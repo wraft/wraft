@@ -3,27 +3,25 @@ defmodule WraftDoc.Themes.Theme do
   The theme model.
   ### Fields
   * `name` - The name of the theme, `:string`
-  * `font` - The font name. `:string`
+  * `font_id` - The font to use, belongs_to Font model
   * `typescale` - The type scale to use, example: `{ "p": 6, "h2": 8, "h1": 10}`.
   * `body_color` - The Body color of the theme, hex-code must be in the format of `#RRGGBB`.
   * `primary_color` - The Primary color of the theme, hex-code must be in the format of `#RRGGBB`.
   * `secondary_color` - The Secondary color of the theme, hex-code must be in the format of `#RRGGBB`.
   * `defualt_theme` - Defualt Theme to use, `true` or `false`
   * `preview_file` - The Preview file to use. currently supporting formats are `.png` `.jpeg` `.pdf` `.jpg` `.gif`.
-  * `file` - The font file to use. currently supporting formats are `.ttf` `.otf`.
   """
   @behaviour ExTypesense
 
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
   alias __MODULE__
-  alias WraftDoc.Assets.Asset
-  alias WraftDoc.Themes.ThemeAsset
+  alias WraftDoc.Themes.Font
   @hex_code_warning_msg "hex-code must be in the format of `#RRGGBB`"
 
   @fields [
     :name,
-    :font,
+    :font_id,
     :typescale,
     :organisation_id,
     :body_color,
@@ -33,7 +31,6 @@ defmodule WraftDoc.Themes.Theme do
 
   schema "theme" do
     field(:name, :string)
-    field(:font, :string)
     field(:typescale, :map, default: %{})
     field(:body_color, :string)
     field(:primary_color, :string)
@@ -42,8 +39,9 @@ defmodule WraftDoc.Themes.Theme do
 
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+    belongs_to(:font, Font)
+
     has_many(:content_type, WraftDoc.ContentTypes.ContentType)
-    many_to_many(:assets, Asset, join_through: ThemeAsset)
 
     timestamps()
   end
@@ -53,7 +51,8 @@ defmodule WraftDoc.Themes.Theme do
   def changeset(%Theme{} = theme, attrs \\ %{}) do
     theme
     |> cast(attrs, @fields)
-    |> validate_required([:name, :font, :organisation_id])
+    |> validate_required([:name, :font_id, :organisation_id])
+    |> foreign_key_constraint(:font_id)
     |> validate_format(:body_color, @hex_format, message: @hex_code_warning_msg)
     |> validate_format(:primary_color, @hex_format, message: @hex_code_warning_msg)
     |> validate_format(:secondary_color, @hex_format, message: @hex_code_warning_msg)
@@ -67,7 +66,8 @@ defmodule WraftDoc.Themes.Theme do
     theme
     |> cast(attrs, @fields)
     |> cast_attachments(attrs, [:preview_file])
-    |> validate_required([:name, :font, :typescale])
+    |> validate_required([:name, :font_id, :typescale])
+    |> foreign_key_constraint(:font_id)
     |> validate_format(:body_color, @hex_format, message: @hex_code_warning_msg)
     |> validate_format(:primary_color, @hex_format, message: @hex_code_warning_msg)
     |> validate_format(:secondary_color, @hex_format, message: @hex_code_warning_msg)
@@ -79,7 +79,7 @@ defmodule WraftDoc.Themes.Theme do
       fields: [
         %{name: "id", type: "string", facet: false},
         %{name: "name", type: "string", facet: false},
-        %{name: "font", type: "string", facet: false},
+        %{name: "font_id", type: "string", facet: true},
         %{name: "typescale", type: "string", facet: false},
         %{name: "body_color", type: "string", facet: true},
         %{name: "primary_color", type: "string", facet: true},

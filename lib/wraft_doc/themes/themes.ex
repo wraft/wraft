@@ -7,7 +7,6 @@ defmodule WraftDoc.Themes do
   require Logger
 
   alias WraftDoc.Account.User
-  alias WraftDoc.Assets
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
   alias WraftDoc.Documents
@@ -29,9 +28,9 @@ defmodule WraftDoc.Themes do
     |> case do
       {:ok, theme} ->
         theme_preview_file_upload(theme, params)
-        fetch_and_associcate_assets_with_theme(theme, current_user, params)
+        # fetch_and_associcate_assets_with_theme(theme, current_user, params)
 
-        Repo.preload(theme, [:assets])
+        Repo.preload(theme, font: :assets)
 
       {:error, _} = changeset ->
         changeset
@@ -39,24 +38,24 @@ defmodule WraftDoc.Themes do
   end
 
   # Get all the assets from their UUIDs and associate them with the given theme.
-  defp fetch_and_associcate_assets_with_theme(theme, current_user, %{"assets" => assets}) do
-    (assets || "")
-    |> String.split(",")
-    |> Stream.map(fn asset -> Assets.get_asset(asset, current_user) end)
-    |> Stream.map(fn asset -> associate_theme_and_asset(theme, asset) end)
-    |> Enum.to_list()
-  end
+  # defp fetch_and_associcate_assets_with_theme(theme, current_user, %{"assets" => assets}) do
+  #   (assets || "")
+  #   |> String.split(",")
+  #   |> Stream.map(fn asset -> Assets.get_asset(asset, current_user) end)
+  #   |> Stream.map(fn asset -> associate_theme_and_asset(theme, asset) end)
+  #   |> Enum.to_list()
+  # end
 
-  defp fetch_and_associcate_assets_with_theme(_theme, _current_user, _params), do: []
+  # defp fetch_and_associcate_assets_with_theme(_theme, _current_user, _params), do: []
 
-  # Associate the asset with the given theme, ie; insert a ThemeAsset entry.
-  defp associate_theme_and_asset(theme, %Asset{} = asset) do
-    %ThemeAsset{}
-    |> ThemeAsset.changeset(%{theme_id: theme.id, asset_id: asset.id})
-    |> Repo.insert()
-  end
+  # # Associate the asset with the given theme, ie; insert a ThemeAsset entry.
+  # defp associate_theme_and_asset(theme, %Asset{} = asset) do
+  #   %ThemeAsset{}
+  #   |> ThemeAsset.changeset(%{theme_id: theme.id, asset_id: asset.id})
+  #   |> Repo.insert()
+  # end
 
-  defp associate_theme_and_asset(_theme, _asset), do: nil
+  # defp associate_theme_and_asset(_theme, _asset), do: nil
 
   @doc """
   Upload theme preview file.
@@ -80,7 +79,7 @@ defmodule WraftDoc.Themes do
     |> where([t], t.organisation_id == ^org_id)
     |> where(^theme_filter_by_name(params))
     |> order_by(^theme_sort(params))
-    |> preload(:assets)
+    |> preload(font: :assets)
     |> Repo.paginate(params)
   end
 
@@ -107,7 +106,7 @@ defmodule WraftDoc.Themes do
   def get_theme(theme_uuid, %{current_org_id: org_id}) do
     Theme
     |> Repo.get_by(id: theme_uuid, organisation_id: org_id)
-    |> Repo.preload(:assets)
+    |> Repo.preload(font: :assets)
   end
 
   def get_theme(theme_id, org_id) do
@@ -131,18 +130,16 @@ defmodule WraftDoc.Themes do
   Update a theme.
   """
   # TODO - improve test
-  @spec update_theme(Theme.t(), User.t(), map()) ::
+  @spec update_theme(Theme.t(), map()) ::
           {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
-  def update_theme(theme, current_user, params) do
+  def update_theme(theme, params) do
     theme
     |> Theme.update_changeset(params)
     |> Repo.update()
     |> case do
       {:ok, theme} ->
         theme_preview_file_upload(theme, params)
-        fetch_and_associcate_assets_with_theme(theme, current_user, params)
-
-        Repo.preload(theme, [:assets])
+        Repo.preload(theme, font: :assets)
 
       {:error, _} = changeset ->
         changeset
@@ -178,7 +175,7 @@ defmodule WraftDoc.Themes do
 
   @spec get_theme_details(Theme.t(), String.t()) :: map()
   def get_theme_details(theme, mkdir) do
-    [%{file: %{file_name: file_name}} | _] = theme.assets
+    [%{file: %{file_name: file_name}} | _] = theme.font.assets
     [font_name, _, file_type] = String.split(file_name, ~r/[-.]/)
 
     %{
@@ -193,7 +190,7 @@ defmodule WraftDoc.Themes do
   end
 
   def font_options(%Theme{organisation_id: org_id} = theme, mkdir) do
-    theme.assets
+    theme.font.assets
     |> Stream.map(fn asset ->
       file_name = asset.file.file_name
       binary = Minio.download("organisations/#{org_id}/assets/#{asset.id}/#{file_name}")

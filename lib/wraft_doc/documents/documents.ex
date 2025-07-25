@@ -1015,7 +1015,7 @@ defmodule WraftDoc.Documents do
         opts \\ []
       ) do
     content_type = Repo.preload(content_type, [:fields, :theme])
-    theme = Repo.preload(content_type.theme, [:assets])
+    theme = Repo.preload(content_type.theme, font: :assets)
     file_path = Assets.download_slug_file(layout)
 
     instance_dir_path = Path.join(["organisations", "#{org_id}", "contents", "#{instance_id}"])

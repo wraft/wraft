@@ -39,7 +39,7 @@ defmodule WraftDoc.ContentTypes do
           :creator,
           [layout: [:assets, frame: [:asset]]],
           :flow,
-          {:theme, :assets},
+          {:theme, font: :assets},
           {:fields, :field_type},
           creator: [:profile]
         ])
@@ -113,7 +113,7 @@ defmodule WraftDoc.ContentTypes do
     |> preload([
       [layout: [:assets, frame: [:asset]]],
       :flow,
-      {:theme, :assets},
+      {:theme, font: :assets},
       {:fields, :field_type},
       creator: [:profile]
     ])
@@ -152,7 +152,7 @@ defmodule WraftDoc.ContentTypes do
       Repo.preload(content_type, [
         {:layout, [frame: [:asset]]},
         :creator,
-        {:theme, :assets},
+        {:theme, font: :assets},
         [{:fields, :field_type}, {:flow, :states}]
       ])
     end
@@ -171,7 +171,7 @@ defmodule WraftDoc.ContentTypes do
         Repo.preload(content_type, [
           [layout: [:assets, frame: [:asset]]],
           :creator,
-          {:theme, :assets},
+          {:theme, font: :assets},
           [{:flow, :states}, {:fields, :field_type}]
         ])
 
@@ -264,7 +264,7 @@ defmodule WraftDoc.ContentTypes do
         Repo.preload(content_type, [
           [layout: [:assets, frame: [:asset]]],
           :creator,
-          {:theme, :assets},
+          {:theme, font: :assets},
           [{:flow, :states}, {:fields, :field_type}]
         ])
     end

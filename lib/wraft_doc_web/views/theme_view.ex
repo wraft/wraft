@@ -1,22 +1,21 @@
 defmodule WraftDocWeb.Api.V1.ThemeView do
   use WraftDocWeb, :view
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.AssetView
+  alias WraftDocWeb.Api.V1.FontView
   alias WraftDocWeb.Api.V1.UserView
 
   def render("create.json", %{theme: theme}) do
     %{
       id: theme.id,
       name: theme.name,
-      font: theme.font,
       body_color: theme.body_color,
       primary_color: theme.primary_color,
       secondary_color: theme.secondary_color,
+      font: render_one(theme.font, FontView, "font.json", as: :font),
       typescale: theme.typescale,
       preview_file: theme.preview_file,
       updated_at: theme.updated_at,
-      inserted_at: theme.inserted_at,
-      assets: render_many(theme.assets, AssetView, "asset.json", as: :asset)
+      inserted_at: theme.inserted_at
     }
   end
 

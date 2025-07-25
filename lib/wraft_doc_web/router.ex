@@ -264,6 +264,9 @@ defmodule WraftDocWeb.Router do
       # Theme
       resources("/themes", ThemeController, only: [:create, :index, :show, :update, :delete])
 
+      # Font
+      resources("/fonts", FontController, only: [:create, :index, :show, :update, :delete])
+
       scope "/flows" do
         # Flows
         resources("/", FlowController, only: [:create, :index, :show, :update, :delete])

@@ -8,7 +8,7 @@ defmodule WraftDoc.Layouts.Layout do
   use Waffle.Ecto.Schema
   alias __MODULE__
 
-  schema "layout" do
+  schema "layouts" do
     field(:name, :string)
     field(:description, :string)
     field(:width, :float)
