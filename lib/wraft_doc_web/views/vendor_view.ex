@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.VendorView do
   use WraftDocWeb, :view
   alias __MODULE__
   alias WraftDocWeb.Api.V1.InstanceView
-  alias WraftDocWeb.Api.V1.OrganisationView
+
   alias WraftDocWeb.Api.V1.UserView
 
   def render("vendor.json", %{vendor: vendor}) do
@@ -35,9 +35,9 @@ defmodule WraftDocWeb.Api.V1.VendorView do
       reg_no: vendor.reg_no,
       logo: vendor.logo,
       contact_person: vendor.contact_person,
-      organisation:
-        render_one(vendor.organisation, OrganisationView, "organisation.json", as: :organisation),
-      creator: render_one(vendor.creator, UserView, "user.json", as: :user)
+      creator: render_one(vendor.creator, UserView, "actor.json", as: :user),
+      inserted_at: vendor.inserted_at,
+      updated_at: vendor.updated_at
     }
   end
 
@@ -94,7 +94,7 @@ defmodule WraftDocWeb.Api.V1.VendorView do
     %{
       total_documents: stats.total_documents,
       pending_approvals: stats.pending_approvals,
-      total_contract_value: Decimal.to_string(stats.total_contract_value),
+      total_contract_value: Decimal.to_integer(stats.total_contract_value),
       total_contacts: stats.total_contacts,
       new_this_month: stats.new_this_month
     }

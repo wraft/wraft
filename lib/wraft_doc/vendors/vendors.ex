@@ -27,7 +27,7 @@ defmodule WraftDoc.Vendors do
     |> Repo.insert()
     |> case do
       {:ok, vendor} ->
-        Repo.preload(vendor, [:organisation, :creator])
+        Repo.preload(vendor, creator: [:profile])
 
       {:error, _} = changeset ->
         changeset
@@ -56,7 +56,7 @@ defmodule WraftDoc.Vendors do
   @spec show_vendor(Ecto.UUID.t(), User.t()) :: Vendor.t()
   def show_vendor(id, user) do
     with %Vendor{} = vendor <- get_vendor(user, id) do
-      Repo.preload(vendor, [:creator, :organisation])
+      Repo.preload(vendor, creator: [:profile])
     end
   end
 
@@ -76,7 +76,7 @@ defmodule WraftDoc.Vendors do
         changeset
 
       {:ok, vendor} ->
-        Repo.preload(vendor, [:organisation, :creator])
+        Repo.preload(vendor, creator: [:profile])
     end
   end
 
