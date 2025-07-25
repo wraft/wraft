@@ -379,7 +379,7 @@ defmodule WraftDoc.DocumentTest do
 
       params = Map.put(@valid_layout_attrs, "engine_uuid", engine.id)
 
-      layout = Documents.update_layout(layout, user, params)
+      layout = Documents.update_layout(layout, params)
 
       count_after =
         Layout

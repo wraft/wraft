@@ -126,7 +126,9 @@ defmodule WraftDoc.Assets do
   # file uploading is throwing errors, in tests
   @spec update_asset(Asset.t(), map()) :: {:ok, Asset.t()} | {:error, Ecto.Changset.t()}
   def update_asset(asset, params) do
-    asset |> Asset.update_changeset(params) |> Repo.update()
+    asset
+    |> Asset.update_changeset(params)
+    |> Repo.update()
   end
 
   @doc """
@@ -192,7 +194,7 @@ defmodule WraftDoc.Assets do
   @spec preload_asset(Layout.t()) :: Layout.t()
   def preload_asset(%Layout{} = layout) do
     Repo.preload(layout, [
-      :assets,
+      :asset,
       :creator,
       :organisation,
       :engine,

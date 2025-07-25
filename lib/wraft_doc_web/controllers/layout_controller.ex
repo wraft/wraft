@@ -227,6 +227,63 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             total_pages: 2,
             total_entries: 15
           })
+        end,
+      LayoutCreate:
+        swagger_schema do
+          title("LayoutCreate")
+          description("Payload for creating a layout")
+
+          properties do
+            name(:string, "Layout name", required: true)
+            description(:string, "Description", required: true)
+            width(:string, "Layout width", required: true)
+            height(:string, "Layout height", required: true)
+            unit(:string, "Dimension unit", required: true)
+            slug(:string, "Slug for the layout")
+            frame_id(:string, "ID of the frame")
+            screenshot(:string, "Screenshot file name or URL")
+            assets(Schema.array(:string), "List of asset IDs")
+            engine_id(:string, "Layout engine ID", required: true)
+            margin(Schema.ref(:Margin), "Margins object")
+          end
+
+          example(%{
+            name: "Letter Layout",
+            description: "Standard letter page",
+            width: "216",
+            height: "279",
+            unit: "mm",
+            slug: "letter-layout",
+            frame_id: "uuid-frame",
+            screenshot: "letter_preview.png",
+            assets: ["asset-1", "asset-2"],
+            engine_id: "uuid-engine",
+            margin: %{
+              top: 2.5,
+              right: 2.5,
+              bottom: 2.5,
+              left: 2.5
+            }
+          })
+        end,
+      Margin:
+        swagger_schema do
+          title("Margin")
+          description("Margins for layout")
+
+          properties do
+            top(:float, "Top margin", required: true)
+            right(:float, "Right margin", required: true)
+            bottom(:float, "Bottom margin", required: true)
+            left(:float, "Left margin", required: true)
+          end
+
+          example(%{
+            top: 2.5,
+            right: 2.5,
+            bottom: 2.5,
+            left: 2.5
+          })
         end
     }
   end
@@ -236,10 +293,16 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   """
   swagger_path :create do
     post("/layouts")
-    summary("Create layout")
-    description("Create layout API")
+    summary("Create Layout")
+    description("Creates a new asset and uses it to create a layout")
 
     consumes("multipart/form-data")
+
+    parameter(:asset_name, :formData, :string, "Name of the asset", required: true)
+
+    parameter(:file, :formData, :file, "Asset file to upload", required: true)
+
+    parameter(:type, :formData, :string, "Type of the asset", required: true)
 
     parameter(:name, :formData, :string, "Layout's name", required: true)
 
@@ -257,8 +320,6 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
 
-    parameter(:assets, :formData, :list, "IDs of assets of the layout")
-
     parameter(:engine_id, :formData, :string, "ID of layout's engine", required: true)
 
     response(200, "Ok", Schema.ref(:LayoutAndEngine))
@@ -266,12 +327,12 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
     with %Engine{} = engine <- Frames.get_engine_by_frame_type(params),
-         %Layout{} = layout <- Layouts.create_layout(current_user, engine, params) do
+         {:ok, %{layout: layout}} <- Layouts.create_layout(current_user, engine, params) do
       Typesense.create_document(layout)
       render(conn, "create.json", doc_layout: layout)
     end
@@ -299,7 +360,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     current_user = conn.assigns[:current_user]
 
@@ -334,7 +395,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
@@ -355,6 +416,14 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:id, :path, :string, "layout id", required: true)
 
+    parameter(:asset_id, :path, :string, "asset id", required: true)
+
+    parameter(:asset_name, :formData, :string, "Name of the asset", required: true)
+
+    parameter(:file, :formData, :file, "Asset file to upload", required: true)
+
+    parameter(:type, :formData, :string, "Type of the asset", required: true)
+
     parameter(:name, :formData, :string, "Layout's name", required: true)
 
     parameter(:description, :formData, :string, "Layout description", required: true)
@@ -367,11 +436,9 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:slug, :formData, :string, "Name of slug to be used")
 
-    parameter(:frame_id, :formData, :string, "Slug file to upload")
+    parameter(:frame_id, :formData, :string, "ID of the frame")
 
     parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
-
-    parameter(:assets, :formData, :list, "IDs of assets of the layout")
 
     parameter(:engine_id, :formData, :string, "ID of layout's engine", required: true)
 
@@ -380,16 +447,16 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => id} = params) do
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update(conn, %{"id" => layout_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Layouts.get_layout(id, current_user),
+    with %Layout{} = layout <- Layouts.get_layout(layout_id, current_user),
          %Engine{id: engine_id} = _engine <- Frames.get_engine_by_frame_type(params),
          %Layout{} = layout <-
            Layouts.update_layout(
-             layout,
              current_user,
+             layout,
              Map.merge(params, %{"engine_id" => engine_id})
            ) do
       Typesense.update_document(layout)
@@ -414,7 +481,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
@@ -443,7 +510,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec delete_layout_asset(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec delete_layout_asset(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete_layout_asset(conn, %{"id" => l_id, "a_id" => a_id}) do
     current_user = conn.assigns[:current_user]
 
