@@ -30,6 +30,8 @@ defmodule WraftDocWeb.Api.V1.VendorControllerTest do
 
   describe "create/2" do
     test "create vendors by valid attrrs", %{conn: conn} do
+      user = conn.assigns.current_user
+      insert(:profile, user: user)
       count_before = Vendor |> Repo.all() |> length()
 
       conn =
@@ -111,6 +113,7 @@ defmodule WraftDocWeb.Api.V1.VendorControllerTest do
   describe "show/2" do
     test "show renders vendor details by id", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:profile, user: user)
       vendor = insert(:vendor, organisation: List.first(user.owned_organisations), creator: user)
 
       conn = get(conn, Routes.v1_vendor_path(conn, :show, vendor.id))
