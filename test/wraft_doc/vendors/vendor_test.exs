@@ -1,16 +1,15 @@
-defmodule WraftDoc.Enterprise.VendorTest do
+defmodule WraftDoc.Vendors.VendorTest do
   use WraftDoc.ModelCase
   @moduletag :enterprise
   import WraftDoc.Factory
 
-  alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Vendors.Vendor
 
   @valid_attrs %{
     "name" => "vendor name",
-    "email" => "vendor email",
+    "email" => "vendor@example.com",
     "phone" => "vendor phone",
     "address" => "vendor address",
-    "gstin" => "vendor gstin",
     "reg_no" => "vendor reg_no",
     "contact_person" => "vendor contact_person"
   }

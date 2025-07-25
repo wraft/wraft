@@ -41,7 +41,6 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.StateUser
-  alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Fields.Field
   alias WraftDoc.Fields.FieldType
   alias WraftDoc.Forms.Form
@@ -270,7 +269,8 @@ defmodule WraftDoc.Factory do
       state: build(:state),
       content_type: build(:content_type),
       creator: build(:user),
-      allowed_users: []
+      allowed_users: [],
+      organisation: build(:organisation)
     }
   end
 
@@ -526,14 +526,28 @@ defmodule WraftDoc.Factory do
   end
 
   def vendor_factory do
-    %Vendor{
+    %WraftDoc.Vendors.Vendor{
       name: sequence(:name, &"Vendor name #{&1} "),
-      email: sequence(:email, &"Vendor email #{&1} "),
-      phone: sequence(:phone, &"Vendor phone #{&1} "),
-      address: sequence(:address, &"Vendor address #{&1} "),
-      gstin: sequence(:gstin, &"Vendor gstin #{&1} "),
-      reg_no: sequence(:reg_no, &"Vendor reg_no #{&1} "),
-      contact_person: sequence(:contact_person, &"Vendor contact_person #{&1} ")
+      email: sequence(:email, &"vendor#{&1}@example.com"),
+      phone: sequence(:phone, &"555-000-#{String.pad_leading("#{&1}", 4, "0")}"),
+      address: sequence(:address, &"#{&1} Main Street"),
+      city: sequence(:city, &"City #{&1}"),
+      country: sequence(:country, &"Country #{&1}"),
+      website: sequence(:website, &"https://vendor#{&1}.com"),
+      reg_no: sequence(:reg_no, &"REG#{String.pad_leading("#{&1}", 8, "0")}"),
+      contact_person: sequence(:contact_person, &"Contact Person #{&1}"),
+      creator: build(:user),
+      organisation: build(:organisation)
+    }
+  end
+
+  def vendor_contact_factory do
+    %WraftDoc.Vendors.VendorContact{
+      name: sequence(:name, &"Contact #{&1}"),
+      email: sequence(:email, &"contact#{&1}@vendor.com"),
+      phone: sequence(:phone, &"555-100-#{String.pad_leading("#{&1}", 4, "0")}"),
+      job_title: sequence(:job_title, &"Job Title #{&1}"),
+      vendor: build(:vendor)
     }
   end
 

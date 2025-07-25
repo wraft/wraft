@@ -37,8 +37,8 @@ defmodule WraftDoc.Documents.Instance do
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
-    belongs_to(:vendor, WraftDoc.Enterprise.Vendor)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+    belongs_to(:vendor, WraftDoc.Vendors.Vendor)
 
     has_many(:content_collaboration, WraftDoc.Documents.ContentCollaboration,
       foreign_key: :content_id
@@ -63,9 +63,9 @@ defmodule WraftDoc.Documents.Instance do
       :content_type_id,
       :type,
       :creator_id,
-      :vendor_id,
       :allowed_users,
-      :organisation_id
+      :organisation_id,
+      :vendor_id
     ])
     |> cast_embed(:doc_settings, with: &DocumentSettings.changeset/2)
     |> validate_required([
@@ -92,7 +92,7 @@ defmodule WraftDoc.Documents.Instance do
 
   def update_changeset(%Instance{} = instance, attrs \\ %{}) do
     instance
-    |> cast(attrs, [:instance_id, :raw, :serialized])
+    |> cast(attrs, [:instance_id, :raw, :serialized, :vendor_id])
     |> cast_embed(:doc_settings, with: &DocumentSettings.changeset/2)
     |> validate_required([:instance_id, :raw, :serialized])
     |> unique_constraint(:instance_id,

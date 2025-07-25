@@ -1,16 +1,13 @@
 defmodule WraftDocWeb.Api.V1.InstanceView do
   use WraftDocWeb, :view
 
-  alias WraftDocWeb.Api.V1.{
-    ContentTypeView,
-    FlowView,
-    InstanceApprovalSystemView,
-    InstanceVersionView,
-    StateView,
-    UserView,
-    VendorView
-  }
-
+  alias WraftDocWeb.Api.V1.ContentTypeView
+  alias WraftDocWeb.Api.V1.FlowView
+  alias WraftDocWeb.Api.V1.InstanceApprovalSystemView
+  alias WraftDocWeb.Api.V1.InstanceVersionView
+  alias WraftDocWeb.Api.V1.StateView
+  alias WraftDocWeb.Api.V1.UserView
+  alias WraftDocWeb.Api.V1.VendorView
   alias __MODULE__
 
   def render("create.json", %{content: content}) do
@@ -23,13 +20,13 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         approval_status: content.approval_status,
         type: content.type,
         serialized: content.serialized,
+        vendor: render_one(content.vendor, VendorView, "vendor.json", as: :vendor),
         inserted_at: content.inserted_at,
         updated_at: content.updated_at
       },
       content_type:
         render_one(content.content_type, ContentTypeView, "content_type.json", as: :content_type),
       state: render_one(content.state, StateView, "create.json", as: :state),
-      vendor: render_one(content.vendor, VendorView, "vendor.json", as: :vendor),
       instance_approval_systems:
         render_many(content.instance_approval_systems, InstanceApprovalSystemView, "create.json",
           as: :instance_approval_system
@@ -50,6 +47,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       build: instance.build,
       signed_doc_url: instance.signed_doc_url,
       editable: instance.editable,
+      vendor: render_one(instance.vendor, VendorView, "vendor.json", as: :vendor),
       inserted_at: instance.inserted_at,
       updated_at: instance.updated_at
     }
@@ -78,6 +76,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         approval_status: content.approval_status,
         type: content.type,
         title: get_in(content.serialized, ["title"]),
+        vendor: render_one(content.vendor, VendorView, "vendor.json", as: :vendor),
         inserted_at: content.inserted_at,
         updated_at: content.updated_at
       },
@@ -86,7 +85,6 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       state: render_one(content.state, StateView, "create.json", as: :state),
       flow:
         render_one(content.content_type.flow, FlowView, "flow_states_summary.json", as: :flow),
-      vendor: render_one(content.vendor, VendorView, "vendor.json", as: :vendor),
       instance_approval_systems:
         render_many(content.instance_approval_systems, InstanceApprovalSystemView, "create.json",
           as: :instance_approval_system
@@ -154,6 +152,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       state: render_one(instance.state, StateView, "instance_state.json", as: :state),
       creator: render_one(instance.creator, UserView, "user.json", as: :user),
       profile_pic: generate_url(instance.creator.profile),
+      vendor: render_one(instance.vendor, VendorView, "vendor.json", as: :vendor),
       versions: render_many(instance.versions, InstanceVersionView, "version.json", as: :version),
       instance_approval_systems:
         render_many(instance.instance_approval_systems, InstanceApprovalSystemView, "create.json",

@@ -18,7 +18,7 @@ alias WraftDoc.Enterprise.Membership.Payment
 alias WraftDoc.Enterprise.Organisation
 alias WraftDoc.Enterprise.OrganisationRole
 alias WraftDoc.Enterprise.Plan
-alias WraftDoc.Enterprise.Vendor
+alias WraftDoc.Vendors.Vendor
 alias WraftDoc.Layouts
 alias WraftDoc.Layouts.Layout
 alias WraftDoc.InvitedUsers

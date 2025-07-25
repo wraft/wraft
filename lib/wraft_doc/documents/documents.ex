@@ -130,8 +130,8 @@ defmodule WraftDoc.Documents do
           {:content_type, [layout: [:assets, :frame, :engine, :organisation]]},
           {:versions, versions_preload_query},
           :state,
-          :vendor,
-          :instance_approval_systems
+          :instance_approval_systems,
+          :vendor
         ])
 
       {:error, _, changeset, _} ->
@@ -212,8 +212,8 @@ defmodule WraftDoc.Documents do
         Repo.preload(content, [
           :content_type,
           :state,
-          :vendor,
-          {:instance_approval_systems, :approver}
+          {:instance_approval_systems, :approver},
+          :vendor
         ])
 
       {:error, _, changeset, _} ->
@@ -413,7 +413,8 @@ defmodule WraftDoc.Documents do
           {:creator, :profile},
           {:content_type, :layout},
           {:versions, :author},
-          {:state, :approvers}
+          {:state, :approvers},
+          :vendor
         ])
 
       {:error, _, changeset, _} ->
@@ -541,9 +542,9 @@ defmodule WraftDoc.Documents do
     |> preload([
       {:content_type, [flow: :states]},
       :state,
-      :vendor,
       {:instance_approval_systems, :approver},
-      {:creator, :profile}
+      {:creator, :profile},
+      :vendor
     ])
     |> Repo.paginate(params)
   end
@@ -574,9 +575,9 @@ defmodule WraftDoc.Documents do
     |> preload([
       :content_type,
       :state,
-      :vendor,
       {:instance_approval_systems, :approver},
-      {:creator, :profile}
+      {:creator, :profile},
+      :vendor
     ])
     |> Repo.paginate(params)
   end
@@ -662,8 +663,8 @@ defmodule WraftDoc.Documents do
         preload: [
           :content_type,
           :state,
-          :vendor,
           {:instance_approval_systems, :approver},
+          :vendor,
           creator: [:profile]
         ]
       )
@@ -737,6 +738,7 @@ defmodule WraftDoc.Documents do
         {:versions, versions_preload_query},
         {:state, :approvers},
         {:instance_approval_systems, :approver},
+        :vendor,
         state: [
           approval_system: [:post_state, :approver],
           rejection_system: [:pre_state, :approver]
@@ -821,6 +823,7 @@ defmodule WraftDoc.Documents do
           {:content_type, :layout},
           {:versions, :author},
           {:instance_approval_systems, :approver},
+          :vendor,
           state: [approval_system: [:post_state, :approver]]
         ])
         |> get_built_document()

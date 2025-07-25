@@ -114,11 +114,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           properties do
             raw(:string, "Content raw data", required: true)
             serialized(:string, "Content serialized data")
+            vendor_id(:string, "Vendor ID to associate with this document")
           end
 
           example(%{
             raw: "Content data",
-            serialized: %{title: "Title of the content", body: "Body of the content"}
+            serialized: %{title: "Title of the content", body: "Body of the content"},
+            vendor_id: "123e4567-e89b-12d3-a456-426614174000"
           })
         end,
       ContentUpdateRequest:
@@ -130,12 +132,14 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             raw(:string, "Content raw data", required: true)
             serialized(:string, "Content serialized data")
             naration(:string, "Naration for updation")
+            vendor_id(:string, "Vendor ID to associate with this document")
           end
 
           example(%{
             raw: "Content data",
             serialized: %{title: "Title of the content", body: "Body of the content"},
-            naration: "Revision by manager"
+            naration: "Revision by manager",
+            vendor_id: "123e4567-e89b-12d3-a456-426614174000"
           })
         end,
       ContentStateUpdateRequest:
@@ -728,7 +732,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     parameters do
       id(:path, :string, "Instance id", required: true)
-
       content(:body, Schema.ref(:ContentUpdateRequest), "Instance to be updated", required: true)
     end
 

@@ -3,6 +3,10 @@ defmodule WraftDoc.Seed do
     Smaller functions to seed various tables.
   """
 
+  alias Faker.Address.En, as: FakerAddressEn
+  alias Faker.Code
+  alias Faker.Internet
+  alias Faker.Person
   alias Faker.Phone
   alias WraftDoc.Account.Profile
   alias WraftDoc.Account.Role
@@ -26,7 +30,6 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.Membership
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Fields.Field
   alias WraftDoc.Fields.FieldType
   alias WraftDoc.Layouts.Layout
@@ -34,6 +37,7 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.Repo
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Themes.ThemeAsset
+  alias WraftDoc.Vendors.Vendor
 
   require Logger
 
@@ -72,8 +76,8 @@ defmodule WraftDoc.Seed do
   def generate_user do
     user =
       Repo.insert!(%User{
-        name: Faker.Person.first_name() <> " " <> Faker.Person.last_name(),
-        email: Faker.Internet.email(),
+        name: Person.first_name() <> " " <> Person.last_name(),
+        email: Internet.email(),
         encrypted_password: Bcrypt.hash_pwd_salt("password"),
         email_verify: true,
         deleted_at: nil
@@ -281,13 +285,16 @@ defmodule WraftDoc.Seed do
 
   def seed_vendor(user, organisation) do
     Repo.insert!(%Vendor{
-      name: Faker.Company.name(),
-      email: Faker.Internet.email(),
+      name: Person.name(),
+      email: Internet.email(),
       phone: Phone.EnGb.number(),
-      address: Faker.Address.En.street_address(),
-      gstin: Faker.Code.iban(),
-      reg_no: Faker.Code.isbn(),
-      contact_person: Faker.Person.name(),
+      address: FakerAddressEn.street_address(),
+      city: FakerAddressEn.city(),
+      country: FakerAddressEn.country(),
+      reg_no: Code.isbn(),
+      website: Internet.url(),
+      logo: nil,
+      contact_person: Person.name(),
       organisation_id: organisation.id,
       creator_id: user.id
     })
@@ -299,7 +306,7 @@ defmodule WraftDoc.Seed do
       raw: Faker.Company.buzzword_prefix(),
       serialized: %{
         title: Faker.Company.catch_phrase(),
-        body: "Hi #{Faker.Person.name()}, We offer you the position of Elixir developer"
+        body: "Hi #{Person.name()}, We offer you the position of Elixir developer"
       },
       type: 1,
       creator_id: user.id,

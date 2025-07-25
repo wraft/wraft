@@ -43,3 +43,6 @@ form_entry:show,Form Entry,Show
 form_entry:manage,Form Entry,Manage
 form_entry:delete,Form Entry,Delete
 global_import:manage,Global Import,Manage
+vendor:show,Vendor,Show
+vendor:manage,Vendor,Manage
+vendor:delete,Vendor,Delete

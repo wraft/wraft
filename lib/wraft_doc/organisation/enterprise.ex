@@ -26,7 +26,6 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.StateUser
-  alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Notifications.Settings
   alias WraftDoc.Repo
   alias WraftDoc.Storage
@@ -1610,95 +1609,6 @@ defmodule WraftDoc.Enterprise do
     |> get_payment(user)
     |> Repo.preload([:organisation, :creator, :membership, :from_plan, :to_plan])
   end
-
-  @doc """
-  Create a vendor under organisations
-  ##Parameters
-  - `current_user` - an User struct
-  - `params` - a map countains vendor parameters
-
-  """
-  @spec create_vendor(User.t(), map) :: Vendor.t() | {:error, Ecto.Changeset.t()}
-  def create_vendor(current_user, params) do
-    current_user
-    |> build_assoc(:vendors, organisation_id: current_user.current_org_id)
-    |> Vendor.changeset(params)
-    |> Repo.insert()
-    |> case do
-      {:ok, vendor} ->
-        Repo.preload(vendor, [:organisation, :creator])
-
-      {:error, _} = changeset ->
-        changeset
-    end
-  end
-
-  @doc """
-  Retunrs vendor by id and organisation
-  ##Parameters
-  -`uuid`- UUID of vendor
-  -`organisation`- Organisation struct
-
-  """
-  @spec get_vendor(Organisation.t(), Ecto.UUID.t()) :: Vendor.t()
-  def get_vendor(%User{current_org_id: org_id}, id) do
-    query = from(v in Vendor, where: v.id == ^id and v.organisation_id == ^org_id)
-
-    case Repo.one(query) do
-      %Vendor{} = vendor -> vendor
-      _ -> {:error, :invalid_id, "Vendor"}
-    end
-  end
-
-  def get_vendor(_, _), do: nil
-
-  @spec show_vendor(Ecto.UUID.t(), User.t()) :: Vendor.t()
-  def show_vendor(id, user) do
-    with %Vendor{} = vendor <- get_vendor(user, id) do
-      Repo.preload(vendor, [:creator, :organisation])
-    end
-  end
-
-  @doc """
-  To update vendor details and attach logo file
-
-  ## Parameters
-  -`vendor`- a Vendor struct
-  -`params`- a map contains vendor fields
-  """
-  def update_vendor(vendor, params) do
-    vendor
-    |> Vendor.update_changeset(params)
-    |> Repo.update()
-    |> case do
-      {:error, _} = changeset ->
-        changeset
-
-      {:ok, vendor} ->
-        Repo.preload(vendor, [:organisation, :creator])
-    end
-  end
-
-  @doc """
-  Deletes vendor data
-  ##Parameters
-  -`vendor`- a Vendor struct
-  """
-  @spec delete_vendor(Vendor.t()) :: Vendor.t()
-  def delete_vendor(%Vendor{} = vendor), do: Repo.delete(vendor)
-
-  @doc """
-  Lists all vendors under an organisation
-  -`organisation`- an Organisation struct
-  -`params` - a map contains params for pagination
-  """
-  @spec vendor_index(Organisation.t(), map()) :: Scrivener.Paginater.t()
-  def vendor_index(%User{current_org_id: organisation_id}, params) do
-    query = from(v in Vendor, where: v.organisation_id == ^organisation_id)
-    Repo.paginate(query, params)
-  end
-
-  def vendor_index(_, _), do: nil
 
   # TODO - Not required
   @doc """
