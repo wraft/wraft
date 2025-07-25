@@ -413,7 +413,8 @@ defmodule WraftDoc.Documents do
           {:creator, :profile},
           {:content_type, :layout},
           {:versions, :author},
-          {:state, :approvers}
+          {:state, :approvers},
+          :vendor
         ])
 
       {:error, _, changeset, _} ->

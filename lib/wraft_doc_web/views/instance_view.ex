@@ -169,7 +169,6 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
           as: :content_type
         ),
       state: render_one(instance.state, StateView, "state.json", as: :state),
-      vendor: render_one(instance.vendor, VendorView, "vendor.json", as: :vendor),
       creator: render_one(instance.creator, UserView, "user.json", as: :user),
       profile_pic: generate_url(instance.creator.profile),
       versions: render_many(instance.versions, InstanceVersionView, "version.json", as: :version)
