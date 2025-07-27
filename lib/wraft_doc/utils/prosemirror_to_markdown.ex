@@ -96,6 +96,27 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     Enum.map_join(content, "", &convert_node(&1, opts))
   end
 
+  defp convert_node(%{"type" => "list", "attrs" => %{"type" => "bullet"}, "content" => content}, opts) do
+    Enum.map_join(content, "\n", fn item ->
+      "- " <> convert_node(item, opts)
+    end)
+  end
+
+  defp convert_node(%{"type" => "list", "attrs" => %{"type" => "ordered"}, "content" => content}, opts) do
+    content
+    |> Enum.with_index(1)
+    |> Enum.map_join("\n", fn {node, index} ->
+      "#{index}. " <> convert_node(node, opts)
+    end)
+  end
+
+  defp convert_node(%{"type" => "list", "content" => content}, opts) do
+    # Default to bullet list if no type is specified
+    Enum.map_join(content, "\n", fn item ->
+      "- " <> convert_node(item, opts)
+    end)
+  end
+
   defp convert_node(
          %{
            "type" => "image",

@@ -38,7 +38,7 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
           footnotes: true,
           autolink: true,
           tagfilter: true,
-          tasklists: true
+          tasklist: true
         ],
         parse: [
           smart: true,
