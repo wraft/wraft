@@ -21,6 +21,12 @@ $else$
 #let secondary_color = rgb("000")
 $endif$
 
+$if(margin_top)$$if(margin_left)$$if(margin_bottom)$$if(margin_right)$
+#let page_margin = (top: $margin_top$cm, left: $margin_left$cm, bottom: $margin_bottom$cm, right: $margin_right$cm)
+$else$
+#let page_margin = (x: 1.35in)
+$endif$$endif$$endif$$endif$
+
 #show figure: set block(breakable: true)
 #set page(
   background: muchpdf(read("$letterhead$", encoding: none),
@@ -28,7 +34,7 @@ $endif$
 )
 
 #show: conf.with(
-  margin: (x: 1.35in),
+  margin: page_margin,
   paper: "$if(papersize)$$papersize$$else$us-letter$endif$",
   cols: $if(columns)$$columns$$else$1$endif$,
   // Typography

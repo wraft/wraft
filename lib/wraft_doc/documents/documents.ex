@@ -1106,7 +1106,12 @@ defmodule WraftDoc.Documents do
            doc_settings: document_settings,
            creator: %User{name: name, email: email}
          } = instance,
-         %Layout{organisation: %Organisation{name: organisation_name}, slug: slug, asset: asset} =
+         %Layout{
+           organisation: %Organisation{name: organisation_name},
+           slug: slug,
+           asset: asset,
+           margin: margin
+         } =
            layout,
          header,
          mkdir,
@@ -1136,6 +1141,7 @@ defmodule WraftDoc.Documents do
       |> concat_strings("secondary_color: \"#{theme.secondary_color}\"\n")
       |> concat_strings("typescale: #{theme.typescale}\n")
       |> document_option_header(document_settings, slug)
+      |> add_margin(margin)
       |> concat_strings("--- \n")
 
     raw =
@@ -1146,6 +1152,16 @@ defmodule WraftDoc.Documents do
     #{raw}
     """
   end
+
+  defp add_margin(header, nil), do: header
+
+  defp add_margin(header, %{top: top, bottom: bottom, left: left, right: right}),
+    do:
+      header
+      |> concat_strings("margin_top: #{top}\n")
+      |> concat_strings("margin_right: #{right}\n")
+      |> concat_strings("margin_bottom: #{bottom}\n")
+      |> concat_strings("margin_left: #{left}\n")
 
   defp document_option_header(
          header,

@@ -18,7 +18,7 @@ defmodule WraftDoc.Layouts.Layout do
     field(:slug, :string)
     field(:screenshot, WraftDocWeb.LayoutScreenShotUploader.Type)
 
-    embeds_one(:margin, Margin)
+    embeds_one(:margin, Margin, on_replace: :update)
 
     belongs_to(:engine, WraftDoc.Documents.Engine)
     belongs_to(:frame, WraftDoc.Frames.Frame)
