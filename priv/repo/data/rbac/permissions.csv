@@ -46,3 +46,5 @@ global_import:manage,Global Import,Manage
 vendor:show,Vendor,Show
 vendor:manage,Vendor,Manage
 vendor:delete,Vendor,Delete
+integration:show,Integration,Show
+integration:manage,Integration,Manage
