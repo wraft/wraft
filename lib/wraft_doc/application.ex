@@ -31,7 +31,7 @@ defmodule WraftDoc.Application do
       #   restart: :permanent
       # )
       WraftDoc.Schedulers.RefreshDashboardStats,
-      WraftDoc.Utils.Vault
+      WraftDoc.Utils.CloakVault
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

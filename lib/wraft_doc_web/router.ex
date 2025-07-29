@@ -618,6 +618,19 @@ defmodule WraftDocWeb.Router do
         get("/folder/:folder_id/files", CloudImportController, :list_onedrive_folder_files)
       end
 
+      # Integration routes
+      get("/integrations", IntegrationController, :index)
+      post("/integrations", IntegrationController, :create)
+      put("/integrations/:id/enable", IntegrationController, :enable)
+      put("/integrations/:id/disable", IntegrationController, :disable)
+      put("/integrations/:id/events", IntegrationController, :update_events)
+
+      # Integration configuration routes
+      get("/integration_configs", IntegrationConfigController, :index)
+      get("/integration_configs/categories", IntegrationConfigController, :categories)
+      get("/integration_configs/:id", IntegrationConfigController, :show)
+      get("/integration_configs/:provider/config", IntegrationConfigController, :config)
+
       # Repositories
       resources("/repositories", RepositoryController, except: [:new, :edit])
       get("/repository/check", RepositoryController, :check_setup)
