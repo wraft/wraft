@@ -962,7 +962,20 @@ defmodule WraftDoc.Documents do
   Delete an instance.
   """
   @spec delete_instance(Instance.t()) :: {:ok, Instance.t()} | {:error, any()}
-  def delete_instance(instance), do: Repo.delete(instance)
+  def delete_instance(instance) do
+    instance
+    |> Repo.delete()
+    |> case do
+      {:ok, instance} ->
+        {:ok,
+         Repo.preload(instance, [
+           :vendor
+         ])}
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
 
   @doc """
   Delete uploaded documents of an instance.
