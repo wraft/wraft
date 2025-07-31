@@ -4,7 +4,7 @@ defmodule WraftDoc.Account.UserOrganisation do
   """
   use WraftDoc.Schema
 
-  @fields [:user_id, :organisation_id]
+  @fields [:user_id, :organisation_id, :deleted_at]
 
   schema "users_organisations" do
     field(:deleted_at, :naive_datetime)

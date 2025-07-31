@@ -2,10 +2,12 @@ defmodule WraftDocWeb.OrganisationAdmin do
   @moduledoc """
   Admin panel for organisation
   """
+  import Ecto.Query
+
+  alias Ecto.Multi
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Repo
-  import Ecto.Query
 
   def widgets(_schema, _conn) do
     query = from(u in Organisation, select: count(u.id))
@@ -27,9 +29,9 @@ defmodule WraftDocWeb.OrganisationAdmin do
     [
       name: %{name: "Name", value: fn x -> x.name end},
       email: %{email: "Email", value: fn x -> x.email end},
-      deleted_at: %{name: "Deleted", value: fn x -> deleted_at(x) end},
       inserted_at: %{name: "Created At", value: fn x -> x.inserted_at end},
-      updated_at: %{name: "Updated At", value: fn x -> x.updated_at end}
+      updated_at: %{name: "Updated At", value: fn x -> x.updated_at end},
+      deleted_at: %{name: "Soft Deleted", value: fn x -> deleted_at(x) end}
       # legal_name: %{name: "Legal name", value: fn x -> x.legal_name end},
       # address: %{name: "Address", value: fn x -> x.address end},
       # name_of_ceo: %{name: "Name of CEO", value: fn x -> x.name_of_ceo end},
@@ -54,24 +56,45 @@ defmodule WraftDocWeb.OrganisationAdmin do
     ]
   end
 
-  def ordering(_schema) do
-    # order by created_at
-    [desc: :inserted_at]
-  end
+  def ordering(_schema), do: [desc: :inserted_at]
 
   def custom_index_query(_conn, _schema, query) do
-    from(q in query, preload: [:users_organisations])
+    from(q in query,
+      where: q.name != "Personal",
+      preload: [:users_organisations, :modified_by]
+    )
   end
 
-  defp deleted_at(%Organisation{users_organisations: [%UserOrganisation{deleted_at: nil}]}) do
-    false
+  def delete(conn, %{data: %{id: org_id} = organisation} = _changeset) do
+    admin_id = conn.assigns.admin_session.id
+
+    Multi.new()
+    |> Multi.update_all(
+      :soft_delete_user_organisations,
+      from(uo in UserOrganisation, where: uo.organisation_id == ^org_id),
+      set: [deleted_at: DateTime.utc_now()]
+    )
+    |> Multi.update(
+      :update_organisation,
+      Organisation.changeset(organisation, %{modified_by_id: admin_id})
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_organisation: organisation}} ->
+        {:ok, organisation}
+
+      {:error, _, reason, _} ->
+        {:error, reason}
+    end
   end
+
+  defp deleted_at(%Organisation{users_organisations: [%UserOrganisation{deleted_at: nil}]}),
+    do: false
 
   defp deleted_at(%Organisation{
          users_organisations: [%UserOrganisation{deleted_at: _deleted_at}]
-       }) do
-    true
-  end
+       }),
+       do: true
 
   defp deleted_at(_), do: ""
 end
