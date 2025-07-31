@@ -177,20 +177,22 @@ defmodule WraftDoc.Themes do
   end
 
   @spec get_theme_details(Theme.t(), String.t()) :: map()
-  def get_theme_details(theme, mkdir) do
-    [%{file: %{file_name: file_name}} | _] = theme.assets
+  def get_theme_details(%Theme{assets: [%{file: %{file_name: file_name}} | _]} = theme, mkdir) do
     [font_name, _, file_type] = String.split(file_name, ~r/[-.]/)
 
-    %{
-      body_color: theme.body_color,
-      primary_color: theme.primary_color,
-      secondary_color: theme.secondary_color,
-      typescale: Jason.encode!(theme.typescale),
-      base_font_name: get_base_font_name(font_name),
-      font_name: "#{font_name}-Regular.#{file_type}",
-      font_options: font_options(theme, mkdir)
-    }
+    {:ok,
+     %{
+       body_color: theme.body_color,
+       primary_color: theme.primary_color,
+       secondary_color: theme.secondary_color,
+       typescale: Jason.encode!(theme.typescale),
+       base_font_name: get_base_font_name(font_name),
+       font_name: "#{font_name}-Regular.#{file_type}",
+       font_options: font_options(theme, mkdir)
+     }}
   end
+
+  def get_theme_details(_, _), do: {"Font files not found.", 1099}
 
   def font_options(%Theme{organisation_id: org_id} = theme, mkdir) do
     theme.assets

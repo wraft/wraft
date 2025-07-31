@@ -252,28 +252,36 @@ defmodule WraftDoc.Assets do
   @doc """
   Find the header values for the content.md file from the assets of the layout used.
   """
-  @spec find_asset_header_values(Asset.t(), String.t(), String.t(), Instance.t()) :: String.t()
+  @spec find_asset_header_values(String.t(), Layout.t(), Instance.t()) :: String.t()
   def find_asset_header_values(
-        %Asset{name: name, file: file, organisation_id: org_id} = asset,
         acc,
-        %Layout{frame: frame, slug: slug},
+        %Layout{
+          frame: frame,
+          slug: slug,
+          asset: %Asset{id: asset_id, name: name, file: file, organisation_id: org_id}
+        },
         %Instance{
           instance_id: instance_id
         }
       ) do
-    binary = Minio.download("organisations/#{org_id}/assets/#{asset.id}/#{file.file_name}")
+    binary = Minio.download("organisations/#{org_id}/assets/#{asset_id}/#{file.file_name}")
 
     asset_file_path =
       Path.join(File.cwd!(), "organisations/#{org_id}/contents/#{instance_id}/#{file.file_name}")
 
     File.write!(asset_file_path, binary)
 
-    if frame != nil || slug == "pletter" do
-      Documents.concat_strings(acc, "letterhead: #{asset_file_path} \n")
-    else
-      Documents.concat_strings(acc, "#{name}: #{asset_file_path} \n")
-    end
+    header =
+      if frame != nil || slug == "pletter" do
+        Documents.concat_strings(acc, "letterhead: #{asset_file_path} \n")
+      else
+        Documents.concat_strings(acc, "#{name}: #{asset_file_path} \n")
+      end
+
+    {:ok, header}
   end
+
+  def find_asset_header_values(_, %Layout{}, _), do: {"Layout background not found.", 1099}
 
   # TODO update preview.
   @doc """

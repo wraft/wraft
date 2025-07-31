@@ -199,21 +199,29 @@ defmodule WraftDoc.Layouts do
   """
   # TODO - improve tests
   @spec update_layout(User.t(), Layout.t(), map()) :: Layout.t() | {:error, Ecto.Changeset.t()}
-  def update_layout(%{current_org_id: org_id} = _current_user, %{asset: asset} = layout, params) do
+  def update_layout(%{current_org_id: org_id} = current_user, %{asset: asset} = layout, params) do
     Multi.new()
     |> Multi.run(:asset, fn _repo, _changes ->
+      params = %{
+        "organisation_id" => org_id,
+        "name" => params["asset_name"],
+        "type" => "layout",
+        "file" => params["file"]
+      }
+
+      case asset do
+        %Asset{} = asset ->
+          Assets.update_asset(asset, params)
+
+        _ ->
+          Assets.create_asset(current_user, params)
+      end
+    end)
+    |> Multi.update(:layout, fn %{asset: %{id: asset_id}} ->
       params =
         Map.merge(params, %{
           "organisation_id" => org_id,
-          "name" => Map.get(params, "asset_name", asset.name)
-        })
-
-      Assets.update_asset(asset, params)
-    end)
-    |> Multi.update(:layout, fn _ ->
-      params =
-        Map.merge(params, %{
-          "organisation_id" => org_id
+          "asset_id" => asset_id
         })
 
       Layout.update_changeset(layout, params)
