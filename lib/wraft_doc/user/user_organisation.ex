@@ -17,8 +17,8 @@ defmodule WraftDoc.Account.UserOrganisation do
   def changeset(users_organisations, params \\ %{}) do
     users_organisations
     |> cast(params, @fields)
-    |> validate_required(@fields)
-    |> unique_constraint(@fields,
+    |> validate_required([:user_id, :organisation_id])
+    |> unique_constraint([:user_id, :organisation_id],
       name: :users_organisations_organisation_id_user_id_index,
       message: "already exist"
     )
