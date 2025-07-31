@@ -201,28 +201,12 @@ defmodule WraftDoc.Layouts do
   @spec update_layout(User.t(), Layout.t(), map()) :: Layout.t() | {:error, Ecto.Changeset.t()}
   def update_layout(%{current_org_id: org_id} = current_user, %{asset: asset} = layout, params) do
     Multi.new()
-    |> Multi.run(:asset, fn _repo, _changes ->
-      params = %{
-        "organisation_id" => org_id,
-        "name" => params["asset_name"],
-        "type" => "layout",
-        "file" => params["file"]
-      }
-
-      case asset do
-        %Asset{} = asset ->
-          Assets.update_asset(asset, params)
-
-        _ ->
-          Assets.create_asset(current_user, params)
-      end
-    end)
-    |> Multi.update(:layout, fn %{asset: %{id: asset_id}} ->
+    |> maybe_update_asset(asset, current_user, params)
+    |> Multi.update(:layout, fn changes ->
       params =
-        Map.merge(params, %{
-          "organisation_id" => org_id,
-          "asset_id" => asset_id
-        })
+        params
+        |> Map.put("organisation_id", org_id)
+        |> maybe_put_asset_id(changes[:asset])
 
       Layout.update_changeset(layout, params)
     end)
@@ -235,6 +219,55 @@ defmodule WraftDoc.Layouts do
         {:error, reason}
     end
   end
+
+  defp maybe_update_asset(
+         multi,
+         nil,
+         %{current_org_id: org_id} = current_user,
+         params
+       ) do
+    Multi.run(multi, :asset, fn _repo, _changes ->
+      case params["file"] do
+        nil ->
+          {:error, "No file provided"}
+
+        _ ->
+          params =
+            Map.merge(params, %{
+              "organisation_id" => org_id,
+              "name" => params["asset_name"],
+              "type" => "layout"
+            })
+
+          Assets.create_asset(current_user, params)
+      end
+    end)
+  end
+
+  defp maybe_update_asset(
+         multi,
+         asset,
+         %{current_org_id: org_id} = _current_user,
+         %{"file" => file} = _params
+       ) do
+    Multi.run(multi, :asset, fn _repo, _changes ->
+      params = %{
+        "organisation_id" => org_id,
+        "name" => file.filename,
+        "type" => "layout",
+        "file" => file
+      }
+
+      Assets.update_asset(asset, params)
+    end)
+  end
+
+  defp maybe_update_asset(multi, _, _, _), do: multi
+
+  defp maybe_put_asset_id(params, nil), do: params
+
+  defp maybe_put_asset_id(params, %{id: asset_id} = _asset),
+    do: Map.put(params, "asset_id", asset_id)
 
   @doc """
   Delete a layout.
