@@ -69,7 +69,7 @@ config :wraft_doc, Oban,
        #  {"0 0 * * MON", WraftDoc.Workers.ScheduledWorker,
        #   queue: :scheduled, tags: ["unused_assets"]},
        {"0 0 * * *", WraftDoc.Workers.ReminderWorker, queue: :scheduled, tags: ["reminders"]},
-       {"0 0 * * *", WraftDoc.Workers.ScheduledWorker,
+       {"@weekly", WraftDoc.Workers.ScheduledWorker,
         queue: :scheduled,
         tags: ["purge_deleted_records"],
         args: %{"type" => "purge_deleted_records"}}
