@@ -257,6 +257,24 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
             email: "abcent@gmail.com",
             role_ids: ["756f1fa1-9657-4166-b372-21e8135aeaf1"]
           })
+        end,
+      InvitedUser:
+        swagger_schema do
+          title("InvitedUser")
+          description("An invited user")
+
+          properties do
+            id(:string, "User ID", required: true)
+            email(:string, "Email address", required: true)
+            status(:string, "Invitation status", required: true)
+          end
+        end,
+      InvitedUsersResponse:
+        swagger_schema do
+          title("InvitedUsersResponse")
+          description("A list of invited users")
+          type(:array)
+          items(Schema.ref(:InvitedUser))
         end
     }
   end
@@ -790,6 +808,27 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     current_user = conn.assigns[:current_user]
     permissions = Enterprise.get_permissions(current_user)
     render(conn, "permissions.json", permissions: permissions)
+  end
+
+  @doc """
+  Returns a list of users invited by the current user.
+  """
+
+  swagger_path :list_invited do
+    get("/organisations/users/invited")
+    summary("List Invited Users")
+    description("Returns a list of users invited by the current user.")
+    produces("application/json")
+
+    response(200, "OK", Schema.ref(:InvitedUsersResponse))
+    response(401, "Unauthorized")
+  end
+
+  @spec list_invited(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def list_invited(conn, _params) do
+    current_user = conn.assigns[:current_user]
+    invited_users = InvitedUsers.list_invited_users(current_user)
+    render(conn, "invited_users.json", invited_users: invited_users)
   end
 
   # This stops the user from changing the name of Personal organisation
