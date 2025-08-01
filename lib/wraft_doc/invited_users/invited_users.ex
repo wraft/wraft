@@ -4,6 +4,8 @@ defmodule WraftDoc.InvitedUsers do
   """
   require Logger
 
+  import Ecto.Query
+
   alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDoc.Repo
 
@@ -29,4 +31,7 @@ defmodule WraftDoc.InvitedUsers do
 
   def get_invited_user(email, organisation_id),
     do: Repo.get_by(InvitedUser, email: email, organisation_id: organisation_id)
+
+  def list_invited_users(%{current_org_id: organisation_id} = _current_user),
+    do: Repo.all(from(i in InvitedUser, where: i.organisation_id == ^organisation_id))
 end

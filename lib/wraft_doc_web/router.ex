@@ -355,6 +355,7 @@ defmodule WraftDocWeb.Router do
         get("/:id/members", OrganisationController, :members)
         # Invite new user
         post("/users/invite", OrganisationController, :invite)
+        get("/users/invited", OrganisationController, :list_invited)
         # Removes existing user
         post("/remove_user/:id", OrganisationController, :remove_user)
         # permissions of user in organisation
