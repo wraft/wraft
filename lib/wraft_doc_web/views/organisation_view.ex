@@ -155,6 +155,18 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
+  def render("invited_users.json", %{invited_users: invited_users}) do
+    render_many(invited_users, __MODULE__, "invited_user.json", as: :invited_user)
+  end
+
+  def render("invited_user.json", %{invited_user: invited_user}) do
+    %{
+      id: invited_user.id,
+      email: invited_user.email,
+      status: invited_user.status
+    }
+  end
+
   defp organisation_member?({:error, :already_member}), do: true
   defp organisation_member?(:ok), do: false
 
