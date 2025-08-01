@@ -20,11 +20,17 @@ $else$
 #let toc_depth = 3
 $endif$
 
+$if(margin_top)$$if(margin_left)$$if(margin_bottom)$$if(margin_right)$
+#let page_margin = (top: $margin_top$cm, left: $margin_left$cm, bottom: $margin_bottom$cm, right: $margin_right$cm)
+$else$
+#let page_margin = (auto)
+$endif$$endif$$endif$$endif$
+
 #show figure: set block(breakable: true)
 #set page(fill: body_color)
 
 #show: conf.with(
-  margin: (auto),
+  margin: page_margin,
   paper: "$if(papersize)$$papersize$$else$us-letter$endif$",
   cols: $if(columns)$$columns$$else$1$endif$,
   font: ("$if(mainfont_base)$$mainfont_base$$else$Mallory$endif$"),

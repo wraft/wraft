@@ -154,6 +154,7 @@ RUN test -f priv/visual-signer-v2-1.0-SNAPSHOT-jar-with-dependencies.jar && echo
 
 COPY ./entrypoint.sh /entrypoint.sh
 COPY rel/commands/migrate.sh /app/
+COPY rel/commands/rollback.sh /app/
 COPY rel/overlays/seeds.sh /app/
 COPY priv/pandoc_filters/*.lua /app/priv/pandoc_filters/
 

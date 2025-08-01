@@ -7,8 +7,9 @@ defmodule WraftDoc.Layouts.Layout do
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
   alias __MODULE__
+  alias __MODULE__.Margin
 
-  schema "layout" do
+  schema "layouts" do
     field(:name, :string)
     field(:description, :string)
     field(:width, :float)
@@ -17,14 +18,15 @@ defmodule WraftDoc.Layouts.Layout do
     field(:slug, :string)
     field(:screenshot, WraftDocWeb.LayoutScreenShotUploader.Type)
 
+    embeds_one(:margin, Margin, on_replace: :update)
+
     belongs_to(:engine, WraftDoc.Documents.Engine)
     belongs_to(:frame, WraftDoc.Frames.Frame)
+    belongs_to(:asset, WraftDoc.Assets.Asset)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     has_many(:content_types, WraftDoc.ContentTypes.ContentType)
-    has_many(:layout_assets, WraftDoc.Layouts.LayoutAsset)
-    has_many(:assets, through: [:layout_assets, :asset])
 
     timestamps()
   end
@@ -39,9 +41,11 @@ defmodule WraftDoc.Layouts.Layout do
       :unit,
       :slug,
       :frame_id,
+      :asset_id,
       :organisation_id,
       :engine_id
     ])
+    |> cast_embed(:margin, with: &Margin.changeset/2)
     |> validate_required([
       :name,
       :description,
@@ -64,9 +68,11 @@ defmodule WraftDoc.Layouts.Layout do
       :height,
       :unit,
       :slug,
+      :asset_id,
       :frame_id,
       :engine_id
     ])
+    |> cast_embed(:margin, with: &Margin.changeset/2)
     |> cast_attachments(attrs, [:screenshot])
     |> validate_required([
       :name,
@@ -101,5 +107,32 @@ defmodule WraftDoc.Layouts.Layout do
         %{name: "updated_at", type: "int64", facet: false}
       ]
     }
+  end
+end
+
+defmodule WraftDoc.Layouts.Layout.Margin do
+  @moduledoc """
+  The trail period model.
+  """
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @primary_key false
+  @derive {Jason.Encoder, only: [:top, :right, :bottom, :left]}
+
+  embedded_schema do
+    field(:top, :float)
+    field(:right, :float)
+    field(:bottom, :float)
+    field(:left, :float)
+  end
+
+  def changeset(margin, attrs) do
+    margin
+    |> cast(attrs, [:top, :right, :bottom, :left])
+    |> validate_number(:top, greater_than_or_equal_to: 0)
+    |> validate_number(:right, greater_than_or_equal_to: 0)
+    |> validate_number(:bottom, greater_than_or_equal_to: 0)
+    |> validate_number(:left, greater_than_or_equal_to: 0)
   end
 end

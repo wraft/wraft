@@ -127,7 +127,7 @@ defmodule WraftDoc.Documents do
           )
 
         Repo.preload(content, [
-          {:content_type, [layout: [:assets, :frame, :engine, :organisation]]},
+          {:content_type, [layout: [:asset, :frame, :engine, :organisation]]},
           {:versions, versions_preload_query},
           :state,
           :instance_approval_systems,
@@ -1048,34 +1048,33 @@ defmodule WraftDoc.Documents do
       move_old_builds(instance_dir_path, current_instance_file, instance_updated?)
     end)
 
-    theme = Themes.get_theme_details(theme, base_content_dir)
-
     header =
       Enum.reduce(content_type.fields, "--- \n", fn x, acc ->
         find_header_values(x, instance.serialized, acc)
       end)
 
-    content =
-      prepare_markdown(
-        instance,
-        layout,
-        header,
-        base_content_dir,
-        theme,
-        task
-      )
+    with {:ok, theme} <- Themes.get_theme_details(theme, base_content_dir),
+         {:ok, content} <-
+           prepare_markdown(
+             instance,
+             layout,
+             header,
+             base_content_dir,
+             theme,
+             task
+           ) do
+      File.write("#{base_content_dir}/content.md", content)
 
-    File.write("#{base_content_dir}/content.md", content)
+      generate_field_json(instance, layout, base_content_dir)
 
-    generate_field_json(instance, layout, base_content_dir)
+      pdf_file = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
 
-    pdf_file = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
+      pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir, layout)
 
-    pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir, layout)
-
-    "pandoc"
-    |> System.cmd(pandoc_commands, stderr_to_stdout: true)
-    |> upload_file_and_delete_local_copy(base_content_dir, pdf_file, opts)
+      "pandoc"
+      |> System.cmd(pandoc_commands, stderr_to_stdout: true)
+      |> upload_file_and_delete_local_copy(base_content_dir, pdf_file, opts)
+    end
   end
 
   defp generate_field_json(_, %Layout{frame: nil}, _), do: nil
@@ -1106,48 +1105,70 @@ defmodule WraftDoc.Documents do
            doc_settings: document_settings,
            creator: %User{name: name, email: email}
          } = instance,
-         %Layout{organisation: %Organisation{name: organisation_name}, slug: slug} = layout,
+         %Layout{
+           organisation: %Organisation{name: organisation_name},
+           slug: slug,
+           margin: margin
+         } =
+           layout,
          header,
          mkdir,
          theme,
          task
        ) do
-    header =
-      Enum.reduce(layout.assets, header, fn asset, acc ->
-        Assets.find_asset_header_values(asset, acc, layout, instance)
-      end)
+    header
+    |> Assets.find_asset_header_values(layout, instance)
+    |> case do
+      {:ok, header} ->
+        qr_code = Task.await(task)
+        page_title = instance.serialized["title"]
 
-    qr_code = Task.await(task)
-    page_title = instance.serialized["title"]
+        header =
+          header
+          |> concat_strings("qrcode: #{qr_code} \n")
+          |> concat_strings("path: #{mkdir}\n")
+          |> concat_strings("title: #{page_title}\n")
+          |> concat_strings("organisation_name: #{organisation_name}\n")
+          |> concat_strings("author_name: #{name}\n")
+          |> concat_strings("author_email: #{email}\n")
+          |> concat_strings("id: #{instance_id}\n")
+          |> concat_strings("mainfont: #{theme.font_name}\n")
+          |> concat_strings("mainfont_base: #{theme.base_font_name}\n")
+          |> concat_strings("mainfontoptions:\n")
+          |> Themes.font_option_header(theme.font_options)
+          |> concat_strings("body_color: \"#{theme.body_color}\"\n")
+          |> concat_strings("primary_color: \"#{theme.primary_color}\"\n")
+          |> concat_strings("secondary_color: \"#{theme.secondary_color}\"\n")
+          |> concat_strings("typescale: #{theme.typescale}\n")
+          |> document_option_header(document_settings, slug)
+          |> add_margin(margin)
+          |> concat_strings("--- \n")
 
-    header =
-      header
-      |> concat_strings("qrcode: #{qr_code} \n")
-      |> concat_strings("path: #{mkdir}\n")
-      |> concat_strings("title: #{page_title}\n")
-      |> concat_strings("organisation_name: #{organisation_name}\n")
-      |> concat_strings("author_name: #{name}\n")
-      |> concat_strings("author_email: #{email}\n")
-      |> concat_strings("id: #{instance_id}\n")
-      |> concat_strings("mainfont: #{theme.font_name}\n")
-      |> concat_strings("mainfont_base: #{theme.base_font_name}\n")
-      |> concat_strings("mainfontoptions:\n")
-      |> Themes.font_option_header(theme.font_options)
-      |> concat_strings("body_color: \"#{theme.body_color}\"\n")
-      |> concat_strings("primary_color: \"#{theme.primary_color}\"\n")
-      |> concat_strings("secondary_color: \"#{theme.secondary_color}\"\n")
-      |> concat_strings("typescale: #{theme.typescale}\n")
-      |> document_option_header(document_settings, slug)
-      |> concat_strings("--- \n")
+        raw =
+          instance.serialized["serialized"]
+          |> Jason.decode!()
+          |> ProsemirrorToMarkdown.convert()
 
-    raw =
-      instance.serialized["serialized"] |> Jason.decode!() |> ProsemirrorToMarkdown.convert()
+        {:ok,
+         """
+         #{header}
+         #{raw}
+         """}
 
-    """
-    #{header}
-    #{raw}
-    """
+      error ->
+        error
+    end
   end
+
+  defp add_margin(header, nil), do: header
+
+  defp add_margin(header, %{top: top, bottom: bottom, left: left, right: right}),
+    do:
+      header
+      |> concat_strings("margin_top: #{top}\n")
+      |> concat_strings("margin_right: #{right}\n")
+      |> concat_strings("margin_bottom: #{bottom}\n")
+      |> concat_strings("margin_left: #{left}\n")
 
   defp document_option_header(
          header,

@@ -6,6 +6,7 @@ defmodule WraftDoc.Layouts do
   import Ecto.Query
   require Logger
 
+  alias Ecto.Multi
   alias WraftDoc.Account.User
   alias WraftDoc.Assets
   alias WraftDoc.Assets.Asset
@@ -18,10 +19,47 @@ defmodule WraftDoc.Layouts do
   Create a layout.
   """
   # TODO - improve tests
-  @spec create_layout(User.t(), Engine.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
-  def create_layout(%{current_org_id: org_id} = current_user, %{id: engine_id} = engine, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id, "engine_id" => engine_id})
+  @spec create_layout(User.t(), Engine.t(), map()) ::
+          {:ok, %{layout: Layout.t(), asset: Asset.t()}} | {:error, any()}
+  def create_layout(
+        %{current_org_id: org_id} = current_user,
+        %Engine{id: engine_id} = engine,
+        params
+      ) do
+    Multi.new()
+    |> Multi.run(:asset, fn _repo, _changes ->
+      asset_params = %{
+        "organisation_id" => org_id,
+        "name" => params["asset_name"],
+        "type" => params["type"],
+        "file" => params["file"]
+      }
 
+      Assets.create_asset(current_user, asset_params)
+    end)
+    |> Multi.run(:layout, fn _repo, %{asset: %{id: asset_id}} ->
+      params =
+        Map.merge(params, %{
+          "engine_id" => engine_id,
+          "asset_id" => asset_id,
+          "organisation_id" => org_id
+        })
+
+      prepare_layout(current_user, engine, params)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{asset: asset, layout: layout}} ->
+        {:ok, %{asset: asset, layout: layout}}
+
+      {:error, _operation, reason, _changes} ->
+        {:error, reason}
+    end
+  end
+
+  def create_layout(_, _, _), do: {:error, :fake}
+
+  defp prepare_layout(current_user, engine, params) do
     current_user
     |> build_assoc(:layouts, engine: engine)
     |> Layout.changeset(params)
@@ -29,37 +67,31 @@ defmodule WraftDoc.Layouts do
     |> case do
       {:ok, layout} ->
         layout = layout_files_upload(layout, params)
-        fetch_and_associcate_assets(layout, current_user, params)
 
-        Repo.preload(layout, [
-          :engine,
-          :creator,
-          :assets,
-          frame: [:asset]
-        ])
+        {:ok,
+         Repo.preload(layout, [
+           :engine,
+           :creator,
+           :asset,
+           frame: [:asset, fields: [:field_type]]
+         ])}
 
       changeset = {:error, _} ->
         changeset
     end
   end
 
-  def create_layout(_, _, _), do: {:error, :fake}
-
   @doc """
   Upload layout slug/screenshot file.
   """
   @spec layout_files_upload(Layout.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
-  def layout_files_upload(layout, %{"slug_file" => _} = params) do
-    layout_update_files(layout, params)
-  end
+  def layout_files_upload(layout, %{"slug_file" => _} = params),
+    do: layout_update_files(layout, params)
 
-  def layout_files_upload(layout, %{"screenshot" => _} = params) do
-    layout_update_files(layout, params)
-  end
+  def layout_files_upload(layout, %{"screenshot" => _} = params),
+    do: layout_update_files(layout, params)
 
-  def layout_files_upload(layout, _params) do
-    Repo.preload(layout, [:engine, :creator])
-  end
+  def layout_files_upload(layout, _params), do: Repo.preload(layout, [:engine, :creator])
 
   # Update the layout on fileupload.
   @spec layout_update_files(Layout.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
@@ -76,27 +108,6 @@ defmodule WraftDoc.Layouts do
     end
   end
 
-  # Get all the assets from their UUIDs and associate them with the given layout.
-  defp fetch_and_associcate_assets(layout, current_user, %{"assets" => assets}) do
-    (assets || "")
-    |> String.split(",")
-    |> Stream.map(fn x -> Assets.get_asset(x, current_user) end)
-    |> Stream.map(fn x -> associate_layout_and_asset(layout, current_user, x) end)
-    |> Enum.to_list()
-  end
-
-  defp fetch_and_associcate_assets(_layout, _current_user, _params), do: nil
-
-  # Associate the asset with the given layout, ie; insert a LayoutAsset entry.
-  defp associate_layout_and_asset(_layout, _current_user, nil), do: nil
-
-  defp associate_layout_and_asset(%Layout{} = layout, current_user, asset) do
-    layout
-    |> build_assoc(:layout_assets, asset_id: asset.id, creator: current_user)
-    |> LayoutAsset.changeset()
-    |> Repo.insert()
-  end
-
   @doc """
   List all layouts.
   """
@@ -108,7 +119,7 @@ defmodule WraftDoc.Layouts do
         where: l.organisation_id == ^org_id,
         where: ^layout_index_filter_by_name(params),
         order_by: ^layout_index_sort(params),
-        preload: [:engine, :assets, frame: [:asset]]
+        preload: [:engine, :asset, frame: [:asset]]
       )
 
     Repo.paginate(query, params)
@@ -187,27 +198,76 @@ defmodule WraftDoc.Layouts do
   Update a layout.
   """
   # TODO - improve tests
-  @spec update_layout(Layout.t(), User.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
+  @spec update_layout(User.t(), Layout.t(), map()) :: Layout.t() | {:error, Ecto.Changeset.t()}
+  def update_layout(%{current_org_id: org_id} = current_user, %{asset: asset} = layout, params) do
+    Multi.new()
+    |> maybe_update_asset(asset, current_user, params)
+    |> Multi.update(:layout, fn changes ->
+      params =
+        params
+        |> Map.put("organisation_id", org_id)
+        |> maybe_put_asset_id(changes[:asset])
 
-  def update_layout(layout, current_user, params) do
-    layout
-    |> Layout.update_changeset(params)
-    |> Repo.update()
+      Layout.update_changeset(layout, params)
+    end)
+    |> Repo.transaction()
     |> case do
-      {:error, _} = changeset ->
-        changeset
+      {:ok, %{layout: layout}} ->
+        Assets.preload_asset(layout)
 
-      {:ok, layout} ->
-        fetch_and_associcate_assets(layout, current_user, params)
-
-        Repo.preload(layout, [
-          :engine,
-          :creator,
-          :assets,
-          frame: [:asset]
-        ])
+      {:error, _operation, reason, _changes} ->
+        {:error, reason}
     end
   end
+
+  defp maybe_update_asset(
+         multi,
+         nil,
+         %{current_org_id: org_id} = current_user,
+         params
+       ) do
+    Multi.run(multi, :asset, fn _repo, _changes ->
+      case params["file"] do
+        nil ->
+          {:error, "No file provided"}
+
+        _ ->
+          params =
+            Map.merge(params, %{
+              "organisation_id" => org_id,
+              "name" => params["asset_name"],
+              "type" => "layout"
+            })
+
+          Assets.create_asset(current_user, params)
+      end
+    end)
+  end
+
+  defp maybe_update_asset(
+         multi,
+         asset,
+         %{current_org_id: org_id} = _current_user,
+         %{"file" => file} = _params
+       ) do
+    Multi.run(multi, :asset, fn _repo, _changes ->
+      params = %{
+        "organisation_id" => org_id,
+        "name" => file.filename,
+        "type" => "layout",
+        "file" => file
+      }
+
+      Assets.update_asset(asset, params)
+    end)
+  end
+
+  defp maybe_update_asset(multi, _, _, _), do: multi
+
+  defp maybe_put_asset_id(params, nil), do: params
+
+  defp maybe_put_asset_id(params, %{id: asset_id} = _asset),
+    do: Map.put(params, "asset_id", asset_id)
 
   @doc """
   Delete a layout.

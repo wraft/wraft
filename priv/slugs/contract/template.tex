@@ -24,6 +24,7 @@
 \usepackage{polyglossia}
 \usepackage{graphicx}
 \usepackage{grffile}
+\usepackage{geometry}
 \usepackage[normalem]{ulem}
 
 \PassOptionsToPackage{setpagesize=false,
@@ -152,27 +153,31 @@ $endif$
 %  END OF PREAMBLE
 % -----------------
 \begin{document}
+$if(margin_top)$$if(margin_left)$$if(margin_bottom)$$if(margin_right)$
+			\newgeometry{top=$margin_top$cm, left=$margin_left$cm, bottom=$margin_bottom$cm, right=$margin_right$cm}
+		$endif$$endif$$endif$$endif$
 $if(path)$
-\input{$path$/cover}
-$endif$
+		\input{$path$/cover}
+	$endif$
 
-% chapter: 0, section: 1, subsection: 2 etc
-$if(toc)$
-{
-		$if(colorlinks)$
-		\hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
-		$endif$
-		\setcounter{secnumdepth}{3}
-		\setcounter{tocdepth}{$toc_depth$}
-		\tableofcontents
-	}
-$endif$
-\newpage
-$body$
-% Add some vertical space before the QR code
-\vspace{10mm}
+		% chapter: 0, section: 1, subsection: 2 etc
+	$if(toc)$
+		{
+				$if(colorlinks)$
+				\hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
+				$endif$
+				\setcounter{secnumdepth}{3}
+				\setcounter{tocdepth}{$toc_depth$}
+				\tableofcontents
+			}
+	$endif$
 
-$if(qrcode)$
-\includegraphics[scale=20.25]{$qrcode$}
-$endif$
+		\newpage
+	$body$
+		% Add some vertical space before the QR code
+		\vspace{10mm}
+
+	$if(qrcode)$
+		\includegraphics[scale=20.25]{$qrcode$}
+	$endif$
 \end{document}
