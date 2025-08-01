@@ -147,16 +147,39 @@ defmodule WraftDoc.Themes.Fonts do
 
   defp create_assets(current_user, files) do
     files
-    |> Enum.map(
-      &Assets.create_asset(current_user, %{
-        "file" => &1,
-        "type" => "theme",
-        "name" => &1.filename
-      })
-    )
-    |> Enum.reduce({:ok, []}, fn
-      {:ok, asset}, {:ok, acc} -> {:ok, [asset | acc]}
-      {:error, _} = err, _ -> err
-    end)
+    |> validate_regular_asset()
+    |> case do
+      {:ok, files} ->
+        files
+        |> Enum.map(
+          &Assets.create_asset(current_user, %{
+            "file" => &1,
+            "type" => "theme",
+            "name" => &1.filename
+          })
+        )
+        |> Enum.reduce({:ok, []}, fn
+          {:ok, asset}, {:ok, acc} -> {:ok, [asset | acc]}
+          {:error, _} = err, _ -> err
+        end)
+
+      {:error, _} = error ->
+        error
+    end
   end
+
+  defp validate_regular_asset(files) do
+    files
+    |> Enum.any?(&regular_asset?/1)
+    |> if do
+      {:ok, files}
+    else
+      {:error, "Please include regular font file"}
+    end
+  end
+
+  defp regular_asset?(%{filename: name}),
+    do: String.contains?(String.downcase(name), "regular")
+
+  defp regular_asset?(_), do: false
 end

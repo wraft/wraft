@@ -21,7 +21,10 @@ defmodule WraftDocWeb.Plug.AddActionLog do
   @spec create_log(Plug.Conn.t()) :: ActionLog.t()
   defp create_log(%Plug.Conn{assigns: %{current_user: _user}} = conn) do
     params = create_action_log_params(conn)
-    %ActionLog{} |> ActionLog.authorized_action_changeset(params) |> Repo.insert!()
+
+    %ActionLog{}
+    |> ActionLog.authorized_action_changeset(params)
+    |> Repo.insert!()
   end
 
   defp create_log(_), do: nil
@@ -116,14 +119,22 @@ defmodule WraftDocWeb.Plug.AddActionLog do
   end
 
   # Change the stucts in params to maps.
-  @spec change_structs_to_maps(map) :: map
-  defp change_structs_to_maps(params) do
-    Enum.reduce(params, %{}, fn
-      {k, %{__struct__: _} = v}, acc ->
-        Map.put(acc, k, Map.from_struct(v))
+  @spec change_structs_to_maps(term()) :: term()
+  defp change_structs_to_maps(%{__struct__: _} = struct) do
+    struct
+    |> Map.from_struct()
+    |> change_structs_to_maps()
+  end
 
-      {k, v}, acc ->
-        Map.put(acc, k, v)
+  defp change_structs_to_maps(map) when is_map(map) do
+    Enum.reduce(map, %{}, fn {k, v}, acc ->
+      Map.put(acc, k, change_structs_to_maps(v))
     end)
   end
+
+  defp change_structs_to_maps(list) when is_list(list) do
+    Enum.map(list, &change_structs_to_maps/1)
+  end
+
+  defp change_structs_to_maps(other), do: other
 end

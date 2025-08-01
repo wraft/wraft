@@ -2,16 +2,14 @@ defmodule WraftDocWeb.Api.V1.FontController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  # plug(WraftDocWeb.Plug.AddActionLog)
+  plug(WraftDocWeb.Plug.AddActionLog)
 
-  # plug(WraftDocWeb.Plug.Authorized,
-  #   create: "form:manage",
-  #   index: "form:show",
-  #   show: "form:show",
-  #   update: "form:manage",
-  #   delete: "form:delete",
-  #   align_fields: "form:manage"
-  # )
+  plug WraftDocWeb.Plug.Authorized,
+    create: "theme:manage",
+    index: "theme:show",
+    show: "theme:show",
+    update: "theme:manage",
+    delete: "theme:delete"
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -124,7 +122,6 @@ defmodule WraftDocWeb.Api.V1.FontController do
   end
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
