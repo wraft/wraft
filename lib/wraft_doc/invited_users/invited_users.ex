@@ -9,6 +9,11 @@ defmodule WraftDoc.InvitedUsers do
   alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDoc.Repo
 
+  @doc """
+  Create or update an invited user.
+  """
+  @spec create_or_update_invited_user(String.t(), Ecto.UUID.t(), String.t()) ::
+          :ok | {:error, Ecto.Changeset.t()}
   def create_or_update_invited_user(email, organisation_id, status \\ "invited") do
     email
     |> get_invited_user(organisation_id)
@@ -29,9 +34,26 @@ defmodule WraftDoc.InvitedUsers do
     end
   end
 
+  @doc """
+  Get an invited user by ID.
+  """
+  @spec get_invited_user_by_id(Ecto.UUID.t()) :: InvitedUser.t() | nil
+  def get_invited_user_by_id(<<_::288>> = invited_user_id),
+    do: Repo.get(InvitedUser, invited_user_id)
+
+  def get_invited_user_by_id(_), do: nil
+
+  @doc """
+  Get an invited user by email and organisation ID.
+  """
+  @spec get_invited_user(String.t(), Ecto.UUID.t()) :: InvitedUser.t() | nil
   def get_invited_user(email, organisation_id),
     do: Repo.get_by(InvitedUser, email: email, organisation_id: organisation_id)
 
+  @doc """
+  List all invited users for the current organisation.
+  """
+  @spec list_invited_users(User.t()) :: [InvitedUser.t()]
   def list_invited_users(%{current_org_id: organisation_id} = _current_user),
-    do: Repo.all(from(i in InvitedUser, where: i.organisation_id == ^organisation_id))
+    do: InvitedUser |> where([i], i.organisation_id == ^organisation_id) |> Repo.all()
 end

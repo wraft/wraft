@@ -354,12 +354,20 @@ defmodule WraftDocWeb.Router do
         post("/request_deletion", OrganisationController, :request_deletion)
         get("/:id/members", OrganisationController, :members)
         # Invite new user
-        post("/users/invite", OrganisationController, :invite)
-        get("/users/invited", OrganisationController, :list_invited)
+        scope "/users" do
+          scope("/invite") do
+            post("/", OrganisationController, :invite)
+            get("/", OrganisationController, :list_invited)
+            post("/:id/resend", OrganisationController, :resend_invite)
+            delete("/:id/revoke", OrganisationController, :revoke_invite)
+          end
+
+          # permissions of user in organisation
+          get("/permissions", OrganisationController, :permissions)
+        end
+
         # Removes existing user
         post("/remove_user/:id", OrganisationController, :remove_user)
-        # permissions of user in organisation
-        get("/users/permissions", OrganisationController, :permissions)
         # Transfer ownership
         post("/transfer_ownership", OrganisationController, :transfer_ownership)
       end
