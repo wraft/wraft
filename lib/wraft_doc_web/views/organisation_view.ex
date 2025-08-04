@@ -125,6 +125,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
+  def render("revoke.json", %{}) do
+    %{
+      info: "Revoked successfully.!"
+    }
+  end
+
   def render("verify_invite_token.json", %{
         organisation: organisation,
         email: email,

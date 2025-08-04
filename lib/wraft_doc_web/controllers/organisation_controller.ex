@@ -22,6 +22,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.InvitedUsers
+  alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDocWeb.Guardian
 
   def swagger_definitions do
@@ -566,6 +567,30 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
       error ->
         error
+    end
+  end
+
+  @doc """
+  Resends organisation invite.
+  """
+  def resend_invite(conn, %{"id" => invited_user_id} = _params) do
+    current_user = conn.assigns[:current_user]
+
+    with %Organisation{} = organisation <-
+           Enterprise.get_organisation(current_user.current_org_id),
+         %InvitedUser{} = invited_user <- InvitedUsers.get_invited_user_by_id(invited_user_id),
+         {:ok, _} <- Enterprise.resend_invite(current_user, invited_user, organisation) do
+      render(conn, "invite.json")
+    end
+  end
+
+  @doc """
+  Revoke organisation invite.
+  """
+  def revoke_invite(conn, %{"id" => invited_user_id} = _params) do
+    with %InvitedUser{} = invited_user <- InvitedUsers.get_invited_user_by_id(invited_user_id),
+         {:ok, _} <- Enterprise.revoke_invite(invited_user) do
+      render(conn, "revoke.json")
     end
   end
 
