@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
 
   alias __MODULE__
   alias WraftDoc.Account.User
+  alias WraftDocWeb.Api.V1.RoleView
   alias WraftDocWeb.Api.V1.UserView
 
   def render("create.json", %{organisation: organisation}) do
@@ -169,7 +170,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     %{
       id: invited_user.id,
       email: invited_user.email,
-      status: invited_user.status
+      status: invited_user.status,
+      roles: render_many(invited_user.roles, RoleView, "role.json", as: :role)
     }
   end
 

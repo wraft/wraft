@@ -100,6 +100,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
           example(%{info: "Invited successfully.!"})
         end,
+      RevokedResponse:
+        swagger_schema do
+          title("Revoke invite user response")
+          description("Revoke Invite user response")
+
+          properties do
+            info(:string, "Info", required: true)
+          end
+
+          example(%{info: "Invited successfully.!"})
+        end,
       InviteTokenStatusResponse:
         swagger_schema do
           title("Invite Token Status")
@@ -553,7 +564,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
         for_actor: %{email: params["email"]}
       )
 
-      InvitedUsers.create_or_update_invited_user(params["email"], organisation.id)
+      InvitedUsers.create_or_update_invited_user(
+        params["email"],
+        organisation.id,
+        "invited",
+        roles
+      )
 
       render(conn, "invite.json")
     else
@@ -573,6 +589,21 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @doc """
   Resends organisation invite.
   """
+
+  swagger_path :resend_invite do
+    put("/organisations/users/invite/{id}/resend")
+    summary("Resend organisation invite")
+    description("Resends an organisation invite email to a previously invited user")
+
+    parameter(:id, :path, :string, "Invited User ID",
+      required: true,
+      example: "d19e10fc-4b36-46ab-a9cb-7fa52d7a289e"
+    )
+
+    response(200, "Invite resent", Schema.ref(:InvitedResponse))
+    response(404, "Invited user not found")
+  end
+
   def resend_invite(conn, %{"id" => invited_user_id} = _params) do
     current_user = conn.assigns[:current_user]
 
@@ -587,6 +618,21 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @doc """
   Revoke organisation invite.
   """
+
+  swagger_path :revoke_invite do
+    put("/organisations/users/invite/{id}/revoke")
+    summary("Revoke organisation invite")
+    description("Revokes a previously sent organisation invite")
+
+    parameter(:id, :path, :string, "Invited User ID",
+      required: true,
+      example: "d19e10fc-4b36-46ab-a9cb-7fa52d7a289e"
+    )
+
+    response(200, "Revoked successfully.!", Schema.ref(:RevokedResponse))
+    response(404, "Invited user not found")
+  end
+
   def revoke_invite(conn, %{"id" => invited_user_id} = _params) do
     with %InvitedUser{} = invited_user <- InvitedUsers.get_invited_user_by_id(invited_user_id),
          {:ok, _} <- Enterprise.revoke_invite(invited_user) do

@@ -937,15 +937,14 @@ defmodule WraftDoc.Enterprise do
   @spec resend_invite(User.t(), InvitedUser.t(), Organisation.t()) :: any()
   def resend_invite(
         %{name: name} = user,
-        %{email: email} = _invited_user,
+        %{email: email, roles: roles} = _invited_user,
         %{id: organisation_id, name: org_name} = _organisation
       ) do
     token =
       WraftDoc.create_phx_token("organisation_invite", %{
         organisation_id: organisation_id,
         email: email,
-        # TODO add roles to invited users
-        roles: "roles"
+        roles: Enum.map(roles, & &1.id)
       })
 
     Task.start_link(fn ->
