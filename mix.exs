@@ -69,7 +69,7 @@ defmodule WraftDoc.Mixfile do
       {:ex_json_schema, "~> 0.9", override: true},
       {:ex_machina, "~> 2.8", only: :test},
       {:ex_phone_number, "~> 0.4"},
-      {:ex_typesense, "~> 0.6"},
+      {:ex_typesense, "~> 0.7"},
       {:excoveralls, "~> 0.18", only: :test},
       {:faker, "~> 0.18"},
       {:file_type, "~> 0.1"},
