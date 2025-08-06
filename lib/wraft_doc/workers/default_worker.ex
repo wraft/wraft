@@ -17,7 +17,6 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias WraftDoc.Documents.Engine
   alias WraftDoc.Fields
   alias WraftDoc.Layouts.Layout
-  alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Repo
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Themes.ThemeAsset
@@ -216,7 +215,10 @@ defmodule WraftDoc.Workers.DefaultWorker do
       end)
 
     asset_id = create_wraft_branded_asset(organisation_id, asset_params)
-    Repo.insert(%LayoutAsset{layout_id: layout.id, asset_id: asset_id})
+
+    layout
+    |> Layout.changeset(%{"asset_id" => asset_id})
+    |> Repo.update()
 
     {:ok, "ok"}
   end

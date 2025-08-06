@@ -543,7 +543,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(
         conn,
         %{"c_type_id" => c_type_id} = params
