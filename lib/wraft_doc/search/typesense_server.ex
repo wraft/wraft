@@ -67,15 +67,50 @@ defmodule WraftDoc.Search.TypesenseServer do
 
   defp handle_initialization do
     case Typesense.initialize() do
-      :ok -> Logger.info("Typesense initialized successfully.")
-      {:ok, _} -> Logger.info("Typesense initialized successfully.")
-      {:error, reason} -> Logger.error("Failed to initialize Typesense: #{inspect(reason)}")
-      unexpected -> Logger.warning("Unexpected Typesense response: #{inspect(unexpected)}")
+      :ok ->
+        Logger.info("Typesense initialized successfully.")
+
+      {:ok, _} ->
+        Logger.info("Typesense initialized successfully.")
+
+      {:error, reason} ->
+        Logger.warning("Typesense initialization failed: #{inspect(reason)}")
+
+        Logger.warning(
+          "Typesense service may not be available. Search functionality will be limited."
+        )
+
+      unexpected ->
+        Logger.warning("Unexpected Typesense response: #{inspect(unexpected)}")
     end
   rescue
-    exception -> Logger.error("Initialization exception: #{Exception.format(:error, exception)}")
+    exception ->
+      case exception do
+        %FunctionClauseError{function: :put_header, arity: 3} ->
+          Logger.warning(
+            "Typesense initialization failed due to Req library compatibility issue."
+          )
+
+          Logger.warning(
+            "Typesense service may not be available. Search functionality will be limited."
+          )
+
+        _ ->
+          Logger.warning(
+            "Typesense initialization exception: #{Exception.format(:error, exception)}"
+          )
+
+          Logger.warning(
+            "Typesense service may not be available. Search functionality will be limited."
+          )
+      end
   catch
-    type, value -> Logger.error("Caught #{type}: #{inspect(value)}")
+    type, value ->
+      Logger.warning("Caught #{type} during Typesense initialization: #{inspect(value)}")
+
+      Logger.warning(
+        "Typesense service may not be available. Search functionality will be limited."
+      )
   end
 
   @impl true
@@ -85,7 +120,7 @@ defmodule WraftDoc.Search.TypesenseServer do
         Logger.debug("Document created successfully")
 
       {:error, reason} ->
-        Logger.error("Failed to create document: #{inspect(reason)}")
+        Logger.warning("Failed to create document: #{inspect(reason)}")
     end
 
     {:noreply, state}
@@ -98,7 +133,7 @@ defmodule WraftDoc.Search.TypesenseServer do
         Logger.debug("Document updated successfully")
 
       {:error, reason} ->
-        Logger.error("Failed to update document: #{inspect(reason)}")
+        Logger.warning("Failed to update document: #{inspect(reason)}")
     end
 
     {:noreply, state}
@@ -111,7 +146,7 @@ defmodule WraftDoc.Search.TypesenseServer do
         Logger.debug("Document deleted successfully")
 
       {:error, reason} ->
-        Logger.error("Failed to delete document #{id}: #{inspect(reason)}")
+        Logger.warning("Failed to delete document #{id}: #{inspect(reason)}")
     end
 
     {:noreply, state}
@@ -124,7 +159,7 @@ defmodule WraftDoc.Search.TypesenseServer do
         Logger.info("Collection created successfully.")
 
       {:error, reason} ->
-        Logger.error("Failed to create collection: #{inspect(reason)}")
+        Logger.warning("Failed to create collection: #{inspect(reason)}")
     end
 
     {:noreply, state}
@@ -132,15 +167,42 @@ defmodule WraftDoc.Search.TypesenseServer do
 
   @impl true
   def handle_cast(:initialize, state) do
-    case Typesense.initialize() do
-      {:ok, _result} ->
-        Logger.info("Typesense initialized successfully.")
+    try do
+      case Typesense.initialize() do
+        {:ok, _result} ->
+          Logger.info("Typesense initialized successfully.")
 
-      :ok ->
-        Logger.info("Typesense initialized successfully (no extra data).")
+        :ok ->
+          Logger.info("Typesense initialized successfully (no extra data).")
 
-      {:error, reason} ->
-        Logger.error("Failed to initialize Typesense: #{inspect(reason)}")
+        {:error, reason} ->
+          Logger.warning("Failed to initialize Typesense: #{inspect(reason)}")
+
+          Logger.warning(
+            "Typesense service may not be available. Search functionality will be limited."
+          )
+      end
+    rescue
+      exception ->
+        case exception do
+          %FunctionClauseError{function: :put_header, arity: 3} ->
+            Logger.warning(
+              "Typesense initialization failed due to Req library compatibility issue."
+            )
+
+            Logger.warning(
+              "Typesense service may not be available. Search functionality will be limited."
+            )
+
+          _ ->
+            Logger.warning(
+              "Typesense initialization exception: #{Exception.format(:error, exception)}"
+            )
+
+            Logger.warning(
+              "Typesense service may not be available. Search functionality will be limited."
+            )
+        end
     end
 
     {:noreply, state}
@@ -148,7 +210,7 @@ defmodule WraftDoc.Search.TypesenseServer do
 
   @impl true
   def handle_info({:error, reason}, state) do
-    Logger.error("Error in TypesenseServer: #{inspect(reason)}")
+    Logger.warning("Error in TypesenseServer: #{inspect(reason)}")
     {:noreply, state}
   end
 
@@ -160,7 +222,7 @@ defmodule WraftDoc.Search.TypesenseServer do
 
   @impl true
   def terminate(reason, _state) do
-    Logger.error("Typesense terminated: #{inspect(reason)}")
+    Logger.warning("Typesense terminated: #{inspect(reason)}")
     :ok
   end
 end
