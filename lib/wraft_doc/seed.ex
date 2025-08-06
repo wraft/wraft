@@ -50,7 +50,7 @@ defmodule WraftDoc.Seed do
           Repo.insert!(%User{
             name: username,
             email: email,
-            encrypted_password: Bcrypt.hash_pwd_salt("password"),
+            encrypted_password: Bcrypt.hash_pwd_salt("demo@1234"),
             email_verify: true,
             deleted_at: nil
           })

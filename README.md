@@ -231,7 +231,7 @@ The default username and password
 
 ```bash
 username: wraftuser@gmail.com
-password: password
+password: demo@1234
 ```
 
 ---
@@ -261,7 +261,7 @@ The default username and password
 
 ```bash
 username: wraftuser@gmail.com
-password: password
+password: demo@1234
 ```
 
 ## License
