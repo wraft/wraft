@@ -180,6 +180,8 @@ $ sudo apt-get install texmaker
 
 Typesense is a fast, typo-tolerant search engine used by Wraft for search functionality.
 
+For detailed installation instructions, refer to the [official Typesense documentation](https://typesense.org/docs/guide/install-typesense.html#option-2-local-machine-self-hosting).
+
 Download from [Typesense releases](https://github.com/typesense/typesense/releases) or run manually:
 
 ```shell
