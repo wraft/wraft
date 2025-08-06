@@ -20,7 +20,7 @@ alias WraftDoc.Seed
 if !FunWithFlags.enabled?(:seeds_ran?) do
   # Clear existing data to avoid constraint conflicts
   Repo.delete_all(WraftDoc.Enterprise.Organisation)
-  
+
   # Seed users
   user = Seed.generate_user("wraftuser", "wraftuser@gmail.com")
   user_list = [user]
@@ -95,9 +95,16 @@ if !FunWithFlags.enabled?(:seeds_ran?) do
 
   # Seed Document Instance
   instance_list =
-    for {user, content_type, states, vendor} <-
-          Enum.zip([user_list, content_type_list, state_list, vendor_list]),
-        do: Seed.seed_document_instance(user, content_type, Enum.random(states), vendor)
+    for {user, organisation, content_type, states, vendor} <-
+          Enum.zip([user_list, organisation_list, content_type_list, state_list, vendor_list]),
+        do:
+          Seed.seed_document_instance(
+            user,
+            organisation,
+            content_type,
+            Enum.random(states),
+            vendor
+          )
 
   # Seed Build History
   for {user, instance} <- Enum.zip([user_list, instance_list]),
@@ -118,6 +125,9 @@ if !FunWithFlags.enabled?(:seeds_ran?) do
   # Seed fields and content type field
   for {content_type, organisation} <- Enum.zip([content_type_list, organisation_list]),
       do: Seed.seed_field_and_content_type_field(content_type, organisation)
+
+  # Seed Dashboard Stats
+  Seed.seed_dashboard_stats()
 
   # Enable fun with flags for ensuring that the seeds are not run more than once
   FunWithFlags.enable(:seeds_ran?)
