@@ -18,10 +18,12 @@ alias WraftDoc.Repo
 alias WraftDoc.Seed
 
 if !FunWithFlags.enabled?(:seeds_ran?) do
+  # Clear existing data to avoid constraint conflicts
+  Repo.delete_all(WraftDoc.Enterprise.Organisation)
+  
   # Seed users
   user = Seed.generate_user("wraftuser", "wraftuser@gmail.com")
-  user_list = for _ <- 1..2, do: Seed.generate_user()
-  user_list = [user | user_list]
+  user_list = [user]
 
   FunWithFlags.enable(:waiting_list_organisation_create_control,
     for_actor: %{email: "wraftuser@gmail.com"}
