@@ -35,15 +35,18 @@ Wraft is built on top of open formats, using markdown and JSON. This means your 
 
 #### Pre-requisite
 
-- Elixir 1.14
-- Erlang/OTP 26.0
+- Elixir 1.18.4
+- Erlang/OTP 27.0.1
 - Postgres
 - Minio - S3 compatible object storage
-- Pandoc
+- Pandoc 3.6.3
 - ImageMagick
 - Latex
+- Typst 0.13.0
+- Java 17 (for PDF signing)
+- Rust toolchain (for native dependencies)
 
-`.tools_version` will have the exact versions defined in it.
+`.tool-versions` will have the exact versions defined in it.
 
 #### Initial setup
 
@@ -173,7 +176,20 @@ In case you need latex editor, type in:
 $ sudo apt-get install texmaker
 ```
 
-### 8 - Running Wraft
+### 8 - **Typesense**
+
+Typesense is a fast, typo-tolerant search engine used by Wraft for search functionality.
+
+Download from [Typesense releases](https://github.com/typesense/typesense/releases) or run manually:
+
+```shell
+$ mkdir -p ~/typesense-data
+$ typesense-server --data-dir ~/typesense-data --api-key=your-api-key-here
+```
+
+**Note:** Replace `your-api-key-here` with a secure API key. Default port is 8108.
+
+### 9 - Running Wraft
 
 To start your Wraft app:
 
@@ -213,7 +229,7 @@ Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 To get the API documentation, go [here](http://localhost:4000/api/swagger/index.html#/).
 
-### 9 - Frontend
+### 10 - Frontend
 
 Clone the frontend repository separately.
 
@@ -225,7 +241,7 @@ $ cd wraft-frontend
 
 Refer the README.md in the frontend repository for the setup.
 
-### 10 - Default User
+### 11 - Default User
 
 The default username and password
 
@@ -238,7 +254,14 @@ password: demo@1234
 
 ## Setup using Docker
 
-The easiest way to get started with wraft-backend is using Docker by running the following command.
+The easiest way to get started with Wraft is using Docker. The Docker setup includes all required dependencies and services.
+
+### Prerequisites
+
+- Docker and Docker Compose installed on your system
+- Git
+
+### Quick Start
 
 ```shell
 $ git clone https://github.com/wraft/wraft.git
@@ -247,21 +270,64 @@ $ cd wraft
 # Copy the example env to your own file and edit it
 $ cp .env.example .env.dev
 
-#Load the development environment variables
+# Load the development environment variables
 $ source .env.dev
 
 # Start the Docker containers
 $ docker-compose up -d
 
-# Visit localhost:3200
-$ http://localhost:3200
+# Visit the application
+$ open http://localhost:3200
 ```
 
-The default username and password
+### What's Included
+
+The Docker setup includes:
+
+- **Backend**: Elixir 1.18.4 with Erlang 27.0.1
+- **Frontend**: React application
+- **Database**: PostgreSQL 14
+- **Object Storage**: MinIO (S3-compatible)
+- **Search Engine**: Typesense
+- **Dependencies**: Pandoc 3.6.3, Typst 0.13.0, LaTeX, ImageMagick, Java 17, Rust toolchain
+
+#### Services and Ports
+
+- **Frontend**: http://localhost:3200
+- **Backend API**: http://localhost:4000
+- **MinIO Console**: http://localhost:9001
+- **PostgreSQL**: localhost:5433
+- **Typesense**: localhost:8108
+
+##### Default Credentials
 
 ```bash
 username: wraftuser@gmail.com
 password: demo@1234
+```
+
+##### Environment Variables
+
+Make sure to configure the following environment variables in your `.env.dev` file:
+
+- `SECRET_KEY_BASE`
+- `DATABASE_URL`
+- `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`
+- `TYPESENSE_API_KEY`
+- `CLOAK_KEY`
+- `GUARDIAN_KEY`
+- And other required variables (see `.env.example`)
+
+#### Stopping the Services
+
+```shell
+$ docker-compose down
+```
+
+To remove all data volumes as well:
+
+```shell
+$ docker-compose down -v
 ```
 
 ## License
