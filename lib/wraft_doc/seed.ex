@@ -125,8 +125,8 @@ defmodule WraftDoc.Seed do
   def seed_user_organisation(user) do
     organisation =
       Repo.insert!(%Organisation{
-        name: Faker.Company.name(),
-        legal_name: Faker.Company.name(),
+        name: "Acme Corporation",
+        legal_name: "Acme Corporation Ltd",
         address: Faker.Address.street_address(),
         name_of_ceo: Faker.Person.name(),
         name_of_cto: Faker.Person.name(),
