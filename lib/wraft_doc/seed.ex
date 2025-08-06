@@ -33,7 +33,6 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.Fields.Field
   alias WraftDoc.Fields.FieldType
   alias WraftDoc.Layouts.Layout
-  alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Repo
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Themes.ThemeAsset
@@ -178,7 +177,9 @@ defmodule WraftDoc.Seed do
   end
 
   def seed_layout_and_layout_asset(user, organisation, engine) do
-    # Insert layout
+    asset = seed_asset(user, organisation, "layout")
+
+    # Insert layout with asset_id
     layout =
       Repo.insert!(%Layout{
         name: Enum.join(Faker.Lorem.words(2), " "),
@@ -188,18 +189,10 @@ defmodule WraftDoc.Seed do
         unit: Enum.random(["cm", "mm"]),
         slug: "contract",
         engine_id: engine.id,
+        asset_id: asset.id,
         creator_id: user.id,
         organisation_id: organisation.id
       })
-
-    asset = seed_asset(user, organisation, "layout")
-
-    # Insert layout asset
-    Repo.insert!(%LayoutAsset{
-      layout_id: layout.id,
-      asset_id: asset.id,
-      creator_id: user.id
-    })
 
     layout
   end
