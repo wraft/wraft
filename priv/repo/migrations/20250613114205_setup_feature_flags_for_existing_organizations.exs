@@ -1,24 +1,33 @@
 defmodule WraftDoc.Repo.Migrations.SetupFeatureFlagsForExistingOrganizations do
   use Ecto.Migration
 
-  alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.FeatureFlags
   alias WraftDoc.Repo
 
   def up do
-    organizations = Repo.all(Organisation)
+    unless self_hosted?() do
+      organizations = Repo.query!("SELECT id FROM organisation")
 
-    Enum.each(organizations, fn organization ->
-      FeatureFlags.setup_defaults(organization)
-    end)
+      Enum.each(organizations.rows, fn [org_id] ->
+        organization = %{id: org_id}
+        FeatureFlags.setup_defaults(organization)
+      end)
+    end
   end
 
   def down do
-    organizations = Repo.all(Organisation)
+    unless self_hosted?() do
+      organizations = Repo.query!("SELECT id FROM organisation")
 
-    Enum.each(organizations, fn organization ->
-      available_features = FeatureFlags.available_features()
-      FeatureFlags.bulk_disable(available_features, organization)
-    end)
+      Enum.each(organizations.rows, fn [org_id] ->
+        organization = %{id: org_id}
+        available_features = FeatureFlags.available_features()
+        FeatureFlags.bulk_disable(available_features, organization)
+      end)
+    end
+  end
+
+  defp self_hosted? do
+    Application.get_env(:wraft_doc, :deployement)[:is_self_hosted] == true
   end
 end
