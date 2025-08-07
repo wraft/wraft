@@ -1,3 +1,1 @@
-# make sure sh files are encoded with unix line endings
 *.sh text eol=lf
-*.bash text eol=lf
