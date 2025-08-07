@@ -967,10 +967,7 @@ defmodule WraftDoc.Documents do
     |> Repo.delete()
     |> case do
       {:ok, instance} ->
-        {:ok,
-         Repo.preload(instance, [
-           :vendor
-         ])}
+        {:ok, Repo.preload(instance, [:vendor])}
 
       {:error, _} = changeset ->
         changeset
