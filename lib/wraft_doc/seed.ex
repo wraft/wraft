@@ -166,8 +166,8 @@ defmodule WraftDoc.Seed do
         })
 
     profile_pic = %Plug.Upload{
-      path: Path.join(File.cwd!(), "priv/static/images/gradient.jpg"),
-      filename: "gradient.jpg"
+      path: Path.join(File.cwd!(), "priv/static/images/gradient.png"),
+      filename: "gradient.png"
     }
 
     user
