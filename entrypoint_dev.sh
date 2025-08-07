@@ -2,13 +2,20 @@
 # Docker entry point script.
 # Wait until postgres is ready
 
-# Check if necessary environment variables are set
-if [[ -z "$DEV_DB_PASSWORD" || -z "$DEV_DB_HOST" || -z "$DEV_DB_PORT" || -z "$DEV_DB_USERNAME" ]]; then
-  echo "Error: Required environment variables (PGPASSWORD, PGHOST, PGPORT, PGUSER) are not set."
+# Check if DATABASE_URL is set
+if [[ -z "$DATABASE_URL" ]]; then
+  echo "Error: DATABASE_URL environment variable is not set."
   exit 1
 fi
 
-while ! PGPASSWORD=$DEV_DB_PASSWORD pg_isready -q -h $DEV_DB_HOST -p $DEV_DB_PORT -U $DEV_DB_USERNAME
+# Parse DATABASE_URL
+DB_USER=$(echo $DATABASE_URL | sed -n 's/^postgres:\/\/\([^:]*\):.*/\1/p')
+DB_PASS=$(echo $DATABASE_URL | sed -n 's/^postgres:\/\/[^:]*:\([^@]*\)@.*/\1/p')
+DB_HOST=$(echo $DATABASE_URL | sed -n 's/^postgres:\/\/[^:]*:[^@]*@\([^:]*\):.*/\1/p')
+DB_PORT=$(echo $DATABASE_URL | sed -n 's/^postgres:\/\/[^:]*:[^@]*@[^:]*:\([^/]*\).*/\1/p')
+DB_NAME=$(echo $DATABASE_URL | sed -n 's/^postgres:\/\/[^:]*:[^@]*@[^:]*:[^/]*\/\(.*\)$/\1/p')
+
+while ! PGPASSWORD=$DB_PASS pg_isready -q -h $DB_HOST -p $DB_PORT -U $DB_USER
 do
   echo "$(date) - [] Waiting for Database to start eedsd"
   sleep 2
@@ -16,12 +23,12 @@ done
 
 echo "$(date) - [] PostgreSQL is ready"
 
-if [[ -z `psql -Atqc "\\list $DEV_DB_NAME"` ]]; then
-  echo "Database $DEV_DB_NAME does not exist. Creating..."
-  createdb -E UTF8 $DEV_DB_NAME -l en_US.UTF-8 -T template0
+if [[ -z `psql -Atqc "\\list $DB_NAME"` ]]; then
+  echo "Database $DB_NAME does not exist. Creating..."
+  createdb -E UTF8 $DB_NAME -l en_US.UTF-8 -T template0
   mix ecto.migrate
   mix run priv/repo/seeds.exs
-  echo "Database $DEV_DB_NAME created."
+  echo "Database $DB_NAME created."
 fi
 
 mix ecto.migrate

@@ -16,11 +16,7 @@ services:
         SELF_HOSTED: ${SELF_HOSTED}
     environment:
       CLOAK_KEY: ${CLOAK_KEY}
-      DEV_DB_HOST: db
-      DEV_DB_NAME: ${DEV_DB_NAME}
-      DEV_DB_PASSWORD: ${DEV_DB_PASSWORD}
-      DEV_DB_PORT: 5433
-      DEV_DB_USERNAME: ${DEV_DB_USERNAME}
+      DATABASE_URL: ${DATABASE_URL}
       GUARDIAN_KEY: ${GUARDIAN_KEY}
       MINIO_BUCKET: ${MINIO_BUCKET}
       MINIO_HOST: minio
