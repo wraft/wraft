@@ -11,4 +11,4 @@ docker build \
 --build-arg DATABASE_URL=${DATABASE_URL} \
 --build-arg PORT=${PORT} \
 --build-arg RELEASE_NAME=wraft_doc_dev \
- -t wraft-docs:latest .
+-t wraft-docs:latest .
