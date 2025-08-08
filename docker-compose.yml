@@ -9,20 +9,19 @@ services:
     stdin_open: true
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
       args:
         SECRET_KEY_BASE: ${SECRET_KEY_BASE}
-        DATABASE_URL: ${DATABASE_URL}
         SELF_HOSTED: ${SELF_HOSTED}
     environment:
       CLOAK_KEY: ${CLOAK_KEY}
       DATABASE_URL: ${DATABASE_URL}
       GUARDIAN_KEY: ${GUARDIAN_KEY}
-      MINIO_BUCKET: ${MINIO_BUCKET}
       MINIO_HOST: minio
       MINIO_PORT: 9000
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_URL: http://127.0.0.1:9000
       MIX_ENV: dev
       PADDLE_API_KEY: ${PADDLE_API_KEY}
@@ -32,7 +31,6 @@ services:
       SECRET_KEY_BASE: ${SECRET_KEY_BASE}
       SELF_HOSTED: ${SELF_HOSTED}
       SENTRY_DSN: ${SENTRY_DSN}
-      SIGNING_LOCAL_FILE_PATH: ${SIGNING_LOCAL_FILE_PATH}
       TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
       TYPESENSE_HOST: typesense
       XELATEX_PATH: ${XELATEX_PATH}

@@ -96,9 +96,31 @@ ARG SELF_HOSTED
 COPY entrypoint_dev.sh /app/
 RUN chmod +x /app/entrypoint_dev.sh
 
+# Set environment variables for better network handling
+ENV HEX_HTTP_TIMEOUT=300
+ENV HEX_HTTP_CONCURRENCY=1
+ENV MIX_ENV=dev
+
+# Install hex and rebar with retry logic
 RUN mix local.hex --force && \
-    mix local.rebar --force && \
-    mix deps.get
+    mix local.rebar --force
+
+# Install dependencies with retry logic and better error handling
+RUN for i in 1 2 3; do \
+        echo "Attempt $i to fetch dependencies..."; \
+        if mix deps.get; then \
+            echo "Dependencies fetched successfully on attempt $i"; \
+            break; \
+        else \
+            echo "Attempt $i failed, cleaning and retrying..."; \
+            rm -rf deps _build; \
+            if [ $i -eq 3 ]; then \
+                echo "All attempts failed. Exiting."; \
+                exit 1; \
+            fi; \
+            sleep 10; \
+        fi; \
+    done
 
 RUN mix do compile
 
