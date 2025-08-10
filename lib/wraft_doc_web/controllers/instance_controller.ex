@@ -818,7 +818,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Documents.get_instance(id, current_user),
          _ <- Documents.delete_uploaded_docs(current_user, instance),
-         {:ok, %Instance{id: instance_id}} <- Documents.delete_instance(instance) do
+         {:ok, %Instance{id: instance_id} = instance} <- Documents.delete_instance(instance) do
       Typesense.delete_document(instance_id, "content")
       render(conn, "instance.json", instance: instance)
     end
