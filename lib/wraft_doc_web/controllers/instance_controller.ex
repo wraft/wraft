@@ -18,6 +18,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     approve: "document:review",
     reject: "document:review"
 
+  plug WraftDocWeb.Plug.AddDocumentAuditLog when action not in [:contract_chart]
+
   action_fallback(WraftDocWeb.FallbackController)
 
   require Logger
