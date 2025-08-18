@@ -313,7 +313,7 @@ password: demo@1234
 Make sure to configure the following environment variables in your `.env.dev` file:
 
 - `SECRET_KEY_BASE`
-- `DATABASE_URL`
+- `DEV_DB_USERNAME`, `DEV_DB_PASSWORD`, `DEV_DB_NAME` 
 - `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`
 - `TYPESENSE_API_KEY`
 - `CLOAK_KEY`

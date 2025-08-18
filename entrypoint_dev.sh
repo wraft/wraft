@@ -2,18 +2,28 @@
 # Docker entry point script.
 # Wait until postgres is ready
 
-# Check if DATABASE_URL is set
-if [[ -z "$DATABASE_URL" ]]; then
-  echo "Error: DATABASE_URL environment variable is not set."
+# Check if required environment variables are set
+if [[ -z "$DEV_DB_USERNAME" ]]; then
+  echo "Error: DEV_DB_USERNAME environment variable is not set."
   exit 1
 fi
 
-# Parse DATABASE_URL
-DB_USER=$(echo $DATABASE_URL | sed -n 's/^postgres:\/\/\([^:]*\):.*/\1/p')
-DB_PASS=$(echo $DATABASE_URL | sed -n 's/^postgres:\/\/[^:]*:\([^@]*\)@.*/\1/p')
-DB_HOST=$(echo $DATABASE_URL | sed -n 's/^postgres:\/\/[^:]*:[^@]*@\([^:]*\):.*/\1/p')
-DB_PORT=$(echo $DATABASE_URL | sed -n 's/^postgres:\/\/[^:]*:[^@]*@[^:]*:\([^/]*\).*/\1/p')
-DB_NAME=$(echo $DATABASE_URL | sed -n 's/^postgres:\/\/[^:]*:[^@]*@[^:]*:[^/]*\/\(.*\)$/\1/p')
+if [[ -z "$DEV_DB_PASSWORD" ]]; then
+  echo "Error: DEV_DB_PASSWORD environment variable is not set."
+  exit 1
+fi
+
+if [[ -z "$DEV_DB_NAME" ]]; then
+  echo "Error: DEV_DB_NAME environment variable is not set."
+  exit 1
+fi
+
+# Set database connection parameters
+DB_USER=$DEV_DB_USERNAME
+DB_PASS=$DEV_DB_PASSWORD
+DB_NAME=$DEV_DB_NAME
+DB_HOST=${DEV_DB_HOST:-localhost}
+DB_PORT=${DEV_DB_PORT:-5432}
 
 while ! PGPASSWORD=$DB_PASS pg_isready -q -h $DB_HOST -p $DB_PORT -U $DB_USER
 do

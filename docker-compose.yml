@@ -15,7 +15,7 @@ services:
         SELF_HOSTED: ${SELF_HOSTED}
     environment:
       CLOAK_KEY: ${CLOAK_KEY}
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgres://${DEV_DB_USERNAME}:${DEV_DB_PASSWORD}@db:5433/${DEV_DB_NAME}
       GUARDIAN_KEY: ${GUARDIAN_KEY}
       MINIO_HOST: minio
       MINIO_PORT: 9000
