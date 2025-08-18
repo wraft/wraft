@@ -150,6 +150,11 @@ config :wraft_doc, :paddle,
   webhook_secret_key: System.get_env("PADDLE_WEBHOOK_SECRET_KEY"),
   base_url: System.get_env("PADDLE_BASE_URL")
 
+# Configure keystore file for digital signatures
+config :wraft_doc,
+  keystore_file: System.get_env("SIGNING_LOCAL_FILE_PATH") || "priv/signature/doc_signer.p12",
+  signature_jar_file: System.get_env("SIGNATURE_JAR_FILE") || "priv/signature/pdf-signer.jar"
+
 # Configure Sentry
 config :sentry,
   dsn: System.get_env("SENTRY_DSN"),

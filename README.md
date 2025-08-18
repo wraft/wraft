@@ -254,7 +254,7 @@ password: demo@1234
 
 ---
 
-## Setup using Docker
+## Setup using Docker Compose
 
 The easiest way to get started with Wraft is using Docker. The Docker setup includes all required dependencies and services.
 
@@ -265,21 +265,52 @@ The easiest way to get started with Wraft is using Docker. The Docker setup incl
 
 ### Quick Start
 
+1. **Clone the repository and navigate into it**  
+
 ```shell
-$ git clone https://github.com/wraft/wraft.git
-$ cd wraft
+git clone https://github.com/wraft/wraft.git
+cd wraft
+```
+2. **Copy the example environment file and update it**
 
-# Copy the example env to your own file and edit it
-$ cp .env.example .env.dev
+```shell
+cp .env.example .env.dev
+```
 
-# Load the development environment variables
-$ source .env.dev
+3. **Load environment variables**
 
-# Start the Docker containers
-$ docker-compose up -d
+```shell
+source .env.dev
+```
 
-# Visit the application
-$ open http://localhost:3200
+4. **Add MinIO host entry**
+
+```shell
+# macOS / Linux
+echo "127.0.0.1 minio" | sudo tee -a /etc/hosts
+
+# Windows
+echo 127.0.0.1 minio >> C:\Windows\System32\drivers\etc\hosts
+```
+
+5. **Start all Docker containers**
+
+```shell
+docker-compose up -d
+```
+
+6. **Visit the application**
+
+```shell
+# Frontend
+open http://localhost:3200
+```
+
+##### Default Credentials
+
+```bash
+username: wraftuser@gmail.com
+password: demo@1234
 ```
 
 ### What's Included
@@ -301,19 +332,14 @@ The Docker setup includes:
 - **PostgreSQL**: localhost:5433
 - **Typesense**: localhost:8108
 
-##### Default Credentials
 
-```bash
-username: wraftuser@gmail.com
-password: demo@1234
-```
 
 ##### Environment Variables
 
 Make sure to configure the following environment variables in your `.env.dev` file:
 
 - `SECRET_KEY_BASE`
-- `DATABASE_URL`
+- `DEV_DB_USERNAME`, `DEV_DB_PASSWORD`, `DEV_DB_NAME` 
 - `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`
 - `TYPESENSE_API_KEY`
 - `CLOAK_KEY`
@@ -334,4 +360,4 @@ $ docker-compose down -v
 
 ## License
 
-Wraft is open-source software licensed under the [AGPLv3](LICENSE).
+Wraft is open-source software licensed under the [AGPLv3](LICENSE.md).
