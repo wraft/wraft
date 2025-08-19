@@ -358,13 +358,18 @@ defmodule WraftDoc.Notifications do
       %Settings{events: ["document.share", "document.comment"]}
   """
   @spec get_organisation_settings(User.t()) :: Settings.t() | nil
-  def get_organisation_settings(%User{current_org_id: current_org_id} = _current_user) do
+  def get_organisation_settings(%User{current_org_id: current_org_id} = _current_user)
+      when not is_nil(current_org_id) do
     Settings
     |> Repo.get_by(organisation_id: current_org_id)
     |> case do
       %Settings{} = settings -> settings
       _ -> %Settings{events: []}
     end
+  end
+
+  def get_organisation_settings(_user) do
+    %Settings{events: []}
   end
 
   @doc """

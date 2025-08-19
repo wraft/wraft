@@ -7,9 +7,6 @@ defmodule WraftDoc.Documents.Signatures do
   require Logger
 
   # Path to the pdf signer JAR file
-  @pdf_signer_jar Application.compile_env!(:wraft_doc, [:signature_jar_file])
-  # Digital signature keystore configuration
-  @keystore_file Application.compile_env!(:wraft_doc, [:keystore_file])
   @signature_reason "I hereby certify that I have signed this document"
   @signature_location "Digital Signature"
 
@@ -53,16 +50,19 @@ defmodule WraftDoc.Documents.Signatures do
   @spec apply_digital_signature(String.t(), String.t(), String.t()) ::
           {:ok, String.t()} | {:error, String.t()}
   def apply_digital_signature(pdf_path, signed_pdf_path, certificate_path) do
+    keystore_file = Application.fetch_env!(:wraft_doc, :keystore_file)
+    signature_jar_file = Application.fetch_env!(:wraft_doc, :signature_jar_file)
+
     args = [
       "-cp",
-      @pdf_signer_jar,
+      signature_jar_file,
       "com.wraft.DigitalSignerApp",
       "--input",
       pdf_path,
       "--output",
       signed_pdf_path,
       "--keystore",
-      @keystore_file,
+      keystore_file,
       "--keystore-password",
       to_string(get_keystore_password()),
       "--key-alias",
@@ -100,9 +100,11 @@ defmodule WraftDoc.Documents.Signatures do
   @spec apply_visual_signature(String.t(), String.t(), String.t(), String.t()) ::
           {:ok, String.t()} | {:error, String.t()}
   def apply_visual_signature(pdf_path, signature_image_path, signed_pdf_path, coordinates) do
+    pdf_signer_jar = Application.fetch_env!(:wraft_doc, :signature_jar_file)
+
     args = [
       "-cp",
-      @pdf_signer_jar,
+      pdf_signer_jar,
       "com.wraft.VisualSignerApp",
       "--input",
       pdf_path,
@@ -778,7 +780,7 @@ defmodule WraftDoc.Documents.Signatures do
 
   # Private
   defp get_keystore_password do
-    System.get_env("SIGNING_LOCAL_PASSPHRASE")
+    System.get_env("SIGNING_LOCAL_PASSPHRASE") || "EnsHmeoOx+r8mbqOmqT55kLjdmSncMesyRDpQqs1AdA="
   end
 
   defp get_key_alias do
