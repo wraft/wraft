@@ -158,5 +158,7 @@ defmodule WraftDoc.Notifications.Delivery do
       _ ->
         true
     end
+  rescue
+    _ -> true
   end
 end

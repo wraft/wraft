@@ -152,8 +152,16 @@ config :wraft_doc, :paddle,
 
 # Configure keystore file for digital signatures
 config :wraft_doc,
-  keystore_file: System.get_env("SIGNING_LOCAL_FILE_PATH") || "priv/signature/doc_signer.p12",
-  signature_jar_file: System.get_env("SIGNATURE_JAR_FILE") || "priv/signature/pdf-signer.jar"
+  keystore_file:
+    Path.join(
+      :code.priv_dir(:wraft_doc),
+      System.get_env("SIGNING_LOCAL_FILE_PATH") || "signature/doc_signer.p12"
+    ),
+  signature_jar_file:
+    Path.join(
+      :code.priv_dir(:wraft_doc),
+      System.get_env("SIGNATURE_JAR_FILE") || "signature/pdf-signer.jar"
+    )
 
 # Configure Sentry
 config :sentry,
