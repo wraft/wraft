@@ -2,7 +2,7 @@ services:
   frontend:
     image: quay.io/wraft/wraft-frontend:latest
     environment:
-      NEXT_PUBLIC_HOME_PAGE_URL: http://localhost:4000
+      NEXT_PUBLIC_API_HOST: http://localhost:4000
       NEXT_PUBLIC_WEBSOCKET_URL: ws://localhost:4000
     ports:
       - "3200:3000"
@@ -17,7 +17,7 @@ services:
         SELF_HOSTED: ${SELF_HOSTED}
     environment:
       CLOAK_KEY: ${CLOAK_KEY}
-      DATABASE_URL: postgres://${DEV_DB_USERNAME}:${DEV_DB_PASSWORD}@db:5433/${DEV_DB_NAME}
+      DATABASE_URL: postgres://${DEV_DB_USERNAME}:${DEV_DB_PASSWORD}@db:5433/${DEV_DB_NAME}?ssl=false
       GUARDIAN_KEY: ${GUARDIAN_KEY}
       MINIO_HOST: minio
       MINIO_PORT: 9000
