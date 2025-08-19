@@ -30,6 +30,12 @@ defmodule WraftDoc.Integrations do
     |> Repo.one()
   end
 
+  def update_metadata(%Integration{} = integration, metadata) when is_map(metadata) do
+    integration
+    |> Integration.changeset(%{metadata: metadata})
+    |> Repo.update()
+  end
+
   @doc """
   Creates an integration.
   """

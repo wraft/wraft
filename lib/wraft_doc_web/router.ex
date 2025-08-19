@@ -619,17 +619,40 @@ defmodule WraftDocWeb.Router do
       end
 
       # Integration routes
-      get("/integrations", IntegrationController, :index)
-      post("/integrations", IntegrationController, :create)
-      put("/integrations/:id/enable", IntegrationController, :enable)
-      put("/integrations/:id/disable", IntegrationController, :disable)
-      put("/integrations/:id/events", IntegrationController, :update_events)
+      scope "/integrations" do
+        get("/", IntegrationController, :index)
+        post("/new", IntegrationController, :create)
+        put("/:id/enable", IntegrationController, :enable)
+        put("/:id/disable", IntegrationController, :disable)
+        put("/:id/events", IntegrationController, :update_events)
 
-      # Integration configuration routes
-      get("/integration_configs", IntegrationConfigController, :index)
-      get("/integration_configs/categories", IntegrationConfigController, :categories)
-      get("/integration_configs/:id", IntegrationConfigController, :show)
-      get("/integration_configs/:provider/config", IntegrationConfigController, :config)
+        # Integration configuration routes
+        get("/configs", IntegrationConfigController, :index)
+        get("/configs/categories", IntegrationConfigController, :categories)
+        get("/configs/:id", IntegrationConfigController, :show)
+        get("/:provider/config", IntegrationConfigController, :config)
+
+        # Signature
+        post("/send_document", DocumentSignController, :send_document)
+        post("/document/get_status", DocumentSignController, :get_document_status)
+        post("/document/download", DocumentSignController, :download_document)
+
+        # Docusign
+        scope "/docusign" do
+          # post("/send_document", DocusignController, :send_envelope)
+          # post("/:id/document_status", DocusignController, :status)
+          # post("/download", DocusignController, :download)
+          get("/auth", IntegrationAuthController, :auth)
+          get("/callback", IntegrationAuthController, :callback)
+        end
+
+        # Documenso
+        # scope "/documenso" do
+        #   post("/send_document", DocumensoController, :send_doc)
+        #   post("/:id/document_status", DocumensoController, :status)
+        #   post("/download", DocumensoController, :download)
+        # end
+      end
 
       # Repositories
       resources("/repositories", RepositoryController, except: [:new, :edit])
