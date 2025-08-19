@@ -85,6 +85,33 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
           }
         ]
       },
+      "documenso" => %{
+        name: "Documenso",
+        category: "document_management",
+        description: "Electronic signature and document management",
+        icon: "documenso-icon",
+        config_structure: %{
+          token: %{
+            type: "string",
+            label: "Token",
+            description: "Documenso API Token",
+            required: true,
+            secret: true
+          }
+        },
+        available_events: [
+          %{
+            id: "envelope.signed",
+            name: "Envelope Signed",
+            description: "Triggered when an envelope is signed"
+          },
+          %{
+            id: "envelope.sent",
+            name: "Envelope Sent",
+            description: "Triggered when an envelope is sent"
+          }
+        ]
+      },
       "okta" => %{
         name: "Okta",
         category: "authentication",
