@@ -1,6 +1,9 @@
 services:
   frontend:
     image: quay.io/wraft/wraft-frontend:latest
+    environment:
+      NEXT_PUBLIC_HOME_PAGE_URL: http://localhost:4000
+      NEXT_PUBLIC_WEBSOCKET_URL: ws://localhost:4000
     ports:
       - "3200:3000"
 
