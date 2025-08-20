@@ -18,7 +18,7 @@ DB_NAME=$(echo $DATABASE_URL | sed -n 's/^postgres:\/\/[^:]*:[^@]*@[^:]*:[^/]*\/
 
 while ! PGPASSWORD=$DB_PASS pg_isready -q -h $DB_HOST -p $DB_PORT -U $DB_USER
 do
-  echo "$(date) - [] Waiting for Database to start eedsd"
+  echo "$(date) - [] Waiting for Database to start"
   sleep 2
 done
 
@@ -27,12 +27,11 @@ echo "$(date) - [] PostgreSQL is ready"
 if [[ -z `psql -Atqc "\\list $DB_NAME"` ]]; then
   echo "Database $DB_NAME does not exist. Creating..."
   createdb -E UTF8 $DB_NAME -l en_US.UTF-8 -T template0
-  mix wraft.bucket
-  mix ecto.migrate
-  mix run priv/repo/seeds.exs
   echo "Database $DB_NAME created."
 fi
 
+mix wraft.bucket
 mix ecto.migrate
+mix run priv/repo/seeds.exs
 mix wraft.permissions
 exec mix phx.server
