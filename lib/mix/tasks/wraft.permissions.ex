@@ -41,6 +41,6 @@ defmodule Mix.Tasks.Wraft.Permissions do
   defp insert_permission(permission) do
     %Permission{}
     |> Permission.changeset(permission)
-    |> Repo.insert()
+    |> Repo.insert(on_conflict: :nothing)
   end
 end
