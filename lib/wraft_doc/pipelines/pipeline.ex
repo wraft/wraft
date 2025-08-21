@@ -47,7 +47,7 @@ defmodule WraftDoc.Pipelines.Pipeline do
   def get_field_types do
     %{
       fields: [
-        %{name: "id", type: "string", facet: false},
+        %{name: "internal_id", type: "string", facet: false},
         %{name: "name", type: "string", facet: true},
         %{name: "api_route", type: "string", facet: true},
         %{name: "source", type: "string", facet: true},

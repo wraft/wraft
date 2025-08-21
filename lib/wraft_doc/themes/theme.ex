@@ -77,7 +77,7 @@ defmodule WraftDoc.Themes.Theme do
   def get_field_types do
     %{
       fields: [
-        %{name: "id", type: "string", facet: false},
+        %{name: "internal_id", type: "string", facet: false},
         %{name: "name", type: "string", facet: false},
         %{name: "font", type: "string", facet: false},
         %{name: "typescale", type: "string", facet: false},

@@ -27,7 +27,7 @@ defmodule WraftDoc.DataTemplates.DataTemplate do
   def get_field_types do
     %{
       fields: [
-        %{name: "id", type: "string", facet: false},
+        %{name: "internal_id", type: "string", facet: false},
         %{name: "name", type: "string", facet: true},
         %{name: "title_template", type: "string", facet: true},
         %{name: "data", type: "string", facet: true},

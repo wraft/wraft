@@ -70,7 +70,7 @@ defmodule WraftDoc.Blocks.Block do
   def get_field_types do
     %{
       fields: [
-        %{name: "id", type: "string", facet: false},
+        %{name: "internal_id", type: "string", facet: false},
         %{name: "name", type: "string", facet: true},
         %{name: "description", type: "string", facet: false},
         %{name: "btype", type: "string", facet: true},
