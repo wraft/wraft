@@ -30,22 +30,15 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Documents.Instance do
       content_id: to_string(instance.id),
       collection_name: "content",
       instance_id: instance.instance_id,
-      raw: instance.raw,
       name: instance.serialized["title"],
-      serialized: Jason.encode!(instance.serialized),
       # document_type: instance.document_type,
-      meta: Jason.encode!(instance.meta),
       type: instance.type,
       organisation_id: to_string(organisation_id),
-      editable: instance.editable,
-      allowed_users: instance.allowed_users,
       approval_status: instance.approval_status,
       creator_id: to_string(instance.creator_id),
       content_type_id: to_string(instance.content_type_id),
       state_id: to_string(instance.state_id),
-      vendor_id: to_string(instance.vendor_id),
-      inserted_at: instance.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
-      updated_at: instance.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+      inserted_at: instance.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
     }
   end
 end
@@ -91,15 +84,11 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.DataTemplates.DataTemplate do
       collection_name: "data_template",
       name: data_template.title,
       title_template: data_template.title_template,
-      data: data_template.data,
-      serialized: Jason.encode!(data_template.serialized),
       content_type_id: to_string(data_template.content_type_id),
       creator_id: to_string(data_template.creator_id),
       organisation_id: to_string(organisation_id),
       inserted_at:
-        data_template.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
-      updated_at:
-        data_template.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+        data_template.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
     }
   end
 end
