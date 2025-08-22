@@ -107,7 +107,7 @@ defmodule WraftDoc.ContentTypes.ContentType do
   def get_field_types do
     %{
       fields: [
-        %{name: "internal_id", type: "string", facet: false},
+        %{name: "content_type_id", type: "string", facet: false},
         %{name: "name", type: "string", facet: true},
         %{name: "description", type: "string", facet: false},
         %{name: "color", type: "string", facet: true},

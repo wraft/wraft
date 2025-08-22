@@ -27,7 +27,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Documents.Instance do
       end
 
     %{
-      internal_id: to_string(instance.id),
+      content_id: to_string(instance.id),
       collection_name: "content",
       instance_id: instance.instance_id,
       raw: instance.raw,
@@ -53,7 +53,7 @@ end
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.ContentTypes.ContentType do
   def to_document(%WraftDoc.ContentTypes.ContentType{} = content_type) do
     %{
-      internal_id: to_string(content_type.id),
+      content_type_id: to_string(content_type.id),
       collection_name: "content_type",
       name: content_type.name,
       description: content_type.description,
@@ -87,7 +87,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.DataTemplates.DataTemplate do
       end
 
     %{
-      internal_id: to_string(data_template.id),
+      data_template_id: to_string(data_template.id),
       collection_name: "data_template",
       name: data_template.title,
       title_template: data_template.title_template,
@@ -107,7 +107,7 @@ end
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.Layouts.Layout do
   def to_document(%WraftDoc.Layouts.Layout{} = layout) do
     %{
-      internal_id: to_string(layout.id),
+      layout_id: to_string(layout.id),
       collection_name: "layout",
       name: layout.name,
       description: layout.description,
@@ -127,7 +127,7 @@ end
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.Themes.Theme do
   def to_document(%WraftDoc.Themes.Theme{} = theme) do
     %{
-      internal_id: to_string(theme.id),
+      theme_id: to_string(theme.id),
       collection_name: "theme",
       name: theme.name,
       font: theme.font,
@@ -146,7 +146,7 @@ end
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.Enterprise.Flow do
   def to_document(%WraftDoc.Enterprise.Flow{} = flow) do
     %{
-      internal_id: to_string(flow.id),
+      flow_id: to_string(flow.id),
       collection_name: "flow",
       name: flow.name,
       controlled: flow.controlled,
@@ -160,7 +160,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Enterprise.Flow do
   defimpl WraftDoc.Search.Encoder, for: WraftDoc.Pipelines.Pipeline do
     def to_document(%WraftDoc.Pipelines.Pipeline{} = pipeline) do
       %{
-        internal_id: to_string(pipeline.id),
+        pipeline_id: to_string(pipeline.id),
         collection_name: "pipeline",
         name: pipeline.name,
         api_route: pipeline.api_route,
@@ -179,7 +179,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Enterprise.Flow do
   defimpl WraftDoc.Search.Encoder, for: WraftDoc.Blocks.Block do
     def to_document(%WraftDoc.Blocks.Block{} = block) do
       %{
-        internal_id: to_string(block.id),
+        block_id: to_string(block.id),
         collection_name: "block",
         name: block.name,
         description: block.description,
@@ -201,7 +201,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Enterprise.Flow do
   defimpl WraftDoc.Search.Encoder, for: WraftDoc.Forms.Form do
     def to_document(%WraftDoc.Forms.Form{} = form) do
       %{
-        internal_id: to_string(form.id),
+        form_id: to_string(form.id),
         collection_name: "form",
         name: form.name,
         description: form.description,

@@ -70,7 +70,7 @@ defmodule WraftDoc.Enterprise.Flow do
     %{
       enable_nested_fields: true,
       fields: [
-        %{name: "internal_id", type: "string", facet: false},
+        %{name: "flow_id", type: "string", facet: false},
         %{name: "name", type: "string", facet: false},
         %{name: "controlled", type: "bool", facet: true},
         %{name: "creator_id", type: "string", facet: true},

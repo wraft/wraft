@@ -129,7 +129,7 @@ defmodule WraftDoc.Documents.Instance do
   def get_field_types do
     %{
       fields: [
-        %{name: "internal_id", type: "string", facet: false},
+        %{name: "content_id", type: "string", facet: false},
         %{name: "instance_id", type: "string", facet: true},
         %{name: "raw", type: "string", facet: false},
         %{name: "serialized", type: "string", facet: false},
