@@ -27,25 +27,18 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Documents.Instance do
       end
 
     %{
-      id: to_string(instance.id),
+      content_id: to_string(instance.id),
       collection_name: "content",
       instance_id: instance.instance_id,
-      raw: instance.raw,
       name: instance.serialized["title"],
-      serialized: Jason.encode!(instance.serialized),
       # document_type: instance.document_type,
-      meta: Jason.encode!(instance.meta),
       type: instance.type,
       organisation_id: to_string(organisation_id),
-      editable: instance.editable,
-      allowed_users: instance.allowed_users,
       approval_status: instance.approval_status,
       creator_id: to_string(instance.creator_id),
       content_type_id: to_string(instance.content_type_id),
       state_id: to_string(instance.state_id),
-      vendor_id: to_string(instance.vendor_id),
-      inserted_at: instance.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
-      updated_at: instance.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+      inserted_at: instance.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
     }
   end
 end
@@ -53,7 +46,7 @@ end
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.ContentTypes.ContentType do
   def to_document(%WraftDoc.ContentTypes.ContentType{} = content_type) do
     %{
-      id: to_string(content_type.id),
+      content_type_id: to_string(content_type.id),
       collection_name: "content_type",
       name: content_type.name,
       description: content_type.description,
@@ -87,19 +80,15 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.DataTemplates.DataTemplate do
       end
 
     %{
-      id: to_string(data_template.id),
+      data_template_id: to_string(data_template.id),
       collection_name: "data_template",
       name: data_template.title,
       title_template: data_template.title_template,
-      data: data_template.data,
-      serialized: Jason.encode!(data_template.serialized),
       content_type_id: to_string(data_template.content_type_id),
       creator_id: to_string(data_template.creator_id),
       organisation_id: to_string(organisation_id),
       inserted_at:
-        data_template.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
-      updated_at:
-        data_template.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+        data_template.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
     }
   end
 end
@@ -107,7 +96,7 @@ end
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.Layouts.Layout do
   def to_document(%WraftDoc.Layouts.Layout{} = layout) do
     %{
-      id: to_string(layout.id),
+      layout_id: to_string(layout.id),
       collection_name: "layout",
       name: layout.name,
       description: layout.description,
@@ -127,7 +116,7 @@ end
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.Themes.Theme do
   def to_document(%WraftDoc.Themes.Theme{} = theme) do
     %{
-      id: to_string(theme.id),
+      theme_id: to_string(theme.id),
       collection_name: "theme",
       name: theme.name,
       font: theme.font,
@@ -146,7 +135,7 @@ end
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.Enterprise.Flow do
   def to_document(%WraftDoc.Enterprise.Flow{} = flow) do
     %{
-      id: to_string(flow.id),
+      flow_id: to_string(flow.id),
       collection_name: "flow",
       name: flow.name,
       controlled: flow.controlled,
@@ -160,7 +149,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Enterprise.Flow do
   defimpl WraftDoc.Search.Encoder, for: WraftDoc.Pipelines.Pipeline do
     def to_document(%WraftDoc.Pipelines.Pipeline{} = pipeline) do
       %{
-        id: to_string(pipeline.id),
+        pipeline_id: to_string(pipeline.id),
         collection_name: "pipeline",
         name: pipeline.name,
         api_route: pipeline.api_route,
@@ -179,7 +168,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Enterprise.Flow do
   defimpl WraftDoc.Search.Encoder, for: WraftDoc.Blocks.Block do
     def to_document(%WraftDoc.Blocks.Block{} = block) do
       %{
-        id: to_string(block.id),
+        block_id: to_string(block.id),
         collection_name: "block",
         name: block.name,
         description: block.description,
@@ -201,7 +190,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Enterprise.Flow do
   defimpl WraftDoc.Search.Encoder, for: WraftDoc.Forms.Form do
     def to_document(%WraftDoc.Forms.Form{} = form) do
       %{
-        id: to_string(form.id),
+        form_id: to_string(form.id),
         collection_name: "form",
         name: form.name,
         description: form.description,

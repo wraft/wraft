@@ -93,7 +93,7 @@ defmodule WraftDoc.Layouts.Layout do
   def get_field_types do
     %{
       fields: [
-        %{name: "id", type: "string", facet: false},
+        %{name: "layout_id", type: "string", facet: false},
         %{name: "name", type: "string", facet: true},
         %{name: "description", type: "string", facet: true},
         %{name: "width", type: "float", facet: false},
