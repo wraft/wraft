@@ -94,7 +94,7 @@ services:
     environment:
       TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
     volumes:
-      - ./typesense-data:/data
+      - typesense_data:/data
     command: >
       --data-dir /data
       --api-key=${TYPESENSE_API_KEY}
@@ -102,3 +102,4 @@ services:
 volumes:
   db:
   miniodata:
+  typesense_data:
