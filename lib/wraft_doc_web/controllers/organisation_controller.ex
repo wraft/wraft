@@ -591,7 +591,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   """
 
   swagger_path :resend_invite do
-    put("/organisations/users/invite/{id}/resend")
+    post("/organisations/users/invite/{id}/resend")
     summary("Resend organisation invite")
     description("Resends an organisation invite email to a previously invited user")
 
@@ -886,7 +886,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   """
 
   swagger_path :list_invited do
-    get("/organisations/users/invited")
+    get("/organisations/invite")
     summary("List Invited Users")
     description("Returns a list of users invited by the current user.")
     produces("application/json")
