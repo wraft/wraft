@@ -171,6 +171,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       id: invited_user.id,
       email: invited_user.email,
       status: invited_user.status,
+      inserted_at: invited_user.inserted_at,
       roles: render_many(invited_user.roles, RoleView, "role.json", as: :role)
     }
   end
