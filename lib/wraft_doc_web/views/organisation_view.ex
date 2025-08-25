@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
 
   alias __MODULE__
   alias WraftDoc.Account.User
+  alias WraftDocWeb.Api.V1.RoleView
   alias WraftDocWeb.Api.V1.UserView
 
   def render("create.json", %{organisation: organisation}) do
@@ -125,6 +126,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
+  def render("revoke.json", %{}) do
+    %{
+      info: "Revoked successfully.!"
+    }
+  end
+
   def render("verify_invite_token.json", %{
         organisation: organisation,
         email: email,
@@ -152,6 +159,20 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
   def render("permissions.json", %{permissions: permissions}) do
     %{
       permissions: permissions
+    }
+  end
+
+  def render("invited_users.json", %{invited_users: invited_users}) do
+    render_many(invited_users, __MODULE__, "invited_user.json", as: :invited_user)
+  end
+
+  def render("invited_user.json", %{invited_user: invited_user}) do
+    %{
+      id: invited_user.id,
+      email: invited_user.email,
+      status: invited_user.status,
+      inserted_at: invited_user.inserted_at,
+      roles: render_many(invited_user.roles, RoleView, "role.json", as: :role)
     }
   end
 

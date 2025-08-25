@@ -22,6 +22,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.InvitedUsers
+  alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDocWeb.Guardian
 
   def swagger_definitions do
@@ -92,6 +93,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
         swagger_schema do
           title("Invite user response")
           description("Invite user response")
+
+          properties do
+            info(:string, "Info", required: true)
+          end
+
+          example(%{info: "Invited successfully.!"})
+        end,
+      RevokedResponse:
+        swagger_schema do
+          title("Revoke invite user response")
+          description("Revoke Invite user response")
 
           properties do
             info(:string, "Info", required: true)
@@ -257,6 +269,24 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
             email: "abcent@gmail.com",
             role_ids: ["756f1fa1-9657-4166-b372-21e8135aeaf1"]
           })
+        end,
+      InvitedUser:
+        swagger_schema do
+          title("InvitedUser")
+          description("An invited user")
+
+          properties do
+            id(:string, "User ID", required: true)
+            email(:string, "Email address", required: true)
+            status(:string, "Invitation status", required: true)
+          end
+        end,
+      InvitedUsersResponse:
+        swagger_schema do
+          title("InvitedUsersResponse")
+          description("A list of invited users")
+          type(:array)
+          items(Schema.ref(:InvitedUser))
         end
     }
   end
@@ -534,7 +564,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
         for_actor: %{email: params["email"]}
       )
 
-      InvitedUsers.create_or_update_invited_user(params["email"], organisation.id)
+      InvitedUsers.create_or_update_invited_user(
+        params["email"],
+        organisation.id,
+        "invited",
+        roles
+      )
 
       render(conn, "invite.json")
     else
@@ -548,6 +583,60 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
       error ->
         error
+    end
+  end
+
+  @doc """
+  Resends organisation invite.
+  """
+
+  swagger_path :resend_invite do
+    post("/organisations/users/invite/{id}/resend")
+    summary("Resend organisation invite")
+    description("Resends an organisation invite email to a previously invited user")
+
+    parameter(:id, :path, :string, "Invited User ID",
+      required: true,
+      example: "d19e10fc-4b36-46ab-a9cb-7fa52d7a289e"
+    )
+
+    response(200, "Invite resent", Schema.ref(:InvitedResponse))
+    response(404, "Invited user not found")
+  end
+
+  def resend_invite(conn, %{"id" => invited_user_id} = _params) do
+    current_user = conn.assigns[:current_user]
+
+    with %Organisation{} = organisation <-
+           Enterprise.get_organisation(current_user.current_org_id),
+         %InvitedUser{} = invited_user <- InvitedUsers.get_invited_user_by_id(invited_user_id),
+         {:ok, _} <- Enterprise.resend_invite(current_user, invited_user, organisation) do
+      render(conn, "invite.json")
+    end
+  end
+
+  @doc """
+  Revoke organisation invite.
+  """
+
+  swagger_path :revoke_invite do
+    put("/organisations/users/invite/{id}/revoke")
+    summary("Revoke organisation invite")
+    description("Revokes a previously sent organisation invite")
+
+    parameter(:id, :path, :string, "Invited User ID",
+      required: true,
+      example: "d19e10fc-4b36-46ab-a9cb-7fa52d7a289e"
+    )
+
+    response(200, "Revoked successfully.!", Schema.ref(:RevokedResponse))
+    response(404, "Invited user not found")
+  end
+
+  def revoke_invite(conn, %{"id" => invited_user_id} = _params) do
+    with %InvitedUser{} = invited_user <- InvitedUsers.get_invited_user_by_id(invited_user_id),
+         {:ok, _} <- Enterprise.revoke_invite(invited_user) do
+      render(conn, "revoke.json")
     end
   end
 
@@ -790,6 +879,27 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     current_user = conn.assigns[:current_user]
     permissions = Enterprise.get_permissions(current_user)
     render(conn, "permissions.json", permissions: permissions)
+  end
+
+  @doc """
+  Returns a list of users invited by the current user.
+  """
+
+  swagger_path :list_invited do
+    get("/organisations/invite")
+    summary("List Invited Users")
+    description("Returns a list of users invited by the current user.")
+    produces("application/json")
+
+    response(200, "OK", Schema.ref(:InvitedUsersResponse))
+    response(401, "Unauthorized")
+  end
+
+  @spec list_invited(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def list_invited(conn, _params) do
+    current_user = conn.assigns[:current_user]
+    invited_users = InvitedUsers.list_invited_users(current_user)
+    render(conn, "invited_users.json", invited_users: invited_users)
   end
 
   # This stops the user from changing the name of Personal organisation
