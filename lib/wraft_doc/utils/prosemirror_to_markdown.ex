@@ -14,6 +14,11 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   @default_min_col_width 55
 
+  @roman %{
+    lower: ~w(i ii iii iv v vi vii viii ix x xi xii xiii xiv xv xvi xvii xviii xix xx),
+    upper: ~w(I II III IV V VI VII VIII IX X XI XII XIII XIV XV XVI XVII XVIII XIX XX)
+  }
+
   def convert(%{"type" => "doc", "content" => content}, opts \\ []) do
     Enum.map_join(content, "\n\n", &convert_node(&1, opts))
   end
@@ -45,14 +50,30 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   defp convert_node(%{"type" => "text", "text" => text}, _opts), do: text
 
   defp convert_node(
-         %{"type" => "bulletList", "attrs" => %{"kind" => kind}, "content" => content},
+         %{"type" => "listItem", "attrs" => %{"kind" => kind}, "content" => content} = node,
          opts
        ) do
-    convert_list_content(content, kind, 0, opts)
-  end
+    depth = opts[:depth] || 0
+    index = node["index"] || 1
 
-  defp convert_node(%{"type" => "listItem", "content" => content}, opts) do
-    Enum.map_join(content, "", &convert_node(&1, opts))
+    {paragraphs, nested} = Enum.split_with(content, &(&1["type"] == "paragraph"))
+
+    text = Enum.map_join(paragraphs, " ", &convert_node(&1, opts))
+
+    marker = list_marker(kind, index)
+
+    current_line =
+      String.duplicate("    ", depth) <> "#{marker} #{text}"
+
+    if nested == [] do
+      current_line
+    else
+      current_line <>
+        "\n" <>
+        Enum.map_join(Enum.with_index(nested, 1), "\n", fn {item, i} ->
+          convert_node(Map.put(item, "index", i), depth: depth + 1)
+        end)
+    end
   end
 
   defp convert_node(
@@ -138,205 +159,11 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   defp convert_mark(_text, %{"type" => type}, _opts),
     do: raise(InvalidJsonError, "Invalid mark type: #{type}")
 
-  defp convert_item(
-         %{"type" => "bulletList", "attrs" => %{"kind" => kind}, "content" => content},
-         indent_level,
-         opts
-       ) do
-    convert_list_content(content, kind, indent_level, opts)
-  end
-
-  defp convert_item(%{"type" => "paragraph"} = item, indent_level, opts) do
-    content = Map.get(item, "content", [])
-    text = Enum.map_join(content, "", &convert_node(&1, opts))
-
-    case text do
-      "" ->
-        ""
-
-      _ ->
-        indentation = String.duplicate("   ", indent_level)
-        "#{indentation}#{text}"
-    end
-  end
-
-  defp convert_item(%{"type" => "listItem"} = item, indent_level, opts) do
-    # Handle the old structure where lists contain listItems
-    content = Map.get(item, "content", [])
-
-    content
-    |> Enum.map(&convert_item(&1, indent_level, opts))
-    |> Enum.filter(&(&1 != ""))
-    |> Enum.join("\n")
-  end
-
-  defp convert_item(_, _, _opts), do: ""
-
-  defp convert_list_content(items, list_kind, indent_level, opts) do
-    case items do
-      [%{"type" => "listItem"} | _] ->
-        convert_list_items(items, list_kind, indent_level, opts)
-
-      _ ->
-        convert_direct_content(items, list_kind, indent_level, opts)
-    end
-  end
-
-  defp convert_list_items(items, list_kind, indent_level, opts) do
-    items
-    |> Enum.with_index(1)
-    |> Enum.map(fn {item, index} ->
-      convert_list_item_old(item, list_kind, index, indent_level, opts)
-    end)
-    |> Enum.filter(&(&1 != ""))
-    |> Enum.join("\n")
-  end
-
-  defp convert_direct_content(items, list_kind, indent_level, opts) do
-    items
-    |> group_content_items()
-    |> Enum.with_index(1)
-    |> Enum.map(fn {group, index} ->
-      group_marker = get_list_marker(list_kind, index)
-
-      convert_content_group(group, group_marker, indent_level, opts)
-    end)
-    |> Enum.filter(&(&1 != ""))
-    |> Enum.join("\n")
-  end
-
-  defp group_content_items(items) do
-    items
-    |> Enum.reduce([], fn item, acc ->
-      case item do
-        %{"type" => "paragraph"} ->
-          acc ++ [[item]]
-
-        %{"type" => "bulletList"} ->
-          handle_bulletlist_grouping(acc, item)
-
-        _ ->
-          acc
-      end
-    end)
-    |> Enum.filter(&(&1 != []))
-  end
-
-  defp handle_bulletlist_grouping(acc, item) do
-    case acc do
-      [] ->
-        [[item]]
-
-      groups ->
-        {last_group, other_groups} = List.pop_at(groups, -1)
-        other_groups ++ [last_group ++ [item]]
-    end
-  end
-
-  defp convert_content_group(group, marker, indent_level, opts) do
-    indentation = String.duplicate("   ", indent_level)
-
-    paragraph_text =
-      group
-      |> Enum.find(&match?(%{"type" => "paragraph"}, &1))
-      |> case do
-        nil -> ""
-        para -> convert_node(para, opts)
-      end
-
-    nested_lists =
-      Enum.filter(group, &match?(%{"type" => "bulletList"}, &1))
-
-    main_line =
-      case paragraph_text do
-        "" -> ""
-        text -> "#{indentation}#{marker} #{text}"
-      end
-
-    nested_content =
-      nested_lists
-      |> Enum.map(&convert_item(&1, indent_level + 1, opts))
-      |> Enum.filter(&(&1 != ""))
-      |> Enum.join("\n")
-
-    # Combine main line and nested content
-    case {main_line, nested_content} do
-      {"", ""} -> ""
-      {main, ""} -> main
-      {"", nested} -> nested
-      {main, nested} -> "#{main}\n#{nested}"
-    end
-  end
-
-  defp convert_list_item_old(%{"type" => "listItem"} = item, list_kind, index, indent_level, opts) do
-    content = Map.get(item, "content", [])
-    indentation = String.duplicate("   ", indent_level)
-
-    {paragraph_content, nested_lists} = extract_list_item_parts(content, opts)
-
-    marker = get_list_marker(list_kind, index)
-
-    format_list_item_output(
-      paragraph_content,
-      nested_lists,
-      indentation,
-      marker,
-      indent_level,
-      opts
-    )
-  end
-
-  defp extract_list_item_parts(content, opts) do
-    paragraph_content =
-      content
-      |> Enum.find(&match?(%{"type" => "paragraph"}, &1))
-      |> case do
-        nil -> ""
-        para -> convert_node(para, opts)
-      end
-
-    nested_lists = Enum.filter(content, &match?(%{"type" => "bulletList"}, &1))
-
-    {paragraph_content, nested_lists}
-  end
-
-  defp get_list_marker("ordered", index), do: "#{index}."
-  defp get_list_marker(_, _), do: "-"
-
-  defp format_list_item_output(
-         paragraph_content,
-         nested_lists,
-         indentation,
-         marker,
-         indent_level,
-         opts
-       ) do
-    lines = create_main_line(paragraph_content, nested_lists, indentation, marker)
-
-    nested_lines = process_nested_lists(nested_lists, indent_level, opts)
-
-    all_lines = lines ++ nested_lines
-
-    case all_lines do
-      [] -> ""
-      _ -> Enum.join(all_lines, "\n")
-    end
-  end
-
-  defp create_main_line(paragraph_content, nested_lists, indentation, marker) do
-    case paragraph_content do
-      "" when nested_lists == [] -> []
-      "" -> []
-      text -> ["#{indentation}#{marker} #{text}"]
-    end
-  end
-
-  defp process_nested_lists(nested_lists, indent_level, opts) do
-    Enum.flat_map(nested_lists, fn nested_list ->
-      nested_content = convert_item(nested_list, indent_level + 1, opts)
-      String.split(nested_content, "\n", trim: true)
-    end)
-  end
+  defp list_marker("ordered", index), do: "#{index}."
+  defp list_marker("lower-alpha", index), do: <<?a + index - 1>> <> "."
+  defp list_marker("upper-alpha", index), do: <<?A + index - 1>> <> ". "
+  defp list_marker("lower-roman", index), do: Enum.at(@roman.lower, index - 1) <> "."
+  defp list_marker("upper-roman", index), do: Enum.at(@roman.upper, index - 1) <> ". "
 
   defp wrap_lines(text, prefix) do
     Enum.map_join(String.split(text, "\n"), "\n", &(prefix <> &1))
