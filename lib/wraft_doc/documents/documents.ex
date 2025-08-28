@@ -17,6 +17,7 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Documents.ContentCollaboration
   alias WraftDoc.Documents.Counter
+  alias WraftDoc.Documents.DocumentAuditLog
   alias WraftDoc.Documents.Engine
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Instance.History
@@ -2565,5 +2566,25 @@ defmodule WraftDoc.Documents do
         })
       )
     end
+  end
+
+  @doc """
+  Retrieves the audit logs for a document.
+
+  ## Parameters
+    - `instance_id`: The ID of the document.
+
+  ## Returns
+    - `{:ok, logs}`: A tuple containing the audit logs.
+  """
+  @spec get_logs(Ecto.UUID.t()) :: {:ok, list()}
+  def get_logs(instance_id) do
+    logs =
+      DocumentAuditLog
+      |> where(document_id: ^instance_id)
+      |> order_by(desc: :inserted_at)
+      |> Repo.all()
+
+    {:ok, logs}
   end
 end

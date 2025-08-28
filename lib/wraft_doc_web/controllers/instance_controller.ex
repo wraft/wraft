@@ -18,7 +18,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     approve: "document:review",
     reject: "document:review"
 
-  plug WraftDocWeb.Plug.AddDocumentAuditLog when action not in [:contract_chart]
+  plug WraftDocWeb.Plug.AddDocumentAuditLog
+       when action in [:update, :update_meta, :state_update, :lock_unlock, :approve]
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -635,7 +636,25 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               state: "draft",
               version: 2
             }
-          })
+          }),
+      Logs:
+        swagger_schema do
+          title("Instance Logs")
+          description("Logs of actions performed on an instance")
+
+          example([
+            %{
+              id: "4e630a83-c8d8-43d6-875e-0a2a47ec97f5",
+              action: "update",
+              document_id: "4e630a83-c8d8-43d6-875e-0a2a47ec97f5",
+              inserted_at: "2023-05-15T14:32:10Z",
+              actor: %{
+                current_org_id: "4e630a83-c8d8-43d6-875e-0a2a4747838",
+                name: "John Doe",
+                email: "john@example.com"
+              }
+            }
+          ])
         end
     }
   end
@@ -678,6 +697,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       Logger.info("Create content success")
       Typesense.create_document(content)
       Task.start(fn -> EventTrigger.trigger_document_created(content) end)
+
+      WraftDocWeb.Plug.AddDocumentAuditLog.call(
+        %{conn | params: Map.put(conn.params, "id", content.id)},
+        %{}
+      )
+
       render(conn, :create, content: content)
     else
       error ->
@@ -1523,6 +1548,29 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       conn
       |> put_view(WraftDocWeb.Api.V1.InstanceVersionView)
       |> render("comparison.json", comparison: comparison)
+      end
+  end
+
+  @doc """
+  Get logs for an instance.
+  """
+  swagger_path :get_logs do
+    get("/contents/{id}/logs")
+    summary("Get instance logs")
+    description("Retrieve logs of actions performed on a specific instance")
+
+    parameters do
+      id(:path, :string, "Instance ID", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:Logs))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def get_logs(conn, %{"id" => instance_id} = _params) do
+    with {:ok, logs} <- Documents.get_logs(instance_id) do
+      render(conn, "logs.json", logs: logs)
     end
   end
 end
