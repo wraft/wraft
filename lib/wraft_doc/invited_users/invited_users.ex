@@ -73,6 +73,8 @@ defmodule WraftDoc.InvitedUsers do
     do:
       InvitedUser
       |> where([i], i.organisation_id == ^organisation_id)
+      |> where([i], i.status != "joined")
+      |> order_by([i], desc: i.inserted_at)
       |> Repo.all()
       |> Repo.preload([:roles])
 end
