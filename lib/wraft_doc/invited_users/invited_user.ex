@@ -11,6 +11,12 @@ defmodule WraftDoc.InvitedUsers.InvitedUser do
     field(:status, :string, default: "invited")
 
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+
+    many_to_many(:roles, WraftDoc.Account.Role,
+      join_through: "invited_users_roles",
+      on_replace: :delete
+    )
+
     timestamps()
   end
 

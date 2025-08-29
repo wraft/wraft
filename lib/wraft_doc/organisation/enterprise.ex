@@ -5,8 +5,8 @@ defmodule WraftDoc.Enterprise do
   import Ecto.Query
   import Ecto
   require Logger
-  alias Ecto.Multi
 
+  alias Ecto.Multi
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
@@ -930,6 +930,36 @@ defmodule WraftDoc.Enterprise do
   end
 
   def invite_team_member(_, _, _, _), do: {:error, :no_data}
+
+  @doc """
+  Re-sends invitation email to the email with the role.
+  """
+  @spec resend_invite(User.t(), InvitedUser.t(), Organisation.t()) :: any()
+  def resend_invite(
+        %{name: name} = user,
+        %{email: email, roles: roles} = _invited_user,
+        %{id: organisation_id, name: org_name} = _organisation
+      ) do
+    token =
+      WraftDoc.create_phx_token("organisation_invite", %{
+        organisation_id: organisation_id,
+        email: email,
+        roles: Enum.map(roles, & &1.id)
+      })
+
+    Task.start_link(fn ->
+      AuthTokens.insert_auth_token!(user, %{value: token, token_type: "invite"})
+    end)
+
+    %{org_name: org_name, user_name: name, email: email, token: token}
+    |> EmailWorker.new(queue: "mailer", tags: ["invite"])
+    |> Oban.insert()
+  end
+
+  def revoke_invite(%{id: invited_user_id} = invited_user) do
+    AuthTokens.delete_auth_token(invited_user_id, "invite")
+    Repo.delete(invited_user)
+  end
 
   @doc """
   Fetches the list of all members of current users organisation.
