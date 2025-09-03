@@ -5,7 +5,16 @@ defmodule WraftDoc.Documents.Instance.Version do
   use WraftDoc.Schema
   alias __MODULE__
 
-  @fields [:version_number, :raw, :serialized, :author_id, :type, :naration, :content_id]
+  @fields [
+    :version_number,
+    :raw,
+    :serialized,
+    :author_id,
+    :type,
+    :naration,
+    :content_id,
+    :current_version
+  ]
 
   schema "version" do
     field(:version_number, :integer)

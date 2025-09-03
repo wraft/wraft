@@ -69,7 +69,7 @@ defmodule WraftDoc.Documents do
 
     Logger.info("Creating initial version...")
 
-    insert_initial_version(Map.merge(params, %{"type" => "save"}))
+    insert_initial_version(Map.merge(params, %{"type" => "save", "current_version" => true}))
     insert_initial_version(Map.merge(params, %{"type" => "build"}))
 
     Logger.info("Initial version generated")
@@ -861,6 +861,11 @@ defmodule WraftDoc.Documents do
       true ->
         params = create_version_params(new_instance, params, type)
 
+        Version
+        |> where([v], v.content_id == ^new_instance.id)
+        |> where([v], v.type == :save)
+        |> Repo.update_all(set: [current_version: false])
+
         current_user
         |> build_assoc(:instance_versions, content: new_instance)
         |> Version.changeset(params)
@@ -905,7 +910,12 @@ defmodule WraftDoc.Documents do
 
     instance
     |> Map.from_struct()
-    |> Map.merge(%{version_number: incremented_version, type: type, naration: params["naration"]})
+    |> Map.merge(%{
+      version_number: incremented_version,
+      type: type,
+      naration: params["naration"],
+      current_version: true
+    })
   end
 
   defp create_version_params(_, params, _), do: params
@@ -918,7 +928,16 @@ defmodule WraftDoc.Documents do
     instance
     |> get_version(version_id)
     |> case do
-      %Version{raw: raw, serialized: serialized} ->
+      %Version{raw: raw, serialized: serialized} = instance_version ->
+        Version
+        |> where([v], v.content_id == ^instance.id)
+        |> where([v], v.type == :save)
+        |> Repo.update_all(set: [current_version: false])
+
+        instance_version
+        |> Version.changeset(%{current_version: true})
+        |> Repo.update()
+
         update_instance(instance, %{raw: raw, serialized: serialized})
 
       _ ->
