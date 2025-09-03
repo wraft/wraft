@@ -13,8 +13,11 @@ defmodule WraftDoc.Documents.Instance.Version do
     field(:raw, :string)
     field(:serialized, :map, default: %{})
     field(:naration, :string)
+    field(:current_version, :boolean, default: false)
+
     belongs_to(:content, WraftDoc.Documents.Instance)
     belongs_to(:author, WraftDoc.Account.User)
+
     timestamps()
   end
 

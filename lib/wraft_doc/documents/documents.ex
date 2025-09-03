@@ -882,7 +882,7 @@ defmodule WraftDoc.Documents do
   defp get_last_version(_, _), do: nil
   # Create the params to create a new version.
   # @spec create_version_params(Instance.t(), map()) :: map
-  defp create_version_params(%Instance{id: id} = instance, _params, type)
+  defp create_version_params(%Instance{id: id} = instance, params, type)
        when type in [:save, :build] do
     query =
       from(v in Version,
@@ -903,12 +903,9 @@ defmodule WraftDoc.Documents do
           version_number + 1
       end
 
-    # TODO - add naration
-    # naration = params["naration"] || "Version-#{incremented_version / 10}"
-
     instance
     |> Map.from_struct()
-    |> Map.merge(%{version_number: incremented_version, type: type})
+    |> Map.merge(%{version_number: incremented_version, type: type, naration: params["naration"]})
   end
 
   defp create_version_params(_, params, _), do: params
@@ -923,6 +920,29 @@ defmodule WraftDoc.Documents do
     |> case do
       %Version{raw: raw, serialized: serialized} ->
         update_instance(instance, %{raw: raw, serialized: serialized})
+
+      _ ->
+        nil
+    end
+  end
+
+  @doc """
+  Update a version of an instance.
+  """
+  @spec update_version(Ecto.UUID.t(), map()) ::
+          Version.t() | nil | Ecto.Changeset.t()
+  def update_version(version_id, params) do
+    Version
+    |> Repo.get_by(id: version_id)
+    |> case do
+      %Version{} = instance_version ->
+        instance_version
+        |> Version.changeset(params)
+        |> Repo.update()
+        |> case do
+          {:ok, _} -> Repo.preload(instance_version, [:author])
+          error -> error
+        end
 
       _ ->
         nil

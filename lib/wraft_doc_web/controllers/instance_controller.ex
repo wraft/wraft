@@ -29,6 +29,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Documents
   alias WraftDoc.Documents.Charts
   alias WraftDoc.Documents.Instance
+  alias WraftDoc.Documents.Instance.Version
   alias WraftDoc.Documents.Reminders
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
@@ -40,6 +41,33 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   def swagger_definitions do
     %{
+      VersionResponse:
+        swagger_schema do
+          title("Version Response")
+          description("Response containing details of an updated version")
+
+          properties do
+            id(:string, "The ID of the version", required: true)
+            version_number(:integer, "Version number", required: true)
+            raw(:string, "Raw data of the version")
+            type(:string, "Type of the version")
+            serialised(:map, "Serialized data of the version")
+            naration(:string, "Narration for the version")
+            author(:map, "Author of the version", required: true)
+            current_version(:boolean, "Whether this is the current version")
+            inserted_at(:string, "When the version was created", format: "ISO-8601")
+            updated_at(:string, "When the version was last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "123456",
+            version_number: 2,
+            type: "content",
+            current_version: true,
+            inserted_at: "2023-01-01T12:00:00Z",
+            updated_at: "2023-01-02T14:30:00Z"
+          })
+        end,
       RestoreContent:
         swagger_schema do
           title("Restore Content")
@@ -1263,13 +1291,42 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(404, "Instance or version not found", Schema.ref(:Error))
   end
 
-  @spec restore(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec restore(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def restore(conn, %{"id" => id, "version_id" => version_id} = params) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Documents.show_instance(id, current_user, params),
          %Instance{} = instance <- Documents.restore_version(instance, version_id) do
       render(conn, "restore.json", content: instance)
+    end
+  end
+
+  @doc """
+  Updates a specific version of an instance.
+  """
+  @spec update_version(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  swagger_path :update_version do
+    put("/versions/{id}")
+    summary("Update a specific version")
+    description("Updates metadata or content of a specific version")
+    produces("application/json")
+
+    parameters do
+      id(:path, :string, "Version ID", required: true)
+      naration(:body, :string, "Narration for the version", required: false)
+    end
+
+    response(200, "Version updated successfully", Schema.ref(:VersionResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Version not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity - Validation errors", Schema.ref(:Error))
+  end
+
+  def update_version(conn, %{"id" => version_id} = params) do
+    with %Version{} = version <- Documents.update_version(version_id, params) do
+      conn
+      |> put_view(WraftDocWeb.Api.V1.InstanceVersionView)
+      |> render("version.json", version: version)
     end
   end
 end

@@ -453,6 +453,7 @@ defmodule WraftDocWeb.Router do
       post("/contents/:id/build", InstanceController, :build)
 
       post("/contents/:id/restore/:version_id", InstanceController, :restore)
+      post("/versions/:id", InstanceController, :update_version)
 
       # All data in an organisation
       get("/data_templates", DataTemplateController, :all_templates)
