@@ -197,6 +197,13 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
 
   def render("contract_chart.json", %{contract_list: contract_list}), do: contract_list
 
+  def render("restore.json", %{content: content}) do
+    %{
+      info: "Instance version restored",
+      content: render_one(content, InstanceView, "instance.json", as: :instance)
+    }
+  end
+
   def generate_url(%{profile_pic: pic} = profile) do
     WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
   end

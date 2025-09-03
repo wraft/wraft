@@ -40,6 +40,26 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   def swagger_definitions do
     %{
+      RestoreContent:
+        swagger_schema do
+          title("Restore Content")
+          description("Response after restoring an instance to a previous version")
+
+          properties do
+            info(:string, "Status message", required: true)
+            content(:map, "Restored instance details", required: true)
+          end
+
+          example(%{
+            info: "Instance version restored",
+            content: %{
+              id: "1232148nb3478",
+              name: "Sample Document",
+              state: "draft",
+              version: 2
+            }
+          })
+        end,
       Content:
         swagger_schema do
           title("Content")
@@ -697,6 +717,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     parameters do
       id(:path, :string, "ID of the instance", required: true)
+      version_type(:query, :string, "Version type", required: false)
     end
 
     response(200, "Ok", Schema.ref(:ShowContent))
@@ -705,19 +726,19 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   # Guest user
-  def show(conn, %{"id" => document_id, "auth_type" => "guest"} = _params) do
+  def show(conn, %{"id" => document_id, "auth_type" => "guest"} = params) do
     current_user = conn.assigns.current_user
 
     with true <- Documents.has_access?(current_user, document_id),
-         %Instance{} = instance <- Documents.show_instance(document_id, current_user) do
+         %Instance{} = instance <- Documents.show_instance(document_id, current_user, params) do
       render(conn, "show.json", instance: instance)
     end
   end
 
-  def show(conn, %{"id" => instance_id}) do
+  def show(conn, %{"id" => instance_id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.show_instance(instance_id, current_user) do
+    with %Instance{} = instance <- Documents.show_instance(instance_id, current_user, params) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -848,7 +869,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
     start_time = Timex.now()
 
-    case Documents.show_instance(instance_id, current_user) do
+    case Documents.show_instance(instance_id, current_user, params) do
       %Instance{content_type: %{layout: layout} = content_type} = instance ->
         with %Layout{} = layout <- Assets.preload_asset(layout),
              :ok <- Frames.check_frame_mapping(content_type),
@@ -1045,7 +1066,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec approve(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def approve(conn, %{"id" => id}) do
+  def approve(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
     with %Instance{
@@ -1053,7 +1074,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
              organisation: %Organisation{} = organisation
            },
            state: state
-         } = instance <- Documents.show_instance(id, current_user),
+         } = instance <- Documents.show_instance(id, current_user, params),
          %Instance{} = instance <- Documents.approve_instance(current_user, instance) do
       Task.start(fn -> Reminders.maybe_create_auto_reminders(current_user, instance) end)
 
@@ -1089,10 +1110,10 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec reject(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def reject(conn, %{"id" => id}) do
+  def reject(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.show_instance(id, current_user),
+    with %Instance{} = instance <- Documents.show_instance(id, current_user, params),
          %Instance{} = instance <- Documents.reject_instance(current_user, instance) do
       render(conn, "approve_or_reject.json", %{instance: instance})
     end
@@ -1120,7 +1141,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def send_email(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.show_instance(id, current_user),
+    with %Instance{} = instance <- Documents.show_instance(id, current_user, params),
          {:ok, _} <- Documents.send_document_email(instance, params) do
       render(conn, "email.json", %{info: "Email sent successfully"})
     end
@@ -1215,6 +1236,40 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with {:ok, contract_list} <- Charts.get_contract_chart(current_user, params) do
       render(conn, "contract_chart.json", contract_list: contract_list)
+    end
+  end
+
+  @doc """
+  Restores an instance to a specific version.
+
+  ## Parameters
+    - params: Map containing:
+      - id: The instance ID to be restored
+      - version_id: The version ID to restore the instance to
+  """
+  swagger_path :restore do
+    put("/contents/{id}/restore/{version_id}")
+    summary("Restore a specific version of an instance")
+    description("Restores a content instance to a previous version")
+    produces("application/json")
+
+    parameters do
+      id(:path, :string, "Instance ID", required: true)
+      version_id(:path, :string, "Version ID to restore", required: true)
+    end
+
+    response(200, "Instance version restored successfully", Schema.ref(:RestoreContent))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Instance or version not found", Schema.ref(:Error))
+  end
+
+  @spec restore(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def restore(conn, %{"id" => id, "version_id" => version_id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Documents.show_instance(id, current_user, params),
+         %Instance{} = instance <- Documents.restore_version(instance, version_id) do
+      render(conn, "restore.json", content: instance)
     end
   end
 end

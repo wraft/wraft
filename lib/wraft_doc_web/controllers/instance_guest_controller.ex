@@ -173,7 +173,7 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
     current_user = conn.assigns.current_user
 
     with %Instance{state_id: state_id} = instance <-
-           Documents.show_instance(document_id, current_user),
+           Documents.show_instance(document_id, current_user, params),
          %User{} = invited_user <- Account.get_or_create_guest_user(params),
          %ContentCollaboration{} = collaborator <-
            Documents.add_content_collaborator(current_user, instance, invited_user, params),
@@ -288,10 +288,13 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   end
 
   @spec revoke_document_access(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def revoke_document_access(conn, %{"id" => document_id, "collaborator_id" => collaborator_id}) do
+  def revoke_document_access(
+        conn,
+        %{"id" => document_id, "collaborator_id" => collaborator_id} = params
+      ) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user, params),
          %ContentCollaboration{} = collaborator <-
            Documents.get_content_collaboration(collaborator_id),
          %ContentCollaboration{} = collaborator <-
@@ -317,10 +320,10 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   end
 
   @spec list_collaborators(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def list_collaborators(conn, %{"id" => document_id}) do
+  def list_collaborators(conn, %{"id" => document_id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user, params),
          collaborators when is_list(collaborators) <- Documents.list_collaborators(instance) do
       render(conn, "collaborators.json", collaborators: collaborators)
     end
@@ -353,7 +356,7 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
       ) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user, params),
          %ContentCollaboration{} = collaborator <-
            Documents.get_content_collaboration(collaborator_id),
          %ContentCollaboration{} = collaborator <-
@@ -382,10 +385,13 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   end
 
   @spec remove_counterparty(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def remove_counterparty(conn, %{"id" => document_id, "counterparty_id" => counterparty_id}) do
+  def remove_counterparty(
+        conn,
+        %{"id" => document_id, "counterparty_id" => counterparty_id} = params
+      ) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user, params),
          %CounterParty{} = counterparty <-
            CounterParties.get_counterparty(document_id, counterparty_id),
          %CounterParty{} = counterparty <- CounterParties.remove_counterparty(counterparty) do

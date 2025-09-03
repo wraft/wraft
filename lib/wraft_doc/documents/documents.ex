@@ -715,13 +715,23 @@ defmodule WraftDoc.Documents do
   Show an instance.
   """
   # TODO - improve tests
-  @spec show_instance(binary(), User.t()) ::
+  @spec show_instance(binary(), User.t(), map()) ::
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
-  def show_instance(instance_id, user) do
+  def show_instance(instance_id, user, params) do
+    version_type =
+      params
+      |> Map.get("version_type", :build)
+      |> case do
+        "save" -> :save
+        _ -> :build
+      end
+
     # Preload the build versions of the instance
     versions_preload_query =
       from(version in Version,
-        where: version.content_id == ^instance_id and version.type == :build,
+        where:
+          version.content_id == ^instance_id and
+            version.type == ^version_type,
         preload: [:author]
       )
 
@@ -902,6 +912,22 @@ defmodule WraftDoc.Documents do
   end
 
   defp create_version_params(_, params, _), do: params
+
+  @doc """
+  Restore a version of an instance.
+  """
+  @spec restore_version(Instance.t(), Ecto.UUID.t()) :: Instance.t() | nil | {:error, atom()}
+  def restore_version(instance, version_id) do
+    instance
+    |> get_version(version_id)
+    |> case do
+      %Version{raw: raw, serialized: serialized} ->
+        update_instance(instance, %{raw: raw, serialized: serialized})
+
+      _ ->
+        nil
+    end
+  end
 
   # Checks whether the raw and serialzed of old and new instances are same or not.
   # If they are both the same, returns false, else returns true

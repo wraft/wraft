@@ -452,6 +452,8 @@ defmodule WraftDocWeb.Router do
       # build PDF from a content
       post("/contents/:id/build", InstanceController, :build)
 
+      post("/contents/:id/restore/:version_id", InstanceController, :restore)
+
       # All data in an organisation
       get("/data_templates", DataTemplateController, :all_templates)
       # Block templates
