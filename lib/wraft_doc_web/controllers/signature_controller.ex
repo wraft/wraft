@@ -175,7 +175,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   def add_counterparty(conn, %{"id" => document_id, "email" => _email} = params) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.show_instance(document_id, current_user, params),
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
          %User{} = invited_user <- Account.get_or_create_guest_user(params),
          %CounterParty{} = counterparty <-
            CounterParties.add_counterparty(instance, params, invited_user) do
@@ -201,10 +201,10 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec list_counterparties(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def list_counterparties(conn, %{"id" => document_id} = params) do
+  def list_counterparties(conn, %{"id" => document_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user, params),
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
          counterparties <- CounterParties.get_document_counterparties(document_id) do
       render(conn, "counterparties.json", counterparties: counterparties)
     end
@@ -237,11 +237,11 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @spec request_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def request_signature(
         conn,
-        %{"id" => document_id, "counterparty_id" => counter_party_id} = params
+        %{"id" => document_id, "counterparty_id" => counter_party_id}
       ) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.show_instance(document_id, current_user, params),
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
          %CounterParty{email: email, signature_status: :pending} = counter_party <-
            CounterParties.get_counterparty(document_id, counter_party_id),
          {:ok, %AuthToken{value: token}} <-
@@ -255,10 +255,10 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec request_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def request_signature(conn, %{"id" => document_id} = params) do
+  def request_signature(conn, %{"id" => document_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.show_instance(document_id, current_user, params),
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
          counter_parties <- Signatures.get_document_pending_signatures(document_id) do
       Signatures.signature_request_email(instance, counter_parties, current_user)
 
@@ -287,10 +287,10 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec get_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def get_signature(conn, %{"id" => document_id, "signature_id" => signature_id} = params) do
+  def get_signature(conn, %{"id" => document_id, "signature_id" => signature_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user, params),
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
          %ESignature{} = signature <- Signatures.get_signature(signature_id, document_id) do
       render(conn, "signature.json", signature: signature)
     end
@@ -322,10 +322,10 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec create_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create_signature(conn, %{"id" => document_id} = params) do
+  def create_signature(conn, %{"id" => document_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.show_instance(document_id, current_user, params),
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
          %ESignature{} = signature <- Signatures.create_signature(instance, current_user) do
       render(conn, "signature.json", signature: signature)
     end
@@ -349,11 +349,11 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec get_document_signatures(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def get_document_signatures(conn, %{"id" => document_id} = params) do
+  def get_document_signatures(conn, %{"id" => document_id}) do
     current_user = conn.assigns.current_user
 
     with %Instance{build: document_url} <-
-           Documents.show_instance(document_id, current_user, params),
+           Documents.show_instance(document_id, current_user),
          {:ok, signatures} <- Signatures.get_document_signatures(document_id) do
       render(conn, "signatures.json", signatures: signatures, document_url: document_url)
     end
@@ -380,11 +380,11 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @spec revoke_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def revoke_signature(
         conn,
-        %{"id" => document_id, "counter_party_id" => counter_party_id} = params
+        %{"id" => document_id, "counter_party_id" => counter_party_id}
       ) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user, params),
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
          %CounterParty{} = counter_party <-
            CounterParties.get_counterparty(document_id, counter_party_id),
          {_, nil} <- Signatures.delete_signatures(counter_party) do
@@ -411,11 +411,11 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec generate_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def generate_signature(conn, %{"id" => document_id} = params) do
+  def generate_signature(conn, %{"id" => document_id}) do
     current_user = conn.assigns.current_user
 
     with %Instance{build: document_url} = instance <-
-           Documents.show_instance(document_id, current_user, params),
+           Documents.show_instance(document_id, current_user),
          {:ok, signatures} <- Signatures.generate_signature(instance, current_user) do
       render(conn, "signatures.json", signatures: signatures, document_url: document_url)
     end
@@ -450,7 +450,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   def update_signature(conn, %{"id" => document_id, "signature_id" => signature_id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user, params),
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
          %ESignature{} = signature <- Signatures.get_signature(signature_id, document_id),
          {:ok, %ESignature{} = updated_signature} <-
            Signatures.update_e_signature(signature, params) do
@@ -485,11 +485,11 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
           "id" => document_id,
           "signature_id" => signature_id,
           "counterparty_id" => counter_party_id
-        } = params
+        }
       ) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user, params),
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
          %ESignature{} = signature <- Signatures.get_signature(signature_id, document_id),
          %CounterParty{} = counter_party <-
            CounterParties.get_counterparty(document_id, counter_party_id),
@@ -526,7 +526,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     ip_address = conn.remote_ip |> :inet_parse.ntoa() |> to_string()
     params = Map.merge(params, %{"ip_address" => ip_address, "device" => device})
 
-    with %Instance{} = instance <- Documents.show_instance(document_id, current_user, params),
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
          %CounterParty{} = counter_party <-
            CounterParties.get_counterparty_with_signatures(current_user, document_id),
          signature_status <- Signatures.document_signed?(instance),

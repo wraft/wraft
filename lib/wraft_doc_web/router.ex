@@ -449,10 +449,14 @@ defmodule WraftDocWeb.Router do
       # All instances in an organisation
       get("/contents", InstanceController, :all_contents)
 
-      # build PDF from a content
-      post("/contents/:id/build", InstanceController, :build)
+      scope "/contents/:id" do
+        # build PDF from a content
+        post("/build", InstanceController, :build)
 
-      post("/contents/:id/restore/:version_id", InstanceController, :restore)
+        post("/restore/:version_id", InstanceController, :restore)
+        get("/versions", InstanceController, :index_versions)
+      end
+
       post("/versions/:id", InstanceController, :update_version)
 
       # All data in an organisation

@@ -6,9 +6,7 @@ defmodule WraftDocWeb.Api.V1.InstanceVersionView do
     %{
       id: version.id,
       version_number: version.version_number,
-      raw: version.raw,
       type: version.type,
-      serialised: version.serialized,
       naration: version.naration,
       author: render_one(version.author, UserView, "user.json", as: :user),
       current_version: version.current_version,
@@ -16,6 +14,9 @@ defmodule WraftDocWeb.Api.V1.InstanceVersionView do
       updated_at: version.updated_at
     }
   end
+
+  def render("versions.json", %{versions: versions}),
+    do: render_many(versions, __MODULE__, "version.json", as: :version)
 
   def render("show.json", %{version: version}) do
     %{
@@ -31,7 +32,5 @@ defmodule WraftDocWeb.Api.V1.InstanceVersionView do
     }
   end
 
-  def render("line.json", %{line: line}) do
-    line
-  end
+  def render("line.json", %{line: line}), do: line
 end

@@ -2537,7 +2537,7 @@ defmodule WraftDoc.DocumentTest do
       state = insert(:state, flow: flow, organisation: organisation)
       instance = insert(:instance, creator: user, content_type: content_type, state: state)
 
-      i_instance = Documents.show_instance(instance.id, user, %{})
+      i_instance = Documents.show_instance(instance.id, user)
       assert i_instance.instance_id == instance.instance_id
       assert i_instance.raw == instance.raw
 

@@ -715,24 +715,17 @@ defmodule WraftDoc.Documents do
   Show an instance.
   """
   # TODO - improve tests
-  @spec show_instance(binary(), User.t(), map()) ::
+  @spec show_instance(binary(), User.t()) ::
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
-  def show_instance(instance_id, user, params) do
-    version_type =
-      params
-      |> Map.get("version_type", :build)
-      |> case do
-        "save" -> :save
-        _ -> :build
-      end
-
+  def show_instance(instance_id, user) do
     # Preload the build versions of the instance
     versions_preload_query =
       from(version in Version,
         where:
           version.content_id == ^instance_id and
-            version.type == ^version_type,
-        preload: [:author]
+            version.type == :build,
+        preload: [:author],
+        order_by: [desc: version.inserted_at]
       )
 
     with %Instance{} = instance <- get_instance(instance_id, user) do
@@ -970,6 +963,27 @@ defmodule WraftDoc.Documents do
       _ ->
         nil
     end
+  end
+
+  @doc """
+  List versions of an instance.
+  """
+  @spec list_versions(Instance.t(), map()) :: [Version.t()]
+  def list_versions(%{id: instance_id}, params) do
+    version_type =
+      params
+      |> Map.get("type", :build)
+      |> case do
+        "build" -> :build
+        _ -> :save
+      end
+
+    Version
+    |> where([v], v.content_id == ^instance_id)
+    |> where([v], v.type == ^version_type)
+    |> preload([v], [:author])
+    |> order_by([v], desc: v.inserted_at)
+    |> Repo.all()
   end
 
   # Checks whether the raw and serialzed of old and new instances are same or not.

@@ -59,14 +59,16 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             updated_at(:string, "When the version was last updated", format: "ISO-8601")
           end
 
-          example(%{
-            id: "123456",
-            version_number: 2,
-            type: "content",
-            current_version: true,
-            inserted_at: "2023-01-01T12:00:00Z",
-            updated_at: "2023-01-02T14:30:00Z"
-          })
+          example([
+            %{
+              id: "123456",
+              version_number: 2,
+              type: "content",
+              current_version: true,
+              inserted_at: "2023-01-01T12:00:00Z",
+              updated_at: "2023-01-02T14:30:00Z"
+            }
+          ])
         end,
       RestoreContent:
         swagger_schema do
@@ -752,21 +754,21 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   # Guest user
-  def show(conn, %{"id" => document_id, "auth_type" => "guest"} = params) do
+  def show(conn, %{"id" => document_id, "auth_type" => "guest"}) do
     current_user = conn.assigns.current_user
 
     with true <- Documents.has_access?(current_user, document_id),
-         %Instance{} = instance <- Documents.show_instance(document_id, current_user, params) do
+         %Instance{} = instance <- Documents.show_instance(document_id, current_user) do
       render(conn, "show.json", instance: instance)
     end
   end
 
-  def show(conn, %{"id" => instance_id} = params) do
+  def show(conn, %{"id" => instance_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.show_instance(instance_id, current_user, params) do
+    with %Instance{} = instance <- Documents.show_instance(instance_id, current_user) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -861,13 +863,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
-  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Documents.get_instance(id, current_user),
          _ <- Documents.delete_uploaded_docs(current_user, instance),
-         {:ok, %Instance{id: instance_id}} <- Documents.delete_instance(instance) do
+         {:ok, %Instance{id: instance_id} = instance} <- Documents.delete_instance(instance) do
       Typesense.delete_document(instance_id, "content")
       render(conn, "instance.json", instance: instance)
     end
@@ -897,7 +899,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
     start_time = Timex.now()
 
-    case Documents.show_instance(instance_id, current_user, params) do
+    case Documents.show_instance(instance_id, current_user) do
       %Instance{content_type: %{layout: layout} = content_type} = instance ->
         with %Layout{} = layout <- Assets.preload_asset(layout),
              :ok <- Frames.check_frame_mapping(content_type),
@@ -1093,8 +1095,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
-  @spec approve(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def approve(conn, %{"id" => id} = params) do
+  @spec approve(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def approve(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
     with %Instance{
@@ -1102,7 +1104,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
              organisation: %Organisation{} = organisation
            },
            state: state
-         } = instance <- Documents.show_instance(id, current_user, params),
+         } = instance <- Documents.show_instance(id, current_user),
          %Instance{} = instance <- Documents.approve_instance(current_user, instance) do
       Task.start(fn -> Reminders.maybe_create_auto_reminders(current_user, instance) end)
 
@@ -1137,11 +1139,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
-  @spec reject(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def reject(conn, %{"id" => id} = params) do
+  @spec reject(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def reject(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.show_instance(id, current_user, params),
+    with %Instance{} = instance <- Documents.show_instance(id, current_user),
          %Instance{} = instance <- Documents.reject_instance(current_user, instance) do
       render(conn, "approve_or_reject.json", %{instance: instance})
     end
@@ -1165,11 +1167,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec send_email(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec send_email(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def send_email(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.show_instance(id, current_user, params),
+    with %Instance{} = instance <- Documents.show_instance(id, current_user),
          {:ok, _} <- Documents.send_document_email(instance, params) do
       render(conn, "email.json", %{info: "Email sent successfully"})
     end
@@ -1292,10 +1294,10 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec restore(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def restore(conn, %{"id" => id, "version_id" => version_id} = params) do
+  def restore(conn, %{"id" => id, "version_id" => version_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.show_instance(id, current_user, params),
+    with %Instance{} = instance <- Documents.show_instance(id, current_user),
          %Instance{} = instance <- Documents.restore_version(instance, version_id) do
       render(conn, "restore.json", content: instance)
     end
@@ -1327,6 +1329,37 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       conn
       |> put_view(WraftDocWeb.Api.V1.InstanceVersionView)
       |> render("version.json", version: version)
+    end
+  end
+
+  @doc """
+  Lists all versions of an instance.
+  """
+  @spec index_versions(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  swagger_path :index_versions do
+    get("contents/{id}/versions")
+    summary("List all versions")
+    description("Lists all versions of an instance")
+    produces("application/json")
+
+    parameters do
+      id(:path, :string, "Instance ID", required: true)
+      type(:query, :string, "Type of versions to list", required: false)
+    end
+
+    response(200, "Versions listed successfully", Schema.ref(:VersionResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Instance not found", Schema.ref(:Error))
+  end
+
+  def index_versions(conn, %{"id" => id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Documents.show_instance(id, current_user),
+         versions <- Documents.list_versions(instance, params) do
+      conn
+      |> put_view(WraftDocWeb.Api.V1.InstanceVersionView)
+      |> render("versions.json", versions: versions)
     end
   end
 end
