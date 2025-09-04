@@ -938,6 +938,10 @@ defmodule WraftDoc.Documents do
         |> Version.changeset(%{current_version: true})
         |> Repo.update()
 
+        WraftDoc.YDocuments
+        |> where([d], d.content_id == ^instance.id)
+        |> Repo.delete_all()
+
         update_instance(instance, %{raw: raw, serialized: serialized})
 
       _ ->
