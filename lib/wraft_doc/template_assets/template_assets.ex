@@ -205,17 +205,18 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec validate_required_items(list(), list()) :: :ok | list()
   def validate_required_items(contained_items, opts) do
-    optional_ids = %{
-      "layout" => Map.get(opts, :layout_id),
-      "theme" => Map.get(opts, :theme_id),
-      "flow" => Map.get(opts, :flow_id),
-      "content_type" => Map.get(opts, :content_type_id),
-      "frame" => Map.get(opts, :frame_id)
-    }
+    optional_ids = [
+      Keyword.get(opts, :layout_id),
+      Keyword.get(opts, :theme_id),
+      Keyword.get(opts, :flow_id),
+      Keyword.get(opts, :content_type_id),
+      Keyword.get(opts, :frame_id)
+    ]
 
     (@required_items -- ["frame"])
     |> Enum.filter(fn key ->
-      key not in contained_items && is_nil(optional_ids[key])
+      key not in contained_items &&
+        is_nil(Enum.at(optional_ids, Enum.find_index(@required_items, &(&1 == key))))
     end)
     |> case do
       [] ->
@@ -376,7 +377,7 @@ defmodule WraftDoc.TemplateAssets do
     |> add_theme_step(template_map, current_user, downloaded_file, entries)
     |> add_flow_step(template_map, current_user)
     |> add_frame_step(template_map, current_user, downloaded_file, entries)
-    |> add_layout_step(template_map, current_user, opts)
+    |> add_layout_step(template_map, current_user, downloaded_file, entries, opts)
     |> add_variant_step(template_map, current_user, opts)
     |> add_data_template_step(template_map, current_user, downloaded_file, opts)
     |> Repo.transaction()
@@ -434,24 +435,22 @@ defmodule WraftDoc.TemplateAssets do
            "packageContents" => %{"assets" => assets}
          },
          current_user,
+         downloaded_file,
+         entries,
          opts
        ) do
     Multi.run(multi, :layout, fn _repo, changes ->
-      frame_id = Map.get(opts, :frame_id, nil)
+      frame_id = Keyword.get(opts, :frame_id, nil)
       frame = Map.get(changes, :frame, nil)
 
       layout
       |> update_conflicting_name(Layout, current_user)
       |> Map.merge(%{"file_path" => get_pdf_asset_path(assets, "layout")})
-      |> prepare_layout(
-        current_user,
-        frame_id || (frame && frame.id),
-        opts
-      )
+      |> prepare_layout(downloaded_file, current_user, entries, frame_id || (frame && frame.id))
     end)
   end
 
-  defp add_layout_step(multi, _template_map, _current_user, _opts),
+  defp add_layout_step(multi, _template_map, _current_user, _downloaded_file, _entries, _opts),
     do: multi
 
   defp add_frame_step(
@@ -565,9 +564,9 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp add_variant_step(multi, %{"items" => %{"variant" => variant}}, current_user, opts) do
-    theme_id = Map.get(opts, :theme_id, nil)
-    layout_id = Map.get(opts, :layout_id, nil)
-    flow_id = Map.get(opts, :flow_id, nil)
+    theme_id = Keyword.get(opts, :theme_id, nil)
+    layout_id = Keyword.get(opts, :layout_id, nil)
+    flow_id = Keyword.get(opts, :flow_id, nil)
 
     Multi.run(multi, :content_type, fn _repo, changes ->
       theme = Map.get(changes, :theme, nil)
@@ -747,17 +746,27 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp prepare_layout(
-         %{"engine" => engine, "file_path" => _file_path} = layout,
+         %{"engine" => engine, "file_path" => file_path} = layouts,
+         downloaded_file,
          current_user,
-         frame_id,
-         opts
+         entries,
+         frame_id
        ) do
     with %Engine{id: engine_id} <- get_engine(engine),
-         params <- prepare_layout_attrs(layout, engine_id, frame_id, opts),
+         asset_params <-
+           prepare_layout_assets_params(entries, file_path, downloaded_file),
+         params <- prepare_layout_attrs(layouts, engine_id, frame_id),
          %Engine{} = engine <- Frames.get_engine_by_frame_type(params),
-         {:ok, %{layout: layout}} <- Layouts.create_layout(current_user, engine, params) do
+         {:ok, %{layout: layout}} <-
+           Layouts.create_layout(current_user, engine, Map.merge(params, asset_params)) do
       {:ok, layout}
     end
+  end
+
+  defp prepare_layout_assets_params(entries, file_path, downloaded_file) do
+    entries
+    |> get_layout_file_entry(file_path)
+    |> extract_and_prepare_layout_asset(downloaded_file)
   end
 
   defp get_pdf_asset_path(assets, type) do
@@ -766,67 +775,50 @@ defmodule WraftDoc.TemplateAssets do
     end)["path"]
   end
 
-  defp prepare_layout_attrs(layout, engine_id, frame_id, opts) do
-    file = process_file_upload(opts["file"])
-
+  defp prepare_layout_attrs(layout, engine_id, frame_id) do
     %{
-      "asset_name" => layout["asset_name"] || layout["name"],
       "name" => layout["name"],
       "meta" => layout["meta"],
       "description" => layout["description"],
       "slug" => layout["slug"],
-      "file" => file,
       "engine_id" => engine_id,
-      "type" => "layout",
-      "unit" => "cm",
-      "frame_id" => frame_id,
       "width" => 40,
-      "height" => 40
+      "height" => 40,
+      "unit" => "cm",
+      "frame_id" => frame_id
     }
   end
 
-  defp process_file_upload(%Plug.Upload{
-         path: zip_path,
-         filename: filename,
-         content_type: "application/zip"
-       }) do
-    extract_dir = Path.join(System.tmp_dir!(), "unzipped_#{System.unique_integer()}")
-    :ok = File.mkdir_p(extract_dir)
+  defp get_layout_file_entry(entries, file_path) do
+    Enum.find(entries, fn entry ->
+      entry.file_name == file_path
+    end)
+  end
 
-    {:ok, _files} = :zip.unzip(String.to_charlist(zip_path), cwd: String.to_charlist(extract_dir))
+  defp extract_and_prepare_layout_asset(entry, downloaded_zip_file) do
+    with {:ok, content} <- FileHelper.extract_file_content(downloaded_zip_file, entry.file_name),
+         {:ok, temp_file_path} <- write_temp_file(content) do
+      prepare_layout_asset_params(entry, temp_file_path)
+    else
+      error ->
+        Logger.error(
+          "Failed to process entry: #{inspect(entry.file_name)}. Error: #{inspect(error)}"
+        )
 
-    pdf_path = find_pdf_in_assets(extract_dir)
-
-    case pdf_path do
-      nil ->
-        File.rm_rf!(extract_dir)
-        raise "No PDF found in assets folder of #{filename}"
-
-      path ->
-        tmp_pdf = Path.join(System.tmp_dir!(), Path.basename(path))
-        File.cp!(path, tmp_pdf)
-
-        File.rm_rf!(extract_dir)
-
-        %Plug.Upload{
-          path: tmp_pdf,
-          filename: Path.basename(path),
-          content_type: "application/pdf"
-        }
+        nil
     end
   end
 
-  defp process_file_upload(other), do: other
-
-  defp find_pdf_in_assets(extract_dir) do
-    extract_dir
-    |> Path.join("assets")
-    |> File.ls!()
-    |> Enum.find_value(fn file ->
-      if String.ends_with?(file, ".pdf") do
-        Path.join([extract_dir, "assets", file])
-      end
-    end)
+  defp prepare_layout_asset_params(entry, temp_file_path) do
+    %{
+      "asset_name" => Path.basename(entry.file_name),
+      "type" => "layout",
+      "file" => %Plug.Upload{
+        filename: Path.basename(entry.file_name),
+        content_type: get_file_type(entry.file_name),
+        path: temp_file_path
+      }
+    }
   end
 
   defp prepare_content_type(variant, current_user, theme_id, layout_id, flow_id) do

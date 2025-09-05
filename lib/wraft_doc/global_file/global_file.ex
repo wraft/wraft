@@ -29,9 +29,9 @@ defmodule WraftDoc.GlobalFile do
     with :ok <- TemplateAssets.validate_template_asset_file(file),
          {:ok, params, file_binary} <-
            TemplateAssets.process_template_asset(params, :file, file),
-         _options <- TemplateAssets.format_opts(params),
+         options <- TemplateAssets.format_opts(params),
          {:ok, result} <-
-           TemplateAssets.import_template(current_user, file_binary, params) do
+           TemplateAssets.import_template(current_user, file_binary, options) do
       {:ok,
        %{
          view: TemplateAssetView,
