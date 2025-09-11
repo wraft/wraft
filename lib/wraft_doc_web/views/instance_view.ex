@@ -42,7 +42,6 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       meta: instance.meta,
       instance_id: instance.instance_id,
       approval_status: instance.approval_status,
-      raw: instance.raw,
       serialized: instance.serialized,
       build: instance.build,
       signed_doc_url: instance.signed_doc_url,
@@ -196,6 +195,9 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
   end
 
   def render("contract_chart.json", %{contract_list: contract_list}), do: contract_list
+
+  def render("content_type.json", %{content_type: content_type}),
+    do: render_one(content_type, ContentTypeView, "show.json", as: :content_type)
 
   def generate_url(%{profile_pic: pic} = profile) do
     WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)

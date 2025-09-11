@@ -285,6 +285,9 @@ defmodule WraftDocWeb.Router do
 
       # Instance show, update and delete
       resources("/contents", InstanceController, only: [:show, :update, :delete])
+      get("/contents/:id/basic", InstanceController, :show_basic)
+      get("/contents/:id/content_type", InstanceController, :get_instance_content_type)
+
       # Instance meta update
       put("/contents/:id/meta", InstanceController, :update_meta)
       # Instance state update
