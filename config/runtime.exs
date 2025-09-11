@@ -23,10 +23,15 @@ if config_env() == :prod do
   maybe_ipv6 = if System.get_env("ECTO_IPV6"), do: [:inet6], else: []
 
   config :wraft_doc, WraftDoc.Repo,
-    ssl: true,
-    ssl_opts: [verify: :verify_none],
+    ssl: [
+      verify: :verify_none,
+      server_name_indication: :disable,
+      reuse_sessions: false
+    ],
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    pool_timeout: String.to_integer(System.get_env("POOL_TIMEOUT") || "15000"),
+    timeout: String.to_integer(System.get_env("DB_TIMEOUT") || "15000"),
     socket_options: maybe_ipv6
 
   # The secret key base is used to sign/encrypt cookies and other secrets.

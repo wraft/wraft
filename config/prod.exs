@@ -39,17 +39,6 @@ config :logger,
   level: :info,
   backends: [:console, Sentry.LoggerBackend]
 
-# config :wraft_doc, WraftDoc.Repo,
-#   adapter: Ecto.Adapters.Postgres,
-#   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-#   ssl: true,
-#   url: System.get_env("DATABASE_URL")
-
-config :wraft_doc, WraftDoc.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-  ssl: true,
-  url: System.get_env("DATABASE_URL")
 
 config :wraft_doc,
   permissions_file: "repo/data/rbac/permissions.csv",
