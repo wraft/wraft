@@ -42,9 +42,9 @@ config :logger,
 
 config :wraft_doc,
   permissions_file: "repo/data/rbac/permissions.csv",
-  theme_folder: File.cwd!() <> "/app/priv/wraft_files/Roboto",
-  layout_file: File.cwd!() <> "/app/priv/wraft_files/letterhead.pdf",
-  default_template_files: File.cwd!() <> "/app/priv/wraft_files/templates"
+  theme_folder: File.cwd!() <> "/priv/wraft_files/Roboto",
+  layout_file: File.cwd!() <> "/priv/wraft_files/letterhead.pdf",
+  default_template_files: File.cwd!() <> "/priv/wraft_files/templates"
 
 # ## SSL Support
 #
