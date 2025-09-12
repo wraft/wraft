@@ -8,6 +8,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     index: "document:show",
     all_contents: "document:show",
     show: "document:show",
+    show_basic: "document:show",
+    get_instance_content_type: "document:show",
     update: "document:manage",
     delete: "document:delete",
     build: "document:manage",
@@ -48,7 +50,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           properties do
             id(:string, "The ID of the content", required: true)
             instance_id(:string, "A unique ID generated for the content")
-            raw(:string, "Raw data of the content")
             serialized(:map, "Serialized data of the content")
             build(:string, "URL of the build document")
             inserted_at(:string, "When was the engine inserted", format: "ISO-8601")
@@ -723,6 +724,57 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @doc """
+  Get basic instance information without related data.
+  """
+  swagger_path :show_basic do
+    get("/contents/{id}/basic")
+    summary("Get basic instance information")
+    description("API to get basic instance information without related data")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def show_basic(conn, %{"id" => instance_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Documents.get_instance_basic(instance_id, current_user) do
+      render(conn, "instance.json", instance: instance)
+    end
+  end
+
+  @doc """
+  Get content type of an instance.
+  """
+  swagger_path :get_instance_content_type do
+    get("/contents/{id}/content_type")
+    summary("Get content type of an instance")
+    description("API to get only the content type of an instance")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContentType))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def get_instance_content_type(conn, %{"id" => instance_id}) do
+    current_user = conn.assigns.current_user
+
+    with %ContentType{} = content_type <-
+           Documents.get_instance_content_type(instance_id, current_user) do
+      render(conn, "content_type.json", content_type: content_type)
+    end
+  end
+
+  @doc """
   Update an instance.
   """
   swagger_path :update do
@@ -818,7 +870,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Documents.get_instance(id, current_user),
          _ <- Documents.delete_uploaded_docs(current_user, instance),
-         {:ok, %Instance{id: instance_id}} <- Documents.delete_instance(instance) do
+         {:ok, %Instance{id: instance_id} = instance} <- Documents.delete_instance(instance) do
       Typesense.delete_document(instance_id, "content")
       render(conn, "instance.json", instance: instance)
     end

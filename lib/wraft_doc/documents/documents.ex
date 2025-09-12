@@ -12,6 +12,7 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Account.User
   alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
+  alias WraftDoc.ContentTypes
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.DataTemplates.DataTemplate
@@ -225,7 +226,7 @@ defmodule WraftDoc.Documents do
   @doc """
     Update document meta data.
   """
-  @spec update_instance(Instance.t(), map) ::
+  @spec update_meta(Instance.t(), map()) ::
           {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
   def update_meta(%Instance{meta: %{"type" => type} = meta} = instance, params) do
     params
@@ -710,6 +711,57 @@ defmodule WraftDoc.Documents do
 
   def get_instance(_, %{current_org_id: _}), do: {:error, :invalid_id}
   def get_instance(_, _), do: {:error, :fake}
+
+  @doc """
+  Gets a instance with only basic fields.
+
+  ## Example
+
+      iex> get_instance_basic(123)
+      %Instance{}
+
+      iex> get_instance_basic(456)
+      nil
+
+  """
+  def get_instance_basic(<<_::288>> = id, %{current_org_id: org_id}) do
+    Instance
+    |> where([i], i.id == ^id)
+    |> where([i], i.organisation_id == ^org_id)
+    |> Repo.one()
+    |> case do
+      %Instance{} = instance -> Repo.preload(instance, :vendor)
+      _ -> nil
+    end
+  end
+
+  def get_instance_basic(_, %{current_org_id: _}), do: nil
+
+  def get_instance_basic(_, _), do: nil
+
+  @doc """
+  Gets only the content_type of an instance.
+
+  ## Example
+
+      iex> get_instance_content_type(123)
+      %ContentType{}
+
+      iex> get_instance_content_type(456)
+      nil
+
+  """
+  def get_instance_content_type(<<_::288>> = id, %{current_org_id: org_id} = current_user) do
+    Instance
+    |> where([i], i.id == ^id and i.organisation_id == ^org_id)
+    |> select([i], i.content_type_id)
+    |> Repo.one()
+    |> then(&ContentTypes.get_content_type(current_user, &1))
+  end
+
+  def get_instance_content_type(_, %{current_org_id: _}), do: nil
+
+  def get_instance_content_type(_, _), do: nil
 
   @doc """
   Show an instance.
@@ -2406,11 +2458,22 @@ defmodule WraftDoc.Documents do
         %Instance{
           id: instance_id,
           serialized: %{"title" => document_title},
-          approval_status: approval_status
+          approval_status: approval_status,
+          content_type: content_type
         } = _instance,
         %Organisation{id: current_org_id, name: organisation_name} = _organisation,
         state
       ) do
+    state =
+      if state == nil do
+        Flow
+        |> Repo.get(content_type.flow_id)
+        |> Enterprise.initial_state()
+        |> Repo.preload(:approvers)
+      else
+        state
+      end
+
     next_state = next_state(state)
     document_url = URI.encode("#{System.get_env("FRONTEND_URL")}/documents/#{instance_id}")
 
@@ -2443,7 +2506,7 @@ defmodule WraftDoc.Documents do
         &Delivery.dispatch(current_user, "document.pending_approvals", %{
           organisation_name: organisation_name,
           document_title: document_title,
-          state_name: state.state,
+          state_name: next_state.state,
           document_url: document_url,
           channel: :user_notification,
           channel_id: &1.id,
