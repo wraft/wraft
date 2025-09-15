@@ -670,7 +670,7 @@ defmodule WraftDoc.TemplateAssets do
 
   defp get_theme_font_file_entries(entries) do
     Enum.filter(entries, fn entry ->
-      case Regex.run(~r/^theme\/.*-(?<style>\w+)\.(otf|ttf)$/i, entry.file_name) do
+      case Regex.run(~r/^fonts\/.*-(?<style>\w+)\.(otf|ttf)$/i, entry.file_name) do
         [_, style, _] when style in @font_style_name -> true
         _ -> false
       end
@@ -880,18 +880,15 @@ defmodule WraftDoc.TemplateAssets do
 
   defp prepare_data_template_attrs(template_map, downloaded_file, content_type_id) do
     case get_data_template_prosemirror(downloaded_file) do
-      {:ok, serialized_prosemirror_data} ->
-        markdown_data =
-          serialized_prosemirror_data
-          |> Jason.decode!()
-          |> ProsemirrorToMarkdown.convert()
+      {:ok, serialized_prosemirror_doc} ->
+        markdown_data = ProsemirrorToMarkdown.convert(serialized_prosemirror_doc)
 
         %{
           "c_type_id" => content_type_id,
           "title" => template_map["title"],
           "title_template" => template_map["title_template"],
           "data" => markdown_data,
-          "serialized" => %{"data" => serialized_prosemirror_data}
+          "serialized" => %{"data" => serialized_prosemirror_doc}
         }
 
       {:error, error} ->
@@ -914,8 +911,10 @@ defmodule WraftDoc.TemplateAssets do
   defp get_data_template_prosemirror(downloaded_file) do
     with {:ok, template_json} <-
            FileHelper.extract_file_content(downloaded_file, "template.json"),
-         serialized_prosemirror <- Jason.decode!(template_json) do
-      {:ok, serialized_prosemirror["data"]}
+         {:ok, serialized_prosemirror} <- Jason.decode(template_json) do
+      {:ok, serialized_prosemirror}
+    else
+      error -> error
     end
   end
 
@@ -1240,7 +1239,7 @@ defmodule WraftDoc.TemplateAssets do
             %{
               "fontName" => asset.name,
               "fontWeight" => "regular",
-              "filePath" => download_file(asset.id, current_user, file_path, "otf", "fonts")
+              "path" => download_file(asset.id, current_user, file_path, "otf", "fonts")
             }
           end)
       },
@@ -1266,13 +1265,13 @@ defmodule WraftDoc.TemplateAssets do
         Enum.map(theme.assets, fn asset ->
           %{
             "fontName" => asset.name,
-            "filePath" => download_file(asset.id, current_user, file_path, "otf", "fonts")
+            "path" => download_file(asset.id, current_user, file_path, "otf", "fonts")
           }
         end),
-      "color" => %{
-        "body_color" => theme.body_color,
-        "primary_color" => theme.primary_color,
-        "secondary_color" => theme.secondary_color
+      "colors" => %{
+        "bodyColor" => theme.body_color,
+        "primaryColor" => theme.primary_color,
+        "secondaryColor" => theme.secondary_color
       }
     }
   end
@@ -1285,7 +1284,16 @@ defmodule WraftDoc.TemplateAssets do
       "name" => layout.name,
       "slug" => "#{layout.slug}",
       "slug_file" => download_file(asset.id, current_user, file_path, "pdf", "assets"),
-      "meta" => "fields",
+      "meta" => %{
+        "standard_size" => "a4",
+        "fields" => [],
+        "margin" => %{
+          "bottom" => "2.54",
+          "left" => "2.54",
+          "right" => "2.54",
+          "top" => "2.54"
+        }
+      },
       "description" => layout.description,
       "engine" => "pandoc/latex"
     }
@@ -1304,7 +1312,7 @@ defmodule WraftDoc.TemplateAssets do
           %{
             "name" => field.name,
             "description" => field.description,
-            "type" => field.field_type.name
+            "type" => String.downcase(field.field_type.name)
           }
         end)
     }

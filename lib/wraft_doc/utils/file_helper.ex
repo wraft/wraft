@@ -124,9 +124,7 @@ defmodule WraftDoc.Utils.FileHelper do
   def get_allowed_files_from_wraft_json(%{
         "packageContents" => %{"rootFiles" => root_files, "assets" => assets, "fonts" => fonts}
       }) do
-    [root_files, assets, fonts]
-    |> Enum.map(&get_paths_from_section/1)
-    |> List.flatten()
+    Enum.flat_map([root_files, assets, fonts], &get_paths_from_section/1)
   end
 
   defp get_paths_from_section(section) when is_list(section),
