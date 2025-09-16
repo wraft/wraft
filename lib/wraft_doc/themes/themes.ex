@@ -177,24 +177,43 @@ defmodule WraftDoc.Themes do
   end
 
   @spec get_theme_details(Theme.t(), String.t()) :: map()
-  def get_theme_details(%Theme{assets: [%{file: %{file_name: file_name}} | _]} = theme, mkdir) do
+  def get_theme_details(%Theme{} = theme, mkdir),
+    do:
+      Map.merge(
+        %{
+          body_color: theme.body_color,
+          primary_color: theme.primary_color,
+          secondary_color: theme.secondary_color,
+          typescale: Jason.encode!(theme.typescale)
+        },
+        get_font_details(theme, mkdir)
+      )
+
+  defp get_font_details(%Theme{assets: [%{file: %{file_name: file_name}} | _]} = theme, mkdir) do
     [font_name, _, file_type] = String.split(file_name, ~r/[-.]/)
 
-    {:ok,
-     %{
-       body_color: theme.body_color,
-       primary_color: theme.primary_color,
-       secondary_color: theme.secondary_color,
-       typescale: Jason.encode!(theme.typescale),
-       base_font_name: get_base_font_name(font_name),
-       font_name: "#{font_name}-Regular.#{file_type}",
-       font_options: font_options(theme, mkdir)
-     }}
+    %{
+      base_font_name: get_base_font_name(font_name),
+      font_name: "#{font_name}-Regular.#{file_type}",
+      font_options: font_options(theme, mkdir)
+    }
   end
 
-  def get_theme_details(_, _), do: {"Font files not found.", 1099}
+  defp get_font_details(_, mkdir) do
+    File.cp(File.cwd!() <> "/priv/wraft_files/Roboto/.", mkdir <> "/fonts")
 
-  def font_options(%Theme{organisation_id: org_id} = theme, mkdir) do
+    %{
+      base_font_name: "Roboto",
+      font_name: "Roboto-Regular.ttf",
+      font_options: [
+        "ItalicFont=Roboto-Italic.ttf",
+        "BoldItalicFont=Roboto-BoldItalic.ttf",
+        "BoldFont=Roboto-Bold.ttf"
+      ]
+    }
+  end
+
+  defp font_options(%Theme{organisation_id: org_id} = theme, mkdir) do
     theme.assets
     |> Stream.map(fn asset ->
       file_name = asset.file.file_name
@@ -217,11 +236,11 @@ defmodule WraftDoc.Themes do
     |> Enum.reject(&(&1 == ""))
   end
 
-  defp get_base_font_name(font_name) do
-    font_name
-    |> String.replace(~r/([A-Z]+)([A-Z][a-z])/, "\\1 \\2")
-    |> String.replace(~r/([a-z])([A-Z])/, "\\1 \\2")
-  end
+  defp get_base_font_name(font_name),
+    do:
+      font_name
+      |> String.replace(~r/([A-Z]+)([A-Z][a-z])/, "\\1 \\2")
+      |> String.replace(~r/([a-z])([A-Z])/, "\\1 \\2")
 
   def font_option_header(header, font_options) do
     Enum.reduce(font_options, header, fn font_option, acc ->

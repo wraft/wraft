@@ -1258,28 +1258,29 @@ defmodule WraftDoc.Documents do
         find_header_values(x, instance.serialized, acc)
       end)
 
-    with {:ok, theme} <- Themes.get_theme_details(theme, base_content_dir),
-         {:ok, content} <-
-           prepare_markdown(
-             instance,
-             layout,
-             header,
-             base_content_dir,
-             theme,
-             task
-           ) do
-      File.write("#{base_content_dir}/content.md", content)
+    theme_details = Themes.get_theme_details(theme, base_content_dir)
 
-      generate_field_json(instance, layout, base_content_dir)
+    content =
+      prepare_markdown(
+        instance,
+        layout,
+        header,
+        base_content_dir,
+        theme_details,
+        task
+      )
 
-      pdf_file = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
+    File.write("#{base_content_dir}/content.md", content)
 
-      pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir, layout)
+    generate_field_json(instance, layout, base_content_dir)
 
-      "pandoc"
-      |> System.cmd(pandoc_commands, stderr_to_stdout: true)
-      |> upload_file_and_delete_local_copy(base_content_dir, pdf_file, opts)
-    end
+    pdf_file = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
+
+    pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir, layout)
+
+    "pandoc"
+    |> System.cmd(pandoc_commands, stderr_to_stdout: true)
+    |> upload_file_and_delete_local_copy(base_content_dir, pdf_file, opts)
   end
 
   defp generate_field_json(_, %Layout{frame: nil}, _), do: nil
@@ -1351,11 +1352,10 @@ defmodule WraftDoc.Documents do
       |> Jason.decode!()
       |> ProsemirrorToMarkdown.convert()
 
-    {:ok,
-     """
-     #{header}
-     #{raw}
-     """}
+    """
+    #{header}
+    #{raw}
+    """
   end
 
   defp add_margin(header, nil), do: header
