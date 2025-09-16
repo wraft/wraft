@@ -1321,48 +1321,41 @@ defmodule WraftDoc.Documents do
          theme,
          task
        ) do
-    header
-    |> Assets.find_asset_header_values(layout, instance)
-    |> case do
-      {:ok, header} ->
-        qr_code = Task.await(task)
-        page_title = instance.serialized["title"]
+    qr_code = Task.await(task)
+    page_title = instance.serialized["title"]
 
-        header =
-          header
-          |> concat_strings("qrcode: #{qr_code} \n")
-          |> concat_strings("path: #{mkdir}\n")
-          |> concat_strings("title: #{page_title}\n")
-          |> concat_strings("organisation_name: #{organisation_name}\n")
-          |> concat_strings("author_name: #{name}\n")
-          |> concat_strings("author_email: #{email}\n")
-          |> concat_strings("id: #{instance_id}\n")
-          |> concat_strings("mainfont: #{theme.font_name}\n")
-          |> concat_strings("mainfont_base: #{theme.base_font_name}\n")
-          |> concat_strings("mainfontoptions:\n")
-          |> Themes.font_option_header(theme.font_options)
-          |> concat_strings("body_color: \"#{theme.body_color}\"\n")
-          |> concat_strings("primary_color: \"#{theme.primary_color}\"\n")
-          |> concat_strings("secondary_color: \"#{theme.secondary_color}\"\n")
-          |> concat_strings("typescale: #{theme.typescale}\n")
-          |> document_option_header(document_settings, slug)
-          |> add_margin(margin)
-          |> concat_strings("--- \n")
+    header =
+      header
+      |> Assets.find_asset_header_values(layout, instance)
+      |> concat_strings("qrcode: #{qr_code} \n")
+      |> concat_strings("path: #{mkdir}\n")
+      |> concat_strings("title: #{page_title}\n")
+      |> concat_strings("organisation_name: #{organisation_name}\n")
+      |> concat_strings("author_name: #{name}\n")
+      |> concat_strings("author_email: #{email}\n")
+      |> concat_strings("id: #{instance_id}\n")
+      |> concat_strings("mainfont: #{theme.font_name}\n")
+      |> concat_strings("mainfont_base: #{theme.base_font_name}\n")
+      |> concat_strings("mainfontoptions:\n")
+      |> Themes.font_option_header(theme.font_options)
+      |> concat_strings("body_color: \"#{theme.body_color}\"\n")
+      |> concat_strings("primary_color: \"#{theme.primary_color}\"\n")
+      |> concat_strings("secondary_color: \"#{theme.secondary_color}\"\n")
+      |> concat_strings("typescale: #{theme.typescale}\n")
+      |> document_option_header(document_settings, slug)
+      |> add_margin(margin)
+      |> concat_strings("--- \n")
 
-        raw =
-          instance.serialized["serialized"]
-          |> Jason.decode!()
-          |> ProsemirrorToMarkdown.convert()
+    raw =
+      instance.serialized["serialized"]
+      |> Jason.decode!()
+      |> ProsemirrorToMarkdown.convert()
 
-        {:ok,
-         """
-         #{header}
-         #{raw}
-         """}
-
-      error ->
-        error
-    end
+    {:ok,
+     """
+     #{header}
+     #{raw}
+     """}
   end
 
   defp add_margin(header, nil), do: header

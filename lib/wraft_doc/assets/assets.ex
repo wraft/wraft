@@ -276,17 +276,14 @@ defmodule WraftDoc.Assets do
 
     File.write!(asset_file_path, binary)
 
-    header =
-      if frame == nil do
-        Documents.concat_strings(acc, "letterhead: #{asset_file_path} \n")
-      else
-        acc
-      end
-
-    {:ok, header}
+    if frame == nil do
+      Documents.concat_strings(acc, "letterhead: #{asset_file_path} \n")
+    else
+      acc
+    end
   end
 
-  def find_asset_header_values(_, %Layout{}, _), do: {"Layout background not found.", 1099}
+  def find_asset_header_values(header, %Layout{}, _), do: header
 
   # TODO update preview.
   @doc """
