@@ -29,6 +29,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Documents
   alias WraftDoc.Documents.Charts
   alias WraftDoc.Documents.Instance
+  alias WraftDoc.Documents.Instance.Version
   alias WraftDoc.Documents.Reminders
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
@@ -521,6 +522,116 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               example: 7
             )
           end
+        end,
+      VersionComparison:
+        swagger_schema do
+          title("Version Comparison")
+          description("Comparison data between two versions")
+
+          properties do
+            version_1(:map, "Details of the first version for comparison", required: true)
+            version_2(:map, "Details of the second version for comparison", required: true)
+          end
+
+          example(%{
+            "version 1": %{
+              id: "ccd54c60-49eb-449b-825a-02c9fa5a88aa",
+              serialized: %{
+                body: "item 1\n\nitem 1\n\nitem 1...",
+                fields: "{\"name\":\"Faheem\",\"title\":\"Technical & Commercial Proposal\",...",
+                serialized: "{\"type\":\"doc\",\"content\":[...]}",
+                title: "Contract for [clientName]"
+              }
+            },
+            "version 2": %{
+              id: "bb195fc4-5bab-435e-8498-480a7d904c03",
+              serialized: %{
+                body: "item 1\n\nitem 1\n\nitem 1...",
+                fields: "{\"name\":\"Faheem\",\"title\":\"Technical & Commercial Proposal\",...",
+                serialized: "{\"type\":\"doc\",\"content\":[...]}",
+                title: "Contract for [clientName]"
+              }
+            }
+          })
+        end,
+      VersionResponse:
+        swagger_schema do
+          title("Version Response")
+          description("Response containing details of an updated version")
+
+          properties do
+            id(:string, "The ID of the version", required: true)
+            version_number(:integer, "Version number", required: true)
+            raw(:string, "Raw data of the version")
+            serialised(:map, "Serialized data of the version")
+            naration(:string, "Narration for the version")
+            author(:map, "Author of the version", required: true)
+            current_version(:boolean, "Whether this is the current version")
+            inserted_at(:string, "When the version was created", format: "ISO-8601")
+          end
+
+          example([
+            %{
+              id: "123456",
+              version_number: 2,
+              current_version: true,
+              inserted_at: "2023-01-01T12:00:00Z"
+            }
+          ])
+        end,
+      PaginatedVersionResponse:
+        swagger_schema do
+          title("Paginated Version Response")
+          description("Response containing a paginated list of versions")
+
+          properties do
+            entries(Schema.array(:VersionResponse), "List of versions", required: true)
+            page_number(:integer, "Current page number", required: true)
+            page_size(:integer, "Number of items per page", required: true)
+            total_entries(:integer, "Total number of versions", required: true)
+            total_pages(:integer, "Total number of pages", required: true)
+          end
+
+          example(%{
+            entries: [
+              %{
+                id: "123456",
+                version_number: 2,
+                current_version: true,
+                inserted_at: "2023-01-01T12:00:00Z"
+              },
+              %{
+                id: "789012",
+                version_number: 1,
+                current_version: false,
+                inserted_at: "2023-01-01T10:00:00Z"
+              }
+            ],
+            page_number: 1,
+            page_size: 10,
+            total_entries: 2,
+            total_pages: 1
+          })
+        end,
+      RestoreContent:
+        swagger_schema do
+          title("Restore Content")
+          description("Response after restoring an instance to a previous version")
+
+          properties do
+            info(:string, "Status message", required: true)
+            content(:map, "Restored instance details", required: true)
+          end
+
+          example(%{
+            info: "Instance version restored",
+            content: %{
+              id: "1232148nb3478",
+              name: "Sample Document",
+              state: "draft",
+              version: 2
+            }
+          })
         end
     }
   end
@@ -697,15 +808,16 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     parameters do
       id(:path, :string, "ID of the instance", required: true)
+      version_type(:query, :string, "Version type", required: false)
     end
 
     response(200, "Ok", Schema.ref(:ShowContent))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   # Guest user
-  def show(conn, %{"id" => document_id, "auth_type" => "guest"} = _params) do
+  def show(conn, %{"id" => document_id, "auth_type" => "guest"}) do
     current_user = conn.assigns.current_user
 
     with true <- Documents.has_access?(current_user, document_id),
@@ -812,13 +924,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
-  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Documents.get_instance(id, current_user),
          _ <- Documents.delete_uploaded_docs(current_user, instance),
-         {:ok, %Instance{id: instance_id}} <- Documents.delete_instance(instance) do
+         {:ok, %Instance{id: instance_id} = instance} <- Documents.delete_instance(instance) do
       Typesense.delete_document(instance_id, "content")
       render(conn, "instance.json", instance: instance)
     end
@@ -1044,7 +1156,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
-  @spec approve(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec approve(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def approve(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
@@ -1088,7 +1200,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
-  @spec reject(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec reject(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def reject(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
@@ -1116,7 +1228,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec send_email(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec send_email(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def send_email(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
@@ -1215,6 +1327,159 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with {:ok, contract_list} <- Charts.get_contract_chart(current_user, params) do
       render(conn, "contract_chart.json", contract_list: contract_list)
+    end
+  end
+
+  @doc """
+  Restores an instance to a specific version.
+
+  ## Parameters
+    - params: Map containing:
+      - id: The instance ID to be restored
+      - version_id: The version ID to restore the instance to
+  """
+  swagger_path :restore do
+    put("/contents/{id}/restore/{version_id}")
+    summary("Restore a specific version of an instance")
+    description("Restores a content instance to a previous version")
+    produces("application/json")
+
+    parameters do
+      id(:path, :string, "Instance ID", required: true)
+      version_id(:path, :string, "Version ID to restore", required: true)
+    end
+
+    response(200, "Instance version restored successfully", Schema.ref(:RestoreContent))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Instance or version not found", Schema.ref(:Error))
+  end
+
+  @spec restore(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def restore(conn, %{"id" => id, "version_id" => version_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Documents.show_instance(id, current_user),
+         %Instance{} = instance <- Documents.restore_version(instance, version_id) do
+      render(conn, "restore.json", content: instance)
+    end
+  end
+
+  @doc """
+  Updates a specific version of an instance.
+  """
+  @spec update_version(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  swagger_path :update_version do
+    put("/versions/{id}")
+    summary("Update a specific version")
+    description("Updates metadata or content of a specific version")
+    produces("application/json")
+
+    parameters do
+      id(:path, :string, "Version ID", required: true)
+      naration(:body, :string, "Narration for the version", required: false)
+    end
+
+    response(200, "Version updated successfully", Schema.ref(:VersionResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Version not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity - Validation errors", Schema.ref(:Error))
+  end
+
+  def update_version(conn, %{"id" => version_id} = params) do
+    with %Version{} = version <- Documents.update_version(version_id, params) do
+      conn
+      |> put_view(WraftDocWeb.Api.V1.InstanceVersionView)
+      |> render("version.json", version: version)
+    end
+  end
+
+  @doc """
+  Lists all versions of an instance.
+  """
+  @spec index_versions(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  swagger_path :index_versions do
+    get("/contents/{id}/versions")
+    summary("List all versions")
+    description("Lists all versions of an instance")
+    produces("application/json")
+
+    parameters do
+      id(:path, :string, "Instance ID", required: true)
+      type(:query, :string, "Type of versions to list")
+      page(:query, :string, "Page number")
+
+      sort(
+        :query,
+        :string,
+        "sort keys => updated_at, updated_at_desc, inserted_at, inserted_at_desc"
+      )
+    end
+
+    response(200, "Versions listed successfully", Schema.ref(:PaginatedVersionResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Instance not found", Schema.ref(:Error))
+  end
+
+  def index_versions(conn, %{"id" => id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Documents.show_instance(id, current_user),
+         %{
+           entries: versions,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Documents.list_versions(instance, params) do
+      conn
+      |> put_view(WraftDocWeb.Api.V1.InstanceVersionView)
+      |> render("versions.json",
+        versions: versions,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
+
+  @doc """
+  Compares two document versions.
+
+  This action allows comparison between two versions of a document to see differences
+  in content, fields, and other attributes.
+
+  ## Parameters
+    - conn: The connection struct
+    - params: Map containing:
+      - id1: The ID of the first version to compare
+      - id2: The ID of the second version to compare
+
+  ## Returns
+    - Renders "comparison.json" with the comparison data when successful
+    - Error responses when versions don't exist or comparison fails
+  """
+  @spec compare_versions(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  swagger_path :compare_versions do
+    get("/versions/{id1}/{id2}")
+    summary("Compare two document versions")
+    description("Compares two document versions to see the differences between them")
+    produces("application/json")
+
+    parameters do
+      id1(:path, :string, "First version ID to compare", required: true)
+      id2(:path, :string, "Second version ID to compare", required: true)
+    end
+
+    response(200, "Comparison performed successfully", Schema.ref(:VersionComparison))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "One or both versions not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity - Versions cannot be compared", Schema.ref(:Error))
+  end
+
+  def compare_versions(conn, %{"id1" => id1, "id2" => id2}) do
+    with {:ok, comparison} <- Documents.compare_versions(id1, id2) do
+      conn
+      |> put_view(WraftDocWeb.Api.V1.InstanceVersionView)
+      |> render("comparison.json", comparison: comparison)
     end
   end
 end

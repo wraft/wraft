@@ -237,7 +237,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @spec request_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def request_signature(
         conn,
-        %{"id" => document_id, "counterparty_id" => counter_party_id} = _params
+        %{"id" => document_id, "counterparty_id" => counter_party_id}
       ) do
     current_user = conn.assigns.current_user
 
@@ -352,7 +352,8 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   def get_document_signatures(conn, %{"id" => document_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{build: document_url} <- Documents.show_instance(document_id, current_user),
+    with %Instance{build: document_url} <-
+           Documents.show_instance(document_id, current_user),
          {:ok, signatures} <- Signatures.get_document_signatures(document_id) do
       render(conn, "signatures.json", signatures: signatures, document_url: document_url)
     end
@@ -377,7 +378,10 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec revoke_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def revoke_signature(conn, %{"id" => document_id, "counter_party_id" => counter_party_id}) do
+  def revoke_signature(
+        conn,
+        %{"id" => document_id, "counter_party_id" => counter_party_id}
+      ) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
@@ -407,7 +411,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec generate_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def generate_signature(conn, %{"id" => document_id} = _params) do
+  def generate_signature(conn, %{"id" => document_id}) do
     current_user = conn.assigns.current_user
 
     with %Instance{build: document_url} = instance <-
@@ -475,11 +479,14 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec assign_counter_party(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def assign_counter_party(conn, %{
-        "id" => document_id,
-        "signature_id" => signature_id,
-        "counterparty_id" => counter_party_id
-      }) do
+  def assign_counter_party(
+        conn,
+        %{
+          "id" => document_id,
+          "signature_id" => signature_id,
+          "counterparty_id" => counter_party_id
+        }
+      ) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),

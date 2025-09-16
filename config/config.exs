@@ -71,8 +71,8 @@ config :wraft_doc, Oban,
        {"0 0 * * *", WraftDoc.Workers.ReminderWorker, queue: :scheduled, tags: ["reminders"]},
        {"@weekly", WraftDoc.Workers.ScheduledWorker,
         queue: :scheduled,
-        tags: ["purge_deleted_records"],
-        args: %{"type" => "purge_deleted_records"}}
+        tags: ["hard_delete_organisation_records"],
+        args: %{"type" => "hard_delete_organisation_records"}}
      ]}
   ]
 

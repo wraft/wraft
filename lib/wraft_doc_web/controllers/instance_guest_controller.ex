@@ -288,7 +288,10 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   end
 
   @spec revoke_document_access(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def revoke_document_access(conn, %{"id" => document_id, "collaborator_id" => collaborator_id}) do
+  def revoke_document_access(
+        conn,
+        %{"id" => document_id, "collaborator_id" => collaborator_id}
+      ) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
@@ -382,7 +385,10 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   end
 
   @spec remove_counterparty(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def remove_counterparty(conn, %{"id" => document_id, "counterparty_id" => counterparty_id}) do
+  def remove_counterparty(
+        conn,
+        %{"id" => document_id, "counterparty_id" => counterparty_id}
+      ) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),

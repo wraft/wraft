@@ -69,7 +69,7 @@ defmodule WraftDoc.Documents do
 
     Logger.info("Creating initial version...")
 
-    insert_initial_version(Map.merge(params, %{"type" => "save"}))
+    insert_initial_version(Map.merge(params, %{"type" => "save", "current_version" => true}))
     insert_initial_version(Map.merge(params, %{"type" => "build"}))
 
     Logger.info("Initial version generated")
@@ -123,7 +123,7 @@ defmodule WraftDoc.Documents do
           from(version in Version,
             where: version.content_id == ^content.id and version.type == :build,
             order_by: [desc: version.inserted_at],
-            preload: [:author]
+            preload: [author: :profile]
           )
 
         Repo.preload(content, [
@@ -412,7 +412,7 @@ defmodule WraftDoc.Documents do
         |> Repo.preload([
           {:creator, :profile},
           {:content_type, :layout},
-          {:versions, :author},
+          {:versions, author: :profile},
           {:state, :approvers},
           :vendor
         ])
@@ -721,8 +721,11 @@ defmodule WraftDoc.Documents do
     # Preload the build versions of the instance
     versions_preload_query =
       from(version in Version,
-        where: version.content_id == ^instance_id and version.type == :build,
-        preload: [:author]
+        where:
+          version.content_id == ^instance_id and
+            version.type == :build,
+        preload: [{:author, :profile}],
+        order_by: [desc: version.inserted_at]
       )
 
     with %Instance{} = instance <- get_instance(instance_id, user) do
@@ -794,7 +797,8 @@ defmodule WraftDoc.Documents do
 
         Map.merge(instance, %{
           build: doc_url,
-          signed_doc_url: signed_doc_url
+          signed_doc_url: signed_doc_url,
+          versions: [List.first(build_versions)]
         })
     end
   end
@@ -821,7 +825,7 @@ defmodule WraftDoc.Documents do
         |> Repo.preload([
           {:creator, :profile},
           {:content_type, :layout},
-          {:versions, :author},
+          {:versions, author: :profile},
           {:instance_approval_systems, :approver},
           :vendor,
           state: [approval_system: [:post_state, :approver]]
@@ -851,6 +855,11 @@ defmodule WraftDoc.Documents do
       true ->
         params = create_version_params(new_instance, params, type)
 
+        Version
+        |> where([v], v.content_id == ^new_instance.id)
+        |> where([v], v.type == :save)
+        |> Repo.update_all(set: [current_version: false])
+
         current_user
         |> build_assoc(:instance_versions, content: new_instance)
         |> Version.changeset(params)
@@ -872,7 +881,7 @@ defmodule WraftDoc.Documents do
   defp get_last_version(_, _), do: nil
   # Create the params to create a new version.
   # @spec create_version_params(Instance.t(), map()) :: map
-  defp create_version_params(%Instance{id: id} = instance, _params, type)
+  defp create_version_params(%Instance{id: id} = instance, params, type)
        when type in [:save, :build] do
     query =
       from(v in Version,
@@ -893,22 +902,222 @@ defmodule WraftDoc.Documents do
           version_number + 1
       end
 
-    # TODO - add naration
-    # naration = params["naration"] || "Version-#{incremented_version / 10}"
-
     instance
     |> Map.from_struct()
-    |> Map.merge(%{version_number: incremented_version, type: type})
+    |> Map.merge(%{
+      version_number: incremented_version,
+      type: type,
+      naration: params["naration"],
+      current_version: true
+    })
   end
 
   defp create_version_params(_, params, _), do: params
 
+  @doc """
+  Restore a version of an instance.
+  """
+  @spec restore_version(Instance.t(), Ecto.UUID.t()) :: Instance.t() | nil | {:error, atom()}
+  def restore_version(instance, version_id) do
+    instance
+    |> get_version(version_id)
+    |> case do
+      %Version{raw: raw, serialized: serialized} = instance_version ->
+        Version
+        |> where([v], v.content_id == ^instance.id)
+        |> where([v], v.type == :save)
+        |> Repo.update_all(set: [current_version: false])
+
+        instance_version
+        |> Version.changeset(%{current_version: true})
+        |> Repo.update()
+
+        WraftDoc.YDocuments
+        |> where([d], d.content_id == ^instance.id)
+        |> Repo.delete_all()
+
+        update_instance(instance, %{raw: raw, serialized: serialized})
+
+      _ ->
+        nil
+    end
+  end
+
+  @doc """
+  Update a version of an instance.
+  """
+  @spec update_version(Ecto.UUID.t(), map()) ::
+          Version.t() | nil | Ecto.Changeset.t()
+  def update_version(version_id, params) do
+    Version
+    |> Repo.get_by(id: version_id)
+    |> case do
+      %Version{} = instance_version ->
+        instance_version
+        |> Version.changeset(params)
+        |> Repo.update()
+        |> case do
+          {:ok, _} -> Repo.preload(instance_version, author: :profile)
+          error -> error
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  @doc """
+  List versions of an instance.
+  """
+  @spec list_versions(Instance.t(), map()) :: [Version.t()]
+  def list_versions(%{id: instance_id}, params) do
+    version_type =
+      params
+      |> Map.get("type", :build)
+      |> case do
+        "build" -> :build
+        _ -> :save
+      end
+
+    Version
+    |> where([v], v.content_id == ^instance_id)
+    |> where([v], v.type == ^version_type)
+    |> preload([v], author: :profile)
+    |> order_by(^sort_versions(params))
+    |> Repo.paginate(params)
+  end
+
+  defp sort_versions(%{"sort" => "inserted_at"}), do: [asc: dynamic([dt], dt.inserted_at)]
+
+  defp sort_versions(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([dt], dt.inserted_at)]
+
+  defp sort_versions(%{"sort" => "updated_at"} = _params),
+    do: [asc: dynamic([dt], dt.updated_at)]
+
+  defp sort_versions(%{"sort" => "updated_at_desc"}),
+    do: [desc: dynamic([dt], dt.updated_at)]
+
+  defp sort_versions(_), do: []
+
+  @doc """
+  Retrieve two versions of an instance.
+
+  - Base version — the previous version
+  - Target version — the current version
+  """
+  @spec compare_versions(Ecto.UUID.t(), Ecto.UUID.t()) :: {:ok, map()} | {:error, String.t()}
+  def compare_versions(base_version_id, target_version_id),
+    do:
+      {:ok,
+       %{
+         "base_version" => get_version(base_version_id),
+         "target_version" => get_version(target_version_id)
+       }}
+
+  defp get_version(<<_::288>> = id) do
+    Version
+    |> where([v], v.id == ^id)
+    |> select([v], %{"id" => v.id, "serialized" => v.serialized})
+    |> Repo.one()
+  end
+
+  defp get_version(_), do: nil
+
+  defp get_version(%{id: instance_id}, <<_::288>> = version_id),
+    do: Repo.get_by(Version, content_id: instance_id, id: version_id)
+
+  defp get_version(_, _), do: nil
+
+  @doc """
+  Returns list of changes on a single version
+  ## Parameters
+  * `instance` - An instance struct
+  * `version_uuid` - uuid of version
+  """
+  @spec version_changes(Instance.t(), <<_::288>>) :: map()
+  def version_changes(instance, <<_::288>> = version_id) do
+    case get_version(instance, version_id) do
+      %Version{raw: current_raw} = version ->
+        case get_previous_version(instance, version) do
+          %Version{raw: previous_raw} ->
+            list_changes(current_raw, previous_raw)
+
+          _ ->
+            %{ins: [], del: []}
+        end
+
+      _ ->
+        {:error, :version_not_found}
+    end
+  end
+
+  def version_changes(_, _), do: {:error, :invalid_id}
+
+  defp list_changes(current_raw, previous_raw) do
+    current_raw = String.split(current_raw, "\n")
+    previous_raw = String.split(previous_raw, "\n")
+
+    previous_raw
+    |> List.myers_difference(current_raw)
+    |> Enum.reduce(%{}, fn x, acc ->
+      case x do
+        {:ins, v} -> add_ins(v, acc)
+        {:del, v} -> add_del(v, acc)
+        {_, _} -> acc
+      end
+    end)
+  end
+
+  defp add_ins(v, %{ins: ins} = acc) do
+    ins = ins |> List.insert_at(0, v) |> Enum.reverse()
+    Map.put(acc, :ins, ins)
+  end
+
+  defp add_ins(v, acc) do
+    ins = [v]
+    Map.put(acc, :ins, ins)
+  end
+
+  defp add_del(v, %{del: del} = acc) do
+    del = del |> List.insert_at(0, v) |> Enum.reverse()
+    Map.put(acc, :del, del)
+  end
+
+  defp add_del(v, acc) do
+    del = [v]
+    Map.put(acc, :del, del)
+  end
+
+  defp get_previous_version(%{id: instance_id}, %{version_number: version_number, type: type}) do
+    version_number = version_number - 1
+    Repo.get_by(Version, version_number: version_number, content_id: instance_id, type: type)
+  end
+
+  defp get_previous_version(_, _), do: nil
+
+  @doc """
+  Retrieves the ID of the latest version of a content item.
+
+  Returns a tuple with the following structure:
+  - `id` if the latest version was found.
+  - `nil` if no version was found.
+  """
+  @spec get_latest_version_id(Ecto.UUID.t()) :: Ecto.UUID.t() | nil
+  def get_latest_version_id(content_id) do
+    Version
+    |> where([v], v.content_id == ^content_id)
+    |> order_by([v], desc: v.version_number)
+    |> select([v], v.id)
+    |> limit(1)
+    |> Repo.one()
+  end
+
   # Checks whether the raw and serialzed of old and new instances are same or not.
   # If they are both the same, returns false, else returns true
   # @spec instance_updated?(Instance.t(), Instance.t()) :: boolean
-  def instance_updated?(%{raw: o_raw, serialized: o_map}, %{raw: n_raw, serialized: n_map}) do
-    !(o_raw === n_raw && o_map === n_map)
-  end
+  def instance_updated?(%{raw: o_raw, serialized: o_map}, %{raw: n_raw, serialized: n_map}),
+    do: !(o_raw === n_raw && o_map === n_map)
 
   def instance_updated?(_old_instance, _new_instance), do: true
 
@@ -1875,7 +2084,7 @@ defmodule WraftDoc.Documents do
         Repo.preload(instance, [
           {:creator, :profile},
           {:content_type, :layout},
-          {:versions, :author},
+          {:versions, author: :profile},
           {:instance_approval_systems, :approver},
           state: [approval_system: [:post_state, :approver]]
         ])
@@ -1985,96 +2194,6 @@ defmodule WraftDoc.Documents do
       {:creator, :profile}
     ])
     |> Repo.paginate(params)
-  end
-
-  @doc """
-  Returns list of changes on a single version
-  ## Parameters
-  * `instance` - An instance struct
-  * `version_uuid` - uuid of version
-  """
-  @spec version_changes(Instance.t(), <<_::288>>) :: map()
-  def version_changes(instance, <<_::288>> = version_id) do
-    case get_version(instance, version_id) do
-      %Version{raw: current_raw} = version ->
-        case get_previous_version(instance, version) do
-          %Version{raw: previous_raw} ->
-            list_changes(current_raw, previous_raw)
-
-          _ ->
-            %{ins: [], del: []}
-        end
-
-      _ ->
-        {:error, :version_not_found}
-    end
-  end
-
-  def version_changes(_, _), do: {:error, :invalid_id}
-
-  defp list_changes(current_raw, previous_raw) do
-    current_raw = String.split(current_raw, "\n")
-    previous_raw = String.split(previous_raw, "\n")
-
-    previous_raw
-    |> List.myers_difference(current_raw)
-    |> Enum.reduce(%{}, fn x, acc ->
-      case x do
-        {:ins, v} -> add_ins(v, acc)
-        {:del, v} -> add_del(v, acc)
-        {_, _} -> acc
-      end
-    end)
-  end
-
-  defp add_ins(v, %{ins: ins} = acc) do
-    ins = ins |> List.insert_at(0, v) |> Enum.reverse()
-    Map.put(acc, :ins, ins)
-  end
-
-  defp add_ins(v, acc) do
-    ins = [v]
-    Map.put(acc, :ins, ins)
-  end
-
-  defp add_del(v, %{del: del} = acc) do
-    del = del |> List.insert_at(0, v) |> Enum.reverse()
-    Map.put(acc, :del, del)
-  end
-
-  defp add_del(v, acc) do
-    del = [v]
-    Map.put(acc, :del, del)
-  end
-
-  defp get_version(%{id: instance_id}, <<_::288>> = version_id) do
-    Repo.get_by(Version, content_id: instance_id, id: version_id)
-  end
-
-  defp get_version(_, _), do: nil
-
-  defp get_previous_version(%{id: instance_id}, %{version_number: version_number, type: type}) do
-    version_number = version_number - 1
-    Repo.get_by(Version, version_number: version_number, content_id: instance_id, type: type)
-  end
-
-  defp get_previous_version(_, _), do: nil
-
-  @doc """
-  Retrieves the ID of the latest version of a content item.
-
-  Returns a tuple with the following structure:
-  - `id` if the latest version was found.
-  - `nil` if no version was found.
-  """
-  @spec get_latest_version_id(Ecto.UUID.t()) :: Ecto.UUID.t() | nil
-  def get_latest_version_id(content_id) do
-    Version
-    |> where([v], v.content_id == ^content_id)
-    |> order_by([v], desc: v.version_number)
-    |> select([v], v.id)
-    |> limit(1)
-    |> Repo.one()
   end
 
   @doc """
