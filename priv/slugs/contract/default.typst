@@ -1,4 +1,5 @@
 #import "$path$" + "/template.typst": conf
+#import "@preview/muchpdf:0.1.1": muchpdf
 
 #let horizontalrule = line(start: (25%,0%), end: (75%,0%))
 
@@ -26,7 +27,15 @@ $else$
 #let page_margin = (auto)
 $endif$$endif$$endif$$endif$
 
+$if(letterhead)$
+  #set page(
+    background: muchpdf(read("$letterhead$", encoding: none),
+    width: 100%, height: 100%, fit: "contain")
+  )
+$endif$
+
 #show figure: set block(breakable: true)
+
 #set page(fill: body_color)
 
 #show: conf.with(
