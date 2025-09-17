@@ -263,10 +263,16 @@ defmodule WraftDoc.Assets do
           instance_id: instance_id
         }
       ) do
-    binary = Minio.download("organisations/#{org_id}/assets/#{asset_id}/#{file.file_name}")
+    file_name =
+      file.file_name
+      |> String.replace(~r/[^A-Za-z0-9._-]+/, "-")
+      |> String.trim("-")
+
+    binary =
+      Minio.download("organisations/#{org_id}/assets/#{asset_id}/#{file_name}")
 
     asset_file_path =
-      Path.join(File.cwd!(), "organisations/#{org_id}/contents/#{instance_id}/#{file.file_name}")
+      Path.join(File.cwd!(), "organisations/#{org_id}/contents/#{instance_id}/#{file_name}")
 
     File.write!(asset_file_path, binary)
 

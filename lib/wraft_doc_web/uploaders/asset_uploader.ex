@@ -54,11 +54,12 @@ defmodule WraftDocWeb.AssetUploader do
 
   def validate({_file, %Asset{type: "template_asset"}}), do: :ok
 
-  def filename(_version, {file, _asset}) do
-    file.file_name
-    |> Path.rootname()
-    |> String.replace(~r/\s+/, "-")
-  end
+  def filename(_version, {file, _asset}),
+    do:
+      file.file_name
+      |> Path.rootname()
+      |> String.replace(~r/[^A-Za-z0-9._-]+/, "-")
+      |> String.trim("-")
 
   # Based on what is acceptable in latex engine
   defp check_file_naming(filename) do
