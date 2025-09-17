@@ -636,10 +636,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               state: "draft",
               version: 2
             }
-          }),
-      Logs:
+          })
+        end,
+      Log:
         swagger_schema do
-          title("Instance Logs")
+          title("Instance Log entity")
           description("Logs of actions performed on an instance")
 
           example([
@@ -655,6 +656,39 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               }
             }
           ])
+        end,
+      Logs:
+        swagger_schema do
+          title("Instance Logs")
+          description("Logs of actions performed on an instance")
+
+          properties do
+            entries(Schema.array(:Log), "List of versions", required: true)
+            page_number(:integer, "Current page number", required: true)
+            page_size(:integer, "Number of items per page", required: true)
+            total_entries(:integer, "Total number of versions", required: true)
+            total_pages(:integer, "Total number of pages", required: true)
+          end
+
+          example(%{
+            entries: [
+              %{
+                id: "4e630a83-c8d8-43d6-875e-0a2a47ec97f5",
+                action: "update",
+                document_id: "4e630a83-c8d8-43d6-875e-0a2a47ec97f5",
+                inserted_at: "2023-05-15T14:32:10Z",
+                actor: %{
+                  current_org_id: "4e630a83-c8d8-43d6-875e-0a2a4747838",
+                  name: "John Doe",
+                  email: "john@example.com"
+                }
+              }
+            ],
+            page_number: 1,
+            page_size: 10,
+            total_entries: 2,
+            total_pages: 1
+          })
         end
     }
   end
@@ -1548,7 +1582,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       conn
       |> put_view(WraftDocWeb.Api.V1.InstanceVersionView)
       |> render("comparison.json", comparison: comparison)
-      end
+    end
   end
 
   @doc """
@@ -1568,9 +1602,20 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def get_logs(conn, %{"id" => instance_id} = _params) do
-    with {:ok, logs} <- Documents.get_logs(instance_id) do
-      render(conn, "logs.json", logs: logs)
+  def get_logs(conn, %{"id" => instance_id} = params) do
+    with %{
+           entries: entries,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <-
+           Documents.get_logs(instance_id, params) do
+      render(conn, "logs.json", %{
+        entries: entries,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      })
     end
   end
 end

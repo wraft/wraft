@@ -983,22 +983,22 @@ defmodule WraftDoc.Documents do
     |> where([v], v.content_id == ^instance_id)
     |> where([v], v.type == ^version_type)
     |> preload([v], author: :profile)
-    |> order_by(^sort_versions(params))
+    |> order_by(^sort(params))
     |> Repo.paginate(params)
   end
 
-  defp sort_versions(%{"sort" => "inserted_at"}), do: [asc: dynamic([dt], dt.inserted_at)]
+  defp sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([dt], dt.inserted_at)]
 
-  defp sort_versions(%{"sort" => "inserted_at_desc"}),
+  defp sort(%{"sort" => "inserted_at_desc"}),
     do: [desc: dynamic([dt], dt.inserted_at)]
 
-  defp sort_versions(%{"sort" => "updated_at"} = _params),
+  defp sort(%{"sort" => "updated_at"} = _params),
     do: [asc: dynamic([dt], dt.updated_at)]
 
-  defp sort_versions(%{"sort" => "updated_at_desc"}),
+  defp sort(%{"sort" => "updated_at_desc"}),
     do: [desc: dynamic([dt], dt.updated_at)]
 
-  defp sort_versions(_), do: []
+  defp sort(_), do: []
 
   @doc """
   Retrieve two versions of an instance.
@@ -2573,18 +2573,15 @@ defmodule WraftDoc.Documents do
 
   ## Parameters
     - `instance_id`: The ID of the document.
-
+    - `params`: Additional parameters for filtering the logs.
   ## Returns
     - `{:ok, logs}`: A tuple containing the audit logs.
   """
-  @spec get_logs(Ecto.UUID.t()) :: {:ok, list()}
-  def get_logs(instance_id) do
-    logs =
-      DocumentAuditLog
-      |> where(document_id: ^instance_id)
-      |> order_by(desc: :inserted_at)
-      |> Repo.all()
-
-    {:ok, logs}
+  @spec get_logs(Ecto.UUID.t(), map()) :: Scrivener.Page.t()
+  def get_logs(instance_id, params) do
+    DocumentAuditLog
+    |> where(document_id: ^instance_id)
+    |> order_by(^sort(params))
+    |> Repo.paginate(params)
   end
 end

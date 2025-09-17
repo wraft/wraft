@@ -204,9 +204,17 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
-  def render("logs.json", %{logs: logs}) do
+  def render("logs.json", %{
+        entries: logs,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
     %{
-      logs: render_many(logs, InstanceView, "log.json", as: :log)
+      entries: render_many(logs, InstanceView, "log.json", as: :log),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
     }
   end
 
