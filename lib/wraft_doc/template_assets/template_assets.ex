@@ -880,15 +880,18 @@ defmodule WraftDoc.TemplateAssets do
 
   defp prepare_data_template_attrs(template_map, downloaded_file, content_type_id) do
     case get_data_template_prosemirror(downloaded_file) do
-      {:ok, serialized_prosemirror_doc} ->
-        markdown_data = ProsemirrorToMarkdown.convert(serialized_prosemirror_doc)
+      {:ok, serialized_prosemirror_data} ->
+        markdown_data =
+          serialized_prosemirror_data
+          |> Jason.decode!()
+          |> ProsemirrorToMarkdown.convert()
 
         %{
           "c_type_id" => content_type_id,
           "title" => template_map["title"],
           "title_template" => template_map["title_template"],
           "data" => markdown_data,
-          "serialized" => %{"data" => serialized_prosemirror_doc}
+          "serialized" => %{"data" => serialized_prosemirror_data}
         }
 
       {:error, error} ->
@@ -908,13 +911,19 @@ defmodule WraftDoc.TemplateAssets do
   #   end
   # end
 
+  # defp get_data_template_prosemirror(downloaded_file) do
+  #   with {:ok, template_json} <-
+  #          FileHelper.extract_file_content(downloaded_file, "template.json"),
+  #        {:ok, serialized_prosemirror} <- Jason.decode(template_json) do
+  #     {:ok, serialized_prosemirror}
+  #   end
+  # end
+
   defp get_data_template_prosemirror(downloaded_file) do
     with {:ok, template_json} <-
            FileHelper.extract_file_content(downloaded_file, "template.json"),
          {:ok, serialized_prosemirror} <- Jason.decode(template_json) do
-      {:ok, serialized_prosemirror}
-    else
-      error -> error
+      {:ok, serialized_prosemirror["data"]}
     end
   end
 
@@ -1174,9 +1183,6 @@ defmodule WraftDoc.TemplateAssets do
   """
   def prepare_template_format(theme, layout, c_type, data_template, current_user) do
     case validate_template_inputs(theme, layout, c_type, data_template) do
-      {:error, reason} ->
-        {:error, "Invalid template data: #{reason}"}
-
       {:ok, _validated} ->
         folder_path = data_template.title
         File.mkdir_p!(folder_path)
@@ -1193,6 +1199,9 @@ defmodule WraftDoc.TemplateAssets do
             File.rm_rf(folder_path)
             {:error, "Failed to prepare template: #{reason}"}
         end
+
+      {:error, reason} ->
+        {:error, "Invalid template data: #{reason}"}
     end
   end
 
@@ -1259,7 +1268,7 @@ defmodule WraftDoc.TemplateAssets do
             %{
               "fontName" => asset.name,
               "fontWeight" => "regular",
-              "path" => download_file(asset.id, current_user, file_path, "otf", "fonts")
+              "path" => download_file(asset.id, current_user, file_path, "fonts")
             }
           end)
       },
@@ -1285,7 +1294,7 @@ defmodule WraftDoc.TemplateAssets do
         Enum.map(theme.assets, fn asset ->
           %{
             "fontName" => asset.name,
-            "path" => download_file(asset.id, current_user, file_path, "otf", "fonts")
+            "path" => download_file(asset.id, current_user, file_path, "fonts")
           }
         end),
       "colors" => %{
@@ -1303,7 +1312,7 @@ defmodule WraftDoc.TemplateAssets do
     %{
       "name" => layout.name,
       "slug" => "#{layout.slug}",
-      "slug_file" => download_file(asset.id, current_user, file_path, "pdf", "assets"),
+      "slug_file" => download_file(asset.id, current_user, file_path, "assets"),
       "meta" => %{
         "standard_size" => "a4",
         "fields" => [],
@@ -1339,12 +1348,16 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp export_to_markdown(template, folder_path) do
-    raw = template.serialized["data"]
+    template_json = """
+    {"data": #{Jason.encode!(template.serialized["data"])}}
+    """
 
-    File.write!(Path.join(folder_path, "template.json"), raw)
+    folder_path
+    |> Path.join("template.json")
+    |> File.write!(template_json)
 
     markdown =
-      raw
+      template.serialized["data"]
       |> Jason.decode!()
       |> ProsemirrorToMarkdown.convert()
 
@@ -1390,15 +1403,14 @@ defmodule WraftDoc.TemplateAssets do
          asset_id,
          %{current_org_id: org_id} = _current_user,
          file_path,
-         format,
          folder_name
        ) do
-    file = Minio.download("organisations/#{org_id}/assets/#{asset_id}")
     asset = Assets.get_asset(asset_id, %{current_org_id: org_id})
-    path = "#{file_path}/#{folder_name}/#{asset.name}.#{format}"
+    file = Minio.download("organisations/#{org_id}/assets/#{asset_id}/#{asset.file.file_name}")
+    path = "#{file_path}/#{folder_name}/#{asset.file.file_name}"
     File.mkdir_p(Path.dirname(path))
     File.write!(path, file)
-    "#{folder_name}/#{asset.name}.#{format}"
+    "#{folder_name}/#{asset.file.file_name}"
   end
 
   defp update_conflicting_name(%{"title" => title} = map, DataTemplate, current_user) do
