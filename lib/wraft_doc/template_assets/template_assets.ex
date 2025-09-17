@@ -934,14 +934,14 @@ defmodule WraftDoc.TemplateAssets do
   defp validate_file_entries(wraft_json, entries) do
     items = has_items(wraft_json)
 
-    {folders, files} =
+    {_folders, files} =
       Enum.split_with(entries, fn entry ->
         String.ends_with?(entry, "/")
       end)
 
     []
     |> collect_missing_files(files)
-    |> collect_missing_folders(folders, items)
+    |> collect_missing_folders(items, files)
     |> validate_layout(files, items)
     |> validate_theme(files, items)
     |> validate_data_template(files, items)
@@ -961,17 +961,19 @@ defmodule WraftDoc.TemplateAssets do
     errors ++ missing_files
   end
 
-  defp collect_missing_folders(errors, folders, items) do
-    missing_folders =
-      items
-      |> Enum.flat_map(fn
+  defp collect_missing_folders(errors, items, files) do
+    required_folders =
+      Enum.flat_map(items, fn
         "theme" -> ["fonts/"]
         "layout" -> ["assets/"]
         "frame" -> ["frame/"]
         _ -> []
       end)
-      |> Enum.filter(fn folder ->
-        not Enum.any?(folders, &String.starts_with?(&1, folder))
+
+    missing_folders =
+      required_folders
+      |> Enum.reject(fn folder ->
+        Enum.any?(files, &String.starts_with?(&1, folder))
       end)
       |> Enum.map(&%{type: "folder_error", message: "Missing required folder: #{&1}"})
 
@@ -1209,8 +1211,26 @@ defmodule WraftDoc.TemplateAssets do
 
   defp zip_folder(folder_path, template_name) do
     zip_path = Path.join(System.tmp_dir!(), "#{template_name}.zip")
-    :zip.create(String.to_charlist(zip_path), [String.to_charlist(folder_path)])
-    {:ok, zip_path}
+
+    files =
+      folder_path
+      |> Path.join("**")
+      |> Path.wildcard()
+      |> Enum.filter(&File.regular?/1)
+      |> Enum.map(fn file ->
+        relative = Path.relative_to(file, folder_path)
+        {:ok, bin} = File.read(file)
+        {String.to_charlist(relative), bin}
+      end)
+
+    case :zip.create(String.to_charlist(zip_path), files, [:memory]) do
+      {:ok, {_zip_name, zip_binary}} ->
+        File.write!(zip_path, zip_binary)
+        {:ok, zip_path}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   def build_wraft_json(theme, layout, c_type, data_template, file_path, current_user) do
