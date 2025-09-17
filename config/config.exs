@@ -31,7 +31,17 @@ config :esbuild,
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:user_id, :error, :status, :changeset, :path, :type]
+  metadata: [
+    :changeset,
+    :error,
+    :execution_time_ms,
+    :path,
+    :reason,
+    :status,
+    :status_code,
+    :type,
+    :user_id
+  ]
 
 # Configures Guardian
 config :wraft_doc, WraftDocWeb.Guardian,
@@ -60,7 +70,7 @@ config :wraft_doc, :phoenix_swagger,
 # Cron jobs Overview https://github.com/sorentwo/oban#periodic-jobs
 config :wraft_doc, Oban,
   repo: WraftDoc.Repo,
-  queues: [default: 10, events: 50, media: 20, mailer: 20, scheduled: 10],
+  queues: [default: 10, events: 50, media: 20, mailer: 20, scheduled: 10, webhooks: 15],
   plugins: [
     Oban.Plugins.Pruner,
     {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(5)},
@@ -72,7 +82,9 @@ config :wraft_doc, Oban,
        {"@weekly", WraftDoc.Workers.ScheduledWorker,
         queue: :scheduled,
         tags: ["hard_delete_organisation_records"],
-        args: %{"type" => "hard_delete_organisation_records"}}
+        args: %{"type" => "hard_delete_organisation_records"}},
+       {"0 2 * * 0", WraftDoc.Workers.WebhookCleanupWorker,
+        queue: :scheduled, tags: ["webhook_cleanup"], args: %{days_to_keep: 90}}
      ]}
   ]
 

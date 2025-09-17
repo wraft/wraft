@@ -145,10 +145,21 @@ defmodule WraftDocWeb.FallbackController do
     conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
+  def call(conn, :not_found) do
+    body = Jason.encode!(%{errors: "Resource not found."})
+    conn |> put_resp_content_type("application/json") |> send_resp(404, body)
+  end
+
   def call(conn, nil) do
     conn
     |> put_status(:not_found)
     |> put_view(WraftDocWeb.ErrorView)
     |> render(:"404")
+  end
+
+  # Catch-all clause for any unhandled return values
+  def call(conn, result) do
+    body = Jason.encode!(%{errors: "Unhandled response: #{inspect(result)}"})
+    conn |> put_resp_content_type("application/json") |> send_resp(500, body)
   end
 end

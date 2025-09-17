@@ -36,7 +36,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Frames
   alias WraftDoc.Layouts.Layout
+  alias WraftDoc.Repo
   alias WraftDoc.Search.TypesenseServer, as: Typesense
+  alias WraftDoc.Webhooks.EventTrigger
   alias WraftDocWeb.Api.V1.InstanceVersionView
 
   def swagger_definitions do
@@ -673,6 +675,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            Documents.create_instance(current_user, c_type, params) do
       Logger.info("Create content success")
       Typesense.create_document(content)
+      Task.start(fn -> EventTrigger.trigger_document_created(content) end)
       render(conn, :create, content: content)
     else
       error ->
@@ -932,6 +935,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
          _ <- Documents.delete_uploaded_docs(current_user, instance),
          {:ok, %Instance{id: instance_id} = instance} <- Documents.delete_instance(instance) do
       Typesense.delete_document(instance_id, "content")
+
+      # Trigger webhook for document deletion
+      Task.start(fn ->
+        EventTrigger.trigger_document_deleted(instance)
+      end)
+
       render(conn, "instance.json", instance: instance)
     end
   end
@@ -1031,9 +1040,22 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Documents.get_instance(instance_id, current_user),
+         %Instance{state: previous_state} = instance_with_state <- Repo.preload(instance, :state),
          %State{} = state <- Enterprise.get_state(current_user, state_id),
-         %Instance{} = instance <- Documents.update_instance_state(instance, state) do
-      render(conn, "show.json", instance: instance)
+         %Instance{} = updated_instance <-
+           Documents.update_instance_state(instance_with_state, state) do
+      # Trigger webhook for state update
+      Task.start(fn ->
+        previous_state_info = %{
+          id: previous_state.id,
+          state: previous_state.state,
+          order: previous_state.order
+        }
+
+        EventTrigger.trigger_document_state_updated(updated_instance, previous_state_info)
+      end)
+
+      render(conn, "show.json", instance: updated_instance)
     end
   end
 
@@ -1166,19 +1188,32 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            },
            state: state
          } = instance <- Documents.show_instance(id, current_user),
-         %Instance{} = instance <- Documents.approve_instance(current_user, instance) do
-      Task.start(fn -> Reminders.maybe_create_auto_reminders(current_user, instance) end)
+         %Instance{} = approved_instance <- Documents.approve_instance(current_user, instance) do
+      Task.start(fn -> Reminders.maybe_create_auto_reminders(current_user, approved_instance) end)
 
       Task.start(fn ->
         Documents.document_notification(
           current_user,
-          instance,
+          approved_instance,
           organisation,
           state
         )
       end)
 
-      render(conn, "approve_or_reject.json", %{instance: instance})
+      # Trigger webhook for document completion if the document workflow is completed
+      Task.start(fn ->
+        EventTrigger.trigger_document_state_updated(instance, %{
+          id: approved_instance.state.id,
+          state: approved_instance.state.state,
+          order: approved_instance.state.order
+        })
+
+        if approved_instance.state && approved_instance.state.state == "completed" do
+          EventTrigger.trigger_document_completed(approved_instance)
+        end
+      end)
+
+      render(conn, "approve_or_reject.json", %{instance: approved_instance})
     end
   end
 
@@ -1205,8 +1240,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Documents.show_instance(id, current_user),
-         %Instance{} = instance <- Documents.reject_instance(current_user, instance) do
-      render(conn, "approve_or_reject.json", %{instance: instance})
+         %Instance{} = rejected_instance <- Documents.reject_instance(current_user, instance) do
+      # Trigger webhook for document rejection
+      Task.start(fn ->
+        EventTrigger.trigger_document_rejected(rejected_instance)
+      end)
+
+      render(conn, "approve_or_reject.json", %{instance: rejected_instance})
     end
   end
 
@@ -1234,6 +1274,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Documents.show_instance(id, current_user),
          {:ok, _} <- Documents.send_document_email(instance, params) do
+      Task.start(fn -> EventTrigger.trigger_document_sent(instance) end)
       render(conn, "email.json", %{info: "Email sent successfully"})
     end
   end

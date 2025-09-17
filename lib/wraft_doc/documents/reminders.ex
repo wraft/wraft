@@ -238,6 +238,21 @@ defmodule WraftDoc.Documents.Reminders do
         # Send notifications
         send_reminder_notifications(updated_reminder)
 
+        # Trigger webhook for reminder sent
+        Task.start(fn ->
+          reminder_data = %{
+            type: "scheduled",
+            message: updated_reminder.message,
+            recipients: updated_reminder.recipients,
+            sent_at: updated_reminder.sent_at
+          }
+
+          WraftDoc.Webhooks.EventTrigger.trigger_document_reminder_sent(
+            updated_reminder.content,
+            reminder_data
+          )
+        end)
+
         {:ok, updated_reminder}
 
       error ->
