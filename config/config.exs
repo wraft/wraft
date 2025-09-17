@@ -32,21 +32,15 @@ config :esbuild,
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [
-    :user_id,
-    :error,
-    :status,
     :changeset,
-    :path,
-    :type,
-    :webhook_id,
-    :instance_id,
-    :reason,
+    :error,
     :execution_time_ms,
+    :path,
+    :reason,
+    :status,
     :status_code,
-    :event,
-    :attempt,
-    :deleted_count,
-    :days_to_keep
+    :type,
+    :user_id
   ]
 
 # Configures Guardian
@@ -88,7 +82,7 @@ config :wraft_doc, Oban,
        {"@weekly", WraftDoc.Workers.ScheduledWorker,
         queue: :scheduled,
         tags: ["hard_delete_organisation_records"],
-        args: %{"type" => "hard_delete_organisation_records"}}
+        args: %{"type" => "hard_delete_organisation_records"}},
        {"0 2 * * 0", WraftDoc.Workers.WebhookCleanupWorker,
         queue: :scheduled, tags: ["webhook_cleanup"], args: %{days_to_keep: 90}}
      ]}

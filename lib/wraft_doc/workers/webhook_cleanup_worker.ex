@@ -12,13 +12,12 @@ defmodule WraftDoc.Workers.WebhookCleanupWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"days_to_keep" => days_to_keep}}) do
-    Logger.info("Starting webhook logs cleanup", days_to_keep: days_to_keep)
+    Logger.info("Starting webhook logs cleanup #{days_to_keep}")
 
     {deleted_count, _} = Webhooks.cleanup_webhook_logs(days_to_keep)
 
-    Logger.info("Webhook logs cleanup completed",
-      deleted_count: deleted_count,
-      days_to_keep: days_to_keep
+    Logger.info(
+      "Webhook logs cleanup completed deleted count #{deleted_count} days to keep #{days_to_keep}"
     )
 
     :ok

@@ -48,7 +48,17 @@ config :wraft_doc, WraftDocWeb.Endpoint,
 config :logger, :console,
   format: "$time [$level] $message\n",
   level: :debug,
-  metadata: [:user_id, :error, :status, :changeset, :path, :type]
+  metadata: [
+    :user_id,
+    :error,
+    :status,
+    :path,
+    :type,
+    :changeset,
+    :status_code,
+    :reason,
+    :execution_time_ms
+  ]
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.

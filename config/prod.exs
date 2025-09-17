@@ -39,7 +39,6 @@ config :logger,
   level: :info,
   backends: [:console, Sentry.LoggerBackend]
 
-
 config :wraft_doc,
   permissions_file: "repo/data/rbac/permissions.csv",
   theme_folder: File.cwd!() <> "/priv/wraft_files/Roboto",

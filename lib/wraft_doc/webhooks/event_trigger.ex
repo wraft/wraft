@@ -14,7 +14,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   def trigger_document_created(%Instance{organisation_id: org_id} = instance) do
     payload = build_document_payload(instance, "created")
     Webhooks.trigger_webhooks("document.created", org_id, payload)
-    Logger.info("Triggered document.created webhook", instance_id: instance.id)
+    Logger.info("Triggered document.created webhook document id #{instance.id}")
   end
 
   @doc """
@@ -24,7 +24,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   def trigger_document_sent(%Instance{organisation_id: org_id} = instance) do
     payload = build_document_payload(instance, "sent")
     Webhooks.trigger_webhooks("document.sent", org_id, payload)
-    Logger.info("Triggered document.sent webhook", instance_id: instance.id)
+    Logger.info("Triggered document.sent webhook document id #{instance.id}")
   end
 
   @doc """
@@ -34,7 +34,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   def trigger_document_completed(%Instance{organisation_id: org_id} = instance) do
     payload = build_document_payload(instance, "completed")
     Webhooks.trigger_webhooks("document.completed", org_id, payload)
-    Logger.info("Triggered document.completed webhook", instance_id: instance.id)
+    Logger.info("Triggered document.completed webhook document id #{instance.id}")
   end
 
   @doc """
@@ -44,7 +44,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   def trigger_document_cancelled(%Instance{organisation_id: org_id} = instance) do
     payload = build_document_payload(instance, "cancelled")
     Webhooks.trigger_webhooks("document.cancelled", org_id, payload)
-    Logger.info("Triggered document.cancelled webhook", instance_id: instance.id)
+    Logger.info("Triggered document.cancelled webhook document id #{instance.id}")
   end
 
   @doc """
@@ -54,7 +54,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   def trigger_document_signed(%Instance{organisation_id: org_id} = instance) do
     payload = build_document_payload(instance, "signed")
     Webhooks.trigger_webhooks("document.signed", org_id, payload)
-    Logger.info("Triggered document.signed webhook", instance_id: instance.id)
+    Logger.info("Triggered document.signed webhook document id #{instance.id}")
   end
 
   @doc """
@@ -64,7 +64,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   def trigger_document_rejected(%Instance{organisation_id: org_id} = instance) do
     payload = build_document_payload(instance, "rejected")
     Webhooks.trigger_webhooks("document.rejected", org_id, payload)
-    Logger.info("Triggered document.rejected webhook", instance_id: instance.id)
+    Logger.info("Triggered document.rejected webhook document id #{instance.id}")
   end
 
   @doc """
@@ -77,7 +77,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
       ) do
     payload = build_document_state_payload(instance, "state_updated", previous_state)
     Webhooks.trigger_webhooks("document.state_updated", org_id, payload)
-    Logger.info("Triggered document.state_updated webhook", instance_id: instance.id)
+    Logger.info("Triggered document.state_updated webhook document id #{instance.id}")
   end
 
   @doc """
@@ -87,7 +87,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   def trigger_document_comment_added(%Instance{organisation_id: org_id} = instance, comment_data) do
     payload = build_document_comment_payload(instance, "comment_added", comment_data)
     Webhooks.trigger_webhooks("document.comment_added", org_id, payload)
-    Logger.info("Triggered document.comment_added webhook", instance_id: instance.id)
+    Logger.info("Triggered document.comment_added webhook document id #{instance.id}")
   end
 
   @doc """
@@ -97,7 +97,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   def trigger_document_deleted(%Instance{organisation_id: org_id} = instance) do
     payload = build_document_payload(instance, "deleted")
     Webhooks.trigger_webhooks("document.deleted", org_id, payload)
-    Logger.info("Triggered document.deleted webhook", instance_id: instance.id)
+    Logger.info("Triggered document.deleted webhook document id #{instance.id}")
   end
 
   @doc """
@@ -110,7 +110,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
       ) do
     payload = build_document_reminder_payload(instance, "reminder_sent", reminder_data)
     Webhooks.trigger_webhooks("document.reminder_sent", org_id, payload)
-    Logger.info("Triggered document.reminder_sent webhook", instance_id: instance.id)
+    Logger.info("Triggered document.reminder_sent webhook document id #{instance.id}")
   end
 
   @doc """
@@ -133,7 +133,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
     action = event |> String.split(".") |> List.last()
     payload = build_document_payload(instance, action)
     Webhooks.trigger_webhooks(event, org_id, payload)
-    Logger.info("Triggered #{event} webhook", instance_id: instance.id)
+    Logger.info("Triggered #{event} webhook document id #{instance.id}")
   end
 
   def trigger_event(event, _instance) do

@@ -18,19 +18,15 @@ defmodule WraftDoc.Workers.WebhookWorker do
           "attempt" => attempt
         }
       }) do
-    Logger.info("Processing webhook trigger",
-      webhook_id: webhook_id,
-      event: event,
-      attempt: attempt
-    )
+    Logger.info("Processing webhook trigger #{webhook_id} event #{event} attempt #{attempt}")
 
     case Repo.get(Webhook, webhook_id) do
       nil ->
-        Logger.error("Webhook not found", webhook_id: webhook_id)
+        Logger.error("Webhook not found #{webhook_id}")
         {:error, :webhook_not_found}
 
       %Webhook{is_active: false} = webhook ->
-        Logger.info("Webhook is inactive, skipping", webhook_id: webhook.id)
+        Logger.info("Webhook is inactive, skipping #{webhook.id}")
         :ok
 
       webhook ->
@@ -83,8 +79,7 @@ defmodule WraftDoc.Workers.WebhookWorker do
           success: true
         })
 
-        Logger.info("Webhook delivered successfully",
-          webhook_id: webhook.id,
+        Logger.info("Webhook delivered successfully #{webhook.id}",
           status_code: status_code,
           execution_time_ms: execution_time
         )
@@ -105,8 +100,7 @@ defmodule WraftDoc.Workers.WebhookWorker do
           error_message: "HTTP #{status_code} response"
         })
 
-        Logger.warning("Webhook delivery failed with non-2xx status",
-          webhook_id: webhook.id,
+        Logger.warning("Webhook delivery failed with non-2xx status #{webhook.id}",
           status_code: status_code,
           execution_time_ms: execution_time
         )
@@ -125,8 +119,7 @@ defmodule WraftDoc.Workers.WebhookWorker do
           error_message: error_message
         })
 
-        Logger.error("Webhook delivery failed",
-          webhook_id: webhook.id,
+        Logger.error("Webhook delivery failed #{webhook.id}",
           reason: inspect(reason),
           execution_time_ms: execution_time
         )
