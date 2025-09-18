@@ -797,8 +797,7 @@ defmodule WraftDoc.Documents do
 
         Map.merge(instance, %{
           build: doc_url,
-          signed_doc_url: signed_doc_url,
-          versions: [List.first(build_versions)]
+          signed_doc_url: signed_doc_url
         })
     end
   end
