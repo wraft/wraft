@@ -257,8 +257,7 @@ defmodule WraftDoc.Assets do
         acc,
         %Layout{
           frame: frame,
-          slug: slug,
-          asset: %Asset{id: asset_id, name: name, file: file, organisation_id: org_id}
+          asset: %Asset{id: asset_id, file: file, organisation_id: org_id}
         },
         %Instance{
           instance_id: instance_id
@@ -272,10 +271,10 @@ defmodule WraftDoc.Assets do
     File.write!(asset_file_path, binary)
 
     header =
-      if frame != nil || slug == "pletter" do
+      if frame == nil do
         Documents.concat_strings(acc, "letterhead: #{asset_file_path} \n")
       else
-        Documents.concat_strings(acc, "#{name}: #{asset_file_path} \n")
+        acc
       end
 
     {:ok, header}

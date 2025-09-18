@@ -144,9 +144,9 @@ $highlighting-macros$
 \setlength{\tabcolsep}{0.8em} % for the horizontal padding
 {\renewcommand{\arraystretch}{1.7}% for the vertical padding
 
-$if(background)$
+$if(letterhead)$
 \usepackage{wallpaper}
-\ULCornerWallPaper{1}{$background$}
+\ULCornerWallPaper{1}{$letterhead$}
 $endif$
 
 % -----------------
@@ -156,6 +156,7 @@ $endif$
 $if(margin_top)$$if(margin_left)$$if(margin_bottom)$$if(margin_right)$
 			\newgeometry{top=$margin_top$cm, left=$margin_left$cm, bottom=$margin_bottom$cm, right=$margin_right$cm}
 		$endif$$endif$$endif$$endif$
+
 $if(path)$
 		\input{$path$/cover}
 	$endif$
