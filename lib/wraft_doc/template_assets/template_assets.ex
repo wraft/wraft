@@ -1316,12 +1316,7 @@ defmodule WraftDoc.TemplateAssets do
       "meta" => %{
         "standard_size" => "a4",
         "fields" => [],
-        "margin" => %{
-          "bottom" => "2.54",
-          "left" => "2.54",
-          "right" => "2.54",
-          "top" => "2.54"
-        }
+        "margin" => "2.54"
       },
       "description" => layout.description,
       "engine" => "pandoc/latex"
