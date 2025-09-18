@@ -911,14 +911,6 @@ defmodule WraftDoc.TemplateAssets do
   #   end
   # end
 
-  # defp get_data_template_prosemirror(downloaded_file) do
-  #   with {:ok, template_json} <-
-  #          FileHelper.extract_file_content(downloaded_file, "template.json"),
-  #        {:ok, serialized_prosemirror} <- Jason.decode(template_json) do
-  #     {:ok, serialized_prosemirror}
-  #   end
-  # end
-
   defp get_data_template_prosemirror(downloaded_file) do
     with {:ok, template_json} <-
            FileHelper.extract_file_content(downloaded_file, "template.json"),

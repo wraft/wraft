@@ -189,21 +189,17 @@ defmodule WraftDoc.Utils.FileValidator do
     case FileType.from_path(file_path) do
       {:ok, {detected_ext, _mime_type}} ->
         cond do
-          # Special case: allow .otf and .ttf interchange if detected as "ttf"
-          ext in [".otf", ".ttf"] and detected_ext in ["ttf"] ->
+          ext in [".otf", ".ttf"] and detected_ext in ["ttf", "otf"] ->
             acc
 
-          # Extension mismatch
           ".#{detected_ext}" != ext ->
             [path_string | acc]
 
-          # All good
           true ->
             acc
         end
 
       {:error, _reason} ->
-        # Couldn’t detect the file type at all
         [path_string | acc]
     end
   end
