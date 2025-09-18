@@ -188,7 +188,16 @@ defmodule WraftDoc.Utils.FileValidator do
 
     case FileType.from_path(file_path) do
       {:ok, {detected_ext, _mime_type}} ->
-        if ".#{detected_ext}" != ext, do: [path_string | acc], else: acc
+        cond do
+          ext in [".otf", ".ttf"] and detected_ext in ["ttf", "otf"] ->
+            acc
+
+          ".#{detected_ext}" != ext ->
+            [path_string | acc]
+
+          true ->
+            acc
+        end
 
       {:error, _reason} ->
         [path_string | acc]

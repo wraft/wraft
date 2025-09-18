@@ -670,7 +670,7 @@ defmodule WraftDoc.TemplateAssets do
 
   defp get_theme_font_file_entries(entries) do
     Enum.filter(entries, fn entry ->
-      case Regex.run(~r/^theme\/.*-(?<style>\w+)\.(otf|ttf)$/i, entry.file_name) do
+      case Regex.run(~r/^fonts\/.*-(?<style>\w+)\.(otf|ttf)$/i, entry.file_name) do
         [_, style, _] when style in @font_style_name -> true
         _ -> false
       end
@@ -753,18 +753,20 @@ defmodule WraftDoc.TemplateAssets do
          frame_id
        ) do
     with %Engine{id: engine_id} <- get_engine(engine),
-         asset_id <- prepare_layout_assets(entries, file_path, downloaded_file, current_user),
-         params <- prepare_layout_attrs(layouts, engine_id, asset_id, frame_id),
+         asset_params <-
+           prepare_layout_assets_params(entries, file_path, downloaded_file),
+         params <- prepare_layout_attrs(layouts, engine_id, frame_id),
          %Engine{} = engine <- Frames.get_engine_by_frame_type(params),
-         %Layout{} = layout <- Layouts.create_layout(current_user, engine, params) do
+         {:ok, %{layout: layout}} <-
+           Layouts.create_layout(current_user, engine, Map.merge(params, asset_params)) do
       {:ok, layout}
     end
   end
 
-  defp prepare_layout_assets(entries, file_path, downloaded_file, current_user) do
+  defp prepare_layout_assets_params(entries, file_path, downloaded_file) do
     entries
     |> get_layout_file_entry(file_path)
-    |> extract_and_prepare_layout_asset(downloaded_file, current_user)
+    |> extract_and_prepare_layout_asset(downloaded_file)
   end
 
   defp get_pdf_asset_path(assets, type) do
@@ -773,14 +775,13 @@ defmodule WraftDoc.TemplateAssets do
     end)["path"]
   end
 
-  defp prepare_layout_attrs(layout, engine_id, asset_id, frame_id) do
+  defp prepare_layout_attrs(layout, engine_id, frame_id) do
     %{
       "name" => layout["name"],
       "meta" => layout["meta"],
       "description" => layout["description"],
       "slug" => layout["slug"],
       "engine_id" => engine_id,
-      "assets" => asset_id,
       "width" => 40,
       "height" => 40,
       "unit" => "cm",
@@ -794,12 +795,10 @@ defmodule WraftDoc.TemplateAssets do
     end)
   end
 
-  defp extract_and_prepare_layout_asset(entry, downloaded_zip_file, current_user) do
+  defp extract_and_prepare_layout_asset(entry, downloaded_zip_file) do
     with {:ok, content} <- FileHelper.extract_file_content(downloaded_zip_file, entry.file_name),
-         {:ok, temp_file_path} <- write_temp_file(content),
-         asset_params <- prepare_layout_asset_params(entry, temp_file_path, current_user),
-         {:ok, asset} <- Assets.create_asset(current_user, asset_params) do
-      asset.id
+         {:ok, temp_file_path} <- write_temp_file(content) do
+      prepare_layout_asset_params(entry, temp_file_path)
     else
       error ->
         Logger.error(
@@ -810,16 +809,15 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp prepare_layout_asset_params(entry, temp_file_path, current_user) do
+  defp prepare_layout_asset_params(entry, temp_file_path) do
     %{
-      "name" => Path.basename(entry.file_name),
+      "asset_name" => Path.basename(entry.file_name),
       "type" => "layout",
       "file" => %Plug.Upload{
         filename: Path.basename(entry.file_name),
         content_type: get_file_type(entry.file_name),
         path: temp_file_path
-      },
-      "creator_id" => current_user.id
+      }
     }
   end
 
@@ -916,7 +914,7 @@ defmodule WraftDoc.TemplateAssets do
   defp get_data_template_prosemirror(downloaded_file) do
     with {:ok, template_json} <-
            FileHelper.extract_file_content(downloaded_file, "template.json"),
-         serialized_prosemirror <- Jason.decode!(template_json) do
+         {:ok, serialized_prosemirror} <- Jason.decode(template_json) do
       {:ok, serialized_prosemirror["data"]}
     end
   end
@@ -937,14 +935,14 @@ defmodule WraftDoc.TemplateAssets do
   defp validate_file_entries(wraft_json, entries) do
     items = has_items(wraft_json)
 
-    {folders, files} =
+    {_folders, files} =
       Enum.split_with(entries, fn entry ->
         String.ends_with?(entry, "/")
       end)
 
     []
     |> collect_missing_files(files)
-    |> collect_missing_folders(folders, items)
+    |> collect_missing_folders(items, files)
     |> validate_layout(files, items)
     |> validate_theme(files, items)
     |> validate_data_template(files, items)
@@ -964,17 +962,19 @@ defmodule WraftDoc.TemplateAssets do
     errors ++ missing_files
   end
 
-  defp collect_missing_folders(errors, folders, items) do
-    missing_folders =
-      items
-      |> Enum.flat_map(fn
+  defp collect_missing_folders(errors, items, files) do
+    required_folders =
+      Enum.flat_map(items, fn
         "theme" -> ["fonts/"]
         "layout" -> ["assets/"]
         "frame" -> ["frame/"]
         _ -> []
       end)
-      |> Enum.filter(fn folder ->
-        not Enum.any?(folders, &String.starts_with?(&1, folder))
+
+    missing_folders =
+      required_folders
+      |> Enum.reject(fn folder ->
+        Enum.any?(files, &String.starts_with?(&1, folder))
       end)
       |> Enum.map(&%{type: "folder_error", message: "Missing required folder: #{&1}"})
 
@@ -1174,20 +1174,26 @@ defmodule WraftDoc.TemplateAssets do
   Prepare all the nessecary files and format for zip export.
   """
   def prepare_template_format(theme, layout, c_type, data_template, current_user) do
-    folder_path = data_template.title
-    File.mkdir_p!(folder_path)
+    case validate_template_inputs(theme, layout, c_type, data_template) do
+      {:ok, _validated} ->
+        folder_path = data_template.title
+        File.mkdir_p!(folder_path)
 
-    case create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user) do
-      :ok ->
-        template_name = "#{data_template.title}.zip"
-        {:ok, zip_path} = zip_folder(folder_path, template_name)
+        case create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user) do
+          :ok ->
+            template_name = "#{data_template.title}.zip"
+            {:ok, zip_path} = zip_folder(folder_path, template_name)
 
-        File.rm_rf(folder_path)
-        {:ok, zip_path}
+            File.rm_rf(folder_path)
+            {:ok, zip_path}
+
+          {:error, reason} ->
+            File.rm_rf(folder_path)
+            {:error, "Failed to prepare template: #{reason}"}
+        end
 
       {:error, reason} ->
-        File.rm_rf(folder_path)
-        {:error, "Failed to prepare template: #{reason}"}
+        {:error, "Invalid template data: #{reason}"}
     end
   end
 
@@ -1206,18 +1212,67 @@ defmodule WraftDoc.TemplateAssets do
 
   defp zip_folder(folder_path, template_name) do
     zip_path = Path.join(System.tmp_dir!(), "#{template_name}.zip")
-    :zip.create(String.to_charlist(zip_path), [String.to_charlist(folder_path)])
-    {:ok, zip_path}
+
+    files =
+      folder_path
+      |> Path.join("**")
+      |> Path.wildcard()
+      |> Enum.filter(&File.regular?/1)
+      |> Enum.map(fn file ->
+        relative = Path.relative_to(file, folder_path)
+        {:ok, bin} = File.read(file)
+        {String.to_charlist(relative), bin}
+      end)
+
+    case :zip.create(String.to_charlist(zip_path), files, [:memory]) do
+      {:ok, {_zip_name, zip_binary}} ->
+        File.write!(zip_path, zip_binary)
+        {:ok, zip_path}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   def build_wraft_json(theme, layout, c_type, data_template, file_path, current_user) do
     %{
-      "theme" => build_theme(theme, file_path, current_user),
-      "layout" => build_layout(layout, file_path, current_user),
-      "variant" => build_c_type(c_type),
-      "data_template" => %{
-        "title" => data_template.title,
-        "title_template" => data_template.title_template
+      "metadata" => %{
+        "name" => export_to_markdown(data_template, file_path) <> " template",
+        "description" => "Template for #{data_template.title}",
+        "type" => "template_asset",
+        "updated_at" => Date.to_string(Date.utc_today())
+      },
+      "packageContents" => %{
+        "rootFiles" => [
+          %{"name" => "template.json", "path" => "template.json"},
+          %{"name" => "wraft.json", "path" => "wraft.json"}
+        ],
+        "assets" => [
+          %{
+            "name" => "#{layout.name}",
+            "path" => "assets/letterhead.pdf",
+            "type" => "layout",
+            "description" => "#{layout.description}"
+          }
+        ],
+        "fonts" =>
+          Enum.map(theme.assets, fn asset ->
+            %{
+              "fontName" => asset.name,
+              "fontWeight" => "regular",
+              "path" => download_file(asset.id, current_user, file_path, "fonts")
+            }
+          end)
+      },
+      "items" => %{
+        "theme" => build_theme(theme, file_path, current_user),
+        "layout" => build_layout(layout, file_path, current_user),
+        "flow" => %{"name" => "Wraft flow"},
+        "variant" => build_c_type(c_type),
+        "data_template" => %{
+          "title" => data_template.title,
+          "title_template" => data_template.title_template
+        }
       }
     }
   end
@@ -1231,26 +1286,30 @@ defmodule WraftDoc.TemplateAssets do
         Enum.map(theme.assets, fn asset ->
           %{
             "fontName" => asset.name,
-            "filePath" => download_file(asset.id, current_user, file_path, "otf", "theme")
+            "path" => download_file(asset.id, current_user, file_path, "fonts")
           }
         end),
-      "color" => %{
-        "body_color" => theme.body_color,
-        "primary_color" => theme.primary_color,
-        "secondary_color" => theme.secondary_color
+      "colors" => %{
+        "bodyColor" => theme.body_color,
+        "primaryColor" => theme.primary_color,
+        "secondaryColor" => theme.secondary_color
       }
     }
   end
 
   defp build_layout(layout, file_path, current_user) do
-    layout = Repo.preload(layout, :assets)
-    [asset | _] = layout.assets
+    layout = Repo.preload(layout, :asset)
+    asset = layout.asset
 
     %{
       "name" => layout.name,
-      "slug" => make_slug(layout.slug, file_path),
-      "slug_file" => download_file(asset.id, current_user, file_path, "pdf", "layout"),
-      "meta" => "fields",
+      "slug" => "#{layout.slug}",
+      "slug_file" => download_file(asset.id, current_user, file_path, "assets"),
+      "meta" => %{
+        "standard_size" => "a4",
+        "fields" => [],
+        "margin" => "2.54"
+      },
       "description" => layout.description,
       "engine" => "pandoc/latex"
     }
@@ -1269,31 +1328,76 @@ defmodule WraftDoc.TemplateAssets do
           %{
             "name" => field.name,
             "description" => field.description,
-            "type" => field.field_type.name
+            "type" => String.downcase(field.field_type.name)
           }
         end)
     }
   end
 
-  defp make_slug(slug, file_path) do
-    path = :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
-    System.cmd("cp", ["-a", path, file_path <> "/" <> slug])
-    slug
+  defp export_to_markdown(template, folder_path) do
+    template_json = """
+    {"data": #{Jason.encode!(template.serialized["data"])}}
+    """
+
+    folder_path
+    |> Path.join("template.json")
+    |> File.write!(template_json)
+
+    markdown =
+      template.serialized["data"]
+      |> Jason.decode!()
+      |> ProsemirrorToMarkdown.convert()
+
+    File.write!(Path.join(folder_path, "template.md"), markdown)
+
+    template.title
   end
+
+  defp validate_template_inputs(theme, layout, c_type, data_template) do
+    with {:ok, data_template} <- validate_data_template(data_template),
+         {:ok, theme} <- validate_theme(theme),
+         {:ok, layout} <- validate_layout(layout),
+         {:ok, c_type} <- validate_contract_type(c_type) do
+      {:ok, %{theme: theme, layout: layout, c_type: c_type, data_template: data_template}}
+    end
+  end
+
+  defp validate_data_template(nil), do: {:error, "DataTemplate is missing"}
+  defp validate_data_template(%{title: nil}), do: {:error, "DataTemplate title is missing"}
+  defp validate_data_template(%{title: ""}), do: {:error, "DataTemplate title is missing"}
+
+  defp validate_data_template(%{serialized: nil}),
+    do: {:error, "DataTemplate serialized data is missing"}
+
+  defp validate_data_template(dt), do: {:ok, dt}
+
+  defp validate_theme(nil), do: {:error, "Theme is missing"}
+  defp validate_theme(%{name: nil}), do: {:error, "Theme name is missing"}
+  defp validate_theme(%{assets: nil}), do: {:error, "Theme assets missing"}
+  defp validate_theme(%{assets: []}), do: {:error, "Theme assets missing"}
+  defp validate_theme(theme), do: {:ok, theme}
+
+  defp validate_layout(nil), do: {:error, "Layout is missing"}
+  defp validate_layout(%{name: nil}), do: {:error, "Layout name is missing"}
+  defp validate_layout(%{asset: nil}), do: {:error, "Layout asset is missing"}
+  defp validate_layout(layout), do: {:ok, layout}
+
+  defp validate_contract_type(nil), do: {:error, "Contract type is missing"}
+  defp validate_contract_type(%{name: nil}), do: {:error, "Contract type name is missing"}
+  defp validate_contract_type(c_type), do: {:ok, c_type}
 
   defp download_file(
          asset_id,
          %{current_org_id: org_id} = _current_user,
          file_path,
-         format,
          folder_name
        ) do
-    file = Minio.download("organisations/#{org_id}/assets/#{asset_id}")
     asset = Assets.get_asset(asset_id, %{current_org_id: org_id})
-    path = "#{file_path}/#{folder_name}/#{asset.name}.#{format}"
+    file = Minio.download("organisations/#{org_id}/assets/#{asset_id}/#{asset.file.file_name}")
+    path = "#{file_path}/#{folder_name}/#{asset.file.file_name}"
     File.mkdir_p(Path.dirname(path))
     File.write!(path, file)
-    "#{folder_name}/#{asset.name}.#{format}"
+    "#{folder_name}/#{asset.file.file_name}"
   end
 
   defp update_conflicting_name(%{"title" => title} = map, DataTemplate, current_user) do
