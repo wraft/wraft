@@ -106,7 +106,7 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   end
 
   defp convert_node(%{"type" => "holder", "attrs" => %{"name" => name}}, _opts) do
-    "[#{name}]"
+    " [#{name}] "
   end
 
   defp convert_node(%{"type" => "holder"}, _opts),
