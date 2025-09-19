@@ -34,6 +34,64 @@ $if(letterhead)$
   )
 $endif$
 
+#let bold_font = "Roboto"
+#let italic_font = "Roboto"
+#let bold_italic_font = "Roboto"
+
+$if(mainfont_base_options)$
+  #let opts = "$mainfont_base_options$"
+  #for opt in opts.split(";") {
+    let opt = opt.trim()
+    if opt.contains("=") {
+      let parts = opt.split("=")
+      let key = parts.at(0).replace("\n", "").trim()
+      let value = parts.at(1).replace("\n", " ").trim()
+
+      if key == "BoldFont" {
+       bold_font = value
+      }
+      if key == "ItalicFont" {
+        italic_font = value
+      }
+      if key == "BoldItalicFont" {
+       bold_italic_font = value
+      }
+    }
+  }
+$endif$
+
+#let bold-text(body) = text(
+  font: bold_font,
+  weight: "bold"
+)[#body]
+
+#let italic-text(body) = text(
+  font: italic_font,
+  style: "italic"
+)[#body]
+
+#let bold-italic-text(body) = text(
+  font: bold_italic_font,
+  weight: "bold",
+  style: "italic"
+)[#body]
+
+#show strong: it => {
+  if repr(it.body).contains("emph") {
+    bold-italic-text(it.body)
+  } else {
+    bold-text(it.body)
+  }
+}
+
+#show emph: it => {
+  if repr(it.body).contains("strong") {
+    bold-italic-text(it.body)
+  } else {
+    italic-text(it.body)
+  }
+}
+
 #show figure: set block(breakable: true)
 
 #show: conf.with(

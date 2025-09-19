@@ -154,7 +154,7 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   defp convert_node(%{"type" => type}, _opts),
     do: raise(InvalidJsonError, "Invalid node type: #{type}")
 
-  defp convert_mark(text, %{"type" => "textHighlight"}, _opts), do: text
+  defp convert_mark(text, %{"type" => "textHighlight"}, _opts), do: "#{text}"
 
   defp convert_mark(text, %{"type" => "bold"}, _opts), do: "**#{text}**"
   defp convert_mark(text, %{"type" => "italic"}, _opts), do: "*#{text}*"
@@ -1099,7 +1099,9 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp process_cell_content_item(item, opts), do: convert_node(item, opts)
 
-  defp process_paragraph_item(%{"type" => "text", "text" => text}, _opts), do: text
+  defp process_paragraph_item(%{"type" => "text", "text" => text, "marks" => marks}, opts),
+    do: Enum.reduce(Enum.reverse(marks), text, &convert_mark(&2, &1, opts))
+
   defp process_paragraph_item(%{"type" => "hardBreak"}, _opts), do: "\n"
   defp process_paragraph_item(item, opts), do: convert_node(item, opts)
 

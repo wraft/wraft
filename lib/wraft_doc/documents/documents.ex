@@ -1339,6 +1339,9 @@ defmodule WraftDoc.Documents do
       |> concat_strings("mainfont_base: #{theme.base_font_name}\n")
       |> concat_strings("mainfontoptions:\n")
       |> Themes.font_option_header(theme.font_options)
+      |> concat_strings(
+        "mainfont_base_options: \"#{Themes.font_base_option_header(theme.font_options)}\"\n"
+      )
       |> concat_strings("body_color: \"#{theme.body_color}\"\n")
       |> concat_strings("primary_color: \"#{theme.primary_color}\"\n")
       |> concat_strings("secondary_color: \"#{theme.secondary_color}\"\n")
