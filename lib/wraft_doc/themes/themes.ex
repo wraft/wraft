@@ -177,55 +177,175 @@ defmodule WraftDoc.Themes do
   end
 
   @spec get_theme_details(Theme.t(), String.t()) :: map()
-  def get_theme_details(%Theme{assets: [%{file: %{file_name: file_name}} | _]} = theme, mkdir) do
-    [font_name, _, file_type] = String.split(file_name, ~r/[-.]/)
+  def get_theme_details(%Theme{} = theme, mkdir),
+    do:
+      Map.merge(
+        %{
+          body_color: theme.body_color,
+          primary_color: theme.primary_color,
+          secondary_color: theme.secondary_color,
+          typescale: Jason.encode!(theme.typescale)
+        },
+        get_font_details(theme, mkdir)
+      )
 
-    {:ok,
-     %{
-       body_color: theme.body_color,
-       primary_color: theme.primary_color,
-       secondary_color: theme.secondary_color,
-       typescale: Jason.encode!(theme.typescale),
-       base_font_name: get_base_font_name(font_name),
-       font_name: "#{font_name}-Regular.#{file_type}",
-       font_options: font_options(theme, mkdir)
-     }}
+  defp get_font_details(%Theme{assets: assets} = theme, mkdir) when length(assets) > 0 do
+    fonts_dir = Path.join(mkdir, "fonts")
+    File.mkdir_p!(fonts_dir)
+
+    available_fonts = process_font_assets(assets, theme.organisation_id, fonts_dir)
+    {base_font_name, regular_font_name} = determine_base_font(available_fonts, fonts_dir)
+    font_options = build_font_options_with_fallbacks(available_fonts, fonts_dir)
+
+    %{
+      base_font_name: base_font_name,
+      font_name: regular_font_name,
+      font_options: font_options
+    }
   end
 
-  def get_theme_details(_, _), do: {"Font files not found.", 1099}
+  defp get_font_details(_, mkdir) do
+    fonts_dir = Path.join(mkdir, "fonts")
+    copy_default_roboto_fonts(fonts_dir)
 
-  def font_options(%Theme{organisation_id: org_id} = theme, mkdir) do
-    theme.assets
-    |> Stream.map(fn asset ->
-      file_name = asset.file.file_name
-      binary = Minio.download("organisations/#{org_id}/assets/#{asset.id}/#{file_name}")
+    %{
+      base_font_name: "Roboto",
+      font_name: "Roboto-Regular.ttf",
+      font_options: [
+        "ItalicFont=Roboto-Italic.ttf",
+        "BoldItalicFont=Roboto-BoldItalic.ttf",
+        "BoldFont=Roboto-Bold.ttf"
+      ]
+    }
+  end
 
-      mkdir
-      |> Path.join("fonts")
-      |> File.mkdir_p!()
+  defp process_font_assets(assets, organisation_id, fonts_dir) do
+    Enum.reduce(assets, %{}, fn asset, acc ->
+      process_single_asset(asset, organisation_id, fonts_dir, acc)
+    end)
+  end
 
-      asset_file_path = Path.join(mkdir, "fonts/#{file_name}")
-      File.write!(asset_file_path, binary)
+  defp process_single_asset(
+         %{id: asset_id, file: %{file_name: file_name}},
+         organisation_id,
+         fonts_dir,
+         acc
+       ) do
+    download_and_save_font(asset_id, file_name, organisation_id, fonts_dir)
+    extract_font_info(file_name, acc)
+  end
 
-      [_, font_type, _] = String.split(file_name, ~r/[-.]/)
+  defp download_and_save_font(asset_id, file_name, organisation_id, fonts_dir) do
+    binary = Minio.download("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}")
+    asset_file_path = Path.join(fonts_dir, file_name)
+    File.write!(asset_file_path, binary)
+  end
 
-      case Enum.member?(["Bold", "Italic", "BoldItalic"], font_type) do
-        true -> "#{font_type}Font=#{file_name}"
-        false -> ""
+  defp extract_font_info(file_name, acc) do
+    case parse_font_filename(file_name) do
+      {font_name, font_type, file_ext} ->
+        base_key = map_font_type_to_key(font_type)
+
+        Map.put(acc, base_key, %{
+          font_name: font_name,
+          file_name: file_name,
+          file_ext: file_ext
+        })
+
+      :invalid_format ->
+        acc
+    end
+  end
+
+  defp parse_font_filename(file_name) do
+    case String.split(file_name, ~r/[-.]/) do
+      [font_name, font_type, file_ext] -> {font_name, font_type, file_ext}
+      _ -> :invalid_format
+    end
+  end
+
+  defp map_font_type_to_key(font_type) do
+    case font_type do
+      "Regular" -> :regular
+      "Bold" -> :bold
+      "Italic" -> :italic
+      "BoldItalic" -> :bold_italic
+      _ -> :regular
+    end
+  end
+
+  defp determine_base_font(available_fonts, fonts_dir) do
+    case Map.get(available_fonts, :regular) do
+      %{font_name: font_name, file_name: file_name} ->
+        {get_base_font_name(font_name), file_name}
+
+      nil ->
+        copy_default_font("Roboto-Regular.ttf", fonts_dir)
+        {"Roboto", "Roboto-Regular.ttf"}
+    end
+  end
+
+  defp build_font_options_with_fallbacks(available_fonts, fonts_dir) do
+    font_mappings = [
+      {:bold, "BoldFont"},
+      {:italic, "ItalicFont"},
+      {:bold_italic, "BoldItalicFont"}
+    ]
+
+    Enum.map(font_mappings, fn {font_key, option_key} ->
+      case Map.get(available_fonts, font_key) do
+        %{file_name: file_name} ->
+          "#{option_key}=#{file_name}"
+
+        nil ->
+          # Use Roboto fallback
+          fallback_file = get_roboto_fallback(font_key)
+          copy_default_font(fallback_file, fonts_dir)
+          "#{option_key}=#{fallback_file}"
       end
     end)
-    |> Enum.reject(&(&1 == ""))
   end
 
-  defp get_base_font_name(font_name) do
-    font_name
-    |> String.replace(~r/([A-Z]+)([A-Z][a-z])/, "\\1 \\2")
-    |> String.replace(~r/([a-z])([A-Z])/, "\\1 \\2")
+  defp get_roboto_fallback(:bold), do: "Roboto-Bold.ttf"
+  defp get_roboto_fallback(:italic), do: "Roboto-Italic.ttf"
+  defp get_roboto_fallback(:bold_italic), do: "Roboto-BoldItalic.ttf"
+
+  defp copy_default_font(font_file, fonts_dir) do
+    source = Path.join([File.cwd!(), "priv", "wraft_files", "Roboto", font_file])
+    destination = Path.join(fonts_dir, font_file)
+    File.cp!(source, destination)
   end
+
+  defp copy_default_roboto_fonts(fonts_dir) do
+    File.mkdir_p!(fonts_dir)
+    roboto_source_dir = Path.join([File.cwd!(), "priv", "wraft_files", "Roboto"])
+    File.cp_r!(roboto_source_dir, fonts_dir)
+  end
+
+  def get_base_font_name(font_name),
+    do:
+      font_name
+      |> String.replace(~r/([A-Z]+)([A-Z][a-z])/, "\\1 \\2")
+      |> String.replace(~r/([a-z])([A-Z])/, "\\1 \\2")
 
   def font_option_header(header, font_options) do
     Enum.reduce(font_options, header, fn font_option, acc ->
       Documents.concat_strings(acc, "- #{font_option}\n")
+    end)
+  end
+
+  def font_base_option_header(font_options) do
+    Enum.reduce(font_options, "", fn font_option, acc ->
+      [key, file] = String.split(font_option, "=")
+
+      base_name =
+        file
+        |> Path.rootname()
+        |> String.split("-", parts: 2)
+        |> List.first()
+        |> get_base_font_name()
+
+      Documents.concat_strings(acc, "#{key}=#{base_name};")
     end)
   end
 end
