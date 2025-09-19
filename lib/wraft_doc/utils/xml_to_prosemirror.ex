@@ -170,17 +170,20 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
   # Convert XML element to ProseMirror node
   defp convert_xml_element({:xmlElement, name, _, _, _, _, _, attrs, content, _, _, _}, opts) do
     element_name = atom_to_string(name)
-    handle_element_by_type(element_name, attrs, content, opts)
+    case element_name do
+      "paragraph" -> handle_element_by_type(element_name, attrs, content, opts)
+      "bold" -> create_formatted_text(content, "bold", opts)
+      "italic" -> create_formatted_text(content, "italic", opts)
+      "underline" -> create_formatted_text(content, "underline", opts)
+      _ -> handle_element_by_type(element_name, attrs, content, opts)
+    end
   end
 
   # Convert XML text node to ProseMirror text
   defp convert_xml_element({:xmlText, _, _, _, text, :text}, _opts) do
-    text_content =
-      text
-      |> to_string()
-      |> String.trim()
-
-    if text_content == "" do
+    text_content = to_string(text)
+    
+    if String.trim(text_content) == "" and text_content != " " do
       nil
     else
       %{"type" => "text", "text" => text_content}
@@ -476,10 +479,18 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
 
   # Helper functions for creating common node types
   defp create_paragraph_node(content, opts) do
-    content_list = convert_content_list(content, opts)
+    content_list = 
+      content
+      |> Enum.map(&convert_xml_element(&1, opts))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.flat_map(fn
+        %{"type" => "text"} = node -> [node]
+        %{"content" => inner_content} -> inner_content
+        _ -> []
+      end)
+
     base_node = %{"type" => "paragraph"}
 
-    # Only add content if it's not empty
     if content_list != [] do
       Map.put(base_node, "content", content_list)
     else
