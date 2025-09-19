@@ -8,6 +8,9 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
   """
   alias WraftDoc.Utils.XmlToProseMirror.XmlParseError
 
+  @block_elements ~w(paragraph heading blockquote pre ul ol li table tr td th p)
+  @formatting_elements ~w(bold italic underline strike code strong b em i u s)
+
   @doc """
   Converts XML text to ProseMirror Node JSON format.
 
@@ -167,22 +170,15 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
     end
   end
 
-  # Convert XML element to ProseMirror node
+  # Convert XML nodes to ProseMirror nodes
   defp convert_xml_element({:xmlElement, name, _, _, _, _, _, attrs, content, _, _, _}, opts) do
     element_name = atom_to_string(name)
-    case element_name do
-      "paragraph" -> handle_element_by_type(element_name, attrs, content, opts)
-      "bold" -> create_formatted_text(content, "bold", opts)
-      "italic" -> create_formatted_text(content, "italic", opts)
-      "underline" -> create_formatted_text(content, "underline", opts)
-      _ -> handle_element_by_type(element_name, attrs, content, opts)
-    end
+    convert_element_by_name(element_name, attrs, content, opts)
   end
 
-  # Convert XML text node to ProseMirror text
   defp convert_xml_element({:xmlText, _, _, _, text, :text}, _opts) do
     text_content = to_string(text)
-    
+
     if String.trim(text_content) == "" and text_content != " " do
       nil
     else
@@ -190,10 +186,43 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
     end
   end
 
-  # Handle other XML node types
   defp convert_xml_element({:xmlComment, _, _, _, _}, _opts), do: nil
   defp convert_xml_element({:xmlPI, _, _, _, _}, _opts), do: nil
   defp convert_xml_element(_, _opts), do: nil
+
+  # Handle element conversion based on element name
+  defp convert_element_by_name(element_name, attrs, content, opts) do
+    cond do
+      element_name in @block_elements ->
+        handle_element_by_type(element_name, attrs, content, opts)
+
+      element_name in @formatting_elements ->
+        create_formatted_text(content, get_mark_type(element_name), opts)
+
+      element_name == "holder" ->
+        %{"type" => "holder", "attrs" => convert_holder_attrs(attrs)}
+
+      element_name == "br" ->
+        %{"type" => "hardBreak"}
+
+      element_name == "hr" ->
+        %{"type" => "horizontalRule"}
+
+      element_name == "img" ->
+        %{"type" => "image", "attrs" => convert_image_attrs(attrs)}
+
+      element_name == "a" ->
+        create_link_text(
+          content,
+          get_attribute_value(attrs, "href"),
+          get_attribute_value(attrs, "title"),
+          opts
+        )
+
+      true ->
+        handle_element_by_type(element_name, attrs, content, opts)
+    end
+  end
 
   # Handle elements by type to reduce complexity
   defp handle_element_by_type("doc", _attrs, content, opts) do
@@ -479,15 +508,10 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
 
   # Helper functions for creating common node types
   defp create_paragraph_node(content, opts) do
-    content_list = 
+    content_list =
       content
       |> Enum.map(&convert_xml_element(&1, opts))
       |> Enum.reject(&is_nil/1)
-      |> Enum.flat_map(fn
-        %{"type" => "text"} = node -> [node]
-        %{"content" => inner_content} -> inner_content
-        _ -> []
-      end)
 
     base_node = %{"type" => "paragraph"}
 
@@ -520,22 +544,50 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
 
   # Create formatted text with marks
   defp create_formatted_text(content, mark_type, opts, additional_attrs \\ %{}) do
-    text_content = extract_text_from_content(content, opts)
+    content_list = convert_content_list(content, opts)
+    nodes = Enum.map(content_list, &format_node(&1, mark_type, additional_attrs))
+    create_formatted_node(nodes, mark_type)
+  end
 
-    base_node = %{"type" => "text", "text" => text_content}
+  # Format a single node with marks and attributes
+  defp format_node(node, mark_type, additional_attrs) do
+    node = add_marks_to_node(node, mark_type)
+    add_attrs_to_node(node, additional_attrs)
+  end
 
-    base_node =
-      if map_size(additional_attrs) > 0 do
-        Map.put(base_node, "attrs", additional_attrs)
-      else
-        base_node
-      end
+  # Add marks to a node
+  defp add_marks_to_node(node, nil), do: node
 
-    if mark_type do
-      Map.put(base_node, "marks", [%{"type" => mark_type}])
-    else
-      base_node
-    end
+  defp add_marks_to_node(node, mark_type) do
+    marks = Map.get(node, "marks", [])
+    marks = [%{"type" => mark_type} | marks]
+    Map.put(node, "marks", marks)
+  end
+
+  # Add attributes to a node if any exist
+  defp add_attrs_to_node(node, attrs) when map_size(attrs) == 0, do: node
+  defp add_attrs_to_node(node, attrs), do: Map.put(node, "attrs", attrs)
+
+  # Create the final formatted node based on the number of nodes and mark type
+  defp create_formatted_node([], _mark_type), do: %{"type" => "text", "text" => ""}
+  defp create_formatted_node([single_node], _mark_type), do: single_node
+
+  defp create_formatted_node(multiple_nodes, nil),
+    do: %{"type" => "text", "content" => multiple_nodes}
+
+  defp create_formatted_node(multiple_nodes, mark_type) do
+    %{
+      "type" => "text",
+      "text" => extract_text_from_nodes(multiple_nodes),
+      "marks" => [%{"type" => mark_type}]
+    }
+  end
+
+  defp extract_text_from_nodes(nodes) do
+    Enum.map_join(nodes, "", fn
+      %{"type" => "text", "text" => text} -> text
+      _ -> ""
+    end)
   end
 
   # Create link text
@@ -681,8 +733,8 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
 
     %{
       "name" => Map.get(converted, "name", ""),
-      "named" => Map.get(converted, "named"),
-      "id" => Map.get(converted, "id")
+      "named" => Map.get(converted, "named", nil),
+      "id" => Map.get(converted, "id", nil)
     }
   end
 
@@ -1023,6 +1075,23 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
 
   defp parse_colwidth(value) when is_integer(value), do: [value]
   defp parse_colwidth(_), do: nil
+
+  @mark_type_map %{
+    "bold" => "bold",
+    "strong" => "bold",
+    "b" => "bold",
+    "italic" => "italic",
+    "em" => "italic",
+    "i" => "italic",
+    "underline" => "underline",
+    "u" => "underline",
+    "strike" => "strike",
+    "s" => "strike",
+    "code" => "code"
+  }
+
+  # Get mark type for formatting elements
+  defp get_mark_type(element_name), do: Map.get(@mark_type_map, element_name)
 
   # Helper function to parse numbers (decimal, hexadecimal, etc.)
   defp parse_number(str) do
