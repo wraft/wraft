@@ -154,7 +154,13 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       profile_pic: generate_url(instance.creator.profile),
       vendor: render_one(instance.vendor, VendorView, "vendor.json", as: :vendor),
       versions:
-        render_many([List.first(instance.versions)], InstanceVersionView, "version.json",
+        render_many(
+          case List.first(instance.versions) do
+            nil -> []
+            version -> [version]
+          end,
+          InstanceVersionView,
+          "version.json",
           as: :version
         ),
       instance_approval_systems:
