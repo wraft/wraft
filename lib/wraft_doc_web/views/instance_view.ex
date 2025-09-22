@@ -31,7 +31,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         render_many(content.instance_approval_systems, InstanceApprovalSystemView, "create.json",
           as: :instance_approval_system
         ),
-      profile_pic: generate_url(content.creator.profile),
+      profile_pic: generate_url(content.creator),
       creator: render_one(content.creator, UserView, "user_id_and_name.json", as: :user)
     }
   end
@@ -89,7 +89,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         render_many(content.instance_approval_systems, InstanceApprovalSystemView, "create.json",
           as: :instance_approval_system
         ),
-      profile_pic: generate_url(content.creator.profile),
+      profile_pic: generate_url(content.creator),
       creator: render_one(content.creator, UserView, "user_id_and_name.json", as: :user)
     }
   end
@@ -151,7 +151,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         ),
       state: render_one(instance.state, StateView, "instance_state.json", as: :state),
       creator: render_one(instance.creator, UserView, "user.json", as: :user),
-      profile_pic: generate_url(instance.creator.profile),
+      profile_pic: generate_url(instance.creator),
       vendor: render_one(instance.vendor, VendorView, "vendor.json", as: :vendor),
       versions: render_many(instance.versions, InstanceVersionView, "version.json", as: :version),
       instance_approval_systems:
@@ -170,7 +170,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         ),
       state: render_one(instance.state, StateView, "state.json", as: :state),
       creator: render_one(instance.creator, UserView, "user.json", as: :user),
-      profile_pic: generate_url(instance.creator.profile),
+      profile_pic: generate_url(instance.creator),
       versions: render_many(instance.versions, InstanceVersionView, "version.json", as: :version)
     }
   end
@@ -204,7 +204,9 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
-  def generate_url(%{profile_pic: pic} = profile) do
-    WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
-  end
+  def generate_url(%{profile: %{profile_pic: pic} = profile}),
+    do: WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
+
+  def generate_url(_),
+    do: nil
 end
