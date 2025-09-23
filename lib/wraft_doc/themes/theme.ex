@@ -53,7 +53,7 @@ defmodule WraftDoc.Themes.Theme do
   def changeset(%Theme{} = theme, attrs \\ %{}) do
     theme
     |> cast(attrs, @fields)
-    |> validate_required([:name, :font, :organisation_id])
+    |> validate_required([:name, :organisation_id])
     |> validate_format(:body_color, @hex_format, message: @hex_code_warning_msg)
     |> validate_format(:primary_color, @hex_format, message: @hex_code_warning_msg)
     |> validate_format(:secondary_color, @hex_format, message: @hex_code_warning_msg)
