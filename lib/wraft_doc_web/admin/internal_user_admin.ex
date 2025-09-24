@@ -14,15 +14,35 @@ defmodule WraftDocWeb.InternalUserAdmin do
 
   def form_fields(_) do
     [
-      email: %{label: "Email"},
+      email: %{label: "Email", update: :readonly},
       password: %{
         label: "Password",
+        update: :readonly,
         help_text:
           "Please note down the password so that you can share the credentials with new user."
       },
       is_deactivated: %{label: "is_deactivated"}
     ]
   end
+
+  # def resource_actions(_conn) do
+  #   [
+  #     reset: %{
+  #       name: "Reset password",
+  #       inputs: [
+  #         %{name: "current_password", title: "Current Password", default: ""},
+  #         %{name: "new_password", title: "New Password", default: ""}
+  #       ],
+  #       action: fn conn, internal_user ->
+  #         {:ok, internal_user}
+  #       end
+  #     }
+  #   ]
+  # end
+
+  # defp reset_password(%InternalUser{} = internal_user) do
+  #   InternalUser.reset_password(internal_user)
+  # end
 
   def update_changeset(%InternalUser{} = internal_user, attrs) do
     InternalUser.update_changeset(internal_user, attrs)
