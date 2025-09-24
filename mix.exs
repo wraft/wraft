@@ -5,7 +5,7 @@ defmodule WraftDoc.Mixfile do
   def project do
     [
       app: :wraft_doc,
-      version: "0.6.2",
+      version: "0.6.4",
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: Mix.compilers() ++ [:phoenix_swagger],
