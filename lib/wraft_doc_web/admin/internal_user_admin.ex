@@ -3,6 +3,7 @@ defmodule WraftDocWeb.InternalUserAdmin do
   Admin panel for internal user
   """
 
+  alias WraftDoc.InternalUsers
   alias WraftDoc.InternalUsers.InternalUser
 
   def index(_) do
@@ -17,32 +18,29 @@ defmodule WraftDocWeb.InternalUserAdmin do
       email: %{label: "Email", update: :readonly},
       password: %{
         label: "Password",
-        update: :readonly,
         help_text:
           "Please note down the password so that you can share the credentials with new user."
       },
-      is_deactivated: %{label: "is_deactivated"}
+      is_deactivated: %{label: "is_deactivated", update: :readonly, create: :hidden}
     ]
   end
 
-  # def resource_actions(_conn) do
-  #   [
-  #     reset: %{
-  #       name: "Reset password",
-  #       inputs: [
-  #         %{name: "current_password", title: "Current Password", default: ""},
-  #         %{name: "new_password", title: "New Password", default: ""}
-  #       ],
-  #       action: fn conn, internal_user ->
-  #         {:ok, internal_user}
-  #       end
-  #     }
-  #   ]
-  # end
-
-  # defp reset_password(%InternalUser{} = internal_user) do
-  #   InternalUser.reset_password(internal_user)
-  # end
+  def resource_actions(_conn) do
+    [
+      activate: %{
+        name: "Activate",
+        action: fn _conn, internal_user ->
+          InternalUsers.update_internal_user(internal_user, %{is_deactivated: false})
+        end
+      },
+      deactivate: %{
+        name: "Deactivate",
+        action: fn _conn, internal_user ->
+          InternalUsers.update_internal_user(internal_user, %{is_deactivated: true})
+        end
+      }
+    ]
+  end
 
   def update_changeset(%InternalUser{} = internal_user, attrs) do
     InternalUser.update_changeset(internal_user, attrs)
