@@ -16,6 +16,12 @@ defmodule WraftDocWeb.InternalUserAdmin do
   def form_fields(_) do
     [
       email: %{label: "Email", update: :readonly},
+      current_password: %{
+        label: "Current Password",
+        create: :hidden,
+        help_text: "Please enter your current password. to change your password.",
+        required: true
+      },
       password: %{
         label: "Password",
         help_text:
@@ -44,5 +50,15 @@ defmodule WraftDocWeb.InternalUserAdmin do
 
   def update_changeset(%InternalUser{} = internal_user, attrs) do
     InternalUser.update_changeset(internal_user, attrs)
+  end
+
+  def update(%{params: %{"internal_user" => attrs} = _params} = _conn, changeset) do
+    if Bcrypt.verify_pass(attrs["current_password"], changeset.data.encrypted_password) do
+      changeset.data
+      |> InternalUser.update_changeset(attrs)
+      |> WraftDoc.Repo.update()
+    else
+      {:error, {changeset, "Invalid current password"}}
+    end
   end
 end
