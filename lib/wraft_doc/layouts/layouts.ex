@@ -27,16 +27,7 @@ defmodule WraftDoc.Layouts do
         params
       ) do
     Multi.new()
-    |> Multi.run(:asset, fn _repo, _changes ->
-      asset_params = %{
-        "organisation_id" => org_id,
-        "name" => params["asset_name"],
-        "type" => params["type"],
-        "file" => params["file"]
-      }
-
-      Assets.create_asset(current_user, asset_params)
-    end)
+    |> layout_asset_multi(current_user, params)
     |> Multi.run(:layout, fn _repo, %{asset: %{id: asset_id}} ->
       params =
         Map.merge(params, %{
@@ -79,6 +70,30 @@ defmodule WraftDoc.Layouts do
       changeset = {:error, _} ->
         changeset
     end
+  end
+
+  defp layout_asset_multi(
+         multi,
+         %{current_org_id: org_id} = current_user,
+         %{"file" => file, "type" => type, "asset_name" => asset_name} = _params
+       )
+       when not is_nil(file) do
+    Multi.run(multi, :asset, fn _repo, _changes ->
+      asset_params = %{
+        "organisation_id" => org_id,
+        "name" => asset_name,
+        "type" => type,
+        "file" => file
+      }
+
+      Assets.create_asset(current_user, asset_params)
+    end)
+  end
+
+  defp layout_asset_multi(multi, _, _) do
+    Multi.run(multi, :asset, fn _repo, _changes ->
+      {:ok, %{id: nil}}
+    end)
   end
 
   @doc """
@@ -224,23 +239,18 @@ defmodule WraftDoc.Layouts do
          multi,
          nil,
          %{current_org_id: org_id} = current_user,
-         params
-       ) do
+         %{"file" => file} = params
+       )
+       when not is_nil(file) do
     Multi.run(multi, :asset, fn _repo, _changes ->
-      case params["file"] do
-        nil ->
-          {:error, "No file provided"}
+      params =
+        Map.merge(params, %{
+          "organisation_id" => org_id,
+          "name" => params["asset_name"],
+          "type" => "layout"
+        })
 
-        _ ->
-          params =
-            Map.merge(params, %{
-              "organisation_id" => org_id,
-              "name" => params["asset_name"],
-              "type" => "layout"
-            })
-
-          Assets.create_asset(current_user, params)
-      end
+      Assets.create_asset(current_user, params)
     end)
   end
 
@@ -249,7 +259,8 @@ defmodule WraftDoc.Layouts do
          asset,
          %{current_org_id: org_id} = _current_user,
          %{"file" => file} = _params
-       ) do
+       )
+       when not is_nil(file) do
     Multi.run(multi, :asset, fn _repo, _changes ->
       params = %{
         "organisation_id" => org_id,
