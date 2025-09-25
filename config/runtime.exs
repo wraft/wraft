@@ -142,10 +142,6 @@ config :wraft_doc, :onedrive,
   redirect_uri: System.get_env("REDIRECT_URI"),
   tenant_id: System.get_env("ONEDRIVE_TENANT_ID")
 
-config :wraft_doc, WraftDocWeb.Mailer, api_key: System.fetch_env!("RESEND_API_KEY")
-
-config :wraft_doc, sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"
-
 config :pdf_generator,
   wkhtml_path: System.get_env("WKHTMLTOPDF_PATH"),
   pdftk_path: System.get_env("PDFTK_PATH")
@@ -169,14 +165,52 @@ config :wraft_doc,
     )
 
 # Configure Sentry
-config :sentry,
-  dsn: System.get_env("SENTRY_DSN"),
-  environment_name: :prod,
-  enable_source_code_context: true,
-  root_source_code_path: File.cwd!(),
-  tags: %{
-    env: "production"
-  }
+if sentry_dsn = System.get_env("SENTRY_DSN") do
+  config :sentry,
+    dsn: System.get_env("SENTRY_DSN"),
+    environment_name: :prod,
+    enable_source_code_context: true,
+    root_source_code_path: File.cwd!(),
+    tags: %{
+      env: "production"
+    }
+end
+
+config :wraft_doc, sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"
+
+# Configure Resend mail
+if api_key = System.get_env("RESEND_API_KEY") do
+  config :wraft_doc, WraftDocWeb.Mailer,
+    adapter: Resend.Swoosh.Adapter,
+    api_key: api_key
+end
+
+# Configure SMTP
+if smtp_host = System.get_env("SMTP_HOST") do
+  config :wraft_doc, WraftDocWeb.Mailer,
+    adapter: Swoosh.Adapters.SMTP,
+    relay: smtp_host,
+    port: String.to_integer(System.get_env("SMTP_PORT") || "587"),
+    ssl: true,
+    tls: :always,
+    auth: :always
+
+  if username = System.get_env("SMTP_USERNAME") do
+    config :wraft_doc, WraftDocWeb.Mailer, username: username
+  end
+
+  if password = System.get_env("SMTP_PASSWORD") do
+    config :wraft_doc, WraftDocWeb.Mailer, password: password
+  end
+
+  if retries = System.get_env("SMTP_RETRIES") do
+    config :wraft_doc, WraftDocWeb.Mailer, retries: String.to_integer(retries)
+  end
+
+  if no_mx_lookups = System.get_env("SMTP_NO_MX_LOOKUPS") do
+    config :wraft_doc, WraftDocWeb.Mailer, no_mx_lookups: no_mx_lookups
+  end
+end
 
 # Do not print debug messages in production
 config :logger,
