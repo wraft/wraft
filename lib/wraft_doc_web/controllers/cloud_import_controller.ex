@@ -9,7 +9,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   alias WraftDoc.CloudImport.Providers.Dropbox
   alias WraftDoc.CloudImport.Providers.GoogleDrive, as: Google
   alias WraftDoc.CloudImport.Providers.Onedrive
-  alias WraftDoc.CloudImport.RepositoryCloudTokens, as: AuthTokens
+  alias WraftDoc.Integrations
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -178,7 +178,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def list_gdrive_files(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_drive),
+    with token when not is_nil(token) <-
+           Integrations.get_latest_token(current_user, "google_drive"),
          {:ok, files} <- Google.list_all_files(token, params) do
       json(conn, %{
         "status" => "success",
@@ -209,7 +210,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def get_gdrive_file(conn, %{"file_id" => file_id}) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_drive),
+    with token when not is_nil(token) <-
+           Integrations.get_latest_token(current_user, "google_drive"),
          {:ok, metadata} <- Google.get_file_metadata(token, file_id) do
       json(conn, %{"status" => "success", "file_metadata" => metadata})
     end
@@ -237,7 +239,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def list_all_gdrive_pdfs(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_drive),
+    with token when not is_nil(token) <-
+           Integrations.get_latest_token(current_user, "google_drive"),
          {:ok, pdfs} <- Google.list_all_pdfs(token, params) do
       json(conn, %{"status" => "success", "pdfs" => pdfs["files"]})
     end
@@ -266,7 +269,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def search_gdrive_files(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_drive),
+    with token when not is_nil(token) <-
+           Integrations.get_latest_token(current_user, "google_drive"),
          {:ok, results} <- Google.search_files(token, params) do
       json(conn, %{"status" => "success", "results" => results})
     end
@@ -291,7 +295,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     current_user = conn.assigns[:current_user]
     current_org_id = current_user.current_org_id
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_drive),
+    with token when not is_nil(token) <-
+           Integrations.get_latest_token(current_user, "google_drive"),
          {:ok, result} <- Google.sync_files_to_db(token, params, current_org_id) do
       json(conn, %{"status" => "success", "sync_result" => result})
     end
@@ -322,7 +327,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     user = conn.assigns[:current_user]
     org_id = user.current_org_id
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(user, :google_drive) do
+    with token when not is_nil(token) <- Integrations.get_latest_token(user, "google_drive") do
       _results =
         Google.schedule_download_to_minio(token, file_ids, org_id, %{
           user_id: user.id
@@ -362,7 +367,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def list_gdrive_folders(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_drive),
+    with token when not is_nil(token) <-
+           Integrations.get_latest_token(current_user, "google_drive"),
          {:ok, folders} <- Google.list_all_folders(token, params) do
       json(conn, %{"status" => "success", "folders" => folders["files"]})
     end
@@ -392,7 +398,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def search_gdrive_folders(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_drive),
+    with token when not is_nil(token) <-
+           Integrations.get_latest_token(current_user, "google_drive"),
          {:ok, results} <- Google.search_folders(token, params) do
       json(conn, %{"status" => "success", "folders" => results["files"]})
     end
@@ -422,7 +429,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def list_gdrive_folder_files(conn, %{"folder_id" => folder_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_drive),
+    with token when not is_nil(token) <-
+           Integrations.get_latest_token(current_user, "google_drive"),
          {:ok, files} <- Google.list_files_in_folder(token, folder_id, params) do
       json(conn, %{"status" => "success", "files" => files["files"]})
     end
@@ -450,7 +458,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def get_gdrive_folder(conn, %{"folder_id" => folder_id}) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_drive),
+    with token when not is_nil(token) <-
+           Integrations.get_latest_token(current_user, "google_drive"),
          {:ok, metadata} <- Google.get_folder_metadata(token, folder_id) do
       json(conn, %{"status" => "success", "folder_metadata" => metadata})
     end
@@ -463,7 +472,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def list_dropbox_files(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :dropbox),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :dropbox),
          {:ok, files} <- Dropbox.list_all_files(token, params) do
       json(conn, %{"status" => "success", "files" => files["files"]})
     end
@@ -475,7 +484,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def get_dropbox_file(conn, %{"file_id" => file_id}) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :dropbox),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :dropbox),
          {:ok, metadata} <- Dropbox.get_file_metadata(token, file_id) do
       json(conn, %{"status" => "success", "file_metadata" => metadata})
     end
@@ -487,7 +496,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def list_all_dropbox_pdfs(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :dropbox),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :dropbox),
          {:ok, pdfs} <- Dropbox.list_all_pdfs(token, params) do
       json(conn, %{"status" => "success", "pdfs" => pdfs["files"]})
     end
@@ -499,7 +508,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def search_dropbox_files(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :dropbox),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :dropbox),
          {:ok, results} <- Dropbox.search_files(token, params) do
       json(conn, %{"status" => "success", "results" => results})
     end
@@ -511,7 +520,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def sync_dropbox_files(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :dropbox),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :dropbox),
          {:ok, result} <- Dropbox.sync_files_to_db(token, params) do
       json(conn, %{"status" => "success", "sync_result" => result})
     end
@@ -525,7 +534,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     user = conn.assigns[:current_user]
     org = conn.assigns[:current_org]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(user, :dropbox) do
+    with token when not is_nil(token) <- Integrations.get_latest_token(user, :dropbox) do
       results = Dropbox.schedule_download_to_minio(token, file_ids, user.id, org.id)
 
       conn
@@ -544,7 +553,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def list_dropbox_folders(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :dropbox),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :dropbox),
          {:ok, folders} <- Dropbox.list_all_folders(token, params) do
       json(conn, %{"status" => "success", "folders" => folders["folders"]})
     end
@@ -556,7 +565,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def search_dropbox_folders(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :dropbox),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :dropbox),
          {:ok, results} <- Dropbox.search_folders(token, params) do
       json(conn, %{"status" => "success", "folders" => results["folders"]})
     end
@@ -580,7 +589,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def get_dropbox_folder(conn, %{"folder_path" => folder_path}) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :dropbox),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :dropbox),
          {:ok, metadata} <- Dropbox.get_folder_metadata(token, folder_path) do
       json(conn, %{"status" => "success", "folder_metadata" => metadata})
     end
@@ -593,7 +602,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def list_onedrive_files(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :onedrive),
          {:ok, files} <- Onedrive.list_all_files(token, params) do
       json(conn, %{"status" => "success", "files" => files["files"]})
     end
@@ -605,7 +614,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def get_onedrive_file(conn, %{"file_id" => file_id}) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :onedrive),
          {:ok, metadata} <- Onedrive.get_file_metadata(token, file_id) do
       json(conn, %{"status" => "success", "file_metadata" => metadata})
     end
@@ -617,7 +626,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def list_all_onedrive_pdfs(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :onedrive),
          {:ok, pdfs} <- Onedrive.list_all_pdfs(token, params) do
       json(conn, %{"status" => "success", "pdfs" => pdfs["files"]})
     end
@@ -629,7 +638,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def search_onedrive_files(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :onedrive),
          {:ok, results} <- Onedrive.search_files(token, params) do
       json(conn, %{"status" => "success", "results" => results})
     end
@@ -641,7 +650,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def sync_onedrive_files(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :onedrive),
          {:ok, result} <- Onedrive.sync_files_to_db(token, params) do
       json(conn, %{"status" => "success", "sync_result" => result})
     end
@@ -656,7 +665,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     # need to be changed
     org = conn.assigns[:current_org]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(user, :onedrive) do
+    with token when not is_nil(token) <- Integrations.get_latest_token(user, :onedrive) do
       results = Onedrive.schedule_download_to_minio(token, file_ids, user.id, org.id)
 
       conn
@@ -675,7 +684,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def list_onedrive_folders(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :onedrive),
          {:ok, folders} <- Onedrive.list_all_folders(token, params) do
       json(conn, %{"status" => "success", "folders" => folders["folders"]})
     end
@@ -687,7 +696,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def search_onedrive_folders(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :onedrive),
          {:ok, results} <- Onedrive.search_folders(token, params) do
       json(conn, %{"status" => "success", "folders" => results["folders"]})
     end
@@ -699,7 +708,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def list_onedrive_folder_files(conn, %{"folder_id" => folder_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :onedrive),
          {:ok, files} <- Onedrive.list_files_in_folder(token, folder_id, params) do
       json(conn, %{"status" => "success", "files" => files["files"]})
     end
@@ -711,7 +720,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   def get_onedrive_folder(conn, %{"folder_id" => folder_id}) do
     current_user = conn.assigns[:current_user]
 
-    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+    with token when not is_nil(token) <- Integrations.get_latest_token(current_user, :onedrive),
          {:ok, metadata} <- Onedrive.get_folder_metadata(token, folder_id) do
       json(conn, %{"status" => "success", "folder_metadata" => metadata})
     end
