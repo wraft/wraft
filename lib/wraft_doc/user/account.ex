@@ -105,14 +105,35 @@ defmodule WraftDoc.Account do
     end
   end
 
+  # NOTE: We originally used `Multi.insert/4` with `on_conflict` to upsert the user.
+  # That caused foreign key errors due to ID mismatches when reusing existing users.
+  # As a temporary fix, we switched to `Multi.run/3` with explicit insert-or-update
+  # by email. This guarantees the correct user ID from the DB.
   defp basic_registration_multi(multi, params) do
     multi
-    |> Multi.insert(:user, User.changeset(%User{}, params),
-      on_conflict: {:replace_all_except, [:email]},
-      conflict_target: :email
-    )
+    # |> Multi.insert(:user, User.changeset(%User{}, params),
+    #   on_conflict: {:replace_all_except, [:email]},
+    #   conflict_target: :email
+    # )
+    |> Multi.run(:user, fn repo, _changes ->
+      User
+      |> repo.get_by(email: params["email"])
+      |> case do
+        nil ->
+          %User{}
+          |> User.changeset(params)
+          |> repo.insert()
+
+        user ->
+          user
+          |> User.changeset(params)
+          |> repo.update()
+      end
+    end)
     |> Multi.insert(:profile, fn %{user: user} ->
-      user |> build_assoc(:profile) |> Profile.changeset(params)
+      user
+      |> build_assoc(:profile)
+      |> Profile.changeset(params)
     end)
     |> Multi.update(:propic, &Profile.propic_changeset(&1.profile, params))
     |> Multi.run(:personal_organisation, fn _repo, %{user: user} ->

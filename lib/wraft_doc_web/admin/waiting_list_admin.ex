@@ -108,11 +108,12 @@ defmodule WraftDocWeb.WaitingListAdmin do
   defp create_account(%WaitingList{email: email, first_name: first_name, last_name: last_name}) do
     random_password = 8 |> :crypto.strong_rand_bytes() |> Base.encode16() |> binary_part(0, 8)
 
-    params = %{
-      "name" => "#{first_name} #{last_name}",
-      "email" => email,
-      "password" => random_password
-    }
+    params =
+      %{
+        "name" => "#{first_name} #{last_name}",
+        "email" => email,
+        "password" => random_password
+      }
 
     Account.registration(params)
   end
