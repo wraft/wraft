@@ -64,7 +64,8 @@ defmodule WraftDocWeb.Api.V1.WaitingListController do
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
-    with nil <- Account.get_user_by_email(params["email"]),
+    with user <- Account.get_user_by_email(params["email"]),
+         true <- is_nil(user) or user.is_guest,
          {:ok, %WaitingList{} = waiting_list} <- WaitingLists.join_waiting_list(params) do
       WaitingLists.waitlist_confirmation_email(waiting_list)
 

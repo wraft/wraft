@@ -3,6 +3,7 @@ defmodule WraftDocWeb.InternalUserAdmin do
   Admin panel for internal user
   """
 
+  alias WraftDoc.InternalUsers
   alias WraftDoc.InternalUsers.InternalUser
 
   def index(_) do
@@ -14,13 +15,30 @@ defmodule WraftDocWeb.InternalUserAdmin do
 
   def form_fields(_) do
     [
-      email: %{label: "Email"},
+      email: %{label: "Email", update: :readonly},
       password: %{
         label: "Password",
         help_text:
           "Please note down the password so that you can share the credentials with new user."
       },
-      is_deactivated: %{label: "is_deactivated"}
+      is_deactivated: %{label: "is_deactivated", update: :readonly, create: :hidden}
+    ]
+  end
+
+  def resource_actions(_conn) do
+    [
+      activate: %{
+        name: "Activate",
+        action: fn _conn, internal_user ->
+          InternalUsers.update_internal_user(internal_user, %{is_deactivated: false})
+        end
+      },
+      deactivate: %{
+        name: "Deactivate",
+        action: fn _conn, internal_user ->
+          InternalUsers.update_internal_user(internal_user, %{is_deactivated: true})
+        end
+      }
     ]
   end
 
