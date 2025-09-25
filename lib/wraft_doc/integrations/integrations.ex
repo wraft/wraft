@@ -4,6 +4,7 @@ defmodule WraftDoc.Integrations do
   """
 
   import Ecto.Query, warn: false
+  alias WraftDoc.Account.User
   alias WraftDoc.Integrations.Integration
   alias WraftDoc.Repo
 
@@ -109,6 +110,27 @@ defmodule WraftDoc.Integrations do
       %Integration{enabled: true, config: config} -> {:ok, config}
       %Integration{enabled: false} -> {:error, :integration_disabled}
       nil -> {:error, :integration_not_found}
+    end
+  end
+
+  @spec get_latest_token(User.t(), atom()) :: String.t() | nil
+  def get_latest_token(%User{current_org_id: org_id}, type) do
+    case Integration
+         |> where([i], i.provider == ^type and i.organisation_id == ^org_id)
+         |> order_by([i], desc: i.inserted_at)
+         |> limit(1)
+         |> Repo.one() do
+      nil ->
+        {:error, "No integration found for #{type}"}
+
+      %Integration{metadata: nil} ->
+        {:error, "Integration found but no tokens available"}
+
+      %Integration{metadata: metadata} ->
+        case metadata do
+          %{"access_token" => token} -> token
+          _ -> {:error, "No access token found"}
+        end
     end
   end
 

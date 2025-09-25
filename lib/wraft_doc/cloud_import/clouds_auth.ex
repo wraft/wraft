@@ -12,7 +12,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
 
   alias Assent.Strategy.Google
   alias Assent.Strategy.OAuth2
-  alias WraftDoc.CloudImport.RepositoryCloudTokens, as: AuthTokens
   alias WraftDoc.CloudImport.StateStore
   alias WraftDoc.Integrations
 
@@ -342,16 +341,20 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   """
   @spec handle_oauth_callback(User.t(), map(), atom(), String.t()) :: String.t()
   def handle_oauth_callback(
-        %{id: user_id} = user,
+        %{id: user_id, current_org_id: org_id} = user,
         params,
         provider,
         code
       ) do
-    with {:ok, user_data, token_data} <-
+    with {:ok, _user_data, token_data} <-
            get_token(provider, user, code),
+         integration <-
+           Integrations.get_integration_by_provider(org_id, "google_drive"),
          {:ok, _token} <-
-           AuthTokens.save_token_data(user, token_data, provider, user_data) do
-      Logger.info("Successfully authenticated with #{token_data["access_token"]}")
+           Integrations.update_integration(integration, %{
+             "metadata" => Map.merge(integration.metadata || %{}, token_data)
+           }) do
+      Logger.info("Successfully authenticated with google drive}")
       get_redirect_path(params)
     else
       {:error, reason} ->
