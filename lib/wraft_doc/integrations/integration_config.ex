@@ -160,6 +160,62 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
           }
         ]
       },
+      "google_drive" => %{
+        name: "Google Drive",
+        category: "file_sharing",
+        description: "File storage and synchronization service",
+        icon: "google-drive-icon",
+        config_structure: %{
+          client_id: %{
+            type: "string",
+            label: "Client ID",
+            description: "Google Drive Integration Key (Client ID)",
+            required: true,
+            secret: true
+          },
+          client_secret: %{
+            type: "string",
+            label: "Client Secret",
+            description: "Google Drive Client Secret",
+            required: true,
+            secret: true
+          },
+          redirect_uri: %{
+            type: "string",
+            label: "Redirect URI",
+            description: "OAuth2 Redirect URI",
+            required: true,
+            secret: false
+          }
+        },
+        available_events: [
+          %{
+            id: "google_drive.list_all_files",
+            name: "List All Files",
+            description: "List all files in Google Drive"
+          },
+          %{
+            id: "google_drive.get_file",
+            name: "Get File",
+            description: "Retrieve a specific file from Google Drive"
+          },
+          %{
+            id: "google_drive.download_files",
+            name: "Download Files",
+            description: "Download files from Google Drive"
+          },
+          %{
+            id: "google_drive.search_files",
+            name: "Search Files",
+            description: "Search for files in Google Drive"
+          },
+          %{
+            id: "google_drive.list_pdfs",
+            name: "List PDFs",
+            description: "List all PDF files in Google Drive"
+          }
+        ]
+      },
       "zapier" => %{
         name: "Zapier",
         category: "automation",

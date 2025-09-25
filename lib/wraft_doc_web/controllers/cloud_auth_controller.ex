@@ -150,7 +150,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
 
     with provider <- String.to_existing_atom(provider),
          true <- provider in @providers,
-         {:ok, redirect_url, session_params} <- CloudAuth.authorize_url!(provider) do
+         {:ok, redirect_url, session_params} <-
+           CloudAuth.authorize_url!(provider, user.current_org_id) do
       StateStore.put(user.id, provider, session_params)
 
       Logger.info("Redirecting to #{provider} OAuth: #{redirect_url}")

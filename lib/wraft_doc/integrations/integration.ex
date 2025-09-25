@@ -56,6 +56,8 @@ defmodule WraftDoc.Integrations.Integration do
       "document_management",
       # For Slack
       "communication",
+      # For Google Drive
+      "file_sharing",
       # For Okta
       "authentication",
       # For Zapier
