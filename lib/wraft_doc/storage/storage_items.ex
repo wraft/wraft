@@ -1014,7 +1014,7 @@ defmodule WraftDoc.Storage.StorageItems do
     sort_by = pagination_opts[:sort_by]
     sort_order = pagination_opts[:sort_order]
 
-    Logger.info("📁 Fetching contents of folder", %{
+    Logger.info("Fetching contents of folder", %{
       parent_id: parent_id,
       organisation_id: organisation_id,
       sort_by: sort_by,
@@ -1023,7 +1023,7 @@ defmodule WraftDoc.Storage.StorageItems do
 
     case get_storage_item_by_org(parent_id, organisation_id) do
       %StorageItem{mime_type: "inode/directory"} ->
-        Logger.info("✅ Folder found, listing contents", %{parent_id: parent_id})
+        Logger.info("Folder found, listing contents", %{parent_id: parent_id})
 
         {:ok,
          list_storage_items_with_breadcrumbs(
@@ -1033,11 +1033,11 @@ defmodule WraftDoc.Storage.StorageItems do
          )}
 
       %StorageItem{} ->
-        Logger.warning("❌ Item exists but is not a directory", %{parent_id: parent_id})
+        Logger.warning("Item exists but is not a directory", %{parent_id: parent_id})
         {:error, :not_a_directory}
 
       nil ->
-        Logger.warning("❌ Folder not found", %{
+        Logger.warning("Folder not found", %{
           parent_id: parent_id,
           organisation_id: organisation_id
         })
@@ -1053,7 +1053,7 @@ defmodule WraftDoc.Storage.StorageItems do
     sort_by = pagination_opts[:sort_by]
     sort_order = pagination_opts[:sort_order]
 
-    Logger.info("🗄️ Fetching repository contents", %{
+    Logger.info("Fetching repository contents", %{
       repository_id: repository_id,
       parent_id: parent_id,
       organisation_id: organisation_id,
@@ -1098,7 +1098,7 @@ defmodule WraftDoc.Storage.StorageItems do
 
   @spec handle_root_flow(String.t(), storage_item_opts()) :: {:ok, map()}
   defp handle_root_flow(organisation_id, pagination_opts) do
-    Logger.info("🏠 Fetching root level items", %{organisation_id: organisation_id})
+    Logger.info("Fetching root level items", %{organisation_id: organisation_id})
     {:ok, list_storage_items_with_breadcrumbs(nil, organisation_id, pagination_opts)}
   end
 

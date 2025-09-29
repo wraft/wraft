@@ -14,18 +14,18 @@ defmodule WraftDoc.Repo.Migrations.UpdatedPermissions do
   @permissions_file Path.join(:code.priv_dir(:wraft_doc), "repo/data/rbac/permissions.csv")
 
   def run do
-    Logger.info("🔄 Starting permissions repopulation and role update")
+    Logger.info("Starting permissions repopulation and role update")
 
     delete_existing_permissions()
     insert_permissions_from_csv()
     update_roles_with_all_permissions()
 
-    Logger.info("✅ Permissions and roles updated successfully.")
+    Logger.info("Permissions and roles updated successfully.")
   end
 
   defp delete_existing_permissions do
     {count, _} = Repo.delete_all(Permission)
-    Logger.info("🧹 Deleted #{count} existing permissions")
+    Logger.info("Deleted #{count} existing permissions")
   end
 
   defp insert_permissions_from_csv do
@@ -42,7 +42,7 @@ defmodule WraftDoc.Repo.Migrations.UpdatedPermissions do
       end)
 
     {count, _} = Repo.insert_all(Permission, permissions_list)
-    Logger.info("✅ Inserted #{count} permissions from CSV")
+    Logger.info("Inserted #{count} permissions from CSV")
   end
 
   defp update_roles_with_all_permissions do

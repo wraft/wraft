@@ -203,7 +203,7 @@ defmodule WraftDoc.Storage do
   def get_ancestors_breadcrumbs(%StorageItem{parent_id: nil} = current_item, organisation_id) do
     path = current_item.materialized_path || current_item.path
 
-    Logger.info("🔍 Building breadcrumbs for item with nil parent_id", %{
+    Logger.info("Building breadcrumbs for item with nil parent_id", %{
       id: current_item.id,
       path: path,
       materialized_path: current_item.materialized_path
@@ -211,10 +211,10 @@ defmodule WraftDoc.Storage do
 
     if path && String.contains?(path, "/") do
       breadcrumbs = build_breadcrumbs_from_path(current_item, organisation_id)
-      Logger.info("📍 Built breadcrumbs from path", %{breadcrumbs_count: length(breadcrumbs)})
+      Logger.info("Built breadcrumbs from path", %{breadcrumbs_count: length(breadcrumbs)})
       breadcrumbs
     else
-      Logger.info("❌ No path available for breadcrumbs")
+      Logger.info("No path available for breadcrumbs")
       []
     end
   end
@@ -224,7 +224,7 @@ defmodule WraftDoc.Storage do
         organisation_id
       )
       when not is_nil(parent_id) do
-    Logger.info("🔍 Building breadcrumbs for item with parent_id", %{
+    Logger.info("Building breadcrumbs for item with parent_id", %{
       id: current_item.id,
       parent_id: parent_id,
       path: current_item.path,
@@ -233,11 +233,11 @@ defmodule WraftDoc.Storage do
 
     case StorageItems.get_storage_item_by_org(parent_id, organisation_id) do
       nil ->
-        Logger.info("⚠️ Parent not found by parent_id, trying path-based breadcrumbs")
+        Logger.info("Parent not found by parent_id, trying path-based breadcrumbs")
         build_breadcrumbs_from_path(current_item, organisation_id)
 
       parent ->
-        Logger.info("✅ Found parent, building breadcrumbs from parent_id relationships")
+        Logger.info("Found parent, building breadcrumbs from parent_id relationships")
         build = build_storage_ancestors(parent, organisation_id, [])
 
         Enum.map(build, fn item ->
@@ -402,7 +402,7 @@ defmodule WraftDoc.Storage do
         current_user,
         organisation_id
       ) do
-    Logger.info("📁 Preparing upload parameters", %{
+    Logger.info("Preparing upload parameters", %{
       filename: upload.filename,
       size: upload.path |> File.stat!() |> Map.get(:size),
       organisation_id: organisation_id
@@ -432,17 +432,17 @@ defmodule WraftDoc.Storage do
         organisation_id: organisation_id
       }
 
-      Logger.info("✅ Upload parameters prepared successfully")
+      Logger.info("Upload parameters prepared successfully")
       {:ok, enriched_params}
     else
       {:error, reason} ->
-        Logger.error("❌ Failed to prepare upload parameters: #{inspect(reason)}")
+        Logger.error("Failed to prepare upload parameters: #{inspect(reason)}")
         {:error, reason}
     end
   end
 
   def prepare_upload_params(_params, _current_user, _organisation_id) do
-    Logger.error("❌ No file provided in upload parameters")
+    Logger.error("No file provided in upload parameters")
     {:error, "File upload is required"}
   end
 
@@ -473,7 +473,7 @@ defmodule WraftDoc.Storage do
   @doc "Executes file upload transaction"
   @spec execute_upload_transaction(map()) :: {:ok, map()} | {:error, Ecto.Changeset.t()}
   def execute_upload_transaction(enriched_params) do
-    Logger.info("🔄 Starting upload transaction")
+    Logger.info("Starting upload transaction")
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(
@@ -498,7 +498,7 @@ defmodule WraftDoc.Storage do
     |> Repo.transaction()
     |> case do
       {:ok, %{storage_item: storage_item, complete_upload: storage_asset}} ->
-        Logger.info("✅ Upload transaction completed successfully", %{
+        Logger.info("Upload transaction completed successfully", %{
           storage_item_id: storage_item.id,
           storage_asset_id: storage_asset.id
         })
@@ -508,7 +508,7 @@ defmodule WraftDoc.Storage do
         {:ok, %{storage_asset: storage_asset, storage_item: storage_item}}
 
       {:error, stage, changeset, _changes} ->
-        Logger.error("❌ Upload transaction failed at stage: #{stage}", %{
+        Logger.error("Upload transaction failed at stage: #{stage}", %{
           errors: changeset.errors,
           changeset: changeset
         })
@@ -560,7 +560,7 @@ defmodule WraftDoc.Storage do
   @spec schedule_background_processing(StorageAsset.t(), StorageItem.t()) :: {:ok, pid()}
   def schedule_background_processing(storage_asset, storage_item) do
     Task.start(fn ->
-      Logger.info("🔄 Starting background processing", %{
+      Logger.info("Starting background processing", %{
         storage_asset_id: storage_asset.id,
         storage_item_id: storage_item.id
       })
@@ -576,13 +576,13 @@ defmodule WraftDoc.Storage do
 
         StorageAssets.update_storage_asset(storage_asset, %{processing_status: "completed"})
 
-        Logger.info("✅ Background processing completed", %{
+        Logger.info("Background processing completed", %{
           storage_asset_id: storage_asset.id,
           storage_item_id: storage_item.id
         })
       else
         {:error, reason} ->
-          Logger.error("❌ Background processing failed", %{
+          Logger.error("Background processing failed", %{
             storage_asset_id: storage_asset.id,
             storage_item_id: storage_item.id,
             reason: reason
