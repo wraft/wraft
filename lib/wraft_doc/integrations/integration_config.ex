@@ -11,6 +11,8 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
     %{
       "slack" => %{
         name: "Slack",
+        # to -do filter based onfeature enabled
+        is_feature_enabled: false,
         category: "communication",
         description: "Integrate with Slack for notifications and updates",
         # Frontend can map this to an actual icon
@@ -21,6 +23,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "Bot Token",
             description: "Slack Bot User OAuth Token",
             required: true,
+            disabled: false,
             secret: true
           },
           signing_secret: %{
@@ -28,6 +31,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "Signing Secret",
             description: "Slack Signing Secret for verifying requests",
             required: true,
+            disabled: false,
             secret: true
           }
         },
@@ -46,6 +50,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
       },
       "docusign" => %{
         name: "DocuSign",
+        is_feature_enabled: false,
         category: "document_management",
         description: "Electronic signature and document management",
         icon: "docusign-icon",
@@ -55,6 +60,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "Client ID",
             description: "DocuSign Integration Key (Client ID)",
             required: true,
+            disabled: false,
             secret: true
           },
           client_secret: %{
@@ -62,6 +68,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "Client Secret",
             description: "DocuSign Client Secret",
             required: true,
+            disabled: false,
             secret: true
           },
           redirect_uri: %{
@@ -69,6 +76,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "Redirect URI",
             description: "OAuth2 Redirect URI",
             required: true,
+            disabled: false,
             secret: false
           }
         },
@@ -87,6 +95,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
       },
       "documenso" => %{
         name: "Documenso",
+        is_feature_enabled: false,
         category: "document_management",
         description: "Electronic signature and document management",
         icon: "documenso-icon",
@@ -96,6 +105,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "Token",
             description: "Documenso API Token",
             required: true,
+            disabled: false,
             secret: true
           }
         },
@@ -123,6 +133,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "Okta Domain",
             description: "Your Okta domain (e.g., company.okta.com)",
             required: true,
+            disabled: false,
             secret: false
           },
           api_token: %{
@@ -130,6 +141,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "API Token",
             description: "Okta API Token",
             required: true,
+            disabled: false,
             secret: true
           },
           client_id: %{
@@ -137,6 +149,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "Client ID",
             description: "OAuth2 Client ID",
             required: true,
+            disabled: false,
             secret: true
           },
           client_secret: %{
@@ -144,6 +157,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "Client Secret",
             description: "OAuth2 Client Secret",
             required: true,
+            disabled: false,
             secret: true
           }
         },
@@ -162,6 +176,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
       },
       "google_drive" => %{
         name: "Google Drive",
+        is_feature_enabled: true,
         category: "file_sharing",
         description: "File storage and synchronization service",
         icon: "google-drive-icon",
@@ -171,6 +186,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "Client ID",
             description: "Google Drive Integration Key (Client ID)",
             required: true,
+            disabled: false,
             secret: true
           },
           client_secret: %{
@@ -178,13 +194,17 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "Client Secret",
             description: "Google Drive Client Secret",
             required: true,
+            disabled: false,
             secret: true
           },
           redirect_uri: %{
             type: "string",
+            # value is getting null in response
+            value: "#{System.get_env("FRONTEND_URL")}/integrations/google-drive/callback",
             label: "Redirect URI",
             description: "OAuth2 Redirect URI",
             required: true,
+            disabled: false,
             secret: false
           }
         },
@@ -218,6 +238,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
       },
       "zapier" => %{
         name: "Zapier",
+        is_feature_enabled: false,
         category: "automation",
         description: "Automate workflows with Zapier",
         icon: "zapier-icon",
@@ -227,6 +248,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "Webhook URL",
             description: "Zapier Webhook URL",
             required: true,
+            disabled: false,
             secret: true
           },
           api_key: %{
@@ -234,6 +256,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             label: "API Key",
             description: "API Key for authentication",
             required: true,
+            disabled: false,
             secret: true
           }
         },
