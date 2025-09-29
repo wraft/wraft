@@ -386,15 +386,52 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     |> handle_response()
   end
 
+  def setup_sync_folder(repository) do
+    case StorageItems.get_sync_folder("google_drive_files", repository.organisation_id) do
+      nil ->
+        folder_params =
+          %{}
+          |> Map.put("name", "google_drive_files")
+          |> Map.put("path", "/google_drive_files")
+          |> Map.put("item_type", "folder")
+          |> Map.put("mime_type", "inode/directory")
+          |> Map.put("size", 0)
+          |> Map.put("depth_level", 1)
+          |> Map.put("materialized_path", "/google_drive_files")
+          |> Map.put("creator_id", repository.creator_id)
+          |> Map.put("organisation_id", repository.organisation_id)
+          |> Map.put("repository_id", repository.id)
+
+        case StorageItems.create_storage_item(folder_params) do
+          {:ok, _storage_item} -> :ok
+          {:error, reason} -> {:error, "Failed to create sync folder: #{reason}"}
+        end
+
+      _folder ->
+        :ok
+    end
+  end
+
   defp build_storage_attrs(file, org_id) do
+    base_path = "google_drive_files"
+
+    relative_path =
+      case file["pathDisplay"] do
+        nil -> ""
+        "" -> ""
+        path -> path
+      end
+
+    final_path = Path.join(base_path, relative_path)
+
     %{
       sync_source: "google_drive",
       external_id: file["id"],
       name: file["name"],
       organisation_id: org_id,
       repository_id: file["repository_id"] || nil,
-      path: file["pathDisplay"] || "root",
-      materialized_path: file["pathDisplay"] || "no_path",
+      path: final_path,
+      materialized_path: final_path,
       mime_type: file["mimeType"],
       item_type: "default",
       metadata: %{description: file["description"] || ""},

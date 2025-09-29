@@ -630,6 +630,18 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.one(query)
   end
 
+  def get_sync_folder(folder_name, organisation_id) do
+    query =
+      from(s in StorageItem,
+        where: s.name == ^folder_name,
+        where: s.organisation_id == ^organisation_id,
+        where: s.mime_type == "inode/directory",
+        where: s.is_deleted == false
+      )
+
+    Repo.one(query)
+  end
+
   @doc """
   Counts storage items under a parent or at root level.
 
