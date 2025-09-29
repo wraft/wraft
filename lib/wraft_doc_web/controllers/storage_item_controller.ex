@@ -670,7 +670,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
     current_user = conn.assigns[:current_user]
     organisation_id = current_user.current_org_id
 
-    Logger.info("📁 Starting folder creation", %{
+    Logger.info("Starting folder creation", %{
       user_id: current_user.id,
       organisation_id: organisation_id,
       folder_name: folder_params["name"],
