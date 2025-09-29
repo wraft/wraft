@@ -165,6 +165,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
 
   swagger_path :google_callback do
     get("/auth/google/callback")
+    # TODO callback variable
     summary("Google Drive OAuth callback endpoint")
 
     description("""

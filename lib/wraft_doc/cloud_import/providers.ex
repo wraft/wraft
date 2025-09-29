@@ -29,6 +29,7 @@ defmodule WraftDoc.CloudImport.Providers do
       use Tesla
       require Logger
 
+      alias WraftDoc.Storage
       alias WraftDoc.Storage.StorageItems
       alias WraftDoc.Workers.CloudImportWorker, as: Worker
 
@@ -45,7 +46,10 @@ defmodule WraftDoc.CloudImport.Providers do
       )
 
       def sync_files_to_db(access_token, params, org_id \\ nil) do
-        with {:ok, %{"files" => files}} <- list_all_files(access_token, params) do
+        with repository <-
+               Storage.get_latest_repository(org_id),
+             :ok <- setup_sync_folder(repository),
+             {:ok, %{"files" => files}} <- list_all_files(access_token, params) do
           files
           |> Enum.map(&Task.async(fn -> save_files_to_db(&1, org_id) end))
           |> Enum.map(&Task.await(&1, 15_000))
@@ -122,6 +126,12 @@ defmodule WraftDoc.CloudImport.Providers do
 
       # This function should be implemented by each provider
       # as the file structure differs between providers
+      defp setup_sync_folder(_repository) do
+        raise "setup_sync_folder/1 must be implemented by the provider module"
+      end
+
+      defoverridable setup_sync_folder: 1
+
       defp build_storage_attrs(file, org_id) do
         raise "build_storage_attrs/2 must be implemented by the provider module"
       end
