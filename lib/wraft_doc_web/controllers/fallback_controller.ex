@@ -156,10 +156,4 @@ defmodule WraftDocWeb.FallbackController do
     |> put_view(WraftDocWeb.ErrorView)
     |> render(:"404")
   end
-
-  # Catch-all clause for any unhandled return values
-  def call(conn, result) do
-    body = Jason.encode!(%{errors: "Unhandled response: #{inspect(result)}"})
-    conn |> put_resp_content_type("application/json") |> send_resp(500, body)
-  end
 end
