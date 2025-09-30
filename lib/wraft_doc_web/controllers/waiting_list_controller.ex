@@ -76,6 +76,9 @@ defmodule WraftDocWeb.Api.V1.WaitingListController do
       %User{} ->
         {:error, "already a member of wraft"}
 
+      false ->
+        {:error, "already a member of wraft"}
+
       error ->
         error
     end
