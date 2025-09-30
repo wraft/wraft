@@ -9,7 +9,10 @@ defmodule WraftDocWeb.InternalUserAdmin do
   def index(_) do
     [
       email: %{name: "Email", value: fn x -> x.email end},
-      is_deactivated: %{name: "Status", value: fn x -> if x.is_deactivated, do: "Deactivated", else: "Active" end},
+      is_deactivated: %{
+        name: "Status",
+        value: fn x -> if x.is_deactivated, do: "Deactivated", else: "Active" end
+      },
       inserted_at: %{name: "Created At", value: fn x -> x.inserted_at end}
     ]
   end
