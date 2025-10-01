@@ -13,7 +13,7 @@
     <!-- Header Section with Logo -->
     <mj-section background-color="#ffffff" padding="20px 0">
       <mj-column width="100%">
-        <mj-image src="https://dev.wraft.co/logo.png" alt="Wraft Logo" align="center" width="120px" />
+        <mj-image src="<%= Application.fetch_env!(:wraft_doc, :email_template_logo) %>" alt="Wraft Logo" align="center" width="120px" />
       </mj-column>
     </mj-section>
 

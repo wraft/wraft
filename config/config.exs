@@ -169,7 +169,8 @@ config :wraft_doc,
   default_template_files: "priv/wraft_files/templates",
   sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}",
   frontend_url: "#{System.get_env("FRONTEND_URL")}",
-  backend_url: "#{System.get_env("BACKEND_URL")}"
+  backend_url: "#{System.get_env("BACKEND_URL")}",
+  email_template_logo: "https://www.wraft.app/logo.svg"
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
