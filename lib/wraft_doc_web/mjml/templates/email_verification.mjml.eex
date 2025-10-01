@@ -40,7 +40,7 @@
           If you didn't request this email, you can safely ignore it. Someone may have entered your email address by mistake.
         </mj-text>
         <mj-text font-size="14px" color="#888888" align="center">
-          For any questions, please contact our support team at hello@wraft.co
+          For any questions, please contact our support team at <%= Application.fetch_env!(:wraft_doc, :support_email) %>
         </mj-text>
       </mj-column>
     </mj-section>

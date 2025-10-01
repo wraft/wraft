@@ -57,7 +57,7 @@
           © 2024 Wraft. All rights reserved.
         </mj-text>
         <mj-text font-size="14px" color="#888888" align="center">
-          This is an automated notification. For support, contact us at hello@wraft.co
+          This is an automated notification. For support, contact us at <%= Application.fetch_env!(:wraft_doc, :support_email) %>
         </mj-text>
       </mj-column>
     </mj-section>

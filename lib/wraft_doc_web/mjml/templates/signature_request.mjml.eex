@@ -42,7 +42,7 @@
           Thank you,<br>Wraft Document Team
         </mj-text>
         <mj-text font-size="14px" color="#888888" align="center">
-          If you need assistance, please contact our support team at hello@wraft.co
+          If you need assistance, please contact our support team at <%= Application.fetch_env!(:wraft_doc, :support_email) %>
         </mj-text>
       </mj-column>
     </mj-section>
