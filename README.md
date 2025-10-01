@@ -44,7 +44,7 @@ Getting started with Wraft is quick and easy. Choose the setup that best fits yo
 See our [user guides](https://docs.wraft.app/users) and [developer docs](https://docs.wraft.app/developers) to get started.
 
 ## Security
-Found a security issue? Please email [hello@wraft.app](mailto:hello@wraft.app)instead of opening a public issue. We take all reports seriously and respond quickly. See our [Security Policy](https://github.com/wraft/wraft/blob/main/SECURITY.md) for details.
+Found a security issue? Please email [hello@wraft.app](mailto:hello@wraft.app) instead of opening a public issue. We take all reports seriously and respond quickly. See our [Security Policy](https://github.com/wraft/wraft/blob/main/SECURITY.md) for details.
 
 ## Contributing
 Contributions are welcome! Report bugs, suggest features, fix docs, or share your Wraft projects.
@@ -63,4 +63,4 @@ Connect with us on [Discord](https://discord.gg/wraft) and report bugs on [GitHu
 
 ## License
 
-Wraft is open-source software licensed under the [AGPLv3](LICENSE.md).
+Wraft is a product from Functionary Labs Pvt  - Released under the [AGPLv3](LICENSE.md) License.
