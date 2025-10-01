@@ -1,14 +1,7 @@
 <div align="center">
- <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wraft/wraft/feat/enhance-internal-user-with-activate-deactivate-actions/priv/static/images/logo-white.svg">
-  <img alt="Logo" src="https://raw.githubusercontent.com/wraft/wraft/feat/enhance-internal-user-with-activate-deactivate-actions/priv/static/images/logo-black.svg">
-</picture>
-</div>
-
-<div align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./priv/static/images/logo-white.svg">
-  <img alt="Logo" src="./priv/static/images/logo-black.svg">
+  <img alt="Wraft Logo" src="./priv/static/images/logo-black.svg"  style="width: 180px;">
 </picture>
 
 </div>
