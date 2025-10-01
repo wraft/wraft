@@ -52,7 +52,7 @@ Contributions are welcome! Report bugs, suggest features, fix docs, or share you
 See [CONTRIBUTING.md](https://github.com/wraft/wraft/blob/main/CONTRIBUTING.md) for how to get started.
 
 ## Community
-Connect with us on [Discord](https://discord.gg/wraft) and report bugs on [GitHub](https://github.com/wraft/wraft/issues). Please follow our [Code of Conduct](https://github.com/wraft/wraft/blob/main/CODE_OF_CONDUCT.md).
+Connect with us on [Discord](https://discord.gg/qwuquGD5ft) and report bugs on [GitHub](https://github.com/wraft/wraft/issues). Please follow our [Code of Conduct](https://github.com/wraft/wraft/blob/main/CODE_OF_CONDUCT.md).
 
 
 ## Contributors
