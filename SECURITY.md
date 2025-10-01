@@ -8,7 +8,7 @@ At Wraft, we are committed to ensuring the security of our products and services
 
 If you believe you have discovered a security issue in any of Wraft's products or services, we urge you to report it to us immediately. You can do so by:
 
-Emailing us at security@wraft.co
+Emailing us at hello@wraft.app
 
 We appreciate your efforts in helping us maintain a secure environment for our users.
 
@@ -26,8 +26,8 @@ We kindly request that you:
 Our security program covers:
 
 - All current releases of Wraft's services
-- Official product downloads available at https://wraft.co
-- Source code hosted at https://github.com/wraft.co
+- Official product downloads available at https://wraft.app
+- Source code hosted at https://github.com/wraft/wraft
 
 ## Out of Scope
 

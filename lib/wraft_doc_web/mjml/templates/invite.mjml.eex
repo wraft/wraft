@@ -9,42 +9,42 @@
   <mj-body background-color="#f4f4f4">
     <mj-section background-color="#ffffff" padding="40px 20px">
       <mj-column width="100%">
-        <mj-image src="https://dev.wraft.co/logo.png" width="120px" align="center" />
-        
+        <mj-image src="<%= Application.fetch_env!(:wraft_doc, :email_template_logo) %>" width="120px" align="center" />
+
         <mj-text font-size="24px" font-weight="bold" align="center" padding-top="20px">
           Join <%= @org_name %> on Wraft
         </mj-text>
-        
+
         <mj-text padding-top="20px">
           Hi <%= String.capitalize(@user_name) %>,
         </mj-text>
-        
+
         <mj-text>
           <strong><%= String.capitalize(@user_name) %></strong> has invited you to join <strong><%= @org_name %> </strong> in Wraft.
         </mj-text>
-        
+
         <mj-button background-color="#004A0F" color="#ffffff" font-size="16px" font-weight="bold" border-radius="5px" href="<%= @join_url %>">
           Click here to join
         </mj-button>
-        
+
         <mj-text padding-top="20px">
           If you have any questions or concerns, please don't hesitate to contact us.
         </mj-text>
-        
+
         <mj-text>
           Thank you for using Wraft!
         </mj-text>
-        
+
         <mj-text>
           Best regards,
         </mj-text>
-        
+
         <mj-text font-weight="bold">
           The Wraft Team
         </mj-text>
-        
+
         <mj-divider border-color="#e5e5e5" padding="30px 0" />
-        
+
         <mj-text font-size="14px" color="#666666">
           If you were not expecting this invitation, you can ignore this email. If you are concerned about your account's safety, please reply to this email to get in touch with us.
         </mj-text>

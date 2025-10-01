@@ -9,46 +9,46 @@
   <mj-body background-color="#f4f4f4">
     <mj-section background-color="#ffffff" padding="40px 20px">
       <mj-column width="100%">
-        <mj-image src="https://dev.wraft.co/logo.png" width="120px" align="center" />
-        
+        <mj-image src="<%= Application.fetch_env!(:wraft_doc, :email_template_logo) %>" width="120px" align="center" />
+
         <mj-text font-size="24px" font-weight="bold" align="center" padding-top="20px">
           Welcome to Wraft !
         </mj-text>
-        
+
         <mj-text padding-top="20px" font-weight="bold">
           Hello <%= String.capitalize(@name) %>,
         </mj-text>
-        
+
         <mj-text>
           We are excited to inform you that your application to join Wraft has been approved! Congratulations, and welcome aboard!
         </mj-text>
-        
+
         <mj-text>
           You are now part of our exclusive community of users who will have access to our document automation tool. Please click the button below to continue.
         </mj-text>
-        
+
         <mj-button background-color="#004A0F" color="#ffffff" font-size="16px" font-weight="bold" border-radius="5px" href="<%= @registration_url %>">
           Click here to continue
         </mj-button>
-        
+
         <mj-text>
           If you have any questions or concerns, please don't hesitate to reach out to our support team.
         </mj-text>
-        
+
         <mj-text>
           Thank you for choosing Wraft. We look forward to serving you!
         </mj-text>
-        
+
         <mj-text font-weight="bold">
           Best regards,
         </mj-text>
-        
+
         <mj-text>
           Wraft Team
         </mj-text>
-        
+
         <mj-divider border-color="#e5e5e5" padding="30px 0" />
-        
+
         <mj-text font-size="14px" color="#666666">
           This email was sent to <%= String.capitalize(@name) %>. If you were not expecting this invitation, you can ignore this email. If you are concerned about your account's safety, please reply to this email to get in touch with us.
         </mj-text>

@@ -11,7 +11,7 @@
   <mj-body background-color="#f4f4f4">
     <mj-section background-color="#ffffff" padding="20px 0">
       <mj-column width="100%">
-        <mj-image src="https://dev.wraft.co/logo.png" alt="Wraft Logo" align="center" width="120px" />
+        <mj-image src="<%= Application.fetch_env!(:wraft_doc, :email_template_logo) %>" alt="Wraft Logo" align="center" width="120px" />
       </mj-column>
     </mj-section>
     <mj-section background-color="#ffffff" padding="20px 30px">
@@ -46,7 +46,7 @@
           This is an automated message from Wraft. Please do not reply to this email.
         </mj-text>
         <mj-text font-size="14px" color="#888888" align="center">
-          If you need assistance, please contact our support team at support@wraft.co
+          If you need assistance, please contact our support team at <%= Application.fetch_env!(:wraft_doc, :support_email) %>
         </mj-text>
       </mj-column>
     </mj-section>

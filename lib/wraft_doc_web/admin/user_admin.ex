@@ -31,7 +31,16 @@ defmodule WraftDocWeb.UserAdmin do
     [
       name: %{name: "Name", value: fn x -> x.name end},
       email: %{name: "Email", value: fn x -> x.email end},
-      email_verify: %{name: "Email Verified", value: fn x -> x.email_verify end},
+      email_verify: %{
+        name: "Email Verified",
+        value: fn x -> if x.email_verify, do: "Verified", else: "Not Verified" end,
+        filters: [{"Verified", "true"}, {"Not Verified", "false"}]
+      },
+      guest: %{
+        name: "Guest",
+        value: fn x -> if x.is_guest, do: "Guest", else: "User" end,
+        filters: [{"Guest", "true"}, {"User", "false"}]
+      },
       signed_in_at: %{name: "Signed In At", value: fn x -> convert_utc_time(x.signed_in_at) end},
       inserted_at: %{name: "Created At", value: fn x -> x.inserted_at end},
       updated_at: %{name: "Updated At", value: fn x -> x.updated_at end}
@@ -50,8 +59,24 @@ defmodule WraftDocWeb.UserAdmin do
     [desc: :inserted_at]
   end
 
-  def custom_index_query(_conn, _schema, query) do
-    from(q in query, preload: [:roles])
+  def custom_index_query(conn, _schema, query) do
+    query = from(q in query, preload: [:roles])
+
+    query =
+      case Map.get(conn.query_params, "guest") do
+        "true" -> from(q in query, where: q.is_guest == true)
+        "false" -> from(q in query, where: q.is_guest == false)
+        _ -> query
+      end
+
+    query =
+      case Map.get(conn.query_params, "email_verify") do
+        "true" -> from(q in query, where: q.email_verify == true)
+        "false" -> from(q in query, where: q.email_verify == false)
+        _ -> query
+      end
+
+    query
   end
 
   def resource_actions(_conn) do

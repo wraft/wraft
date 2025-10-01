@@ -6,7 +6,6 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
 
   alias WraftDoc.Account
   alias WraftDoc.Account.User
-  alias WraftDoc.AuthTokens
   alias WraftDoc.Notifications.Delivery
 
   action_fallback(WraftDocWeb.FallbackController)
@@ -75,8 +74,6 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
                Account.registration(params),
              %{user: user, tokens: [access_token: access_token, refresh_token: refresh_token]} <-
                Account.authenticate(%{user: user, password: params["password"]}) do
-          AuthTokens.create_token_and_send_email(params["email"])
-
           Task.start(fn ->
             Delivery.dispatch(user, "registration.user_joins_wraft", %{
               user_name: user_name,

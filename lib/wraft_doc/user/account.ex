@@ -30,6 +30,12 @@ defmodule WraftDoc.Account do
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Guardian
 
+  # Constants for registration process
+  @personal_org_name "Personal"
+  @default_flow_name "Wraft Flow"
+  @personal_org_roles_job "personal_organisation_roles"
+  @wraft_templates_job "wraft_templates"
+
   @activity_models %{
     "Asset" => Asset,
     "Block" => Block,
@@ -75,6 +81,7 @@ defmodule WraftDoc.Account do
          personal_organisation: %{organisation: personal_org},
          get_org: %{organisation: invited_org}
        }} ->
+        update_email_status(user)
         update_last_signed_in_org(user, personal_org.id)
         InvitedUsers.create_or_update_invited_user(user.email, invited_org.id, "joined")
         {:ok, %{user: Repo.preload(user, :profile), organisations: [personal_org, invited_org]}}
@@ -105,61 +112,168 @@ defmodule WraftDoc.Account do
     end
   end
 
+  # Builds a Multi transaction for basic user registration.
+  #
+  # This function handles the core registration flow:
+  # 1. Creates or updates a user account
+  # 2. Creates user profile with optional profile picture
+  # 3. Sets up personal organisation
+  # 4. Establishes user-organisation relationship
+  # 5. Assigns default roles and permissions
+  # 6. Creates default workflow and templates
+  #
+  # ## Parameters
+  # - `multi`: An existing Ecto.Multi struct to build upon
+  # - `params`: Registration parameters containing user and profile data
+  #
+  # ## Returns
+  # An Ecto.Multi struct ready for transaction execution
+  @spec basic_registration_multi(Multi.t(), map()) :: Multi.t()
   defp basic_registration_multi(multi, params) do
     multi
-    |> Multi.insert(:user, User.changeset(%User{}, params),
-      on_conflict: {:replace_all_except, [:email]},
-      conflict_target: :email
-    )
-    |> Multi.insert(:profile, fn %{user: user} ->
-      user |> build_assoc(:profile) |> Profile.changeset(params)
+    |> upsert_user(params)
+    |> create_user_profile(params)
+    |> setup_personal_organisation(params)
+    |> establish_user_organisation_relationship()
+    |> assign_personal_organisation_roles()
+    |> create_default_workflow()
+    |> setup_default_templates()
+  end
+
+  # Creates or updates a user account based on email
+  # NOTE: We use explicit insert-or-update logic instead of `on_conflict`
+  # to avoid foreign key errors due to ID mismatches when reusing existing users.
+  @spec upsert_user(Multi.t(), map()) :: Multi.t()
+  defp upsert_user(multi, params) do
+    Multi.run(multi, :user, fn repo, _changes ->
+      with {:ok, email} <- validate_email_param(params),
+           result <- upsert_user_by_email(repo, email, params) do
+        result
+      else
+        {:error, reason} -> {:error, reason}
+      end
     end)
-    |> Multi.update(:propic, &Profile.propic_changeset(&1.profile, params))
-    |> Multi.run(:personal_organisation, fn _repo, %{user: user} ->
+  end
+
+  # Validates that email parameter exists and is valid
+  @spec validate_email_param(map()) :: {:ok, String.t()} | {:error, :invalid_email}
+  defp validate_email_param(%{"email" => email}) when is_binary(email) and email != "",
+    do: {:ok, email}
+
+  defp validate_email_param(_), do: {:error, :invalid_email}
+
+  # Performs the actual user upsert operation
+  @spec upsert_user_by_email(Ecto.Repo.t(), String.t(), map()) ::
+          {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  defp upsert_user_by_email(repo, email, params) do
+    case repo.get_by(User, email: email) do
+      nil ->
+        %User{}
+        |> User.changeset(params)
+        |> repo.insert()
+
+      existing_user ->
+        existing_user
+        |> User.changeset(params)
+        |> repo.update()
+    end
+  end
+
+  # Creates user profile and handles profile picture upload
+  @spec create_user_profile(Multi.t(), map()) :: Multi.t()
+  defp create_user_profile(multi, params) do
+    multi
+    |> Multi.insert(:profile, fn %{user: user} ->
+      user
+      |> build_assoc(:profile)
+      |> Profile.changeset(params)
+    end)
+    |> Multi.update(:profile_picture, fn %{profile: profile} ->
+      # Only update profile picture if there's actually a profile_pic in params
+      if Map.has_key?(params, "profile_pic") do
+        Profile.propic_changeset(profile, params)
+      else
+        # Return unchanged profile if no profile picture provided
+        Ecto.Changeset.change(profile, %{})
+      end
+    end)
+  end
+
+  # Sets up the user's personal organisation
+  @spec setup_personal_organisation(Multi.t(), map()) :: Multi.t()
+  defp setup_personal_organisation(multi, params) do
+    Multi.run(multi, :personal_organisation, fn _repo, %{user: user} ->
       Enterprise.create_personal_organisation(user, %{
         email: params["email"],
-        name: "Personal"
+        name: @personal_org_name
       })
     end)
-    |> Multi.insert(:user_personal_organisation, fn %{
-                                                      user: user,
-                                                      personal_organisation: %{organisation: org}
-                                                    } ->
-      UserOrganisation.changeset(%UserOrganisation{}, %{user_id: user.id, organisation_id: org.id})
+  end
+
+  # Establishes the relationship between user and their personal organisation
+  @spec establish_user_organisation_relationship(Multi.t()) :: Multi.t()
+  defp establish_user_organisation_relationship(multi) do
+    Multi.insert(multi, :user_personal_organisation, fn %{
+                                                          user: user,
+                                                          personal_organisation: %{
+                                                            organisation: organisation
+                                                          }
+                                                        } ->
+      UserOrganisation.changeset(%UserOrganisation{}, %{
+        user_id: user.id,
+        organisation_id: organisation.id
+      })
     end)
-    |> Multi.run(:personal_org_roles, fn _repo,
-                                         %{
-                                           user: user,
-                                           personal_organisation: %{organisation: organisation}
-                                         } ->
+  end
+
+  # Assigns default roles for the personal organisation
+  @spec assign_personal_organisation_roles(Multi.t()) :: Multi.t()
+  defp assign_personal_organisation_roles(multi) do
+    Multi.run(multi, :personal_org_roles, fn _repo,
+                                             %{
+                                               user: user,
+                                               personal_organisation: %{
+                                                 organisation: organisation
+                                               }
+                                             } ->
       Enterprise.create_default_worker_job(
         %{organisation_id: organisation.id, user_id: user.id},
-        "personal_organisation_roles"
+        @personal_org_roles_job
       )
     end)
-    |> Multi.run(:default_flow, fn _repo,
-                                   %{
-                                     user: user,
-                                     personal_organisation: %{organisation: organisation}
-                                   } ->
+  end
+
+  # Creates the default workflow for the personal organisation
+  @spec create_default_workflow(Multi.t()) :: Multi.t()
+  defp create_default_workflow(multi) do
+    Multi.run(multi, :default_flow, fn _repo,
+                                       %{
+                                         user: user,
+                                         personal_organisation: %{organisation: organisation}
+                                       } ->
       Enterprise.create_flow(Map.put(user, :current_org_id, organisation.id), %{
-        "name" => "Wraft Flow",
+        "name" => @default_flow_name,
         "organisation_id" => organisation.id
       })
     end)
-    |> Multi.run(:default_templates, fn _repo,
-                                        %{
-                                          user: user,
-                                          personal_organisation: %{organisation: organisation},
-                                          default_flow: flow
-                                        } ->
+  end
+
+  # Sets up default templates for the organisation
+  @spec setup_default_templates(Multi.t()) :: Multi.t()
+  defp setup_default_templates(multi) do
+    Multi.run(multi, :default_templates, fn _repo,
+                                            %{
+                                              user: user,
+                                              personal_organisation: %{organisation: organisation},
+                                              default_flow: flow
+                                            } ->
       Enterprise.create_default_worker_job(
         %{
           organisation_id: organisation.id,
           flow_id: flow.id,
           current_user_id: user.id
         },
-        "wraft_templates"
+        @wraft_templates_job
       )
     end)
   end
@@ -643,8 +757,9 @@ defmodule WraftDoc.Account do
   """
   @spec update_email_status(User.t()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def update_email_status(user) do
-    changeset = User.email_status_update_changeset(user, %{email_verify: true})
-    Repo.update(changeset)
+    user
+    |> User.email_status_update_changeset(%{email_verify: true})
+    |> Repo.update()
   end
 
   @doc """
