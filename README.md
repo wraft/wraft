@@ -1,21 +1,11 @@
 <div align="center">
-  <svg width="174" height="56" viewBox="0 0 116 37" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g clip-path="url(#clip0_2599_1170)">
-      <path d="M39.52 23.5101L39.3 25.1301H39.05L38.79 23.5101L35.43 10.2201H30.49L27.16 23.4701L26.95 24.6201L26.7 24.5701L26.57 23.5101L23.89 10.2201H17.84L23.25 31.5201H29.76L32.83 19.8901H33.08L36.15 31.5201H42.97L48.42 10.2201H42.33L39.52 23.5101ZM58.08 12.4401L57.83 12.3501V10.2201H51.91V31.5601H57.83V17.1201C59.1096 15.9213 60.7966 15.2529 62.55 15.2501H63.41V9.80007H62.9C61.9476 9.83926 61.017 10.0979 60.181 10.5558C59.3449 11.0138 58.6259 11.6586 58.08 12.4401ZM78.23 11.5801L77.97 11.6701C77.333 11.0424 76.5738 10.5525 75.7394 10.2308C74.9051 9.90914 74.0134 9.76251 73.12 9.80007C67.88 9.80007 64.68 14.6901 64.68 20.8701C64.68 27.0501 67.75 31.9401 72.68 31.9401C73.7033 31.9809 74.7214 31.7741 75.6476 31.3371C76.5739 30.9001 77.3809 30.2459 78 29.4301L78.26 29.5101V31.5101H84.18V10.2201H78.23V11.5801ZM78.23 24.1901C77.9017 25.0804 77.3003 25.8441 76.5119 26.3722C75.7235 26.9002 74.7883 27.1655 73.84 27.1301C71.58 27.1301 70.6 24.4901 70.6 20.8701C70.6 17.2501 71.6 14.6501 73.84 14.6501C75.4336 14.6111 76.9893 15.1392 78.23 16.1401V24.1901ZM99.14 4.86006C100.122 4.85771 101.098 5.01302 102.03 5.32006L102.76 0.890064C101.38 0.274005 99.881 -0.0298894 98.37 6.45106e-05C93.64 6.45106e-05 90.62 3.28007 90.62 8.30007V10.2201H87.68V14.7401H90.62V31.5201H96.54V14.7401H100.54V10.2201H96.54V8.30007C96.54 5.92006 97.43 4.86006 99.14 4.86006ZM115.19 26.1901C114.504 26.4825 113.765 26.6289 113.02 26.6201C111.74 26.6201 110.85 25.7201 110.85 23.6201V14.7401H115.15V10.2201H110.85V3.41006H105V10.2201H102.36V14.7401H105V23.8901C105 28.8901 107.94 31.7301 111.94 31.7301C113.327 31.7655 114.702 31.4562 115.94 30.8301L115.19 26.1901ZM0 31.6801H16.83V36.3701H0V31.6801Z" fill="currentColor"/>
-    </g>
-    <defs>
-      <clipPath id="clip0_2599_1170">
-        <rect width="115.92" height="36.37" fill="white"/>
-      </clipPath>
-    </defs>
-  </svg>
-</div>
+  
 
-  <!-- <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wraft/wraft/main/priv/static/images/WidthFull.svg" />
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/wraft/wraft/main/priv/static/images/WidthFull.svg" />
-    <img src=https://raw.githubusercontent.com/wraft/wraft/main/priv/static/images/WidthFull.svg" alt="Wraft" style="width: 180px;" />
-  </picture> -->
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wraft/wraft/feat/enhance-internal-user-with-activate-deactivate-actions/priv/static/images/logo-white.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/wraft/wraft/feat/enhance-internal-user-with-activate-deactivate-actions/priv/static/images/logo-black.svg" />
+    <img src=https://raw.githubusercontent.com/wraft/wraft/feat/enhance-internal-user-with-activate-deactivate-actions/priv/static/images/WidthFull.svg" alt="Wraft" style="width: 180px;" />
+  </picture>
 </div>
 </br>
 
@@ -26,7 +16,7 @@
 <p align="center">
     <a href="https://wraft.app/"><b>Website</b></a> •
     <a href="https://github.com/wraft/wraft/releases"><b>Releases</b></a> •
-    <a href="https://x.com/getwraft"><b>Twitter</b></a> •
+    <a href="https://discord.gg/qwuquGD5ft"><b>Discord</b></a> •
     <a href="https://docs.wraft.app/developers"><b>Documentation</b></a>
 </p>
 
