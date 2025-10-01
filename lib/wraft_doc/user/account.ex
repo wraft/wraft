@@ -81,6 +81,7 @@ defmodule WraftDoc.Account do
          personal_organisation: %{organisation: personal_org},
          get_org: %{organisation: invited_org}
        }} ->
+        update_email_status(user)
         update_last_signed_in_org(user, personal_org.id)
         InvitedUsers.create_or_update_invited_user(user.email, invited_org.id, "joined")
         {:ok, %{user: Repo.preload(user, :profile), organisations: [personal_org, invited_org]}}
@@ -756,8 +757,9 @@ defmodule WraftDoc.Account do
   """
   @spec update_email_status(User.t()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def update_email_status(user) do
-    changeset = User.email_status_update_changeset(user, %{email_verify: true})
-    Repo.update(changeset)
+    user
+    |> User.email_status_update_changeset(%{email_verify: true})
+    |> Repo.update()
   end
 
   @doc """

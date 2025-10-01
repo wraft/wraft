@@ -279,7 +279,7 @@ defmodule WraftDocWeb.Mailer.Email do
   end
 
   defp build_email_verification_url(token) do
-    URI.encode("#{frontend_url()}/users/join_invite/verify_email/#{token}}")
+    URI.encode("#{frontend_url()}/users/join_invite/verify_email/#{token}")
   end
 
   defp build_document_instance_url(token, document_id) do

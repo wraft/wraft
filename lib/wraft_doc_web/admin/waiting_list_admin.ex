@@ -49,6 +49,8 @@ defmodule WraftDocWeb.WaitingListAdmin do
     ]
   end
 
+  def ordering(_schema), do: [desc: :inserted_at]
+
   def form_fields(_) do
     [
       first_name: %{label: "First Name"},
