@@ -16,9 +16,9 @@ Welcome to Wraft! We're thrilled that you're interested in contributing. By part
 
 ## Quick Links
 
-- Documentation: [Project Handbook](link-to-handbook) / [Roadmap](link-to-roadmap)
-- Issue Tracker: [GitHub Issues](link-to-issues)
-- Communication: [Forum](link-to-forum) / [Mailing List](link-to-mailing-list) / [IRC](irc-channel)
+- Documentation: [Project Handbook](https://docs.wraft.app/developers) / [Roadmap](https://github.com/orgs/wraft/projects/3)
+- Issue Tracker: [GitHub Issues](https://github.com/wraft/wraft/issues)
+- Communication: [Discord](https://discord.gg/qwuquGD5ft)
 
 ## How to Contribute
 
@@ -66,7 +66,7 @@ cd wraft
    mix phx.server
    ```
 
-For more detailed instructions, please refer to our [README.md](README.md).
+For more detailed instructions, please refer to our [Developer Document](https://docs.wraft.app/developers).
 
 ### 4. Create a Branch
 
@@ -90,7 +90,7 @@ git checkout -b feature/your-feature-name
    ```
 3. Commit your changes using a descriptive commit message that follows our [commit message conventions](#commit-message-guidelines).
 4. Push your branch to your fork on GitHub.
-5. Submit a pull request to the `develop` branch of the main repository.
+5. Submit a pull request to the `main` branch of the main repository.
 
 ### Commit Message Guidelines
 
@@ -122,7 +122,7 @@ Closes #123
 
 Before submitting a bug report:
 
-1. Check the [existing issues](link-to-issues) to avoid duplicates.
+1. Check the [existing issues](https://github.com/wraft/wraft/issues) to avoid duplicates.
 2. Ensure you're running the latest version of the project.
 
 When submitting a bug report:
@@ -133,7 +133,7 @@ When submitting a bug report:
 4. Include relevant logs, screenshots, or code samples.
 5. Provide details about your environment (OS, Elixir version, etc.).
 
-You can use our [bug report template](link-to-bug-template) to ensure you include all necessary information.
+You can use our [bug report template](https://github.com/wraft/wraft/blob/main/.github/ISSUE_TEMPLATE/bug-report.yml) to ensure you include all necessary information.
 
 ## Requesting Enhancements
 
@@ -166,7 +166,7 @@ We appreciate all contributions to Wraft! Contributors will be recognized in the
 If you need help or have questions:
 
 - Open a [GitHub Discussion](https://github.com/wraft/wraft/discussions)
-- Join our [community chat](link-to-chat)
-- Reach out to the maintainers: [maintainer@email.com](mailto:maintainer@email.com)
+- Join our [community chat](https://discord.gg/qwuquGD5ft)
+- Reach out to the maintainers: [hello@wraft.app](mailto:hello@wraft.app)
 
 Thank you for contributing to Wraft! We look forward to collaborating with you.
