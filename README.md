@@ -1,10 +1,19 @@
 <div align="center">
-  
+  <picture>
+ <picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wraft/wraft/feat/enhance-internal-user-with-activate-deactivate-actions/priv/static/images/logo-black.svg">
+  <img alt="Logo" src="https://raw.githubusercontent.com/wraft/wraft/feat/enhance-internal-user-with-activate-deactivate-actions/priv/static/images/logo-white.svg">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./priv/static/images/logo-black.svg">
+  <img alt="Text changing depending on mode. Light: 'So light!' Dark: 'So dark!'" src="./priv/static/images/logo-white.svg">
+</picture>
 
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wraft/wraft/feat/enhance-internal-user-with-activate-deactivate-actions/priv/static/images/logo-white.svg" />
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/wraft/wraft/feat/enhance-internal-user-with-activate-deactivate-actions/priv/static/images/logo-black.svg" />
-    <img src=https://raw.githubusercontent.com/wraft/wraft/feat/enhance-internal-user-with-activate-deactivate-actions/priv/static/images/WidthFull.svg" alt="Wraft" style="width: 180px;" />
+    <source media="(prefers-color-scheme: dark)" srcset="./priv/static/images/logo-white.svg" />
+   
+    <img src=./priv/static/images/logo-black.svg" alt="Wraft" style="width: 180px;" />
   </picture>
 </div>
 </br>
