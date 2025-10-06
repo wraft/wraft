@@ -1,7 +1,7 @@
 defmodule WraftDoc.Documents.LayoutTest do
   @moduledoc false
   use WraftDoc.ModelCase
-  alias WraftDoc.Documents.Layout
+  alias WraftDoc.Layouts.Layout
   import WraftDoc.Factory
   @moduletag :document
   @valid_attrs %{
