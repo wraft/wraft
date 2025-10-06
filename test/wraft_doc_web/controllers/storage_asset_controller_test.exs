@@ -51,17 +51,17 @@ defmodule WraftDocWeb.StorageAssetControllerTest do
 
   describe "index" do
     test "lists all storage_assets", %{conn: conn} do
-      conn = get(conn, ~p"/api/storage_assets")
+      conn = get(conn, "/api/storage_assets")
       assert json_response(conn, 200)["data"] == []
     end
   end
 
   describe "create storage_asset" do
     test "renders storage_asset when data is valid", %{conn: conn} do
-      conn = post(conn, ~p"/api/storage_assets", storage_asset: @create_attrs)
+      conn = post(conn, "/api/storage_assets", storage_asset: @create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      conn = get(conn, ~p"/api/storage_assets/#{id}")
+      conn = get(conn, "/api/storage_assets/#{id}")
 
       assert %{
                "id" => ^id,
@@ -80,7 +80,7 @@ defmodule WraftDocWeb.StorageAssetControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, ~p"/api/storage_assets", storage_asset: @invalid_attrs)
+      conn = post(conn, "/api/storage_assets", storage_asset: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -92,10 +92,10 @@ defmodule WraftDocWeb.StorageAssetControllerTest do
       conn: conn,
       storage_asset: %StorageAsset{id: id} = storage_asset
     } do
-      conn = put(conn, ~p"/api/storage_assets/#{storage_asset}", storage_asset: @update_attrs)
+      conn = put(conn, "/api/storage_assets/#{storage_asset}", storage_asset: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
-      conn = get(conn, ~p"/api/storage_assets/#{id}")
+      conn = get(conn, "/api/storage_assets/#{id}")
 
       assert %{
                "id" => ^id,
@@ -114,7 +114,7 @@ defmodule WraftDocWeb.StorageAssetControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn, storage_asset: storage_asset} do
-      conn = put(conn, ~p"/api/storage_assets/#{storage_asset}", storage_asset: @invalid_attrs)
+      conn = put(conn, "/api/storage_assets/#{storage_asset}", storage_asset: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -123,11 +123,11 @@ defmodule WraftDocWeb.StorageAssetControllerTest do
     setup [:create_storage_asset]
 
     test "deletes chosen storage_asset", %{conn: conn, storage_asset: storage_asset} do
-      conn = delete(conn, ~p"/api/storage_assets/#{storage_asset}")
+      conn = delete(conn, "/api/storage_assets/#{storage_asset}")
       assert response(conn, 204)
 
       assert_error_sent(404, fn ->
-        get(conn, ~p"/api/storage_assets/#{storage_asset}")
+        get(conn, "/api/storage_assets/#{storage_asset}")
       end)
     end
   end
