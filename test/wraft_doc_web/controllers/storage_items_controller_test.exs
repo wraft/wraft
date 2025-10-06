@@ -1,13 +1,11 @@
 defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
   use WraftDocWeb.ConnCase
-  import WraftDoc.AccountFixtures
-  import WraftDoc.EnterpriseFixtures
+  import WraftDoc.Factory
 
-  alias WraftDoc.Storages
 
   setup %{conn: conn} do
-    user = user_fixture()
-    organisation = organisation_fixture(user)
+    user = insert(:user_with_organisation)
+    organisation = List.first(user.owned_organisations)
     user = %{user | current_org_id: organisation.id}
 
     conn =
@@ -20,10 +18,9 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
 
   describe "index" do
     test "lists root storage items when no parameters provided", %{
-      conn: conn,
-      organisation: organisation
+      conn: conn
     } do
-      conn = get(conn, ~p"/api/v1/storage/assets")
+      conn = get(conn, "/api/v1/storage/assets")
 
       assert %{
                "data" => [],
@@ -35,20 +32,20 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
     end
 
     test "returns error for invalid folder_id UUID", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/storage/assets?folder_id=invalid-uuid")
+      conn = get(conn, "/api/v1/storage/assets?folder_id=invalid-uuid")
 
       assert %{"error" => "Invalid UUID format for folder_id"} = json_response(conn, 400)
     end
 
     test "returns error for non-existent folder", %{conn: conn} do
       folder_id = Ecto.UUID.generate()
-      conn = get(conn, ~p"/api/v1/storage/assets?folder_id=#{folder_id}")
+      conn = get(conn, "/api/v1/storage/assets?folder_id=#{folder_id}")
 
       assert %{"error" => "Folder not found"} = json_response(conn, 404)
     end
 
     test "respects pagination parameters", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/storage/assets?limit=50&offset=10")
+      conn = get(conn, "/api/v1/storage/assets?limit=50&offset=10")
 
       assert %{
                "data" => [],
@@ -63,7 +60,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
   describe "show" do
     test "returns error for non-existent storage item", %{conn: conn} do
       item_id = Ecto.UUID.generate()
-      conn = get(conn, ~p"/api/v1/storage/assets/#{item_id}")
+      conn = get(conn, "/api/v1/storage/assets/#{item_id}")
 
       assert %{"error" => "Storage item not found"} = json_response(conn, 404)
     end
@@ -71,13 +68,13 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
 
   describe "search" do
     test "returns error for short search term", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/storage/assets/search?q=a")
+      conn = get(conn, "/api/v1/storage/assets/search?q=a")
 
       assert %{"error" => "Search term must be at least 2 characters"} = json_response(conn, 400)
     end
 
     test "returns empty results for valid search term", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/storage/assets/search?q=test")
+      conn = get(conn, "/api/v1/storage/assets/search?q=test")
 
       assert %{
                "data" => [],
@@ -89,7 +86,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
     end
 
     test "respects type filter parameter", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/storage/assets/search?q=test&type=files")
+      conn = get(conn, "/api/v1/storage/assets/search?q=test&type=files")
 
       assert %{
                "data" => [],
@@ -103,7 +100,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
 
   describe "stats" do
     test "returns root folder statistics", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/storage/assets/stats")
+      conn = get(conn, "/api/v1/storage/assets/stats")
 
       assert %{
                "data" => %{
@@ -116,7 +113,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
     end
 
     test "returns error for invalid parent_id UUID", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/storage/assets/stats?parent_id=invalid-uuid")
+      conn = get(conn, "/api/v1/storage/assets/stats?parent_id=invalid-uuid")
 
       assert %{"error" => "Invalid UUID format for parent_id"} = json_response(conn, 400)
     end
@@ -124,14 +121,14 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
 
   describe "breadcrumbs" do
     test "returns error for invalid UUID", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/storage/assets/invalid-uuid/breadcrumbs")
+      conn = get(conn, "/api/v1/storage/assets/invalid-uuid/breadcrumbs")
 
       assert %{"error" => "Invalid UUID format for id"} = json_response(conn, 400)
     end
 
     test "returns empty breadcrumbs for non-existent item", %{conn: conn} do
       item_id = Ecto.UUID.generate()
-      conn = get(conn, ~p"/api/v1/storage/assets/#{item_id}/breadcrumbs")
+      conn = get(conn, "/api/v1/storage/assets/#{item_id}/breadcrumbs")
 
       assert %{"data" => []} = json_response(conn, 200)
     end

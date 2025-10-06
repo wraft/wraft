@@ -36,17 +36,17 @@ defmodule WraftDocWeb.RepositoryControllerTest do
 
   describe "index" do
     test "lists all repositories", %{conn: conn} do
-      conn = get(conn, ~p"/api/repositories")
+      conn = get(conn, "/api/repositories")
       assert json_response(conn, 200)["data"] == []
     end
   end
 
   describe "create repository" do
     test "renders repository when data is valid", %{conn: conn} do
-      conn = post(conn, ~p"/api/repositories", repository: @create_attrs)
+      conn = post(conn, "/api/repositories", repository: @create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      conn = get(conn, ~p"/api/repositories/#{id}")
+      conn = get(conn, "/api/repositories/#{id}")
 
       assert %{
                "id" => ^id,
@@ -60,7 +60,7 @@ defmodule WraftDocWeb.RepositoryControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, ~p"/api/repositories", repository: @invalid_attrs)
+      conn = post(conn, "/api/repositories", repository: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -72,10 +72,10 @@ defmodule WraftDocWeb.RepositoryControllerTest do
       conn: conn,
       repository: %Repository{id: id} = repository
     } do
-      conn = put(conn, ~p"/api/repositories/#{repository}", repository: @update_attrs)
+      conn = put(conn, "/api/repositories/#{repository}", repository: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
-      conn = get(conn, ~p"/api/repositories/#{id}")
+      conn = get(conn, "/api/repositories/#{id}")
 
       assert %{
                "id" => ^id,
@@ -89,7 +89,7 @@ defmodule WraftDocWeb.RepositoryControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn, repository: repository} do
-      conn = put(conn, ~p"/api/repositories/#{repository}", repository: @invalid_attrs)
+      conn = put(conn, "/api/repositories/#{repository}", repository: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -98,11 +98,11 @@ defmodule WraftDocWeb.RepositoryControllerTest do
     setup [:create_repository]
 
     test "deletes chosen repository", %{conn: conn, repository: repository} do
-      conn = delete(conn, ~p"/api/repositories/#{repository}")
+      conn = delete(conn, "/api/repositories/#{repository}")
       assert response(conn, 204)
 
       assert_error_sent(404, fn ->
-        get(conn, ~p"/api/repositories/#{repository}")
+        get(conn, "/api/repositories/#{repository}")
       end)
     end
   end
