@@ -21,24 +21,32 @@ defmodule Mix.Tasks.Wraft.Bucket do
       Logger.info("Skipping bucket operations in test environment")
     else
       bucket = System.get_env("MINIO_BUCKET", "wraft")
-      Logger.info("Checking if bucket '#{bucket}' exists...")
+      ensure_bucket_exists(bucket)
+    end
+  end
 
-      case Utils.bucket_exists?(bucket) do
-        true ->
-          Logger.info("Bucket '#{bucket}' already exists.")
+  defp ensure_bucket_exists(bucket) do
+    Logger.info("Checking if bucket '#{bucket}' exists...")
 
-        false ->
-          Logger.info("Creating bucket '#{bucket}'...")
+    case Utils.bucket_exists?(bucket) do
+      true ->
+        Logger.info("Bucket '#{bucket}' already exists.")
 
-          case Utils.create_bucket(bucket) do
-            {:ok, _} ->
-              Logger.info("Bucket '#{bucket}' created successfully.")
+      false ->
+        create_bucket(bucket)
+    end
+  end
 
-            {:error, error} ->
-              Logger.error("Failed to create bucket '#{bucket}': #{inspect(error)}")
-              raise "Failed to create bucket '#{bucket}'"
-          end
-      end
+  defp create_bucket(bucket) do
+    Logger.info("Creating bucket '#{bucket}'...")
+
+    case Utils.create_bucket(bucket) do
+      {:ok, _} ->
+        Logger.info("Bucket '#{bucket}' created successfully.")
+
+      {:error, error} ->
+        Logger.error("Failed to create bucket '#{bucket}': #{inspect(error)}")
+        raise "Failed to create bucket '#{bucket}'"
     end
   end
 end

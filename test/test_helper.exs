@@ -1,3 +1,20 @@
+Application.ensure_all_started(:wraft_doc)
+
+# Set up Mox expectations for test environment
+Mox.set_mox_global()
+ExUnit.start()
+
+# Set up global expectations for ExAwsMock
+Mox.expect(ExAwsMock, :request, fn operation ->
+  case operation do
+    %ExAws.Operation.S3{http_method: :head, path: "/"} ->
+      {:ok, %{status_code: 200}}
+
+    _ ->
+      {:ok, %{status_code: 200}}
+  end
+end)
+
 Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, :manual)
 
 Bureaucrat.start(
