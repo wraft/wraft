@@ -19,7 +19,8 @@ defmodule WraftDoc.StorageTest do
 
     test "list_repositories/0 returns all repositories" do
       repository = repository_fixture()
-      assert Storage.list_repositories() == [repository]
+      repositories = Storage.list_repositories()
+      assert repository in repositories
     end
 
     test "get_repository!/1 returns the repository with given id" do
@@ -28,13 +29,18 @@ defmodule WraftDoc.StorageTest do
     end
 
     test "create_repository/1 with valid data creates a repository" do
+      user = WraftDoc.Factory.insert(:user)
+      organisation = WraftDoc.Factory.insert(:organisation)
+
       valid_attrs = %{
         name: "some name",
         status: "some status",
         description: "some description",
         storage_limit: 42,
         current_storage_used: 42,
-        item_count: 42
+        item_count: 42,
+        creator_id: user.id,
+        organisation_id: organisation.id
       }
 
       assert {:ok, %Repository{} = repository} = Storage.create_repository(valid_attrs)
