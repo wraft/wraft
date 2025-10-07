@@ -8,6 +8,9 @@ defmodule WraftDoc.StorageFixtures do
   Generate a repository.
   """
   def repository_fixture(attrs \\ %{}) do
+    user = WraftDoc.Factory.insert(:user)
+    organisation = WraftDoc.Factory.insert(:organisation)
+
     {:ok, repository} =
       attrs
       |> Enum.into(%{
@@ -16,7 +19,9 @@ defmodule WraftDoc.StorageFixtures do
         item_count: 42,
         name: "some name",
         status: "some status",
-        storage_limit: 42
+        storage_limit: 42,
+        creator_id: user.id,
+        organisation_id: organisation.id
       })
       |> WraftDoc.Storages.create_repository()
 

@@ -2,7 +2,6 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
 
-
   setup %{conn: conn} do
     user = insert(:user_with_organisation)
     organisation = List.first(user.owned_organisations)
