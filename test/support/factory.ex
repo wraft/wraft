@@ -719,4 +719,27 @@ defmodule WraftDoc.Factory do
       ]
     }
   end
+
+  def storage_item_factory do
+    %WraftDoc.Storage.StorageItem{
+      name: sequence(:name, &"storage-item-#{&1}"),
+      mime_type: "text/plain",
+      size: 1024,
+      path: sequence(:path, &"/storage/item-#{&1}"),
+      metadata: %{},
+      display_name: sequence(:display_name, &"Storage Item #{&1}"),
+      item_type: "file",
+      depth_level: 1,
+      materialized_path: sequence(:materialized_path, &"/item-#{&1}"),
+      file_extension: ".txt",
+      is_current_version: true,
+      classification_level: "public",
+      is_deleted: false,
+      content_extracted: false,
+      thumbnail_generated: false,
+      download_count: 0,
+      creator: build(:user),
+      organisation: build(:organisation)
+    }
+  end
 end
