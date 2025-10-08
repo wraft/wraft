@@ -5,14 +5,18 @@ defmodule WraftDocWeb.Plug.AddDocumentAuditLog do
   """
 
   import Plug.Conn
-  alias WraftDoc.Documents.ActionLog
+  alias WraftDoc.Documents.DocumentAuditLog
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Repo
 
   def init(_params), do: nil
 
   def call(conn, _params) do
-    create_log(conn)
+    conn =
+      register_before_send(conn, fn conn ->
+        create_log(conn)
+        conn
+      end)
 
     conn
   end
@@ -21,12 +25,12 @@ defmodule WraftDocWeb.Plug.AddDocumentAuditLog do
   defp create_log(conn) do
     params = create_audit_log_params(conn)
 
-    %ActionLog{}
-    |> ActionLog.changeset(params)
+    %DocumentAuditLog{}
+    |> DocumentAuditLog.changeset(params)
     |> Repo.insert!()
   end
 
-  @spec create_audit_log_params(Plug.Conn.t()) :: map
+  @spec create_audit_log_params(Plug.Conn.t()) :: map()
   defp create_audit_log_params(
          %Plug.Conn{
            assigns: %{current_user: %{id: user_id} = user},
@@ -52,11 +56,27 @@ defmodule WraftDocWeb.Plug.AddDocumentAuditLog do
         params["id"]
       end
 
+    message =
+      cond do
+        conn.assigns[:audit_log_message] ->
+          conn.assigns[:audit_log_message]
+
+        action == "update_meta" ->
+          "#{user.name} updated metadata"
+
+        action == "build" ->
+          "#{user.name} generated document"
+
+        true ->
+          "#{action}d by #{user.name}"
+      end
+
     %{
       document_id: document_id,
       user_id: user_id,
       actor: Map.put(user, :organisation, organisation),
       action: action,
+      message: message,
       changes: conn.assigns[:changes] || %{},
       request_path: path,
       request_method: method,
@@ -66,7 +86,7 @@ defmodule WraftDocWeb.Plug.AddDocumentAuditLog do
     }
   end
 
-  @spec change_structs_to_maps(map) :: map
+  @spec change_structs_to_maps(map()) :: map()
   defp change_structs_to_maps(params) do
     Enum.reduce(params, %{}, fn
       {k, %{__struct__: _} = v}, acc -> Map.put(acc, k, Map.from_struct(v))

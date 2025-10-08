@@ -15,9 +15,9 @@ defmodule WraftDoc.Repo.Migrations.CreateDocumentAuditLogTable do
         add(:request_path, :string)
         add(:request_method, :string)
         add(:params, :map, default: %{}, null: false)
+        add(:message, :string)
 
         add(:document_id, references(:content, type: :uuid, on_delete: :delete_all))
-
         add(:user_id, references(:user, type: :uuid, on_delete: :nilify_all))
 
         timestamps()

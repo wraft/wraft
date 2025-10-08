@@ -274,15 +274,17 @@ defmodule WraftDoc.Documents do
 
   # Initially moving state nil to intial state
   def approve_instance(
-        %User{id: current_approver_id},
+        %User{id: current_approver_id, name: user_name},
         %Instance{
-          state: %State{id: current_state_id, approvers: approvers} = state,
+          state: %State{id: current_state_id, approvers: approvers, state: current_state} = state,
           approval_status: false
         } = instance
       ) do
     if current_approver_id in Enum.map(approvers, & &1.id) do
-      instance_state_transition_transaction(
-        instance,
+      next_state = next_state(state).state
+
+      instance
+      |> instance_state_transition_transaction(
         %{
           state_id: next_state_id(state),
           approval_status: next_state_id(state) == current_state_id
@@ -295,13 +297,23 @@ defmodule WraftDoc.Documents do
           instance_id: instance.id
         }
       )
+      |> case do
+        %Instance{} = instance when current_state == next_state ->
+          {:ok, instance, "#{user_name} marked document as completed"}
+
+        %Instance{} = instance ->
+          {:ok, instance, "#{user_name} approved document from #{current_state} to #{next_state}"}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
     else
       {:error, :no_permission}
     end
   end
 
   def approve_instance(
-        %User{id: current_approver_id},
+        %User{id: current_approver_id, name: user_name},
         %Instance{
           allowed_users: [current_approver_id],
           state: nil,
@@ -322,8 +334,8 @@ defmodule WraftDoc.Documents do
       )
       |> MapSet.to_list()
 
-    instance_state_transition_transaction(
-      instance,
+    instance
+    |> instance_state_transition_transaction(
       %{state_id: initial_state.id, allowed_users: allowed_users},
       %{
         review_status: :approved,
@@ -332,6 +344,13 @@ defmodule WraftDoc.Documents do
         instance_id: instance.id
       }
     )
+    |> case do
+      %Instance{} = instance ->
+        {:ok, instance, "#{user_name} approved document to #{initial_state.state}"}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   def approve_instance(_, %Instance{state: nil}), do: {:error, :no_permission}
@@ -2584,4 +2603,57 @@ defmodule WraftDoc.Documents do
     |> order_by(^sort(params))
     |> Repo.paginate(params)
   end
+
+  # def get_logs(instance_id, params) do
+  #   query =
+  #     DocumentAuditLog
+  #     |> where([d], d.document_id == ^instance_id)
+  #     # |> select([d], %{
+  #     #   id: d.id,
+  #     #   action: d.action,
+  #     #   actor: d.actor,
+  #     #   message: d.message,
+  #     #   document_id: d.document_id,
+  #     #   inserted_at: d.inserted_at
+  #     # })
+  #     |> order_by(^sort(params))
+
+  #   query =
+  #     from(log in query,
+  #       left_join: t in assoc(log, :transition_log),
+  #       on: log.action in ["approve", "reject"],
+  #       preload: [transition_log: t]
+  #     )
+
+  #   # Repo.paginate(query, params) |> IO.inspect(label: "queryy")
+
+  #   page = Repo.paginate(query, params)
+
+  #   # Dynamically add message for each log
+  #   entries_with_msg =
+  #     Enum.map(page.entries, fn log ->
+  #       msg =
+  #         case Repo.preload(log.transition_log, [:from_state, :to_state]) do
+  #           nil ->
+  #             log.message
+
+  #           tlog ->
+  #             cond do
+  #               is_nil(tlog.from_state) and tlog.to_state ->
+  #                 "Document has moved to #{tlog.to_state.state} state"
+
+  #               tlog.from_state && tlog.to_state ->
+  #                 "Document has moved from #{tlog.from_state.state} to #{tlog.to_state.state} state"
+
+  #               true ->
+  #                 log.message
+  #             end
+  #         end
+
+  #       Map.put(log, :message, msg)
+  #     end)
+
+  #   IO.inspect(entries_with_msg, label: "entries_with_msg")
+  #   %{page | entries: entries_with_msg}
+  # end
 end

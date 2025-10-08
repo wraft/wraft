@@ -19,7 +19,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     reject: "document:review"
 
   plug WraftDocWeb.Plug.AddDocumentAuditLog
-       when action in [:update, :update_meta, :state_update, :lock_unlock, :approve]
+       when action in [:update, :update_meta, :state_update, :lock_unlock, :approve, :build]
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -1249,7 +1249,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            },
            state: state
          } = instance <- Documents.show_instance(id, current_user),
-         %Instance{} = approved_instance <- Documents.approve_instance(current_user, instance) do
+         {:ok, %Instance{} = approved_instance, audit_message} <-
+           Documents.approve_instance(current_user, instance) do
       Task.start(fn -> Reminders.maybe_create_auto_reminders(current_user, approved_instance) end)
 
       Task.start(fn ->
@@ -1274,7 +1275,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
         end
       end)
 
-      render(conn, "approve_or_reject.json", %{instance: approved_instance})
+      conn
+      |> Plug.Conn.assign(:audit_log_message, audit_message)
+      |> render("approve_or_reject.json", %{instance: instance})
     end
   end
 

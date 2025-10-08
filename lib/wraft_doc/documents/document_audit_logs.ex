@@ -12,6 +12,7 @@ defmodule WraftDoc.Documents.DocumentAuditLog do
     field(:request_path, :string)
     field(:request_method, :string)
     field(:params, :map, default: %{})
+    field(:message, :string)
 
     belongs_to(:document, WraftDoc.Documents.Instance)
     belongs_to(:user, WraftDoc.Account.User)
@@ -30,6 +31,7 @@ defmodule WraftDoc.Documents.DocumentAuditLog do
       :request_path,
       :request_method,
       :params,
+      :message,
       :document_id,
       :user_id
     ])
