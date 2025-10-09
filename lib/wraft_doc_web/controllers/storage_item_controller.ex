@@ -380,21 +380,6 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
             items: [],
             breadcrumbs: []
           })
-        end,
-      Error:
-        swagger_schema do
-          title("Error")
-          description("Error response")
-
-          properties do
-            error(:string, "Error message", required: true)
-            details(:string, "Additional error details")
-          end
-
-          example(%{
-            error: "Storage item not found",
-            details: "The requested storage item does not exist"
-          })
         end
     }
   end

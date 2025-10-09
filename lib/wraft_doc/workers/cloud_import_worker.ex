@@ -36,94 +36,6 @@ defmodule WraftDoc.Workers.CloudImportWorker do
     end
   end
 
-  # @impl Oban.Worker
-  # def perform(%Oban.Job{
-  #       args:
-  #         %{
-  #           "action" => "export",
-  #           "file_id" => file_id,
-  #           "access_token" => access_token,
-  #           "mime_type" => mime_type
-  #         } = args
-  #     }) do
-  #   store_in_minio = Map.get(args, "store_in_minio", false)
-  #   minio_path = Map.get(args, "minio_path")
-
-  #   file_ids = normalize_file_ids(file_id)
-
-  #   results =
-  #     Enum.map(file_ids, fn id ->
-  #       process_export(id, access_token, mime_type, store_in_minio, minio_path)
-  #     end)
-
-  #   case summarize_results(results, "export") do
-  #     {:ok, summary} -> {:ok, summary}
-  #     {:error, _} = error -> error
-  #   end
-  # end
-
-  # @impl Oban.Worker
-  # def perform(%Oban.Job{
-  #       args:
-  #         %{
-  #           "action" => "download_folder",
-  #           "folder_id" => folder_id,
-  #           "access_token" => access_token
-  #         } = args
-  #     }) do
-  #   store_in_minio = Map.get(args, "store_in_minio", false)
-  #   base_minio_path = Map.get(args, "minio_path", "")
-
-  #   case Clouds.explorer(access_token, folder_id) do
-  #     {:ok, %{"current_folder" => folder, "files" => files, "folders" => subfolders}} ->
-  #       folder_name = folder["name"]
-
-  #       folder_path =
-  #         if base_minio_path == "", do: folder_name, else: "#{base_minio_path}/#{folder_name}"
-
-  #       # Process all files in the current folder
-  #       file_results =
-  #         Enum.map(files, fn file ->
-  #           file_minio_path = "#{folder_path}/#{file["name"]}"
-
-  #           # Schedule download for each file
-  #           Clouds.schedule_download(
-  #             access_token,
-  #             file["id"],
-  #             nil,
-  #             %{
-  #               "store_in_minio" => store_in_minio,
-  #               "minio_path" => file_minio_path
-  #             }
-  #           )
-  #         end)
-
-  #       # Process subfolders recursively
-  #       subfolder_results =
-  #         Enum.map(subfolders, fn subfolder ->
-  #           Clouds.schedule_folder_download(
-  #             access_token,
-  #             subfolder["id"],
-  #             %{
-  #               "store_in_minio" => store_in_minio,
-  #               "minio_path" => folder_path
-  #             }
-  #           )
-  #         end)
-
-  #       {:ok,
-  #        %{
-  #          folder_name: folder_name,
-  #          files_scheduled: length(file_results),
-  #          subfolders_scheduled: length(subfolder_results)
-  #        }}
-
-  #     {:error, reason} = error ->
-  #       Logger.error("Failed to list folder contents #{folder_id}: #{inspect(reason)}")
-  #       error
-  #   end
-  # end
-
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
     Logger.error("Invalid job arguments: #{inspect(args)}")
@@ -165,42 +77,6 @@ defmodule WraftDoc.Workers.CloudImportWorker do
         {:error, %{file_id: file_id, error: reason}}
     end
   end
-
-  # Process individual export
-  # defp process_export(file_id, access_token, mime_type, store_in_minio, minio_path) do
-  #   case Clouds.export_file(access_token, file_id, mime_type) do
-  #     {:ok, %{content: content, metadata: metadata} = result} when store_in_minio ->
-  #       # Store in MinIO if requested
-  #       file_name = metadata["name"]
-  #       extension = metadata["exportExtension"] || ""
-  #       full_minio_path = build_minio_path(minio_path, "#{file_name}#{extension}", file_id)
-
-  #       case upload_to_minio(full_minio_path, content) do
-  #         {:ok, _} ->
-  #           Logger.info(
-  #             "Successfully exported file #{file_id} to #{mime_type} and stored in MinIO at #{full_minio_path}"
-  #           )
-
-  #           {:ok, %{file_id: file_id, result: Map.put(result, :minio_path, full_minio_path)}}
-
-  #         {:error, minio_error} = _error ->
-  #           Logger.error(
-  #             "Failed to store exported file #{file_id} in MinIO: #{inspect(minio_error)}"
-  #           )
-
-  #           {:error, %{file_id: file_id, error: minio_error}}
-  #       end
-
-  #     {:ok, result} ->
-  #       # Regular export without MinIO storage
-  #       Logger.info("Successfully exported file #{file_id} to #{mime_type}")
-  #       {:ok, %{file_id: file_id, result: result}}
-
-  #     {:error, reason} = _error ->
-  #       Logger.error("Failed to export file #{file_id} to #{mime_type}: #{inspect(reason)}")
-  #       {:error, %{file_id: file_id, error: reason}}
-  #   end
-  # end
 
   # Build MinIO path, handling multiple files by appending file_id if needed
   defp build_minio_path(nil, file_name, _file_id), do: file_name

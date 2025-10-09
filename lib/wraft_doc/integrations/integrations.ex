@@ -117,22 +117,20 @@ defmodule WraftDoc.Integrations do
 
   @spec get_latest_token(User.t(), atom()) :: String.t() | nil
   def get_latest_token(%User{current_org_id: org_id}, type) do
-    case Integration
-         |> where([i], i.provider == ^type and i.organisation_id == ^org_id)
-         |> order_by([i], desc: i.inserted_at)
-         |> limit(1)
-         |> Repo.one() do
+    Integration
+    |> where([i], i.provider == ^type and i.organisation_id == ^org_id)
+    |> order_by([i], desc: i.inserted_at)
+    |> limit(1)
+    |> Repo.one()
+    |> case do
       nil ->
         {:error, "No integration found for #{type}"}
 
       %Integration{metadata: nil} ->
         {:error, "Integration found but no tokens available"}
 
-      %Integration{metadata: metadata} ->
-        case metadata do
-          %{"access_token" => token} -> token
-          _ -> {:error, "No access token found"}
-        end
+      %Integration{metadata: %{"access_token" => token} = _metadata} ->
+        {:ok, token}
     end
   end
 
