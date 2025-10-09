@@ -129,6 +129,32 @@ defmodule WraftDocWeb.FallbackController do
     conn |> put_resp_content_type("application/json") |> send_resp(status, body)
   end
 
+  def call(conn, {:error, %{status: status, body: _body}})
+      when is_integer(status) and status == 401 do
+    response_body =
+      Jason.encode!(%{
+        errors:
+          "Access token is expired, invalid, or not accepted. Please reconnect your account."
+      })
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(status, response_body)
+  end
+
+  def call(conn, {:error, %{status: status, body: body}})
+      when is_integer(status) and status >= 100 and status < 600 do
+    response_body =
+      case body do
+        %{} -> Jason.encode!(body)
+        _ -> Jason.encode!(%{errors: inspect(body)})
+      end
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(status, response_body)
+  end
+
   def call(conn, {:error, message}) when is_binary(message) do
     body = Jason.encode!(%{errors: message})
     conn |> put_resp_content_type("application/json") |> send_resp(400, body)
