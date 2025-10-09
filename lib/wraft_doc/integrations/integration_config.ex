@@ -208,33 +208,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
             secret: false
           }
         },
-        available_events: [
-          %{
-            id: "google_drive.list_all_files",
-            name: "List All Files",
-            description: "List all files in Google Drive"
-          },
-          %{
-            id: "google_drive.get_file",
-            name: "Get File",
-            description: "Retrieve a specific file from Google Drive"
-          },
-          %{
-            id: "google_drive.download_files",
-            name: "Download Files",
-            description: "Download files from Google Drive"
-          },
-          %{
-            id: "google_drive.search_files",
-            name: "Search Files",
-            description: "Search for files in Google Drive"
-          },
-          %{
-            id: "google_drive.list_pdfs",
-            name: "List PDFs",
-            description: "List all PDF files in Google Drive"
-          }
-        ]
+        available_events: []
       },
       "zapier" => %{
         name: "Zapier",

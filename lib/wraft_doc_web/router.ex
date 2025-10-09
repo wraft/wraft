@@ -578,7 +578,7 @@ defmodule WraftDocWeb.Router do
 
         get("/files", CloudImportController, :list_gdrive_files)
         get("/file/:file_id", CloudImportController, :get_gdrive_file)
-        post("/download", CloudImportController, :download_gdrive_file)
+        post("/import", CloudImportController, :import_gdrive_file)
         get("/search", CloudImportController, :search_gdrive_files)
         get("/pdfs", CloudImportController, :list_all_gdrive_pdfs)
         post("/sync_files", CloudImportController, :sync_gdrive_files)

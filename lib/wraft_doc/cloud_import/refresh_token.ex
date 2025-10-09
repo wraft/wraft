@@ -8,30 +8,16 @@ defmodule WraftDoc.CloudImport.RefreshToken do
 
   @refresh_margin 300
 
-  # Public API
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
-  # @doc "Refresh all integrations (fire-and-forget)"
-  # def run_refresh_all do
-  #   GenServer.cast(__MODULE__, :refresh_all)
-  # end
-
-  @doc "Refresh a single integration"
   def run_refresh(provider, org_id, refresh_token) do
     GenServer.cast(__MODULE__, {:refresh, provider, org_id, refresh_token})
   end
 
-  # GenServer callbacks
   @impl true
   def init(state), do: {:ok, state}
-
-  # @impl true
-  # def handle_cast(:refresh_all, state) do
-  #   safe(fn -> schedule_all_integrations() end)
-  #   {:noreply, state}
-  # end
 
   @impl true
   def handle_cast({:refresh, provider, org_id, refresh_token}, state) do
@@ -45,7 +31,6 @@ defmodule WraftDoc.CloudImport.RefreshToken do
     {:noreply, state}
   end
 
-  # Internal helpers
   defp safe(fun) do
     fun.()
   rescue
@@ -64,26 +49,6 @@ defmodule WraftDoc.CloudImport.RefreshToken do
         Logger.error("Failed to refresh Google Drive token for #{org_id}: #{inspect(reason)}")
     end
   end
-
-  # defp schedule_all_integrations do
-  #   for integration <- Integrations.list_integrations_with_tokens() do
-  #     schedule_refresh_from_integration(integration)
-  #   end
-  # end
-
-  # defp schedule_refresh_from_integration(%{
-  #        provider: provider,
-  #        organisation_id: org_id,
-  #        metadata: metadata
-  #      }) do
-  #   case metadata do
-  #     %{"refresh_token" => _refresh_token, "expires_at" => _expires_at} ->
-  #       run_refresh(String.to_existing_atom(provider), org_id, metadata)
-
-  #     _ ->
-  #       :noop
-  #   end
-  # end
 
   defp schedule_refresh(
          provider,
