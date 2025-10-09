@@ -46,10 +46,26 @@
 \usepackage{amsmath}
 \usepackage{setspace}
 \usepackage{listings}
+\usepackage{xstring}
 
-\sectionfont{\color{cyan}}
-\definecolor{foo}{HTML}{2c41ac}
-\sectionfont{\color{foo}}
+
+$if(body_color)$
+  \StrGobbleLeft{$body_color$}{1}[\BodyColorHex]  % remove leading #
+  \definecolor{BodyColor}{HTML}{\BodyColorHex}
+  \pagecolor{BodyColor}
+$else$
+  \definecolor{BodyColor}{HTML}{FFFFFF}
+  \pagecolor{BodyColor}
+$endif$
+
+$if(primary_color)$
+  \StrGobbleLeft{$primary_color$}{1}[\PrimaryColorHex]  % remove leading #
+  \definecolor{PrimaryColor}{HTML}{\PrimaryColorHex}
+  \sectionfont{\color{PrimaryColor}}
+$else$
+  \definecolor{foo}{HTML}{2c41ac}
+  \sectionfont{\color{foo}}
+$endif$
 
 $if(mainfont)$
 \setmainfont[
