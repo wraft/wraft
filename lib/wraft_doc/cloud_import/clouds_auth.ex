@@ -14,6 +14,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   alias Assent.Strategy.OAuth2
   alias WraftDoc.CloudImport.StateStore
   alias WraftDoc.Integrations
+  alias WraftDoc.Integrations.Integration
 
   @scopes %{
     # Google Drive scopes
@@ -143,17 +144,36 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   """
   @spec refresh_token(atom(), String.t(), String.t()) :: {:ok, map()} | {:error, String.t()}
   def refresh_token(:google_drive, organisation_id, refresh_token) do
-    organisation_id
-    |> get_google_config()
-    |> OAuth2.refresh_access_token(%{"refresh_token" => refresh_token})
-    |> case do
-      {:ok, token} ->
-        {:ok, normalize_token(token)}
+    with integration <- Integrations.get_integration_by_provider(organisation_id, "google_drive"),
+         {:ok, token} <-
+           organisation_id
+           |> get_google_config()
+           |> OAuth2.refresh_access_token(%{"refresh_token" => refresh_token}),
+         normalized <- normalize_token(token),
+         {:ok, _updated} <- update_integration_metadata(integration, normalized) do
+      {:ok, normalized}
+    else
+      nil ->
+        Logger.error("No Google Drive integration found for org #{organisation_id}")
+        {:error, "Integration not found"}
 
-      {:error, error} ->
-        Logger.error("Google Drive token refresh error: #{inspect(error)}")
+      {:error, reason} ->
+        Logger.error("Google Drive token refresh error: #{inspect(reason)}")
         {:error, "Failed to refresh Google Drive token"}
     end
+  end
+
+  defp update_integration_metadata(
+         %Integration{} = integration,
+         %{"access_token" => at, "expires_at" => exp} = _new_metadata
+       ) do
+    updated_metadata =
+      Map.merge(integration.metadata || %{}, %{
+        "access_token" => at,
+        "expires_at" => exp
+      })
+
+    Integrations.update_metadata(integration, updated_metadata)
   end
 
   # TODO: Uncomment and implement Dropbox authorization URL generation when Dropbox integration is enabled

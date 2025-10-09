@@ -225,11 +225,13 @@ defmodule WraftDoc.CloudImport.Providers.Onedrive do
     |> handle_response()
   end
 
-  defp build_storage_attrs(file, org_id) do
+  defp build_storage_attrs(file, repository_id, parant_id, org_id) do
     %{
       sync_source: "onedrive",
       external_id: file["id"],
       name: file["name"],
+      parent_id: parant_id,
+      repository_id: repository_id,
       path: file["pathDisplay"] || "",
       materalized_path: file["pathDisplay"] || "",
       mime_type: file["mimeType"],

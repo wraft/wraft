@@ -377,6 +377,17 @@ defmodule WraftDoc.Storage.StorageItems do
     |> Repo.update()
   end
 
+  def get_storage_item_by_path(organisation_id, materialized_path) do
+    Repo.one(
+      from(s in StorageItem,
+        where:
+          s.organisation_id == ^organisation_id and
+            s.materialized_path == ^materialized_path and
+            s.is_deleted == false
+      )
+    )
+  end
+
   @doc """
   Gets all children of a storage item recursively (for folders).
 

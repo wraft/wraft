@@ -31,9 +31,11 @@ defmodule WraftDoc.Integrations do
     |> Repo.one()
   end
 
-  def update_metadata(%Integration{} = integration, metadata) when is_map(metadata) do
+  def update_metadata(%Integration{} = integration, new_metadata) when is_map(new_metadata) do
+    merged_metadata = Map.merge(integration.metadata || %{}, new_metadata)
+
     integration
-    |> Integration.changeset(%{metadata: metadata})
+    |> Integration.changeset(%{metadata: merged_metadata})
     |> Repo.update()
   end
 

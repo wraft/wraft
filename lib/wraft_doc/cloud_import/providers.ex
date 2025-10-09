@@ -48,10 +48,12 @@ defmodule WraftDoc.CloudImport.Providers do
       def sync_files_to_db(access_token, params, org_id \\ nil) do
         with repository <-
                Storage.get_latest_repository(org_id),
-             :ok <- setup_sync_folder(repository),
+             {:ok, parant} <- setup_sync_folder(repository),
              {:ok, %{"files" => files}} <- list_all_files(access_token, params) do
           files
-          |> Enum.map(&Task.async(fn -> save_files_to_db(&1, org_id) end))
+          |> Enum.map(
+            &Task.async(fn -> save_files_to_db(&1, repository.id, parant.id, org_id) end)
+          )
           |> Enum.map(&Task.await(&1, 15_000))
           |> calculate_sync_stats(files)
           |> then(&{:ok, &1})
@@ -67,6 +69,7 @@ defmodule WraftDoc.CloudImport.Providers do
           file_id: file_id,
           access_token: access_token,
           org_id: org_id,
+          output_path: metadata["output_path"],
           user_id: metadata["user_id"],
           notification_enabled: Map.get(metadata, "notification_enabled", true)
         }
@@ -112,9 +115,9 @@ defmodule WraftDoc.CloudImport.Providers do
         end
       end
 
-      defp save_files_to_db(file, org_id \\ nil) do
+      defp save_files_to_db(file, repository_id, parant_id \\ nil, org_id \\ nil) do
         file
-        |> build_storage_attrs(org_id)
+        |> build_storage_attrs(repository_id, parant_id, org_id)
         |> StorageItems.create_storage_item()
         |> case do
           {:ok, _} -> :ok
