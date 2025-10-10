@@ -12,13 +12,10 @@ defmodule WraftDocWeb.Plug.AddDocumentAuditLog do
   def init(_params), do: nil
 
   def call(conn, _params) do
-    conn =
-      register_before_send(conn, fn conn ->
-        create_log(conn)
-        conn
-      end)
-
-    conn
+    register_before_send(conn, fn conn ->
+      Task.start(fn -> create_log(conn) end)
+      conn
+    end)
   end
 
   @spec create_log(Plug.Conn.t()) :: ActionLog.t() | nil
@@ -33,7 +30,9 @@ defmodule WraftDocWeb.Plug.AddDocumentAuditLog do
   @spec create_audit_log_params(Plug.Conn.t()) :: map()
   defp create_audit_log_params(
          %Plug.Conn{
-           assigns: %{current_user: %{id: user_id} = user},
+           assigns: %{
+             current_user: %{id: user_id, name: user_name, current_org_id: current_org_id} = user
+           },
            method: method,
            request_path: path,
            remote_ip: ip,
@@ -45,38 +44,18 @@ defmodule WraftDocWeb.Plug.AddDocumentAuditLog do
     action = Atom.to_string(conn.private.phoenix_action)
 
     organisation =
-      if user.current_org_id do
-        Repo.get(Organisation, user.current_org_id)
+      if current_org_id do
+        Repo.get(Organisation, current_org_id)
       else
         nil
       end
 
-    document_id =
-      if params["id"] do
-        params["id"]
-      end
-
-    message =
-      cond do
-        conn.assigns[:audit_log_message] ->
-          conn.assigns[:audit_log_message]
-
-        action == "update_meta" ->
-          "#{user.name} updated metadata"
-
-        action == "build" ->
-          "#{user.name} generated document"
-
-        true ->
-          "#{action}d by #{user.name}"
-      end
-
     %{
-      document_id: document_id,
+      document_id: params["id"],
       user_id: user_id,
       actor: Map.put(user, :organisation, organisation),
       action: action,
-      message: message,
+      message: log_message(conn, user_name, action),
       changes: conn.assigns[:changes] || %{},
       request_path: path,
       request_method: method,
@@ -86,11 +65,36 @@ defmodule WraftDocWeb.Plug.AddDocumentAuditLog do
     }
   end
 
-  @spec change_structs_to_maps(map()) :: map()
   defp change_structs_to_maps(params) do
     Enum.reduce(params, %{}, fn
       {k, %{__struct__: _} = v}, acc -> Map.put(acc, k, Map.from_struct(v))
       {k, v}, acc -> Map.put(acc, k, v)
     end)
+  end
+
+  defp log_message(conn, user_name, action) do
+    cond do
+      conn.assigns[:audit_log_message] ->
+        conn.assigns[:audit_log_message]
+
+      action == "build" ->
+        "#{user_name} generated document"
+
+      action == "generate_signature" ->
+        "#{user_name} generated document for signature"
+
+      # TODO add info about invited counterparty
+      action == "add_counterparty" ->
+        "#{user_name} added counterparty"
+
+      action == "request_signature" ->
+        "#{user_name} requested signature"
+
+      action == "apply_signature" ->
+        "#{user_name} applied signature"
+
+      true ->
+        "#{action}d by #{user_name}"
+    end
   end
 end

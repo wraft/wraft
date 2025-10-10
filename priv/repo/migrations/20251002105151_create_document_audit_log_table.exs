@@ -10,11 +10,6 @@ defmodule WraftDoc.Repo.Migrations.CreateDocumentAuditLogTable do
 
         add(:actor, :map, default: %{}, null: false)
         add(:action, :string, null: false)
-        add(:remote_ip, :string)
-        add(:actor_agent, :string)
-        add(:request_path, :string)
-        add(:request_method, :string)
-        add(:params, :map, default: %{}, null: false)
         add(:message, :string)
 
         add(:document_id, references(:content, type: :uuid, on_delete: :delete_all))
