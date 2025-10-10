@@ -207,15 +207,22 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     * `{:error, String.t() | %{status: integer(), body: any()}}`
   """
   @spec download_file(String.t(), String.t(), String.t() | nil) :: {:ok, map()} | {:error, map()}
-  def download_file(access_token, file_id, output_path \\ nil) do
+  def download_file(access_token, file_id, org_id, output_path \\ nil) do
     with {:ok, metadata} <- get_file_metadata(access_token, file_id),
-         :ok <- save_files_to_db(metadata),
+         storage_item <- StorageItems.get_storage_item_by_path(org_id, output_path),
+         :ok <-
+           save_files_to_db(
+             metadata,
+             storage_item.repository_id,
+             storage_item.id,
+             storage_item.organisation_id
+           ),
          {:ok, %{status: 200, body: body}} <-
            get("#{@base_url}/files/#{file_id}",
              query: [alt: "media"],
              headers: auth_headers(access_token)
            ) do
-      write_file_result(body, output_path, metadata)
+      write_file_result(body, nil, metadata)
     else
       {:ok, %{status: status, body: body}} -> {:error, %{status: status, body: body}}
       error -> error
@@ -386,15 +393,53 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     |> handle_response()
   end
 
-  defp build_storage_attrs(file, org_id) do
+  def setup_sync_folder(repository) do
+    case StorageItems.get_sync_folder("google_drive_files", repository.organisation_id) do
+      nil ->
+        %{
+          "name" => "google_drive_files",
+          "path" => "/google_drive_files",
+          "item_type" => "folder",
+          "mime_type" => "inode/directory",
+          "size" => 0,
+          "depth_level" => 1,
+          "materialized_path" => "/google_drive_files",
+          "creator_id" => repository.creator_id,
+          "organisation_id" => repository.organisation_id,
+          "repository_id" => repository.id
+        }
+        |> StorageItems.create_storage_item()
+        |> case do
+          {:ok, storage_item} -> {:ok, storage_item}
+          {:error, reason} -> {:error, "Failed to create sync folder: #{reason}"}
+        end
+
+      storage_item ->
+        {:ok, storage_item}
+    end
+  end
+
+  defp build_storage_attrs(file, repository_id, parant_id, org_id) do
+    base_path = "/google_drive_files"
+
+    relative_path =
+      case file["pathDisplay"] do
+        nil -> ""
+        "" -> ""
+        path -> path
+      end
+
+    final_path = Path.join(base_path, relative_path)
+
     %{
       sync_source: "google_drive",
       external_id: file["id"],
       name: file["name"],
       organisation_id: org_id,
-      repository_id: file["repository_id"] || nil,
-      path: file["pathDisplay"] || "root",
-      materialized_path: file["pathDisplay"] || "no_path",
+      parent_id: parant_id,
+      repository_id: repository_id,
+      path: "/#{file["name"]}",
+      materialized_path: final_path <> "/#{file["name"]}",
       mime_type: file["mimeType"],
       item_type: "default",
       metadata: %{description: file["description"] || ""},

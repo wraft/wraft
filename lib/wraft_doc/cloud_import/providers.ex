@@ -29,6 +29,7 @@ defmodule WraftDoc.CloudImport.Providers do
       use Tesla
       require Logger
 
+      alias WraftDoc.Storage
       alias WraftDoc.Storage.StorageItems
       alias WraftDoc.Workers.CloudImportWorker, as: Worker
 
@@ -45,9 +46,14 @@ defmodule WraftDoc.CloudImport.Providers do
       )
 
       def sync_files_to_db(access_token, params, org_id \\ nil) do
-        with {:ok, %{"files" => files}} <- list_all_files(access_token, params) do
+        with repository <-
+               Storage.get_latest_repository(org_id),
+             {:ok, parant} <- setup_sync_folder(repository),
+             {:ok, %{"files" => files}} <- list_all_files(access_token, params) do
           files
-          |> Enum.map(&Task.async(fn -> save_files_to_db(&1, org_id) end))
+          |> Enum.map(
+            &Task.async(fn -> save_files_to_db(&1, repository.id, parant.id, org_id) end)
+          )
           |> Enum.map(&Task.await(&1, 15_000))
           |> calculate_sync_stats(files)
           |> then(&{:ok, &1})
@@ -63,6 +69,7 @@ defmodule WraftDoc.CloudImport.Providers do
           file_id: file_id,
           access_token: access_token,
           org_id: org_id,
+          output_path: metadata["output_path"],
           user_id: metadata["user_id"],
           notification_enabled: Map.get(metadata, "notification_enabled", true)
         }
@@ -75,10 +82,21 @@ defmodule WraftDoc.CloudImport.Providers do
       defp handle_response({:ok, %{status: status, body: body}}) when status in 200..299,
         do: {:ok, body}
 
-      defp handle_response({:ok, %{status: status, body: body}}),
-        do: {:error, %{status: status, body: body}}
+      defp handle_response(
+             {:ok,
+              %{
+                status: status,
+                body:
+                  %{
+                    "error" => %{
+                      "message" => error_msg
+                    }
+                  } = _body
+              }}
+           ),
+           do: {:error, {status, %{errors: error_msg}}}
 
-      defp handle_response({:error, reason}), do: {:error, %{status: 500, body: reason}}
+      defp handle_response({:error, reason}), do: {:error, {500, %{error: reason}}}
 
       defp calculate_sync_stats(results, files) do
         success_count = Enum.count(results, &(&1 == :ok))
@@ -108,9 +126,9 @@ defmodule WraftDoc.CloudImport.Providers do
         end
       end
 
-      defp save_files_to_db(file, org_id \\ nil) do
+      defp save_files_to_db(file, repository_id, parant_id \\ nil, org_id \\ nil) do
         file
-        |> build_storage_attrs(org_id)
+        |> build_storage_attrs(repository_id, parant_id, org_id)
         |> StorageItems.create_storage_item()
         |> case do
           {:ok, _} -> :ok
@@ -122,6 +140,12 @@ defmodule WraftDoc.CloudImport.Providers do
 
       # This function should be implemented by each provider
       # as the file structure differs between providers
+      defp setup_sync_folder(_repository) do
+        raise "setup_sync_folder/1 must be implemented by the provider module"
+      end
+
+      defoverridable setup_sync_folder: 1
+
       defp build_storage_attrs(file, org_id) do
         raise "build_storage_attrs/2 must be implemented by the provider module"
       end

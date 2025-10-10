@@ -1,4 +1,4 @@
-defmodule WraftDoc.Utils.Vault do
+defmodule WraftDoc.Utils.CloakVault do
   @moduledoc """
   Vault for encrypting and decrypting sensitive data.
 

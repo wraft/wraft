@@ -577,7 +577,7 @@ defmodule WraftDocWeb.Router do
 
         get("/files", CloudImportController, :list_gdrive_files)
         get("/file/:file_id", CloudImportController, :get_gdrive_file)
-        post("/download", CloudImportController, :download_gdrive_file)
+        post("/import", CloudImportController, :import_gdrive_file)
         get("/search", CloudImportController, :search_gdrive_files)
         get("/pdfs", CloudImportController, :list_all_gdrive_pdfs)
         post("/sync_files", CloudImportController, :sync_gdrive_files)
@@ -615,6 +615,42 @@ defmodule WraftDocWeb.Router do
         get("/folders/search", CloudImportController, :search_onedrive_folders)
         get("/folder/:folder_id", CloudImportController, :get_onedrive_folder)
         get("/folder/:folder_id/files", CloudImportController, :list_onedrive_folder_files)
+      end
+
+      # Integration routes
+      scope "/integrations" do
+        get("/", IntegrationController, :index)
+        post("/new", IntegrationController, :create)
+        put("/:id/enable", IntegrationController, :enable)
+        put("/:id/disable", IntegrationController, :disable)
+        put("/:id/events", IntegrationController, :update_events)
+
+        # Integration configuration routes
+        get("/configs", IntegrationConfigController, :index)
+        get("/configs/categories", IntegrationConfigController, :categories)
+        get("/configs/:id", IntegrationConfigController, :show)
+        get("/:provider/config", IntegrationConfigController, :config)
+
+        # Signature
+        post("/send_document", DocumentSignController, :send_document)
+        post("/document/get_status", DocumentSignController, :get_document_status)
+        post("/document/download", DocumentSignController, :download_document)
+
+        # Docusign
+        scope "/docusign" do
+          # post("/send_document", DocusignController, :send_envelope)
+          # post("/:id/document_status", DocusignController, :status)
+          # post("/download", DocusignController, :download)
+          get("/auth", IntegrationAuthController, :auth)
+          get("/callback", IntegrationAuthController, :callback)
+        end
+
+        # Documenso
+        # scope "/documenso" do
+        #   post("/send_document", DocumensoController, :send_doc)
+        #   post("/:id/document_status", DocumensoController, :status)
+        #   post("/download", DocumensoController, :download)
+        # end
       end
 
       # Repositories
