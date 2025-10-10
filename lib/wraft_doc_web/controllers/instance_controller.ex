@@ -19,7 +19,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     reject: "document:review"
 
   plug WraftDocWeb.Plug.AddDocumentAuditLog
-       when action in [:update, :update_meta, :state_update, :lock_unlock, :approve, :build]
+       when action in [:create, :update, :approve, :build, :invite]
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -726,18 +726,15 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       })
 
     with %ContentType{} = c_type <- ContentTypes.show_content_type(current_user, c_type_id),
-         %Instance{} = content <-
+         %Instance{id: content_id} = content <-
            Documents.create_instance(current_user, c_type, params) do
       Logger.info("Create content success")
       Typesense.create_document(content)
       Task.start(fn -> EventTrigger.trigger_document_created(content) end)
 
-      WraftDocWeb.Plug.AddDocumentAuditLog.call(
-        %{conn | params: Map.put(conn.params, "id", content.id)},
-        %{}
-      )
-
-      render(conn, :create, content: content)
+      conn
+      |> Map.update!(:params, &Map.put(&1, "id", content_id))
+      |> render(:create, content: content)
     else
       error ->
         Logger.error("Create content failed", error: error)

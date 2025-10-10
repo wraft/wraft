@@ -7,11 +7,6 @@ defmodule WraftDoc.Documents.DocumentAuditLog do
   schema "document_audit_logs" do
     field(:actor, :map, default: %{})
     field(:action, :string)
-    field(:remote_ip, :string)
-    field(:actor_agent, :string)
-    field(:request_path, :string)
-    field(:request_method, :string)
-    field(:params, :map, default: %{})
     field(:message, :string)
 
     belongs_to(:document, WraftDoc.Documents.Instance)
@@ -26,15 +21,10 @@ defmodule WraftDoc.Documents.DocumentAuditLog do
     |> cast(attrs, [
       :actor,
       :action,
-      :remote_ip,
-      :actor_agent,
-      :request_path,
-      :request_method,
-      :params,
       :message,
       :document_id,
       :user_id
     ])
-    |> validate_required([:actor, :action, :params, :document_id])
+    |> validate_required([:actor, :action, :document_id])
   end
 end
