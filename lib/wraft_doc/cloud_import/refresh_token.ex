@@ -1,63 +1,105 @@
-defmodule WraftDoc.CloudImport.RefreshToken do
+defmodule WraftDoc.CloudImport.TokenRefreshServer do
   @moduledoc """
-  Scheduled Refreshes tokens for all integrations.
+  GenServer for refreshing access tokens
   """
+
   use GenServer
   require Logger
+
   alias WraftDoc.CloudImport.CloudAuth
 
-  @refresh_margin 300
+  @max_refresh_count 3
+  # Refresh 5 minutes before token expires (safety margin)
+  @refresh_margin_seconds 300
 
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  # Client API
+
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def run_refresh(provider, org_id, refresh_token) do
-    GenServer.cast(__MODULE__, {:refresh, provider, org_id, refresh_token})
-  end
-
-  @impl true
-  def init(state), do: {:ok, state}
-
-  @impl true
-  def handle_cast({:refresh, provider, org_id, refresh_token}, state) do
-    safe(fn -> do_refresh(provider, org_id, refresh_token) end)
-    {:noreply, state}
+  def stop do
+    GenServer.stop(__MODULE__)
   end
 
   @impl true
-  def handle_info({:refresh, provider, org_id, refresh_token}, state) do
-    safe(fn -> do_refresh(provider, org_id, refresh_token) end)
-    {:noreply, state}
+  def init(opts) do
+    organisation_id = Keyword.fetch!(opts, :organisation_id)
+    refresh_token = Keyword.fetch!(opts, :refresh_token)
+
+    state = %{
+      organisation_id: organisation_id,
+      refresh_token: refresh_token,
+      last_refresh: nil,
+      refresh_count: 0,
+      expires_at: nil
+    }
+
+    send(self(), :refresh_token)
+
+    {:ok, state}
   end
 
-  defp safe(fun) do
-    fun.()
-  rescue
-    exception ->
-      Logger.error("RefreshToken crashed: #{Exception.format(:error, exception, __STACKTRACE__)}")
-
-      reraise exception, __STACKTRACE__
+  @impl true
+  def handle_info(:refresh_token, %{refresh_count: count} = state)
+      when count >= @max_refresh_count do
+    {:stop, :normal, state}
   end
 
-  defp do_refresh(:google_drive, org_id, %{"refresh_token" => refresh_token} = metadata) do
-    case CloudAuth.refresh_token(:google_drive, org_id, refresh_token) do
-      {:ok, _normalized_token} ->
-        schedule_refresh(:google_drive, org_id, metadata)
+  @impl true
+  def handle_info(:refresh_token, state) do
+    new_state =
+      case refresh_google_token(state.organisation_id, state.refresh_token) do
+        {:ok, normalized} ->
+          expires_at = normalized["expires_at"]
 
-      {:error, reason} ->
-        Logger.error("Failed to refresh Google Drive token for #{org_id}: #{inspect(reason)}")
-    end
+          updated_state = %{
+            state
+            | last_refresh: DateTime.utc_now(),
+              refresh_count: state.refresh_count + 1,
+              expires_at: expires_at
+          }
+
+          # Schedule next refresh based on expiry time
+          if updated_state.refresh_count < @max_refresh_count do
+            schedule_refresh_based_on_expiry(expires_at)
+          end
+
+          updated_state
+
+        {:error, _reason} ->
+          if state.refresh_count < @max_refresh_count do
+            Process.send_after(self(), :refresh_token, :timer.seconds(30))
+          end
+
+          state
+      end
+
+    {:noreply, new_state}
   end
 
-  defp schedule_refresh(
-         provider,
-         org_id,
-         %{"access_token" => _at, "expires_at" => expires_at} = normalized_token
-       ) do
-    now = System.system_time(:second)
-    delay = max(expires_at - now - @refresh_margin, 0)
+  @impl true
+  def handle_call(:get_state, _from, state) do
+    {:reply, state, state}
+  end
 
-    Process.send_after(self(), {:refresh, provider, org_id, normalized_token}, delay * 1000)
+  # Private Functions
+
+  defp schedule_refresh_based_on_expiry(expires_at) do
+    now = DateTime.to_unix(DateTime.utc_now())
+    time_until_expiry = expires_at - now
+
+    refresh_in_seconds = max(time_until_expiry - @refresh_margin_seconds, 10)
+
+    Process.send_after(self(), :refresh_token, :timer.seconds(refresh_in_seconds))
+  end
+
+  defp refresh_google_token(organisation_id, refresh_token) do
+    CloudAuth.refresh_token(:google_drive, organisation_id, refresh_token)
+  end
+
+  # Helper function to check current state (useful for debugging)
+  def get_state do
+    GenServer.call(__MODULE__, :get_state)
   end
 end

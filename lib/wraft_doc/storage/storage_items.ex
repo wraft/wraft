@@ -1034,20 +1034,9 @@ defmodule WraftDoc.Storage.StorageItems do
           {:ok, map()} | {:error, atom()}
   defp handle_parent_flow(params, organisation_id, pagination_opts) do
     parent_id = params["parent_id"]
-    sort_by = pagination_opts[:sort_by]
-    sort_order = pagination_opts[:sort_order]
-
-    Logger.info("Fetching contents of folder", %{
-      parent_id: parent_id,
-      organisation_id: organisation_id,
-      sort_by: sort_by,
-      sort_order: sort_order
-    })
 
     case get_storage_item_by_org(parent_id, organisation_id) do
       %StorageItem{mime_type: "inode/directory"} ->
-        Logger.info("Folder found, listing contents", %{parent_id: parent_id})
-
         {:ok,
          list_storage_items_with_breadcrumbs(
            parent_id,
@@ -1056,16 +1045,10 @@ defmodule WraftDoc.Storage.StorageItems do
          )}
 
       %StorageItem{} ->
-        Logger.warning("Item exists but is not a directory", %{parent_id: parent_id})
         {:error, :not_a_directory}
 
       nil ->
-        Logger.warning("Folder not found", %{
-          parent_id: parent_id,
-          organisation_id: organisation_id
-        })
-
-        {:error, :folder_not_found}
+        {:error, "folder not found"}
     end
   end
 
@@ -1073,16 +1056,6 @@ defmodule WraftDoc.Storage.StorageItems do
   defp handle_repository_flow(params, organisation_id, pagination_opts) do
     repository_id = params["repository_id"]
     parent_id = Map.get(params, "parent_id")
-    sort_by = pagination_opts[:sort_by]
-    sort_order = pagination_opts[:sort_order]
-
-    Logger.info("Fetching repository contents", %{
-      repository_id: repository_id,
-      parent_id: parent_id,
-      organisation_id: organisation_id,
-      sort_by: sort_by,
-      sort_order: sort_order
-    })
 
     items =
       Helper.list_repository_storage_items(
@@ -1121,7 +1094,6 @@ defmodule WraftDoc.Storage.StorageItems do
 
   @spec handle_root_flow(String.t(), storage_item_opts()) :: {:ok, map()}
   defp handle_root_flow(organisation_id, pagination_opts) do
-    Logger.info("Fetching root level items", %{organisation_id: organisation_id})
     {:ok, list_storage_items_with_breadcrumbs(nil, organisation_id, pagination_opts)}
   end
 
@@ -1145,9 +1117,6 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp respond_with_result({:error, :not_a_directory}, _params, _org),
     do: {:error, "The specified ID is not a directory"}
-
-  defp respond_with_result({:error, :folder_not_found}, _params, _org),
-    do: {:error, "Folder not found"}
 
   @spec storage_item_data(StorageItem.t(), [StorageAsset.t()]) :: map()
   defp storage_item_data(%StorageItem{} = storage_item, storage_assets \\ []) do
@@ -1249,6 +1218,7 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp extract_name_from_path(_), do: "Unknown"
 
+  # TODO - verify logging cases
   @spec log_success(String.t(), [StorageItem.t()], [breadcrumb_item()], map() | nil, map()) :: :ok
   defp log_success(organisation_id, items, breadcrumbs, current_folder, params) do
     Logger.info("Storage items listed", %{
@@ -1336,6 +1306,7 @@ defmodule WraftDoc.Storage.StorageItems do
     {:ok, response}
   end
 
+  # TODO - verify logging cases
   @spec log_navigation_retrieved(String.t(), String.t() | nil, map()) :: :ok
   defp log_navigation_retrieved(organisation_id, parent_id, navigation_data) do
     Logger.info("Storage navigation data retrieved", %{

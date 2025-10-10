@@ -655,23 +655,11 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
     current_user = conn.assigns[:current_user]
     organisation_id = current_user.current_org_id
 
-    Logger.info("Starting folder creation", %{
-      user_id: current_user.id,
-      organisation_id: organisation_id,
-      folder_name: folder_params["name"],
-      parent_id: folder_params["parent_id"]
-    })
-
     folder_depth_level = StorageItems.calculate_depth_level(folder_params["path"])
 
     # Get the latest repository for the current organisation
     case Storage.get_latest_repository(organisation_id) do
       %Repository{} = repository ->
-        Logger.info("Found repository for folder creation", %{
-          repository_id: repository.id,
-          organisation_id: organisation_id
-        })
-
         # Prepare folder parameters with required metadata
         folder_params =
           folder_params
@@ -687,23 +675,12 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
         # Create the folder in storage
         case StorageItems.create_storage_item(folder_params) do
           {:ok, %StorageItem{} = storage_item} ->
-            Logger.info("Folder created successfully", %{
-              folder_id: storage_item.id,
-              folder_name: storage_item.name,
-              path: storage_item.path
-            })
-
             conn
             |> put_status(:created)
             |> put_resp_header("location", "/api/v1/storage/items/#{storage_item.id}")
             |> render("show.json", storage_item: storage_item)
 
           {:error, %Ecto.Changeset{} = changeset} ->
-            Logger.error("Failed to create folder", %{
-              errors: Ecto.Changeset.traverse_errors(changeset, &translate_error/1),
-              organisation_id: organisation_id
-            })
-
             conn
             |> put_status(:unprocessable_entity)
             |> json(%{
@@ -713,10 +690,6 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
         end
 
       nil ->
-        Logger.warning("No repositories found for organisation", %{
-          organisation_id: organisation_id
-        })
-
         conn
         |> put_status(:not_found)
         |> json(%{
@@ -946,12 +919,6 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
       storage_item ->
         case StorageItems.rename_storage_item(storage_item, new_name, organisation_id) do
           {:ok, updated_item} ->
-            Logger.info("Storage item renamed", %{
-              item_id: id,
-              new_name: new_name,
-              organisation_id: organisation_id
-            })
-
             conn
             |> put_status(:ok)
             |> render("show.json", storage_item: updated_item)

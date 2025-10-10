@@ -13,6 +13,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   alias Assent.Strategy.Google
   alias Assent.Strategy.OAuth2
   alias WraftDoc.CloudImport.StateStore
+  alias WraftDoc.CloudImport.TokenRefreshServer
   alias WraftDoc.Integrations
   alias WraftDoc.Integrations.Integration
 
@@ -72,7 +73,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   #       {:ok, url}
 
   #     {:error, error} ->
-  #       Logger.error("Dropbox authorization URL error: #{inspect(error)}")
   #       {:error, "Failed to generate Dropbox authorization URL"}
   #   end
   # end
@@ -85,7 +85,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   #       {:ok, url}
 
   #     {:error, error} ->
-  #       Logger.error("OneDrive authorization URL error: #{inspect(error)}")
   #       {:error, "Failed to generate OneDrive authorization URL"}
   #   end
   # end
@@ -93,7 +92,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   @doc """
   Exchanges authorization code for access token.
   """
-  @spec get_token(atom(), String.t(), String.t()) ::
+  @spec get_token(atom(), User.t(), String.t()) ::
           {:ok, map(), String.t()} | {:error, String.t()}
   def get_token(:google_drive, user, code) do
     {:ok, session_params} = StateStore.get(user.id, :google_drive)
@@ -104,10 +103,16 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     |> OAuth2.callback(%{"code" => code, "state" => session_params.state}, Google)
     |> case do
       {:ok, %{user: user, token: token}} ->
+        Task.start(fn ->
+          TokenRefreshServer.start_link(
+            organisation_id: user.current_org_id,
+            refresh_token: token.refresh_token
+          )
+        end)
+
         {:ok, user, token}
 
-      {:error, error} ->
-        Logger.error("Google Drive token exchange error: #{inspect(error)}")
+      {:error, _error} ->
         {:error, "Failed to exchange Google Drive authorization code"}
     end
   end
@@ -134,7 +139,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   #       {:ok, normalize_token(token)}
 
   #     {:error, error} ->
-  #       Logger.error("OneDrive token exchange error: #{inspect(error)}")
   #       {:error, "Failed to exchange OneDrive authorization code"}
   #   end
   # end
@@ -154,11 +158,9 @@ defmodule WraftDoc.CloudImport.CloudAuth do
       {:ok, normalized}
     else
       nil ->
-        Logger.error("No Google Drive integration found for org #{organisation_id}")
         {:error, "Integration not found"}
 
-      {:error, reason} ->
-        Logger.error("Google Drive token refresh error: #{inspect(reason)}")
+      {:error, _reason} ->
         {:error, "Failed to refresh Google Drive token"}
     end
   end
@@ -185,7 +187,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   #       {:ok, normalize_token(token)}
 
   #     {:error, error} ->
-  #       Logger.error("Dropbox token refresh error: #{inspect(error)}")
   #       {:error, "Failed to refresh Dropbox token"}
   #   end
   # end
@@ -198,7 +199,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   #       {:ok, normalize_token(token)}
 
   #     {:error, error} ->
-  #       Logger.error("OneDrive token refresh error: #{inspect(error)}")
   #       {:error, "Failed to refresh OneDrive token"}
   #   end
   # end
@@ -361,7 +361,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   """
   @spec handle_oauth_callback(User.t(), map(), atom(), String.t()) :: String.t()
   def handle_oauth_callback(
-        %{id: user_id, current_org_id: org_id} = user,
+        %{id: _user_id, current_org_id: org_id} = user,
         params,
         provider,
         code
@@ -374,14 +374,9 @@ defmodule WraftDoc.CloudImport.CloudAuth do
            Integrations.update_integration(integration, %{
              "metadata" => Map.merge(integration.metadata || %{}, token_data)
            }) do
-      Logger.info("Successfully authenticated with google drive}")
       get_redirect_path(params)
     else
-      {:error, reason} ->
-        Logger.error(
-          "#{format_provider_name(provider)} authentication failed for user #{user_id}: #{inspect(reason)}"
-        )
-
+      {:error, _reason} ->
         get_redirect_path(params, "/")
     end
   end
@@ -410,9 +405,4 @@ defmodule WraftDoc.CloudImport.CloudAuth do
         default
     end
   end
-
-  defp format_provider_name(:google_drive), do: "Google Drive"
-  defp format_provider_name(:dropbox), do: "Dropbox"
-  defp format_provider_name(:onedrive), do: "OneDrive"
-  defp format_provider_name(provider), do: provider |> to_string() |> String.capitalize()
 end

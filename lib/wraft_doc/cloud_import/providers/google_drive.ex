@@ -396,20 +396,20 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
   def setup_sync_folder(repository) do
     case StorageItems.get_sync_folder("google_drive_files", repository.organisation_id) do
       nil ->
-        folder_params =
-          %{}
-          |> Map.put("name", "google_drive_files")
-          |> Map.put("path", "/google_drive_files")
-          |> Map.put("item_type", "folder")
-          |> Map.put("mime_type", "inode/directory")
-          |> Map.put("size", 0)
-          |> Map.put("depth_level", 1)
-          |> Map.put("materialized_path", "/google_drive_files")
-          |> Map.put("creator_id", repository.creator_id)
-          |> Map.put("organisation_id", repository.organisation_id)
-          |> Map.put("repository_id", repository.id)
-
-        case StorageItems.create_storage_item(folder_params) do
+        %{
+          "name" => "google_drive_files",
+          "path" => "/google_drive_files",
+          "item_type" => "folder",
+          "mime_type" => "inode/directory",
+          "size" => 0,
+          "depth_level" => 1,
+          "materialized_path" => "/google_drive_files",
+          "creator_id" => repository.creator_id,
+          "organisation_id" => repository.organisation_id,
+          "repository_id" => repository.id
+        }
+        |> StorageItems.create_storage_item()
+        |> case do
           {:ok, storage_item} -> {:ok, storage_item}
           {:error, reason} -> {:error, "Failed to create sync folder: #{reason}"}
         end
