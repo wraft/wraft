@@ -154,8 +154,6 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
            CloudAuth.authorize_url!(provider, user.current_org_id) do
       StateStore.put(user.id, provider, session_params)
 
-      Logger.info("Redirecting to #{provider} OAuth: #{redirect_url}")
-
       json(conn, %{
         status: "success",
         redirect_url: redirect_url

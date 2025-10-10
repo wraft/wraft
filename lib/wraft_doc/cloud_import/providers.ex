@@ -82,10 +82,21 @@ defmodule WraftDoc.CloudImport.Providers do
       defp handle_response({:ok, %{status: status, body: body}}) when status in 200..299,
         do: {:ok, body}
 
-      defp handle_response({:ok, %{status: status, body: body}}),
-        do: {:error, %{status: status, body: body}}
+      defp handle_response(
+             {:ok,
+              %{
+                status: status,
+                body:
+                  %{
+                    "error" => %{
+                      "message" => error_msg
+                    }
+                  } = _body
+              }}
+           ),
+           do: {:error, {status, %{errors: error_msg}}}
 
-      defp handle_response({:error, reason}), do: {:error, %{status: 500, body: reason}}
+      defp handle_response({:error, reason}), do: {:error, {500, %{error: reason}}}
 
       defp calculate_sync_stats(results, files) do
         success_count = Enum.count(results, &(&1 == :ok))

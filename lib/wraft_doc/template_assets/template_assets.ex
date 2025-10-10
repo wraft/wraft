@@ -346,8 +346,6 @@ defmodule WraftDoc.TemplateAssets do
            opts
          ) do
       {:ok, result} ->
-        Logger.info("Theme, Layout, Flow, variant created successfully.")
-
         %{
           theme: Map.get(result, :theme),
           flow: Map.get(result, :flow),
@@ -361,7 +359,6 @@ defmodule WraftDoc.TemplateAssets do
         |> then(&{:ok, &1})
 
       {:error, _failed_operation, error, _changes_so_far} ->
-        Logger.error("Failed to process. Error: #{inspect(error)}")
         {:error, error}
     end
   end
@@ -693,8 +690,7 @@ defmodule WraftDoc.TemplateAssets do
       {:ok, {:error, _reason}}, acc ->
         acc
 
-      {:exit, reason}, acc ->
-        Logger.error("Saving font failed with reason: #{inspect(reason)}")
+      {:exit, _reason}, acc ->
         acc
     end)
   end
@@ -707,11 +703,6 @@ defmodule WraftDoc.TemplateAssets do
       asset.id
     else
       error ->
-        Logger.error("""
-        Failed to create theme asset: #{inspect(entry.file_name)}.
-        Error: #{inspect(error)}.
-        """)
-
         {:error, error}
     end
   end
@@ -800,11 +791,7 @@ defmodule WraftDoc.TemplateAssets do
          {:ok, temp_file_path} <- write_temp_file(content) do
       prepare_layout_asset_params(entry, temp_file_path)
     else
-      error ->
-        Logger.error(
-          "Failed to process entry: #{inspect(entry.file_name)}. Error: #{inspect(error)}"
-        )
-
+      _error ->
         nil
     end
   end
@@ -895,7 +882,6 @@ defmodule WraftDoc.TemplateAssets do
         }
 
       {:error, error} ->
-        Logger.error("Failed to prepare data template. Error: #{inspect(error)}")
         {:error, error}
     end
   end
@@ -907,7 +893,6 @@ defmodule WraftDoc.TemplateAssets do
   #       template_md = Enum.find(entries, fn entry -> entry.file_name =~ ~r/^.*\.md$/i end)
   #       template_md.file_name
   #     _ ->
-  #       Logger.error(" template data not found")
   #   end
   # end
 

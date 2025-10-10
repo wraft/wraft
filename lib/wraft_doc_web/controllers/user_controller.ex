@@ -975,8 +975,6 @@ defmodule WraftDocWeb.Api.V1.UserController do
         render(conn, "token.json", access_token: access_token, refresh_token: refresh_token)
 
       {:error, error} ->
-        Logger.error("Refresh token creation failed. Invalid input data provided.", error: error)
-
         conn
         |> put_status(401)
         |> render("token.json", error: error)
