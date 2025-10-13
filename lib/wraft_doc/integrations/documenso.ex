@@ -33,6 +33,8 @@ defmodule WraftDoc.Integrations.Documenso do
       height: 50
     }
   """
+  @spec create_and_send(String.t(), Ecto.UUID.t(), String.t(), list(map())) ::
+          {:ok, map()} | {:error, any()}
   def create_and_send(document_id, org_id, msg, signers) do
     document = Documents.get_instance(document_id, %{current_org_id: org_id})
 
@@ -97,9 +99,7 @@ defmodule WraftDoc.Integrations.Documenso do
     end
   end
 
-  # Add coordinate-based signature fields
   defp add_fields(document_id, recipients, signers) do
-    # Map recipients by email to get recipientId
     recp_map =
       Enum.reduce(recipients, %{}, fn recp, acc ->
         Map.put(acc, recp["email"], recp["id"])

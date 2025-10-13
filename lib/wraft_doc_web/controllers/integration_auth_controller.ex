@@ -17,8 +17,7 @@ defmodule WraftDocWeb.Api.V1.IntegrationAuthController do
 
   def callback(conn, %{"code" => code}) do
     organisation_id = conn.assigns.current_user.current_org_id
-    user = conn.assigns[:current_user]
-    DocuSign.handle_callback(user, organisation_id, %{"code" => code})
+    DocuSign.handle_callback(organisation_id, %{"code" => code})
 
     redirect(conn, to: "/")
   end

@@ -3,8 +3,6 @@ defmodule WraftDoc.Integrations.DocuSign do
   DocuSign API client using Authorization Code Grant flow.
   """
 
-  require Logger
-
   alias WraftDoc.Client.Minio
   alias WraftDoc.Documents
   alias WraftDoc.Integrations
@@ -12,11 +10,10 @@ defmodule WraftDoc.Integrations.DocuSign do
   @auth_base_url "https://account-d.docusign.com"
   @api_base_url "https://demo.docusign.net/restapi/v2.1"
 
-  # defp get_config do
-  #   Application.get_all_env(:document_signing) |> Enum.into(%{})
-  # end
-
-  # === Step 1: Authorization URL ===
+  @doc """
+  Returns the authorization URL for DocuSign.
+  """
+  @spec get_authorization_url(Ecto.UUID.t()) :: String.t()
   def get_authorization_url(org_id) do
     config = get_config(org_id)
 
@@ -39,27 +36,30 @@ defmodule WraftDoc.Integrations.DocuSign do
     "#{@auth_base_url}/oauth/auth?#{query}"
   end
 
-  def handle_callback(user, org_id, %{"code" => code}) do
+  @doc """
+  Handles the callback from DocuSign after authorization.
+  """
+  @spec handle_callback(Ecto.UUID.t(), map()) ::
+          {:ok, String.t()} | {:error, any()}
+  def handle_callback(org_id, %{"code" => code}) do
     case exchange_code_for_token(code, org_id) do
       {:ok, token_data} ->
-        # Auth.save_token(user, "docusign", token_data)
         WraftDoc.Integrations.update_metadata(
           get_config(org_id),
           token_data
         )
 
-        Logger.info("DocuSign callback successful for user #{user.id}")
-        # Redirect to home or any other page
         {:ok, "/"}
 
       {:error, reason} ->
-        Logger.error("DocuSign callback error: #{inspect(reason)}")
         {:error, reason}
     end
   end
 
-  # === Step 2: Exchange code for token ===
-
+  @doc """
+  Retrieves the configuration for the DocuSign integration.
+  """
+  @spec get_config(Ecto.UUID.t()) :: Integration.t()
   def get_config(org_id) do
     Integrations.get_integration_by_provider(
       org_id,
@@ -67,6 +67,10 @@ defmodule WraftDoc.Integrations.DocuSign do
     )
   end
 
+  @doc """
+  Exchanges an authorization code for an access token.
+  """
+  @spec exchange_code_for_token(String.t(), Ecto.UUID.t()) :: {:ok, map()} | {:error, any()}
   def exchange_code_for_token(code, org_id) do
     config = get_config(org_id)
     {:ok, code_verifier} = WraftDoc.SessionCache.get("code")
@@ -91,16 +95,10 @@ defmodule WraftDoc.Integrations.DocuSign do
     end
   end
 
-  # defp generate_code_verifier do
-  #   Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
-  # end
-
-  # defp create_code_challenge(code_verifier) do
-  #   Base.url_encode64(:crypto.hash(:sha256, code_verifier), padding: false)
-  # end
-
-  # === Step 3: Send document for signing ===
-
+  @doc """
+  Sends a document for signing.
+  """
+  @spec send_document(String.t(), Ecto.UUID.t(), map()) :: {:ok, map()} | {:error, any()}
   def send_document(document_id, org_id, signers_param) do
     document = Documents.get_instance(document_id, %{current_org_id: org_id})
     account_id = "40730823"
@@ -109,7 +107,6 @@ defmodule WraftDoc.Integrations.DocuSign do
     path =
       "organisations/#{org_id}/contents/#{document.instance_id}/#{document.instance_id}-v1.pdf"
 
-    # Normalize signers into a list
     signers =
       case signers_param do
         %{"email" => _, "name" => _} = single -> [single]
@@ -182,8 +179,11 @@ defmodule WraftDoc.Integrations.DocuSign do
     end
   end
 
-  # === Step 4: Get envelope status ===
-
+  @doc """
+  Retrieves the status of an envelope.
+  """
+  @spec get_envelope_status(String.t(), String.t(), String.t()) ::
+          {:ok, map()} | {:error, any()}
   def get_envelope_status(access_token, account_id, envelope_id) do
     url = "#{@api_base_url}/accounts/#{account_id}/envelopes/#{envelope_id}"
 
@@ -199,8 +199,11 @@ defmodule WraftDoc.Integrations.DocuSign do
     end
   end
 
-  # === Step 5: Download the signed document ===
-
+  @doc """
+  Downloads the signed document from DocuSign.
+  """
+  @spec download_document(String.t(), String.t(), String.t(), String.t()) ::
+          {:ok, binary()} | {:error, any()}
   def download_document(access_token, account_id, envelope_id, document_id \\ "1") do
     url =
       "#{@api_base_url}/accounts/#{account_id}/envelopes/#{envelope_id}/documents/#{document_id}"

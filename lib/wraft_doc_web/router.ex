@@ -622,9 +622,12 @@ defmodule WraftDocWeb.Router do
       scope "/integrations" do
         get("/", IntegrationController, :index)
         post("/new", IntegrationController, :create)
-        put("/:id/enable", IntegrationController, :enable)
-        put("/:id/disable", IntegrationController, :disable)
-        put("/:id/events", IntegrationController, :update_events)
+
+        scope "/:id" do
+          put("/enable", IntegrationController, :enable)
+          put("/disable", IntegrationController, :disable)
+          put("/events", IntegrationController, :update_events)
+        end
 
         # Integration configuration routes
         get("/configs", IntegrationConfigController, :index)
