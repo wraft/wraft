@@ -7,6 +7,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
   Returns the configuration structure for all supported integrations.
   This is used to inform the frontend about the required fields and their types.
   """
+  @spec available_integrations() :: map()
   def available_integrations do
     %{
       "slack" => %{
@@ -258,6 +259,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
   @doc """
   Returns the configuration structure for a specific integration.
   """
+  @spec get_integration_config(String.t()) :: map()
   def get_integration_config(provider) do
     Map.get(available_integrations(), provider)
   end
@@ -265,6 +267,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
   @doc """
   Returns a list of all available integration providers.
   """
+  @spec list_providers() :: [String.t()]
   def list_providers do
     Map.keys(available_integrations())
   end
@@ -272,6 +275,7 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
   @doc """
   Returns a list of all available categories with their integrations.
   """
+  @spec list_categories_with_integrations() :: [map()]
   def list_categories_with_integrations do
     available_integrations()
     |> Enum.group_by(fn {_key, config} -> config.category end)

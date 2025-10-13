@@ -8,15 +8,15 @@ defmodule WraftDocWeb.GoogleAuthPlug do
   def init(default), do: default
 
   def call(conn, _opts) do
-    current_user = conn.assigns[:current_user]
-
-    case Integrations.get_latest_token(current_user, "google_drive") do
+    conn.assigns[:current_user]
+    |> Integrations.get_latest_token("google_drive")
+    |> case do
       {:ok, token} ->
         assign(conn, :google_token, token)
 
       _ ->
         conn
-        |> send_resp(401, Jason.encode!(%{error: "Not authenticated"}))
+        |> send_resp(403, Jason.encode!(%{error: "Not authenticated"}))
         |> halt()
     end
   end
