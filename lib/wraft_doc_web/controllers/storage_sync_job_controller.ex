@@ -3,6 +3,9 @@ defmodule WraftDocWeb.Api.V1.StorageSyncJobController do
   alias WraftDoc.Storage.SyncJob
   alias WraftDoc.Storage.SyncJobs, as: Storage
 
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
+
   action_fallback(WraftDocWeb.FallbackController)
 
   def index(conn, _params) do

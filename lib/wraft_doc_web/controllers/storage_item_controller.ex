@@ -28,6 +28,9 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
 
   import WraftDocWeb.ErrorHelpers
 
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
+
   action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do

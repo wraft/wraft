@@ -6,6 +6,9 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
+
   alias WraftDoc.CloudImport.Providers.Dropbox
   alias WraftDoc.CloudImport.Providers.GoogleDrive, as: Google
   alias WraftDoc.CloudImport.Providers.Onedrive

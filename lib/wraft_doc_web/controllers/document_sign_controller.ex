@@ -4,6 +4,9 @@ defmodule WraftDocWeb.Api.V1.DocumentSignController do
   alias WraftDoc.Integrations.Documenso
   alias WraftDoc.Integrations.DocuSign
 
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
+
   action_fallback(WraftDocWeb.FallbackController)
 
   def send_document(conn, %{"id" => document_id, "type" => type, "signers" => signers}) do

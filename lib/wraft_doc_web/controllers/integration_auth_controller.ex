@@ -2,6 +2,9 @@ defmodule WraftDocWeb.Api.V1.IntegrationAuthController do
   use WraftDocWeb, :controller
   alias WraftDoc.Integrations.DocuSign
 
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
+
   def auth(conn, _params) do
     organisation_id = conn.assigns.current_user.current_org_id
     authorize_url = DocuSign.get_authorization_url(organisation_id)
