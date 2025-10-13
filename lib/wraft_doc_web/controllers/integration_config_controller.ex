@@ -3,6 +3,9 @@ defmodule WraftDocWeb.Api.V1.IntegrationConfigController do
   alias WraftDoc.Integrations
   alias WraftDoc.Integrations.IntegrationConfig
 
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
+
   def index(conn, _params) do
     available_integrations = IntegrationConfig.available_integrations()
     organisation_id = conn.assigns.current_user.current_org_id

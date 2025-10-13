@@ -8,6 +8,9 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
+
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.CloudImport.CloudAuth

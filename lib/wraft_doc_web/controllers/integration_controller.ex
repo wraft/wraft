@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
   alias WraftDoc.Integrations.Integration
 
   plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
 
   plug WraftDocWeb.Plug.Authorized,
     index: "integration:show",

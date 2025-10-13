@@ -85,6 +85,20 @@ defmodule WraftDoc.CloudImport.Providers do
       defp handle_response(
              {:ok,
               %{
+                status: 401,
+                body:
+                  %{
+                    "error" => %{
+                      "message" => error_msg
+                    }
+                  } = _body
+              }}
+           ),
+           do: {:error, {403, %{errors: error_msg}}}
+
+      defp handle_response(
+             {:ok,
+              %{
                 status: status,
                 body:
                   %{
