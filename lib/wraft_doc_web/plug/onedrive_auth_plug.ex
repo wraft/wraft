@@ -16,7 +16,7 @@ defmodule WraftDocWeb.OnedriveAuthPlug do
 
       _ ->
         conn
-        |> send_resp(401, Jason.encode!(%{error: "Not authenticated"}))
+        |> send_resp(403, Jason.encode!(%{error: "Not authenticated"}))
         |> halt()
     end
   end

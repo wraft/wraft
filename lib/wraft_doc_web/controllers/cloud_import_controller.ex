@@ -155,6 +155,219 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
               files_skipped: 0
             }
           })
+        end,
+      DropboxFile:
+        swagger_schema do
+          title("Dropbox File")
+          description("A file from Dropbox")
+
+          properties do
+            id(:string, "The ID of the file", required: true)
+            name(:string, "Name of the file")
+            tag_type(:string, "Type tag (always 'file' for files)")
+            path_display(:string, "Display path of the file")
+            path_lower(:string, "Lowercase path of the file")
+            size(:integer, "Size of the file in bytes")
+            client_modified(:string, "Last modified time by client", format: "date-time")
+            server_modified(:string, "Last modified time on server", format: "date-time")
+          end
+
+          example(%{
+            "id" => "id:3a2b1c0d9e8f7g",
+            "name" => "example.pdf",
+            "tag_type" => "file",
+            "path_display" => "/Documents/example.pdf",
+            "path_lower" => "/documents/example.pdf",
+            "size" => 1024,
+            "client_modified" => "2023-01-01T12:00:00Z",
+            "server_modified" => "2023-01-01T12:00:00Z"
+          })
+        end,
+      DropboxFileList:
+        swagger_schema do
+          title("Dropbox File List")
+          description("List of files from Dropbox")
+
+          properties do
+            files(Schema.ref(:DropboxFile), "List of files", type: :array)
+            has_more(:boolean, "Whether there are more files available")
+            cursor(:string, "Cursor for pagination")
+          end
+
+          example(%{
+            "files" => [
+              %{
+                "id" => "id:3a2b1c0d9e8f7g",
+                "name" => "example.pdf"
+              }
+            ],
+            "has_more" => true,
+            "cursor" => "AAFqMWZ4Z2w5OG8yMTU5N2Q5NjYyNzkzODlmYTkyZjI4NzA"
+          })
+        end,
+      DropboxFolder:
+        swagger_schema do
+          title("Dropbox Folder")
+          description("A folder from Dropbox")
+
+          properties do
+            id(:string, "The ID of the folder", required: true)
+            name(:string, "Name of the folder")
+            tag_type(:string, "Type tag (always 'folder' for folders)")
+            path_display(:string, "Display path of the folder")
+            path_lower(:string, "Lowercase path of the folder")
+          end
+
+          example(%{
+            "id" => "id:7g6f5e4d3c2b1a0",
+            "name" => "Example Folder",
+            "tag_type" => "folder",
+            "path_display" => "/Documents/Example Folder",
+            "path_lower" => "/documents/example folder"
+          })
+        end,
+      DropboxFolderList:
+        swagger_schema do
+          title("Dropbox Folder List")
+          description("List of folders from Dropbox")
+
+          properties do
+            folders(Schema.ref(:DropboxFolder), "List of folders", type: :array)
+          end
+
+          example(%{
+            "folders" => [
+              %{
+                "id" => "id:7g6f5e4d3c2b1a0",
+                "name" => "Example Folder"
+              }
+            ]
+          })
+        end,
+      OneDriveFile:
+        swagger_schema do
+          title("OneDrive File")
+          description("A file from OneDrive")
+
+          properties do
+            id(:string, "The ID of the file", required: true)
+            name(:string, "Name of the file")
+            size(:integer, "Size of the file in bytes")
+            webUrl(:string, "URL to view the file in OneDrive")
+            lastModifiedDateTime(:string, "Last modified time", format: "date-time")
+            createdDateTime(:string, "Creation time", format: "date-time")
+            file(:object, "File metadata from OneDrive")
+          end
+
+          example(%{
+            "id" => "1234567890ABC",
+            "name" => "example.pdf",
+            "size" => 1024,
+            "webUrl" => "https://onedrive.live.com/redir?resid=1234567890ABC",
+            "lastModifiedDateTime" => "2023-01-01T12:00:00Z",
+            "createdDateTime" => "2023-01-01T10:00:00Z",
+            "file" => %{
+              "mimeType" => "application/pdf"
+            }
+          })
+        end,
+      OneDriveFileList:
+        swagger_schema do
+          title("OneDrive File List")
+          description("List of files from OneDrive")
+
+          properties do
+            files(Schema.ref(:OneDriveFile), "List of files", type: :array)
+          end
+
+          example(%{
+            "files" => [
+              %{
+                "id" => "1234567890ABC",
+                "name" => "example.pdf"
+              }
+            ]
+          })
+        end,
+      OneDriveFolder:
+        swagger_schema do
+          title("OneDrive Folder")
+          description("A folder from OneDrive")
+
+          properties do
+            id(:string, "The ID of the folder", required: true)
+            name(:string, "Name of the folder")
+            folder(:object, "Folder metadata")
+            lastModifiedDateTime(:string, "Last modified time", format: "date-time")
+            createdDateTime(:string, "Creation time", format: "date-time")
+            parentReference(:object, "Parent folder reference")
+          end
+
+          example(%{
+            "id" => "ABCDEF1234567890",
+            "name" => "Example Folder",
+            "folder" => %{
+              "childCount" => 5
+            },
+            "lastModifiedDateTime" => "2023-01-01T12:00:00Z",
+            "createdDateTime" => "2023-01-01T10:00:00Z",
+            "parentReference" => %{
+              "driveId" => "drive123",
+              "id" => "parent456"
+            }
+          })
+        end,
+      OneDriveFolderList:
+        swagger_schema do
+          title("OneDrive Folder List")
+          description("List of folders from OneDrive")
+
+          properties do
+            folders(Schema.ref(:OneDriveFolder), "List of folders", type: :array)
+          end
+
+          example(%{
+            "folders" => [
+              %{
+                "id" => "ABCDEF1234567890",
+                "name" => "Example Folder"
+              }
+            ]
+          })
+        end,
+      DownloadRequest:
+        swagger_schema do
+          title("Download Request")
+          description("Request to download files from cloud storage")
+
+          properties do
+            file_ids(:array, "List of file IDs to download",
+              items: %Schema{type: :string},
+              example: ["file1", "file2"]
+            )
+          end
+        end,
+      DownloadResponse:
+        swagger_schema do
+          title("Download Response")
+          description("Response for file download request")
+
+          properties do
+            status(:string, "Processing status", enum: ["processing"])
+            provider(:string, "Provider name", enum: ["dropbox", "onedrive"])
+            results(:array, "Download job details")
+          end
+
+          example(%{
+            status: "processing",
+            provider: "dropbox",
+            results: [
+              %{
+                file_id: "id:3a2b1c0d9e8f7g",
+                status: "scheduled"
+              }
+            ]
+          })
         end
     }
   end
@@ -170,13 +383,13 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
 
     response(200, "OK", Schema.ref(:GoogleDriveFileList))
-    response(401, "Unauthorized")
-    response(500, "Internal Server Error")
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   @doc """
   Lists all files in Google Drive.
-  # no params are required, but pagination can be handled via passing `page_token` and `page_size` params.
+  pagination can be handled via passing `page_token` and `page_size` params.
   """
   def list_gdrive_files(conn, params) do
     current_user = conn.assigns[:current_user]
@@ -202,7 +415,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
 
     response(200, "OK", Schema.ref(:GoogleDriveFile))
-    response(401, "Unauthorized")
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
     response(404, "File not found")
   end
 
@@ -231,13 +445,13 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
 
     response(200, "OK", Schema.ref(:GoogleDriveFileList))
-    response(401, "Unauthorized")
-    response(500, "Internal Server Error")
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   @doc """
   Lists all PDF files in Google Drive.
-  # no params are required, but pagination can be handled via passing `page_token` and `page_size` params.
+  pagination can be handled via passing `page_token` and `page_size` params.
   """
   def list_all_gdrive_pdfs(conn, params) do
     current_user = conn.assigns[:current_user]
@@ -261,13 +475,12 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
 
     response(200, "OK", Schema.ref(:GoogleDriveFileList))
-    response(401, "Unauthorized")
-    response(500, "Internal Server Error")
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   @doc """
   Searches for files in Google Drive based on provided parameters.
-  # no params are required, but you can pass `query` for query,
   """
   def search_gdrive_files(conn, params) do
     current_user = conn.assigns[:current_user]
@@ -282,7 +495,6 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   @doc """
   Synchronizes Google Drive files with the database.
   This endpoint fetches files from Google Drive and updates the database.
-  # no params are required,
   """
   swagger_path :sync_gdrive_files do
     post("/clouds/google/sync_files")
@@ -290,23 +502,22 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     description("Fetches files from Google Drive and updates the database")
 
     response(200, "OK", Schema.ref(:SyncResponse))
-    response(401, "Unauthorized")
-    response(500, "Internal Server Error")
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   def sync_gdrive_files(conn, params) do
     current_user = conn.assigns[:current_user]
-    current_org_id = current_user.current_org_id
 
     with {:ok, token} <-
            Integrations.get_latest_token(current_user, "google_drive"),
-         {:ok, result} <- Google.sync_files_to_db(token, params, current_org_id) do
+         {:ok, result} <- Google.sync_files_to_db(token, params, current_user.current_org_id) do
       json(conn, %{"status" => "success", "sync_result" => result})
     end
   end
 
   swagger_path :import_gdrive_file do
-    post("/clouds/google/import_file")
+    post("/clouds/google/import")
     summary("Download files from Google Drive")
     description("Schedules import of specified files from Google Drive to MinIO")
 
@@ -316,32 +527,29 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
 
     response(202, "Accepted", Schema.ref(:ImportResponse))
-    response(401, "Unauthorized")
-    response(500, "Internal Server Error")
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   @doc """
   Downloads files from Google Drive based on provided file IDs.
   This endpoint accepts a list of file IDs and schedules downloads.
-  # param requied ,`file_ids` should be a list of file IDs to download
+  params requied ,`file_ids` should be a list of file IDs to download
   """
   def import_gdrive_file(conn, %{"file_ids" => file_ids, "output_path" => output_path}) do
-    user = conn.assigns[:current_user]
-    org_id = user.current_org_id
+    current_user = conn.assigns[:current_user]
 
-    with {:ok, token} <- Integrations.get_latest_token(user, "google_drive") do
-      _results =
-        Google.schedule_download_to_minio(token, file_ids, org_id, %{
-          output_path: output_path,
-          user_id: user.id
-        })
+    with {:ok, token} <- Integrations.get_latest_token(current_user, "google_drive") do
+      Google.schedule_download_to_minio(token, file_ids, current_user.current_org_id, %{
+        output_path: output_path,
+        user_id: current_user.id
+      })
 
       conn
       |> put_status(:accepted)
       |> json(%{
         status: "processing",
         provider: "google_drive"
-        # results: results
       })
     end
   end
@@ -357,14 +565,13 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
 
     response(200, "OK", Schema.ref(:GoogleDriveFolderList))
-    response(401, "Unauthorized")
-    response(500, "Internal Server Error")
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   @doc """
-  Lists all folders in Google Drive.
-  # no params are required, but pagination can be handled via passing `page_token` and `page_size` params.
-  This endpoint retrieves all folders in the user's Google Drive.
+  Retrieves all folders in the user's Google Drive.
+  pagination can be handled via passing `page_token` and `page_size` params.
   """
 
   def list_gdrive_folders(conn, params) do
@@ -389,13 +596,12 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
 
     response(200, "OK", Schema.ref(:GoogleDriveFolderList))
-    response(401, "Unauthorized")
-    response(500, "Internal Server Error")
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   @doc """
   Searches for folders in Google Drive based on provided parameters.
-  # no params are required, but you can pass `query` for searching folders.
   This endpoint allows users to search for folders in their Google Drive.
   """
   def search_gdrive_folders(conn, params) do
@@ -420,14 +626,12 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
 
     response(200, "OK", Schema.ref(:GoogleDriveFileList))
-    response(401, "Unauthorized")
+    response(403, "Unauthorized")
     response(404, "Folder not found")
   end
 
   @doc """
   Lists all files within a specific Google Drive folder.
-  # param required,  a `folder_id` parameter to identify the folder.
-  It retrieves all files contained within the specified folder.
   """
   def list_gdrive_folder_files(conn, %{"folder_id" => folder_id} = params) do
     current_user = conn.assigns[:current_user]
@@ -449,14 +653,12 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
 
     response(200, "OK", Schema.ref(:GoogleDriveFolder))
-    response(401, "Unauthorized")
+    response(403, "Unauthorized")
     response(404, "Folder not found")
   end
 
   @doc """
   Retrieves metadata for a specific folder in Google Drive.
-  # param required, a `folder_id` parameter to identify the folder.
-  This endpoint fetches metadata for the specified folder in Google Drive.
   """
   def get_gdrive_folder(conn, %{"folder_id" => folder_id}) do
     current_user = conn.assigns[:current_user]
@@ -468,7 +670,22 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
   end
 
-  # Dropbox endpoints
+  swagger_path :list_dropbox_files do
+    get("/clouds/dropbox/files")
+    summary("List Dropbox files")
+    description("Lists all files in the user's Dropbox account")
+
+    parameters do
+      path(:query, :string, "Path to list files from (default: \"\")", required: false)
+      recursive(:query, :boolean, "Whether to list files recursively", required: false)
+      limit(:query, :integer, "Maximum number of files to return", required: false)
+    end
+
+    response(200, "Success", Schema.ref(:DropboxFileList))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+  end
+
   @doc """
   Lists all files in Dropbox.
   """
@@ -479,6 +696,27 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
          {:ok, files} <- Dropbox.list_all_files(token, params) do
       json(conn, %{"status" => "success", "files" => files["files"]})
     end
+  end
+
+  swagger_path :get_dropbox_file do
+    get("/clouds/dropbox/file/{file_id}")
+    summary("Get Dropbox file metadata")
+    description("Retrieves metadata for a specific file in Dropbox")
+
+    parameters do
+      file_id(:path, :string, "The ID or path of the file in Dropbox", required: true)
+    end
+
+    response(200, "Success", %{
+      properties: %{
+        status: %{type: :string, description: "Status of the request", example: "success"},
+        file_metadata: Schema.ref(:DropboxFile)
+      }
+    })
+
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+    response(404, "File Not Found")
   end
 
   @doc """
@@ -493,6 +731,23 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
   end
 
+  swagger_path :list_all_dropbox_pdfs do
+    get("/clouds/dropbox/pdfs")
+    summary("List all PDF files in Dropbox")
+    description("Lists all PDF files in the user's Dropbox account")
+
+    parameters do
+      path(:query, :string, "Path to search for PDFs (default: \"\")", required: false)
+      limit(:query, :integer, "Maximum number of PDFs to return", required: false)
+      recursive(:query, :boolean, "Whether to search recursively", required: false)
+    end
+
+    response(200, "Success", Schema.ref(:DropboxFileList))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+    response(404, "File Not Found")
+  end
+
   @doc """
   Lists all PDF files in Dropbox.
   """
@@ -503,6 +758,28 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
          {:ok, pdfs} <- Dropbox.list_all_pdfs(token, params) do
       json(conn, %{"status" => "success", "pdfs" => pdfs["files"]})
     end
+  end
+
+  swagger_path :search_dropbox_files do
+    get("/clouds/dropbox/search")
+    summary("Search Dropbox files")
+    description("Searches for files in Dropbox based on provided parameters")
+
+    parameters do
+      query(:query, :string, "Search query string", required: true)
+
+      content_type(:query, :string, "Filter by content type (e.g., \"application/pdf\")",
+        required: false
+      )
+
+      limit(:query, :integer, "Maximum number of results to return (default: 100)",
+        required: false
+      )
+    end
+
+    response(200, "Success", Schema.ref(:DropboxFileList))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   @doc """
@@ -517,6 +794,21 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
   end
 
+  swagger_path :sync_dropbox_files do
+    post("/clouds/dropbox/sync_files")
+    summary("Sync Dropbox files with database")
+    description("Synchronizes files from Dropbox with the application database")
+
+    parameters do
+      path(:query, :string, "Path to synchronize files from", required: false)
+      recursive(:query, :boolean, "Whether to synchronize files recursively", required: false)
+    end
+
+    response(200, "Success", Schema.ref(:SyncResponse))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+  end
+
   @doc """
   Synchronizes Dropbox files with the database.
   """
@@ -527,6 +819,23 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
          {:ok, result} <- Dropbox.sync_files_to_db(token, params) do
       json(conn, %{"status" => "success", "sync_result" => result})
     end
+  end
+
+  swagger_path :download_dropbox_file do
+    post("/clouds/dropbox/download")
+    summary("Download files from Dropbox")
+
+    description(
+      "Downloads files from Dropbox based on provided file IDs and schedules the downloads"
+    )
+
+    parameters do
+      body(:body, Schema.ref(:DownloadRequest), "File IDs to download", required: true)
+    end
+
+    response(202, "Accepted", Schema.ref(:DownloadResponse))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   @doc """
@@ -550,6 +859,21 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
   end
 
+  swagger_path :list_dropbox_folders do
+    get("/clouds/dropbox/folders")
+    summary("List Dropbox folders")
+    description("Lists all folders in the user's Dropbox account")
+
+    parameters do
+      path(:query, :string, "Path to list folders from (default: \"\")", required: false)
+      recursive(:query, :boolean, "Whether to list folders recursively", required: false)
+    end
+
+    response(200, "Success", Schema.ref(:DropboxFolderList))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+  end
+
   @doc """
   Lists all folders in Dropbox.
   """
@@ -560,6 +884,24 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
          {:ok, folders} <- Dropbox.list_all_folders(token, params) do
       json(conn, %{"status" => "success", "folders" => folders["folders"]})
     end
+  end
+
+  swagger_path :search_dropbox_folders do
+    get("/clouds/dropbox/folders/search")
+    summary("Search Dropbox folders")
+    description("Searches for folders in Dropbox based on provided parameters")
+
+    parameters do
+      query(:query, :string, "Search query string", required: true)
+
+      max_results(:query, :integer, "Maximum number of results to return (default: 100)",
+        required: false
+      )
+    end
+
+    response(200, "Success", Schema.ref(:DropboxFolderList))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   @doc """
@@ -586,6 +928,27 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   #   end
   # end
 
+  swagger_path :get_dropbox_folder do
+    get("/clouds/dropbox/folder/{folder_path}")
+    summary("Get Dropbox folder metadata")
+    description("Retrieves metadata for a specific folder in Dropbox")
+
+    parameters do
+      folder_path(:path, :string, "Path of the folder in Dropbox", required: true)
+    end
+
+    response(200, "Success", %{
+      properties: %{
+        status: %{type: :string, description: "Status of the request", example: "success"},
+        folder_metadata: Schema.ref(:DropboxFolder)
+      }
+    })
+
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+    response(404, "Folder Not Found")
+  end
+
   @doc """
   Retrieves metadata for a specific folder in Dropbox.
   """
@@ -598,7 +961,24 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
   end
 
-  # OneDrive endpoints
+  swagger_path :list_onedrive_files do
+    get("/clouds/onedrive/files")
+    summary("List OneDrive files")
+    description("Lists all files in the user's OneDrive account")
+
+    parameters do
+      path(:query, :string, "Path to list files from (default: \"/drive/root/children\")",
+        required: false
+      )
+
+      query(:query, :string, "Filter query", required: false)
+    end
+
+    response(200, "Success", Schema.ref(:OneDriveFileList))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+  end
+
   @doc """
   Lists all files in OneDrive.
   """
@@ -609,6 +989,27 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
          {:ok, files} <- Onedrive.list_all_files(token, params) do
       json(conn, %{"status" => "success", "files" => files["files"]})
     end
+  end
+
+  swagger_path :get_onedrive_file do
+    get("/clouds/onedrive/file/{file_id}")
+    summary("Get OneDrive file metadata")
+    description("Retrieves metadata for a specific file in OneDrive")
+
+    parameters do
+      file_id(:path, :string, "The ID of the file in OneDrive", required: true)
+    end
+
+    response(200, "Success", %{
+      properties: %{
+        status: %{type: :string, description: "Status of the request", example: "success"},
+        file_metadata: Schema.ref(:OneDriveFile)
+      }
+    })
+
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+    response(404, "File Not Found")
   end
 
   @doc """
@@ -623,6 +1024,22 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
   end
 
+  swagger_path :list_all_onedrive_pdfs do
+    get("/clouds/onedrive/pdfs")
+    summary("List all PDF files in OneDrive")
+    description("Lists all PDF files in the user's OneDrive account")
+
+    parameters do
+      top(:query, :integer, "Maximum number of results to return (default: 1000)",
+        required: false
+      )
+    end
+
+    response(200, "Success", Schema.ref(:OneDriveFileList))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+  end
+
   @doc """
   Lists all PDF files in OneDrive.
   """
@@ -633,6 +1050,28 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
          {:ok, pdfs} <- Onedrive.list_all_pdfs(token, params) do
       json(conn, %{"status" => "success", "pdfs" => pdfs["files"]})
     end
+  end
+
+  swagger_path :search_onedrive_files do
+    get("/clouds/onedrive/search")
+    summary("Search OneDrive files")
+    description("Searches for files in OneDrive based on provided parameters")
+
+    parameters do
+      query(:query, :string, "Search query string", required: true)
+
+      content_type(:query, :string, "Filter by content type (e.g., \"application/pdf\")",
+        required: false
+      )
+
+      limit(:query, :integer, "Maximum number of results to return (default: 100)",
+        required: false
+      )
+    end
+
+    response(200, "Success", Schema.ref(:OneDriveFileList))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   @doc """
@@ -647,6 +1086,21 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
   end
 
+  swagger_path :sync_onedrive_files do
+    post("/clouds/onedrive/sync_files")
+    summary("Sync OneDrive files with database")
+    description("Synchronizes files from OneDrive with the application database")
+
+    parameters do
+      path(:query, :string, "Path to synchronize files from", required: false)
+      recursive(:query, :boolean, "Whether to synchronize files recursively", required: false)
+    end
+
+    response(200, "Success", Schema.ref(:SyncResponse))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+  end
+
   @doc """
   Synchronizes OneDrive files with the database.
   """
@@ -657,6 +1111,23 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
          {:ok, result} <- Onedrive.sync_files_to_db(token, params) do
       json(conn, %{"status" => "success", "sync_result" => result})
     end
+  end
+
+  swagger_path :download_onedrive_file do
+    post("/clouds/onedrive/download")
+    summary("Download files from OneDrive")
+
+    description(
+      "Downloads files from OneDrive based on provided file IDs and schedules the downloads"
+    )
+
+    parameters do
+      body(:body, Schema.ref(:DownloadRequest), "File IDs to download", required: true)
+    end
+
+    response(202, "Accepted", Schema.ref(:DownloadResponse))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   @doc """
@@ -681,6 +1152,22 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
   end
 
+  swagger_path :list_onedrive_folders do
+    get("/clouds/onedrive/folders")
+    summary("List OneDrive folders")
+    description("Lists all folders in the user's OneDrive account")
+
+    parameters do
+      path(:query, :string, "Path to list folders from (default: \"/drive/root/children\")",
+        required: false
+      )
+    end
+
+    response(200, "Success", Schema.ref(:OneDriveFolderList))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+  end
+
   @doc """
   Lists all folders in OneDrive.
   """
@@ -691,6 +1178,21 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
          {:ok, folders} <- Onedrive.list_all_folders(token, params) do
       json(conn, %{"status" => "success", "folders" => folders["folders"]})
     end
+  end
+
+  swagger_path :search_onedrive_folders do
+    get("/clouds/onedrive/folders/search")
+    summary("Search OneDrive folders")
+    description("Searches for folders in OneDrive based on provided parameters")
+
+    parameters do
+      query(:query, :string, "Search query string", required: true)
+      top(:query, :integer, "Maximum number of results to return (default: 100)", required: false)
+    end
+
+    response(200, "Success", Schema.ref(:OneDriveFolderList))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
   end
 
   @doc """
@@ -705,6 +1207,29 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
   end
 
+  swagger_path :list_onedrive_folder_files do
+    get("/clouds/onedrive/folder/{folder_id}/files")
+    summary("List files in OneDrive folder")
+    description("Lists all files within a specific folder in OneDrive")
+
+    parameters do
+      folder_id(:path, :string, "The ID of the folder in OneDrive", required: true)
+
+      top(:query, :integer, "Maximum number of results to return (default: 1000)",
+        required: false
+      )
+
+      file_type(:query, :string, "Filter by file type (pdf, image, document, all)",
+        required: false
+      )
+    end
+
+    response(200, "Success", Schema.ref(:OneDriveFileList))
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+    response(404, "Folder Not Found")
+  end
+
   @doc """
   Lists all files within a specific OneDrive folder.
   """
@@ -715,6 +1240,27 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
          {:ok, files} <- Onedrive.list_files_in_folder(token, folder_id, params) do
       json(conn, %{"status" => "success", "files" => files["files"]})
     end
+  end
+
+  swagger_path :get_onedrive_folder do
+    get("/clouds/onedrive/folder/{folder_id}")
+    summary("Get OneDrive folder metadata")
+    description("Retrieves metadata for a specific folder in OneDrive")
+
+    parameters do
+      folder_id(:path, :string, "The ID of the folder in OneDrive", required: true)
+    end
+
+    response(200, "Success", %{
+      properties: %{
+        status: %{type: :string, description: "Status of the request", example: "success"},
+        folder_metadata: Schema.ref(:OneDriveFolder)
+      }
+    })
+
+    response(400, "Bad Request")
+    response(403, "Unauthorized")
+    response(404, "Folder Not Found")
   end
 
   @doc """

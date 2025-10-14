@@ -6,6 +6,7 @@ defmodule WraftDoc.Integrations.DocuSign do
   alias WraftDoc.Client.Minio
   alias WraftDoc.Documents
   alias WraftDoc.Integrations
+  alias WraftDoc.Integrations.Documenso
 
   @auth_base_url "https://account-d.docusign.com"
   @api_base_url "https://demo.docusign.net/restapi/v2.1"
@@ -221,6 +222,26 @@ defmodule WraftDoc.Integrations.DocuSign do
 
       {:error, err} ->
         {:error, inspect(err)}
+    end
+  end
+
+  @doc """
+  Handles the document signing process based on the provided type.
+  """
+  @spec handle_document(String.t(), String.t(), String.t(), list()) ::
+          {:ok, map()} | {:error, any()}
+  def handle_document(document_id, type, org_id, signers) do
+    case type do
+      "docusign" ->
+        send_document(document_id, org_id, signers)
+
+      "documenso" ->
+        Documenso.create_and_send(
+          document_id,
+          org_id,
+          "Please sign",
+          signers
+        )
     end
   end
 end
