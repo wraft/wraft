@@ -2591,15 +2591,17 @@ defmodule WraftDoc.Documents do
   Retrieves the audit logs for a document.
 
   ## Parameters
+    - `current_user`: The current user.
     - `instance_id`: The ID of the document.
     - `params`: Additional parameters for filtering the logs.
   ## Returns
     - `{:ok, logs}`: A tuple containing the audit logs.
   """
-  @spec get_logs(Ecto.UUID.t(), map()) :: Scrivener.Page.t()
-  def get_logs(instance_id, params) do
+  @spec get_logs(User.t(), Ecto.UUID.t(), map()) :: Scrivener.Page.t()
+  def get_logs(%{current_org_id: current_org_id} = _current_user, instance_id, params) do
     DocumentAuditLog
     |> where(document_id: ^instance_id)
+    |> where(organisation_id: ^current_org_id)
     |> order_by(^sort(params))
     |> Repo.paginate(params)
   end

@@ -16,7 +16,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     search: "document:show",
     change: "document:show",
     approve: "document:review",
-    reject: "document:review"
+    reject: "document:review",
+    get_logs: "document:show"
 
   plug WraftDocWeb.Plug.AddDocumentAuditLog
        when action in [:create, :update, :approve, :build, :invite]
@@ -1603,13 +1604,15 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   def get_logs(conn, %{"id" => instance_id} = params) do
+    current_user = conn.assigns.current_user
+
     with %{
            entries: entries,
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
          } <-
-           Documents.get_logs(instance_id, params) do
+           Documents.get_logs(current_user, instance_id, params) do
       render(conn, "logs.json", %{
         entries: entries,
         page_number: page_number,

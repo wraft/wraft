@@ -224,7 +224,6 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       action: log.action,
       actor: log.actor,
       message: log.message,
-      document_id: log.document_id,
       inserted_at: log.inserted_at
     }
   end

@@ -31,7 +31,8 @@ defmodule WraftDocWeb.Plug.AddDocumentAuditLog do
   defp create_audit_log_params(
          %Plug.Conn{
            assigns: %{
-             current_user: %{id: user_id, name: user_name, current_org_id: current_org_id} = user
+             current_user:
+               %{id: user_id, name: user_name, current_org_id: current_org_id} = current_user
            },
            method: method,
            request_path: path,
@@ -53,15 +54,18 @@ defmodule WraftDocWeb.Plug.AddDocumentAuditLog do
     %{
       document_id: params["id"],
       user_id: user_id,
-      actor: Map.put(user, :organisation, organisation),
+      organisation_id: current_org_id,
+      actor: Map.put(current_user, :organisation, organisation),
       action: action,
       message: log_message(conn, user_name, action),
-      changes: conn.assigns[:changes] || %{},
-      request_path: path,
-      request_method: method,
-      params: change_structs_to_maps(params),
-      remote_ip: remote_ip,
-      actor_agent: actor_agent
+      metadata: %{
+        changes: conn.assigns[:changes] || %{},
+        request_path: path,
+        request_method: method,
+        params: change_structs_to_maps(params),
+        remote_ip: remote_ip,
+        actor_agent: actor_agent
+      }
     }
   end
 
@@ -82,10 +86,6 @@ defmodule WraftDocWeb.Plug.AddDocumentAuditLog do
 
       action == "generate_signature" ->
         "#{user_name} generated document for signature"
-
-      # TODO add info about invited counterparty
-      action == "add_counterparty" ->
-        "#{user_name} added counterparty"
 
       action == "request_signature" ->
         "#{user_name} requested signature"
