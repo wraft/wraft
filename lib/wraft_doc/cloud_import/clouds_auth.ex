@@ -46,9 +46,10 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   def authorize_url!(provider, _organisation_id, scope \\ nil)
 
   def authorize_url!(:google_drive, organisation_id, scope) do
-    case get_google_config(organisation_id, scope) do
+    organisation_id
+    |> get_google_config(scope)
+    |> case do
       {:error, reason} ->
-        Logger.error("Google Drive config error: #{reason}")
         {:error, reason}
 
       config ->
@@ -57,7 +58,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
             {:ok, url, session_params}
 
           {:error, error} ->
-            Logger.error("Google Drive authorization URL error: #{inspect(error)}")
             {:error, "Failed to generate Google Drive authorization URL: #{inspect(error)}"}
         end
     end

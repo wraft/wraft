@@ -18,7 +18,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
 
   require Logger
 
-  @providers [:google_drive, :dropbox, :onedrive]
+  @providers ["google_drive", "dropbox", "onedrive"]
 
   def swagger_definitions do
     %{
@@ -30,7 +30,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
           properties do
             provider(:string, "Provider to authenticate with",
               required: true,
-              enum: Enum.map(@providers, &Atom.to_string/1)
+              enum: @providers
             )
           end
 
@@ -103,7 +103,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
     parameters do
       provider(:path, :string, "Provider to authenticate with",
         required: true,
-        enum: Enum.map(@providers, &Atom.to_string/1),
+        enum: @providers,
         example: "google_drive"
       )
     end
@@ -149,13 +149,15 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   """
   @spec login_url(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def login_url(conn, %{"provider" => provider})
-      when is_atom(provider) and provider in @providers do
+      when provider in @providers do
     current_user = conn.assigns[:current_user]
+    provider = String.to_existing_atom(provider)
 
-    with provider <- String.to_existing_atom(provider),
-         true <- provider in @providers,
-         {:ok, redirect_url, session_params} <-
-           CloudAuth.authorize_url!(provider, current_user.current_org_id) do
+    with {:ok, redirect_url, session_params} <-
+           CloudAuth.authorize_url!(
+             provider,
+             current_user.current_org_id
+           ) do
       StateStore.put(current_user.id, provider, session_params)
 
       json(conn, %{

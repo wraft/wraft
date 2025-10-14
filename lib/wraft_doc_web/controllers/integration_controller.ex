@@ -439,13 +439,13 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
       body(:body, Schema.ref(:EventUpdateParams), "Event subscriptions to update", required: true)
     end
 
+    tag("Integrations")
+
     response(200, "OK", Schema.ref(:IntegrationResponse))
     response(403, "Unauthorized")
     response(403, "Forbidden", Schema.ref(:Error))
     response(404, "Not Found")
     response(422, "Unprocessable Entity")
-
-    tag("Integrations")
   end
 
   @doc """
@@ -464,6 +464,58 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
          true <- user_organisation_id == organisation_id,
          {:ok, %Integration{} = updated_integration} <-
            Integrations.update_integration_events(integration, events) do
+      render(conn, "show.json", integration: updated_integration)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "Integration does not belong to current organization"})
+
+      error ->
+        error
+    end
+  end
+
+  swagger_path :update_config do
+    put("/integrations/{id}/config")
+    summary("Update integration configuration")
+    description("Updates the configuration parameters of an existing integration")
+
+    parameters do
+      id(:path, :string, "Integration ID", required: true)
+
+      config(:body, :object, "New configuration values to update",
+        required: true,
+        example: %{
+          "client_id" => "new-client-id-value",
+          "client_secret" => "new-client-secret",
+          "webhook_url" => "https://new-webhook-url.example.com"
+        }
+      )
+    end
+
+    tag("Integrations")
+
+    response(200, "OK", Schema.ref(:IntegrationResponse))
+    response(400, "Bad Request")
+    response(403, "Forbidden", Schema.ref(:Error))
+    response(404, "Not Found")
+    response(422, "Unprocessable Entity")
+  end
+
+  @doc """
+  Updates the configuration of an integration if it belongs to the current user's organization.
+  Returns a 403 Forbidden error otherwise.
+  """
+  @spec update_config(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update_config(conn, %{"id" => id} = params) do
+    user_organisation_id = conn.assigns.current_user.current_org_id
+
+    with %Integration{organisation_id: organisation_id} = integration <-
+           Integrations.get_integration(id),
+         true <- user_organisation_id == organisation_id,
+         {:ok, %Integration{} = updated_integration} <-
+           Integrations.update_integration_config(integration, params) do
       render(conn, "show.json", integration: updated_integration)
     else
       false ->
