@@ -162,10 +162,10 @@ defmodule WraftDocWeb.Api.V1.IntegrationConfigController do
   """
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
-    organisation_id = conn.assigns.current_user.current_org_id
+    current_user = conn.assigns.current_user
     available_integrations = IntegrationConfig.available_integrations()
 
-    enabled_integrations_list = Integrations.list_organisation_integrations(organisation_id)
+    enabled_integrations_list = Integrations.list_organisation_integrations(current_user)
 
     enabled_integrations =
       enabled_integrations_list

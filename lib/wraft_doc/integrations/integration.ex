@@ -46,6 +46,12 @@ defmodule WraftDoc.Integrations.Integration do
     |> validate_config()
   end
 
+  def update_config_changeset(integration, attrs) do
+    integration
+    |> cast(attrs, [:config])
+    |> validate_config()
+  end
+
   def available_providers do
     IntegrationConfig.list_providers()
   end

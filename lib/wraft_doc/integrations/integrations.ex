@@ -134,6 +134,17 @@ defmodule WraftDoc.Integrations do
   end
 
   @doc """
+  Updates the configuration for an integration.
+  """
+  @spec update_integration_config(Integration.t(), map()) ::
+          {:ok, Integration.t()} | {:error, Ecto.Changeset.t()}
+  def update_integration_config(%Integration{} = integration, config) do
+    integration
+    |> Integration.update_config_changeset(config)
+    |> Repo.update()
+  end
+
+  @doc """
   Gets the latest token for an integration.
   """
   @spec get_latest_token(User.t(), atom()) :: String.t() | nil
