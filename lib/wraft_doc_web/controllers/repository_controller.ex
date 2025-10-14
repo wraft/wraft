@@ -296,26 +296,26 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     render(conn, "index.json", repositories: repositories)
   end
 
-  # swagger_path :create do
-  #   post("/repositories")
-  #   summary("Create a repository")
-  #   description("Creates a new storage repository")
-  #   operation_id("createRepository")
-  #   consumes("application/json")
-  #   produces("application/json")
-  #   tag("Repositories")
+  swagger_path :create do
+    post("/repositories")
+    summary("Create a repository")
+    description("Creates a new storage repository")
+    operation_id("createRepository")
+    consumes("application/json")
+    produces("application/json")
+    tag("Repositories")
 
-  #   parameters do
-  #     repository(:body, Schema.ref(:RepositoryCreateParams), "Repository creation parameters",
-  #       required: true
-  #     )
-  #   end
+    parameters do
+      repository(:body, Schema.ref(:RepositoryCreateParams), "Repository creation parameters",
+        required: true
+      )
+    end
 
-  #   response(201, "Created", Schema.ref(:Repository))
-  #   response(400, "Bad Request", Schema.ref(:Error))
-  #   response(401, "Unauthorized", Schema.ref(:Error))
-  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
-  # end
+    response(201, "Created", Schema.ref(:Repository))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(403, "Unauthorized", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
 
   def create(conn, %{"repository" => repository_params}) do
     with {:ok, %Repository{} = repository} <- Storage.create_repository(repository_params) do
@@ -452,30 +452,30 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     end
   end
 
-  # swagger_path :update do
-  #   patch("/repositories/{id}")
-  #   put("/api/repositories/{id}")
-  #   summary("Update repository")
-  #   description("Updates an existing repository")
-  #   operation_id("updateRepository")
-  #   consumes("application/json")
-  #   produces("application/json")
-  #   tag("Repositories")
+  swagger_path :update do
+    patch("/repositories/{id}")
+    put("/api/repositories/{id}")
+    summary("Update repository")
+    description("Updates an existing repository")
+    operation_id("updateRepository")
+    consumes("application/json")
+    produces("application/json")
+    tag("Repositories")
 
-  #   parameters do
-  #     id(:path, :string, "ID of the repository to update", required: true, format: "uuid")
+    parameters do
+      id(:path, :string, "ID of the repository to update", required: true, format: "uuid")
 
-  #     repository(:body, Schema.ref(:RepositoryUpdateParams), "Repository update parameters",
-  #       required: true
-  #     )
-  #   end
+      repository(:body, Schema.ref(:RepositoryUpdateParams), "Repository update parameters",
+        required: true
+      )
+    end
 
-  #   response(200, "OK", Schema.ref(:Repository))
-  #   response(400, "Bad Request", Schema.ref(:Error))
-  #   response(401, "Unauthorized", Schema.ref(:Error))
-  #   response(404, "Not Found", Schema.ref(:Error))
-  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
-  # end
+    response(200, "OK", Schema.ref(:Repository))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
 
   def update(conn, %{"id" => id, "repository" => repository_params}) do
     repository = Storage.get_repository!(id)

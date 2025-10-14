@@ -145,17 +145,18 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
       "details": "Supported providers: google_drive, dropbox, onedrive"
     }
     ```
-  - 401: Unauthorized request
+  - 403: Unauthorized request
   """
   @spec login_url(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def login_url(conn, %{"provider" => provider}) do
-    user = conn.assigns[:current_user]
+  def login_url(conn, %{"provider" => provider})
+      when is_atom(provider) and provider in @providers do
+    current_user = conn.assigns[:current_user]
 
     with provider <- String.to_existing_atom(provider),
          true <- provider in @providers,
          {:ok, redirect_url, session_params} <-
-           CloudAuth.authorize_url!(provider, user.current_org_id) do
-      StateStore.put(user.id, provider, session_params)
+           CloudAuth.authorize_url!(provider, current_user.current_org_id) do
+      StateStore.put(current_user.id, provider, session_params)
 
       json(conn, %{
         status: "success",
@@ -164,9 +165,10 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
     end
   end
 
+  def login_url(_conn, _params), do: {:error, "Invalid provider"}
+
   swagger_path :google_callback do
-    get("/auth/google/callback")
-    # TODO callback variable
+    get("/googledrive/callback")
     summary("Google Drive OAuth callback endpoint")
 
     description("""
@@ -197,16 +199,6 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
         required: false,
         description: "State value originally sent to Google for security verification"
       )
-
-      error(:query, :string, "Error code if authorization was denied",
-        required: false,
-        description: "Present only when user denies authorization or an error occurs"
-      )
-
-      error_description(:query, :string, "Human-readable error description",
-        required: false,
-        description: "Additional details about the error if present"
-      )
     end
 
     response(302, "Found - Redirect to frontend", Schema.ref(:OAuthCallbackResponse),
@@ -218,7 +210,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
       description: "Invalid authorization code or missing required parameters"
     )
 
-    response(401, "Unauthorized", Schema.ref(:ErrorResponse),
+    response(403, "Unauthorized", Schema.ref(:ErrorResponse),
       description: "OAuth state mismatch or invalid session"
     )
   end
@@ -237,7 +229,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   end
 
   swagger_path :dropbox_callback do
-    get("/auth/dropbox/callback")
+    get("/dropbox/callback")
     summary("Dropbox OAuth callback endpoint")
 
     description("""
@@ -308,7 +300,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   end
 
   swagger_path :onedrive_callback do
-    get("/auth/onedrive/callback")
+    get("/onedrive/callback")
     summary("OneDrive OAuth callback endpoint")
 
     description("""
@@ -339,16 +331,6 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
         required: false,
         description: "State value originally sent to Microsoft for security verification"
       )
-
-      error(:query, :string, "Error code if authorization was denied",
-        required: false,
-        description: "Present only when user denies authorization or an error occurs"
-      )
-
-      error_description(:query, :string, "Human-readable error description",
-        required: false,
-        description: "Additional details about the error if present"
-      )
     end
 
     response(302, "Found - Redirect to frontend", Schema.ref(:OAuthCallbackResponse),
@@ -360,7 +342,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
       description: "Invalid authorization code or missing required parameters"
     )
 
-    response(401, "Unauthorized", Schema.ref(:ErrorResponse),
+    response(403, "Unauthorized", Schema.ref(:ErrorResponse),
       description: "OAuth state mismatch or invalid session"
     )
   end
