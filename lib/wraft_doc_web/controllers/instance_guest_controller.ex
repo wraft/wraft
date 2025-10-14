@@ -4,6 +4,9 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
+  plug WraftDocWeb.Plug.AddDocumentAuditLog
+       when action in [:invite]
+
   action_fallback(WraftDocWeb.FallbackController)
 
   require Logger
@@ -174,13 +177,19 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
 
     with %Instance{state_id: state_id} = instance <-
            Documents.show_instance(document_id, current_user),
-         %User{} = invited_user <- Account.get_or_create_guest_user(params),
+         %User{name: invited_user_name} = invited_user <-
+           Account.get_or_create_guest_user(params),
          %ContentCollaboration{} = collaborator <-
            Documents.add_content_collaborator(current_user, instance, invited_user, params),
          {:ok, %AuthToken{value: token}} <-
            AuthTokens.create_document_invite_token(state_id, params),
          {:ok, %Oban.Job{}} <- Documents.send_email(instance, invited_user, token) do
-      render(conn, "collaborator.json", collaborator: collaborator)
+      conn
+      |> Plug.Conn.assign(
+        :audit_log_message,
+        "#{current_user.name} invited #{invited_user_name}"
+      )
+      |> render("collaborator.json", collaborator: collaborator)
     end
   end
 

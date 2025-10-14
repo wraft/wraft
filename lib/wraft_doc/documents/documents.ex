@@ -17,6 +17,7 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Documents.ContentCollaboration
   alias WraftDoc.Documents.Counter
+  alias WraftDoc.Documents.DocumentAuditLog
   alias WraftDoc.Documents.Engine
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Instance.History
@@ -273,15 +274,17 @@ defmodule WraftDoc.Documents do
 
   # Initially moving state nil to intial state
   def approve_instance(
-        %User{id: current_approver_id},
+        %User{id: current_approver_id, name: user_name},
         %Instance{
-          state: %State{id: current_state_id, approvers: approvers} = state,
+          state: %State{id: current_state_id, approvers: approvers, state: current_state} = state,
           approval_status: false
         } = instance
       ) do
     if current_approver_id in Enum.map(approvers, & &1.id) do
-      instance_state_transition_transaction(
-        instance,
+      next_state = next_state(state).state
+
+      instance
+      |> instance_state_transition_transaction(
         %{
           state_id: next_state_id(state),
           approval_status: next_state_id(state) == current_state_id
@@ -294,13 +297,23 @@ defmodule WraftDoc.Documents do
           instance_id: instance.id
         }
       )
+      |> case do
+        %Instance{} = instance when current_state == next_state ->
+          {:ok, instance, "#{user_name} marked document as completed"}
+
+        %Instance{} = instance ->
+          {:ok, instance, "#{user_name} approved document from #{current_state} to #{next_state}"}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
     else
       {:error, :no_permission}
     end
   end
 
   def approve_instance(
-        %User{id: current_approver_id},
+        %User{id: current_approver_id, name: user_name},
         %Instance{
           allowed_users: [current_approver_id],
           state: nil,
@@ -321,8 +334,8 @@ defmodule WraftDoc.Documents do
       )
       |> MapSet.to_list()
 
-    instance_state_transition_transaction(
-      instance,
+    instance
+    |> instance_state_transition_transaction(
       %{state_id: initial_state.id, allowed_users: allowed_users},
       %{
         review_status: :approved,
@@ -331,6 +344,13 @@ defmodule WraftDoc.Documents do
         instance_id: instance.id
       }
     )
+    |> case do
+      %Instance{} = instance ->
+        {:ok, instance, "#{user_name} approved document to #{initial_state.state}"}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   def approve_instance(_, %Instance{state: nil}), do: {:error, :no_permission}
@@ -982,22 +1002,22 @@ defmodule WraftDoc.Documents do
     |> where([v], v.content_id == ^instance_id)
     |> where([v], v.type == ^version_type)
     |> preload([v], author: :profile)
-    |> order_by(^sort_versions(params))
+    |> order_by(^sort(params))
     |> Repo.paginate(params)
   end
 
-  defp sort_versions(%{"sort" => "inserted_at"}), do: [asc: dynamic([dt], dt.inserted_at)]
+  defp sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([dt], dt.inserted_at)]
 
-  defp sort_versions(%{"sort" => "inserted_at_desc"}),
+  defp sort(%{"sort" => "inserted_at_desc"}),
     do: [desc: dynamic([dt], dt.inserted_at)]
 
-  defp sort_versions(%{"sort" => "updated_at"} = _params),
+  defp sort(%{"sort" => "updated_at"} = _params),
     do: [asc: dynamic([dt], dt.updated_at)]
 
-  defp sort_versions(%{"sort" => "updated_at_desc"}),
+  defp sort(%{"sort" => "updated_at_desc"}),
     do: [desc: dynamic([dt], dt.updated_at)]
 
-  defp sort_versions(_), do: []
+  defp sort(_), do: []
 
   @doc """
   Retrieve two versions of an instance.
@@ -2565,5 +2585,24 @@ defmodule WraftDoc.Documents do
         })
       )
     end
+  end
+
+  @doc """
+  Retrieves the audit logs for a document.
+
+  ## Parameters
+    - `current_user`: The current user.
+    - `instance_id`: The ID of the document.
+    - `params`: Additional parameters for filtering the logs.
+  ## Returns
+    - `{:ok, logs}`: A tuple containing the audit logs.
+  """
+  @spec get_logs(User.t(), Ecto.UUID.t(), map()) :: Scrivener.Page.t()
+  def get_logs(%{current_org_id: current_org_id} = _current_user, instance_id, params) do
+    DocumentAuditLog
+    |> where(document_id: ^instance_id)
+    |> where(organisation_id: ^current_org_id)
+    |> order_by(^sort(params))
+    |> Repo.paginate(params)
   end
 end

@@ -16,7 +16,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     search: "document:show",
     change: "document:show",
     approve: "document:review",
-    reject: "document:review"
+    reject: "document:review",
+    get_logs: "document:show"
+
+  plug WraftDocWeb.Plug.AddDocumentAuditLog
+       when action in [:create, :update, :approve, :build, :invite]
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -634,6 +638,58 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               version: 2
             }
           })
+        end,
+      Log:
+        swagger_schema do
+          title("Instance Log entity")
+          description("Logs of actions performed on an instance")
+
+          example([
+            %{
+              id: "4e630a83-c8d8-43d6-875e-0a2a47ec97f5",
+              action: "update",
+              document_id: "4e630a83-c8d8-43d6-875e-0a2a47ec97f5",
+              inserted_at: "2023-05-15T14:32:10Z",
+              actor: %{
+                current_org_id: "4e630a83-c8d8-43d6-875e-0a2a4747838",
+                name: "John Doe",
+                email: "john@example.com"
+              }
+            }
+          ])
+        end,
+      Logs:
+        swagger_schema do
+          title("Instance Logs")
+          description("Logs of actions performed on an instance")
+
+          properties do
+            entries(Schema.array(:Log), "List of versions", required: true)
+            page_number(:integer, "Current page number", required: true)
+            page_size(:integer, "Number of items per page", required: true)
+            total_entries(:integer, "Total number of versions", required: true)
+            total_pages(:integer, "Total number of pages", required: true)
+          end
+
+          example(%{
+            entries: [
+              %{
+                id: "4e630a83-c8d8-43d6-875e-0a2a47ec97f5",
+                action: "update",
+                document_id: "4e630a83-c8d8-43d6-875e-0a2a47ec97f5",
+                inserted_at: "2023-05-15T14:32:10Z",
+                actor: %{
+                  current_org_id: "4e630a83-c8d8-43d6-875e-0a2a4747838",
+                  name: "John Doe",
+                  email: "john@example.com"
+                }
+              }
+            ],
+            page_number: 1,
+            page_size: 10,
+            total_entries: 2,
+            total_pages: 1
+          })
         end
     }
   end
@@ -671,12 +727,15 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       })
 
     with %ContentType{} = c_type <- ContentTypes.show_content_type(current_user, c_type_id),
-         %Instance{} = content <-
+         %Instance{id: content_id} = content <-
            Documents.create_instance(current_user, c_type, params) do
       Logger.info("Create content success")
       Typesense.create_document(content)
       Task.start(fn -> EventTrigger.trigger_document_created(content) end)
-      render(conn, :create, content: content)
+
+      conn
+      |> Map.update!(:params, &Map.put(&1, "id", content_id))
+      |> render(:create, content: content)
     else
       error ->
         Logger.error("Create content failed", error: error)
@@ -1188,7 +1247,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            },
            state: state
          } = instance <- Documents.show_instance(id, current_user),
-         %Instance{} = approved_instance <- Documents.approve_instance(current_user, instance) do
+         {:ok, %Instance{} = approved_instance, audit_message} <-
+           Documents.approve_instance(current_user, instance) do
       Task.start(fn -> Reminders.maybe_create_auto_reminders(current_user, approved_instance) end)
 
       Task.start(fn ->
@@ -1213,7 +1273,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
         end
       end)
 
-      render(conn, "approve_or_reject.json", %{instance: approved_instance})
+      conn
+      |> Plug.Conn.assign(:audit_log_message, audit_message)
+      |> render("approve_or_reject.json", %{instance: instance})
     end
   end
 
@@ -1521,6 +1583,42 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       conn
       |> put_view(WraftDocWeb.Api.V1.InstanceVersionView)
       |> render("comparison.json", comparison: comparison)
+    end
+  end
+
+  @doc """
+  Get logs for an instance.
+  """
+  swagger_path :get_logs do
+    get("/contents/{id}/logs")
+    summary("Get instance logs")
+    description("Retrieve logs of actions performed on a specific instance")
+
+    parameters do
+      id(:path, :string, "Instance ID", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:Logs))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def get_logs(conn, %{"id" => instance_id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %{
+           entries: entries,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <-
+           Documents.get_logs(current_user, instance_id, params) do
+      render(conn, "logs.json", %{
+        entries: entries,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      })
     end
   end
 end

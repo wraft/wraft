@@ -204,6 +204,30 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
+  def render("logs.json", %{
+        entries: logs,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      entries: render_many(logs, InstanceView, "log.json", as: :log),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
+  end
+
+  def render("log.json", %{log: log}) do
+    %{
+      id: log.id,
+      action: log.action,
+      actor: log.actor,
+      message: log.message,
+      inserted_at: log.inserted_at
+    }
+  end
+
   def generate_url(%{profile: %{profile_pic: pic} = profile}),
     do: WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
 

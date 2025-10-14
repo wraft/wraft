@@ -302,6 +302,7 @@ defmodule WraftDocWeb.Router do
       patch("/contents/:id/lock-unlock", InstanceController, :lock_unlock)
       get("/contents/title/search", InstanceController, :search)
       get("/contents/:id/change/:v_id", InstanceController, :change)
+      get("/contents/:id/logs", InstanceController, :get_logs)
 
       # Contract chart
       get("/contracts/chart", InstanceController, :contract_chart)

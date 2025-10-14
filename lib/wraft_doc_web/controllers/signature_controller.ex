@@ -8,6 +8,14 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   plug WraftDocWeb.Plug.Authorized,
     only: [:list_counterparties, :get_document_signatures, :apply_signature]
 
+  plug WraftDocWeb.Plug.AddDocumentAuditLog
+       when action in [
+              :generate_signature,
+              :add_counterparty,
+              :request_signature,
+              :apply_signature
+            ]
+
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Account
@@ -176,10 +184,16 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
-         %User{} = invited_user <- Account.get_or_create_guest_user(params),
+         %User{name: invited_user_name} = invited_user <-
+           Account.get_or_create_guest_user(params),
          %CounterParty{} = counterparty <-
            CounterParties.add_counterparty(instance, params, invited_user) do
-      render(conn, "counterparty.json", counterparty: counterparty)
+      conn
+      |> Plug.Conn.assign(
+        :audit_log_message,
+        "#{current_user.name} added #{invited_user_name} as a counterparty"
+      )
+      |> render("counterparty.json", counterparty: counterparty)
     end
   end
 
