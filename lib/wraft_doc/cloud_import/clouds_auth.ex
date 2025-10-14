@@ -102,15 +102,15 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     |> Keyword.put(:session_params, session_params)
     |> OAuth2.callback(%{"code" => code, "state" => session_params.state}, Google)
     |> case do
-      {:ok, %{user: user, token: token}} ->
+      {:ok, %{user: google_user, token: token}} ->
         Task.start(fn ->
           TokenRefreshServer.start_link(
             organisation_id: user.current_org_id,
-            refresh_token: token.refresh_token
+            refresh_token: token["refresh_token"]
           )
         end)
 
-        {:ok, user, token}
+        {:ok, google_user, token}
 
       {:error, _error} ->
         {:error, "Failed to exchange Google Drive authorization code"}
