@@ -218,8 +218,7 @@ defmodule WraftDoc.CloudImport.Providers.Dropbox do
   - `{:error, map()}`: Error with status and body information
   """
   @impl true
-  @spec download_file(String.t(), String.t(), String.t() | nil) :: {:ok, map()} | {:error, map()}
-  def download_file(access_token, file_path, output_path \\ nil) do
+  def download_file(access_token, file_path, _org, output_path) do
     headers =
       auth_headers(access_token) ++ [{"Dropbox-API-Arg", Jason.encode!(%{path: file_path})}]
 
@@ -462,7 +461,7 @@ defmodule WraftDoc.CloudImport.Providers.Dropbox do
     }
   end
 
-  defp build_storage_attrs(file, repository_id, parant_id, org_id) do
+  defp build_storage_attrs(_base_path, file, repository_id, parant_id, org_id) do
     file_name = Map.get(file, "name", "")
 
     %{
