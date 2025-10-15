@@ -79,14 +79,22 @@ defmodule WraftDoc.Storage do
 
   @doc "Handles duplicate names by appending a number suffix"
   @spec handle_duplicate_names(map()) :: map()
-  def handle_duplicate_names(%{"parent_id" => parent_id, "name" => name} = attrs)
-      when is_binary(parent_id) and is_binary(name) do
-    {base_name, extension} = split_name_and_extension(name)
-
+  def handle_duplicate_names(
+        %{
+          "parent_id" => parent_id,
+          "name" => name,
+          "item_type" => item_type,
+          "file_extension" => file_extension,
+          "path" => path,
+          "materialized_path" => materialized_path,
+          "metadata" => metadata
+        } = attrs
+      )
+      when is_binary(parent_id) and is_binary(name) and item_type != "folder" do
     similar_names =
       StorageItem
       |> where([s], s.parent_id == ^parent_id and s.is_deleted == false)
-      |> where([s], like(s.name, ^"#{base_name}%#{extension}"))
+      |> where([s], like(s.name, ^"#{name}%"))
       |> select([s], s.name)
       |> Repo.all()
 
@@ -95,33 +103,31 @@ defmodule WraftDoc.Storage do
         attrs
 
       _ ->
-        next_number = find_next_available_number(similar_names, base_name, extension)
-        updated_name = "#{base_name}_#{next_number}#{extension}"
-        Map.put(attrs, "name", updated_name)
+        next_number = find_next_available_number(similar_names, name)
+        updated_name = "#{name}_#{next_number}"
+        updated_file_name = updated_name <> file_extension
+
+        Map.merge(attrs, %{
+          "name" => updated_name,
+          "display_name" => updated_file_name,
+          "path" => Regex.replace(~r{[^/]+$}, path, updated_file_name),
+          "materialized_path" => Regex.replace(~r{[^/]+$}, materialized_path, updated_file_name),
+          "metadata" => Map.put(metadata, "filename", updated_file_name)
+        })
     end
   end
 
   def handle_duplicate_names(attrs), do: attrs
 
-  @spec split_name_and_extension(String.t()) :: {String.t(), String.t()}
-  defp split_name_and_extension(name) do
-    extension = Path.extname(name)
-    base_name = Path.rootname(name)
-    {base_name, extension}
-  end
-
-  @doc "Finds the next available number for duplicate names"
-  @spec find_next_available_number([String.t()], String.t(), String.t()) :: integer()
-  def find_next_available_number(similar_names, base_name, extension) do
-    numbers =
-      Enum.map(similar_names, fn name ->
-        case Regex.run(~r/#{base_name}_(\d+)#{extension}/, name) do
-          [_, num] -> String.to_integer(num)
-          _ -> 0
-        end
-      end)
-
-    case numbers do
+  defp find_next_available_number(similar_names, base_name) do
+    similar_names
+    |> Enum.map(fn name ->
+      case Regex.run(~r/#{base_name}_(\d+)/, name) do
+        [_, num] -> String.to_integer(num)
+        _ -> 0
+      end
+    end)
+    |> case do
       [] -> 1
       nums -> Enum.max(nums) + 1
     end
@@ -443,10 +449,9 @@ defmodule WraftDoc.Storage do
   @spec execute_upload_transaction(map()) :: {:ok, map()} | {:error, Ecto.Changeset.t()}
   def execute_upload_transaction(enriched_params) do
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(
-      :storage_item,
-      StorageItem.changeset(%StorageItem{}, enriched_params.storage_item)
-    )
+    |> Ecto.Multi.run(:storage_item, fn _repo, _ ->
+      StorageItems.create_storage_item(enriched_params.storage_item)
+    end)
     |> Ecto.Multi.insert(:storage_asset, fn %{storage_item: storage_item} ->
       storage_asset_params =
         Map.put(enriched_params.storage_asset, :storage_item_id, storage_item.id)

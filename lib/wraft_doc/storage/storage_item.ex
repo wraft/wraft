@@ -75,8 +75,11 @@ defmodule WraftDoc.Storage.StorageItem do
       :creator_id,
       :organisation_id
     ])
-    # :path, :materialized_path, :mime_type])
     |> validate_required([:name, :mime_type])
+    |> unique_constraint([:name, :parent_id],
+      name: :storage_items_name_parent_id_index,
+      message: "Folder already exists"
+    )
     |> unique_constraint([:external_id, :sync_source],
       name: :storage_items_external_id_sync_source_index
     )

@@ -660,10 +660,8 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
 
     folder_depth_level = StorageItems.calculate_depth_level(folder_params["path"])
 
-    # Get the latest repository for the current organisation
     case Storage.get_latest_repository(organisation_id) do
-      %Repository{} = repository ->
-        # Prepare folder parameters with required metadata
+      %Repository{id: repository_id} = _repository ->
         folder_params =
           folder_params
           |> Map.put("item_type", "folder")
@@ -673,9 +671,8 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
           |> Map.put("materialized_path", folder_params["path"])
           |> Map.put("creator_id", current_user.id)
           |> Map.put("organisation_id", organisation_id)
-          |> Map.put("repository_id", repository.id)
+          |> Map.put("repository_id", repository_id)
 
-        # Create the folder in storage
         case StorageItems.create_storage_item(folder_params) do
           {:ok, %StorageItem{} = storage_item} ->
             conn
@@ -683,13 +680,8 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
             |> put_resp_header("location", "/api/v1/storage/items/#{storage_item.id}")
             |> render("show.json", storage_item: storage_item)
 
-          {:error, %Ecto.Changeset{} = changeset} ->
-            conn
-            |> put_status(:unprocessable_entity)
-            |> json(%{
-              error: "Invalid folder data",
-              details: Ecto.Changeset.traverse_errors(changeset, &translate_error/1)
-            })
+          {:error, error} ->
+            {:error, error}
         end
 
       nil ->
