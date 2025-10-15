@@ -208,6 +208,8 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
   """
   @spec download_file(String.t(), String.t(), String.t() | nil) :: {:ok, map()} | {:error, map()}
   def download_file(access_token, file_id, org_id, output_path \\ nil) do
+    output_path = output_path || "/"
+
     with {:ok, metadata} <- get_file_metadata(access_token, file_id),
          storage_item <- StorageItems.get_storage_item_by_path(org_id, output_path),
          :ok <-

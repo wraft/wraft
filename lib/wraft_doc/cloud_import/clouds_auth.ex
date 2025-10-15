@@ -167,12 +167,12 @@ defmodule WraftDoc.CloudImport.CloudAuth do
 
   defp update_integration_metadata(
          %Integration{} = integration,
-         %{"access_token" => at, "expires_at" => exp} = _new_metadata
+         %{"access_token" => at, "expires_in" => expires_in}
        ) do
     updated_metadata =
       Map.merge(integration.metadata || %{}, %{
         "access_token" => at,
-        "expires_at" => exp
+        "expires_in" => expires_in
       })
 
     Integrations.update_metadata(integration, updated_metadata)
@@ -323,7 +323,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     %{
       "access_token" => access_token,
       "refresh_token" => refresh_token,
-      "expires_at" => calculate_expires_at(expires_in),
+      "expires_in" => expires_in,
       "token_type" => Map.get(token, "token_type", "Bearer"),
       "scope" => Map.get(token, "scope")
     }
@@ -333,27 +333,10 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     %{
       "access_token" => token["access_token"],
       "refresh_token" => token["refresh_token"],
-      "expires_at" => token["expires_at"] || calculate_expires_at(token["expires_in"]),
+      "expires_in" => token["expires_in"],
       "token_type" => token["token_type"] || "Bearer",
       "scope" => token["scope"]
     }
-  end
-
-  defp calculate_expires_at(nil), do: nil
-
-  defp calculate_expires_at(seconds) when is_integer(seconds) do
-    DateTime.utc_now()
-    |> DateTime.add(seconds, :second)
-    |> DateTime.to_unix()
-  end
-
-  defp calculate_expires_at(seconds) when is_binary(seconds) do
-    seconds
-    |> Integer.parse()
-    |> case do
-      {int_seconds, _} -> calculate_expires_at(int_seconds)
-      :error -> nil
-    end
   end
 
   @doc """
