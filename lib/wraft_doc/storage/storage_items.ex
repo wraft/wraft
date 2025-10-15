@@ -179,11 +179,15 @@ defmodule WraftDoc.Storage.StorageItems do
   """
   @spec create_storage_item(map()) :: {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()}
   def create_storage_item(attrs \\ %{}) do
-    attrs = Helper.handle_duplicate_names(attrs)
+    attrs =
+      attrs
+      |> Map.put("parent_id", attrs["parent_id"])
+      |> Helper.handle_duplicate_names()
 
-    case %StorageItem{}
-         |> StorageItem.changeset(attrs)
-         |> Repo.insert() do
+    %StorageItem{}
+    |> StorageItem.changeset(attrs)
+    |> Repo.insert()
+    |> case do
       {:ok, storage_item} ->
         {:ok, storage_item}
 
@@ -902,33 +906,33 @@ defmodule WraftDoc.Storage.StorageItems do
     display_name = Map.get(params, "display_name", file_metadata.filename)
 
     storage_item_params = %{
-      name: base_name,
-      display_name: display_name,
-      item_type: "file",
-      path: "/#{file_metadata.filename}",
-      path_hash: Base.encode16(:crypto.hash(:sha256, file_metadata.filename), case: :lower),
-      depth_level: depth_level,
-      materialized_path: materialized_path,
-      mime_type: file_metadata.mime_type,
-      file_extension: file_metadata.file_extension,
-      size: file_metadata.file_size,
-      checksum_sha256: file_metadata.checksum_sha256,
-      version_number: "1.0",
-      is_current_version: true,
-      classification_level: Map.get(params, "classification_level", "public"),
-      is_deleted: false,
-      content_extracted: false,
-      thumbnail_generated: false,
-      download_count: 0,
-      metadata: %{
-        original_filename: file_metadata.filename,
-        filename: file_metadata.filename,
-        upload_source: "web_ui"
+      "name" => base_name,
+      "display_name" => display_name,
+      "item_type" => "file",
+      "path" => "/#{file_metadata.filename}",
+      "path_hash" => Base.encode16(:crypto.hash(:sha256, file_metadata.filename), case: :lower),
+      "depth_level" => depth_level,
+      "materialized_path" => materialized_path,
+      "mime_type" => file_metadata.mime_type,
+      "file_extension" => file_metadata.file_extension,
+      "size" => file_metadata.file_size,
+      "checksum_sha256" => file_metadata.checksum_sha256,
+      "version_number" => "1.0",
+      "is_current_version" => true,
+      "classification_level" => Map.get(params, "classification_level", "public"),
+      "is_deleted" => false,
+      "content_extracted" => false,
+      "thumbnail_generated" => false,
+      "download_count" => 0,
+      "metadata" => %{
+        "original_filename" => file_metadata.filename,
+        "filename" => file_metadata.filename,
+        "upload_source" => "web_ui"
       },
-      parent_id: parent_id,
-      repository_id: repository_id,
-      creator_id: current_user && current_user.id,
-      organisation_id: organisation_id
+      "parent_id" => parent_id,
+      "repository_id" => repository_id,
+      "creator_id" => current_user && current_user.id,
+      "organisation_id" => organisation_id
     }
 
     {:ok, storage_item_params}
@@ -1141,6 +1145,9 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp respond_with_result({:error, :not_a_directory}, _params, _org),
     do: {:error, "The specified ID is not a directory"}
+
+  defp respond_with_result({:error, error}, _params, _org),
+    do: {:error, error}
 
   @spec storage_item_data(StorageItem.t(), [StorageAsset.t()]) :: map()
   defp storage_item_data(%StorageItem{} = storage_item, storage_assets \\ []) do
