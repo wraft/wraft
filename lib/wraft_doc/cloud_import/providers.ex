@@ -15,7 +15,7 @@ defmodule WraftDoc.CloudImport.Providers do
   @callback get_file_metadata(access_token, file_id) :: result
   @callback list_all_pdfs(access_token, params) :: result
   @callback search_files(access_token, params) :: result
-  @callback download_file(access_token, file_id, Ecto.UUID.t(), map()) :: result
+  @callback download_file(Ecto.UUID.t(), file_id, Ecto.UUID.t(), String.t()) :: result
   @callback list_all_folders(access_token, params) :: result
   @callback search_folders(access_token, params) :: result
   @callback list_files_in_folder(access_token, folder_id, params) :: result
@@ -29,6 +29,8 @@ defmodule WraftDoc.CloudImport.Providers do
       use Tesla
       require Logger
 
+      alias WraftDoc.Account.User
+      alias WraftDoc.Integrations
       alias WraftDoc.Storage
       alias WraftDoc.Storage.StorageItem
       alias WraftDoc.Storage.StorageItems
@@ -70,9 +72,8 @@ defmodule WraftDoc.CloudImport.Providers do
         params = %{
           action: action,
           file_id: file_id,
-          access_token: access_token,
           org_id: org_id,
-          output_path: metadata["output_path"],
+          folder_id: metadata["folder_id"],
           user_id: metadata["user_id"],
           notification_enabled: Map.get(metadata, "notification_enabled", true)
         }

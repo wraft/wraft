@@ -536,12 +536,12 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   This endpoint accepts a list of file IDs and schedules downloads.
   params requied ,`file_ids` should be a list of file IDs to download
   """
-  def import_gdrive_file(conn, %{"file_ids" => file_ids, "output_path" => output_path}) do
+  def import_gdrive_file(conn, %{"file_ids" => file_ids, "folder_id" => folder_id}) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, token} <- Integrations.get_latest_token(current_user, "google_drive") do
-      Google.schedule_download_to_minio(token, file_ids, current_user.current_org_id, %{
-        output_path: output_path,
+    with {:ok, _token} <- Integrations.get_latest_token(current_user, "google_drive") do
+      Google.schedule_download_to_minio(current_user.id, file_ids, current_user.current_org_id, %{
+        folder_id: folder_id,
         user_id: current_user.id
       })
 

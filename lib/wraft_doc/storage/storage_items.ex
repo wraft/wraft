@@ -618,22 +618,22 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.one!(query)
   end
 
-  def get_storage_item_by_org!(nil, _repository_id, _organisation_id) do
+  def get_folder!(nil, _organisation_id) do
     %StorageItem{
       id: nil,
       mime_type: "inode/directory",
       is_deleted: false,
+      repository_id: nil,
       materialized_path: "/",
       depth_level: 1,
       parent_id: nil
     }
   end
 
-  def get_storage_item_by_org!(folder_id, repository_id, organisation_id) do
+  def get_folder!(folder_id, organisation_id) do
     query =
       from(s in StorageItem,
         where: s.id == ^folder_id,
-        where: s.repository_id == ^repository_id,
         where: s.mime_type == "inode/directory",
         where: s.organisation_id == ^organisation_id,
         where: s.is_deleted == false
