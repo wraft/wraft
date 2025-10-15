@@ -224,9 +224,9 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   It processes the authorization code and redirects the user back to the frontend.
   """
   @spec google_callback(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def google_callback(conn, %{"code" => code} = params) do
+  def google_callback(conn, params) do
     conn.assigns[:current_user]
-    |> CloudAuth.handle_oauth_callback(params, :google_drive, code)
+    |> CloudAuth.handle_oauth_callback(params, :google_drive)
     |> then(&redirect(conn, to: &1))
   end
 
@@ -295,9 +295,9 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   It processes the authorization code and redirects the user back to the frontend.
   """
   @spec dropbox_callback(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def dropbox_callback(conn, %{"code" => code} = params) do
+  def dropbox_callback(conn, params) do
     conn.assigns[:current_user]
-    |> CloudAuth.handle_oauth_callback(params, :dropbox, code)
+    |> CloudAuth.handle_oauth_callback(params, :dropbox)
     |> then(&redirect(conn, to: &1))
   end
 
@@ -356,9 +356,9 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   It processes the authorization code and redirects the user back to the frontend.
   """
   @spec onedrive_callback(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def onedrive_callback(conn, %{"code" => code} = params) do
+  def onedrive_callback(conn, params) do
     conn.assigns[:current_user]
-    |> CloudAuth.handle_oauth_callback(params, :onedrive, code)
+    |> CloudAuth.handle_oauth_callback(params, :onedrive)
     |> then(&redirect(conn, to: &1))
   end
 end
