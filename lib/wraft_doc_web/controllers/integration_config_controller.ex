@@ -11,11 +11,14 @@ defmodule WraftDocWeb.Api.V1.IntegrationConfigController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.FeatureFlags
   alias WraftDoc.Integrations
+  alias WraftDoc.Integrations.Integration
   alias WraftDoc.Integrations.IntegrationConfig
+  alias WraftDoc.Repo
 
   plug WraftDocWeb.Plug.AddActionLog
-  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
 
   def swagger_definitions do
     %{
@@ -163,6 +166,12 @@ defmodule WraftDocWeb.Api.V1.IntegrationConfigController do
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
     current_user = conn.assigns.current_user
+
+    feature_flag =
+      Organisation
+      |> Repo.get(current_user.current_org_id)
+      |> then(&FeatureFlags.enabled?(:repository, &1))
+
     available_integrations = IntegrationConfig.available_integrations()
 
     enabled_integrations_list = Integrations.list_organisation_integrations(current_user)
@@ -178,12 +187,24 @@ defmodule WraftDocWeb.Api.V1.IntegrationConfigController do
         enabled_integration = Map.get(enabled_integrations, provider)
 
         {provider,
-         Map.merge(config, %{
-           enabled: if(enabled_integration, do: enabled_integration.enabled, else: false),
-           id: if(enabled_integration, do: enabled_integration.id, else: nil),
-           selected_events: if(enabled_integration, do: enabled_integration.events, else: []),
-           config: if(enabled_integration, do: enabled_integration.config, else: %{})
-         })}
+         Map.merge(
+           config,
+           if enabled_integration && feature_flag do
+             %{
+               enabled: enabled_integration.enabled,
+               id: enabled_integration.id,
+               selected_events: enabled_integration.events,
+               config: enabled_integration.config
+             }
+           else
+             %{
+               enabled: false,
+               id: nil,
+               selected_events: [],
+               config: %{}
+             }
+           end
+         )}
       end)
       |> Map.new()
 
@@ -215,27 +236,42 @@ defmodule WraftDocWeb.Api.V1.IntegrationConfigController do
   If the integration is enabled for the current organization, includes the current
   configuration values (with sensitive data masked) and selected events.
   """
-  @spec show(Plug.Conn.t(), %{required(String.t()) => String.t()}) :: Plug.Conn.t()
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => provider}) do
-    case IntegrationConfig.get_integration_config(provider) do
+    organisation_id = conn.assigns.current_user.current_org_id
+
+    with config when not is_nil(config) <- IntegrationConfig.get_integration_config(provider),
+         %Integration{} = integration <-
+           Integrations.get_integration_by_provider(organisation_id, provider) do
+      config_with_status =
+        Map.merge(
+          config,
+          if integration do
+            %{
+              enabled: true,
+              id: integration.id,
+              selected_events: integration.events,
+              config: integration.config
+            }
+          else
+            %{
+              enabled: false,
+              id: nil,
+              selected_events: [],
+              config: %{}
+            }
+          end
+        )
+
+      render(conn, "show.json", integration: {provider, config_with_status})
+    else
       nil ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Integration provider not found"})
 
-      config ->
-        organisation_id = conn.assigns.current_user.current_org_id
-        integration = Integrations.get_integration_by_provider(organisation_id, provider)
-
-        config_with_status =
-          Map.merge(config, %{
-            enabled: not is_nil(integration),
-            id: if(integration, do: integration.id, else: nil),
-            selected_events: if(integration, do: integration.events, else: []),
-            config: if(integration, do: integration.config, else: %{})
-          })
-
-        render(conn, "show.json", integration: {provider, config_with_status})
+      error ->
+        error
     end
   end
 
