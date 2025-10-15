@@ -90,10 +90,18 @@ defmodule WraftDoc.Storage do
           "metadata" => metadata
         } = attrs
       )
-      when is_binary(parent_id) and is_binary(name) and item_type != "folder" do
+      when item_type != "folder" do
     similar_names =
       StorageItem
-      |> where([s], s.parent_id == ^parent_id and s.is_deleted == false)
+      |> where([s], s.is_deleted == false)
+      |> where(
+        [s],
+        ^if parent_id == nil do
+          dynamic([s], is_nil(s.parent_id))
+        else
+          dynamic([s], s.parent_id == ^parent_id)
+        end
+      )
       |> where([s], like(s.name, ^"#{name}%"))
       |> select([s], s.name)
       |> Repo.all()

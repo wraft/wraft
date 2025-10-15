@@ -4,7 +4,6 @@ defmodule WraftDocWeb.Api.V1.IntegrationAuthController do
   alias WraftDoc.Integrations.DocuSign
 
   plug WraftDocWeb.Plug.AddActionLog
-  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
 
   def swagger_definitions do
     %{
