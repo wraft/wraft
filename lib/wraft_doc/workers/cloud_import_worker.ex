@@ -15,19 +15,19 @@ defmodule WraftDoc.Workers.CloudImportWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{
-        args:
-          %{"action" => "download", "file_id" => file_id, "access_token" => access_token} = args
+        args: %{"action" => "download", "file_id" => file_id} = args
       }) do
-    output_path = Map.get(args, "output_path")
+    folder_id = Map.get(args, "folder_id")
     org_id = Map.get(args, "org_id")
     store_in_minio = Map.get(args, "store_in_minio", false)
     minio_path = Map.get(args, "minio_path")
+    user_id = Map.get(args, "user_id")
 
     file_ids = normalize_file_ids(file_id)
 
     results =
       Enum.map(file_ids, fn id ->
-        process_download(id, org_id, access_token, output_path, store_in_minio, minio_path)
+        process_download(id, org_id, user_id, folder_id, store_in_minio, minio_path)
       end)
 
     case summarize_results(results, "download") do
@@ -47,8 +47,8 @@ defmodule WraftDoc.Workers.CloudImportWorker do
   defp normalize_file_ids(file_id) when is_binary(file_id), do: [file_id]
 
   # Process individual download
-  defp process_download(file_id, org_id, access_token, output_path, store_in_minio, minio_path) do
-    case GoogleDrive.download_file(access_token, file_id, org_id, output_path) do
+  defp process_download(file_id, org_id, user_id, folder_id, store_in_minio, minio_path) do
+    case GoogleDrive.download_file(user_id, file_id, org_id, folder_id) do
       {:ok, %{content: content, metadata: metadata} = result} when store_in_minio ->
         # Store in MinIO if requested
         file_name = metadata["name"]

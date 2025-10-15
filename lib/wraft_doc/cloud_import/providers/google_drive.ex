@@ -206,20 +206,22 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     * `{:ok, %{path: String.t(), metadata: google_file()}}` - when file is saved
     * `{:error, String.t() | %{status: integer(), body: any()}}`
   """
-  @spec download_file(String.t(), String.t(), Ecto.UUID.t(), map()) ::
+  @spec download_file(Ecto.UUID.t(), String.t(), Ecto.UUID.t(), String.t()) ::
           {:ok, map()} | {:error, map()}
-  def download_file(access_token, file_id, organisation_id, params) do
-    repository_id = Map.get(params, "repository_id")
-    folder_id = Map.get(params, "folder_id", nil)
-
-    with {:ok, metadata} <- get_file_metadata(access_token, file_id),
+  def download_file(user_id, file_id, organisation_id, folder_id) do
+    with {:ok, access_token} <-
+           Integrations.get_latest_token(
+             %User{id: user_id, current_org_id: organisation_id},
+             "google_drive"
+           ),
+         {:ok, metadata} <- get_file_metadata(access_token, file_id),
          %StorageItem{} = storage_item <-
-           StorageItems.get_storage_item_by_org!(folder_id, repository_id, organisation_id),
+           StorageItems.get_folder!(folder_id, organisation_id),
          :ok <-
            save_files_to_db(
              metadata,
              storage_item.materialized_path,
-             repository_id,
+             storage_item.repository_id,
              storage_item.id,
              organisation_id
            ),
