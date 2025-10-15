@@ -13,7 +13,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   alias Assent.Strategy.Google
   alias Assent.Strategy.OAuth2
   alias WraftDoc.CloudImport.StateStore
-  alias WraftDoc.CloudImport.TokenRefreshServer
+  alias WraftDoc.CloudImport.Token.Manager, as: TokenManager
   alias WraftDoc.Integrations
   alias WraftDoc.Integrations.Integration
 
@@ -94,23 +94,40 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   """
   @spec get_token(atom(), User.t(), String.t()) ::
           {:ok, map(), String.t()} | {:error, String.t()}
-  def get_token(:google_drive, user, code) do
+  def get_token(:google_drive, %{current_org_id: organisation_id} = user, code) do
     {:ok, session_params} = StateStore.get(user.id, :google_drive)
 
-    user.current_org_id
+    organisation_id
     |> get_google_config()
     |> Keyword.put(:session_params, session_params)
     |> OAuth2.callback(%{"code" => code, "state" => session_params.state}, Google)
     |> case do
-      {:ok, %{user: google_user, token: token}} ->
-        Task.start(fn ->
-          TokenRefreshServer.start_link(
-            organisation_id: user.current_org_id,
-            refresh_token: token["refresh_token"]
-          )
-        end)
+      {:ok,
+       %{
+         user: google_user,
+         token:
+           %{
+             "refresh_token" => refresh_token,
+             "expires_in" => access_token_expires_in,
+             "refresh_token_expires_in" => refresh_token_expires_in
+           } = token
+       }} ->
+        TokenManager.start(
+          organisation_id,
+          refresh_token
+        )
 
-        {:ok, google_user, token}
+        now = DateTime.utc_now()
+
+        access_token_expires_at = DateTime.add(now, access_token_expires_in, :second)
+        refresh_token_expires_at = DateTime.add(now, refresh_token_expires_in, :second)
+
+        {:ok, google_user,
+         Map.merge(token, %{
+           "updated_at" => now,
+           "access_token_expires_at" => access_token_expires_at,
+           "refresh_token_expires_at" => refresh_token_expires_at
+         })}
 
       {:error, _error} ->
         {:error, "Failed to exchange Google Drive authorization code"}

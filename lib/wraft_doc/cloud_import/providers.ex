@@ -34,7 +34,7 @@ defmodule WraftDoc.CloudImport.Providers do
       alias WraftDoc.Storage
       alias WraftDoc.Storage.StorageItem
       alias WraftDoc.Storage.StorageItems
-      alias WraftDoc.Workers.CloudImportWorker, as: Worker
+      alias WraftDoc.Workers.CloudImportWorker
 
       @base_url unquote(base_url)
 
@@ -65,13 +65,13 @@ defmodule WraftDoc.CloudImport.Providers do
         end
       end
 
-      def schedule_download_to_minio(access_token, file_id, org_id, metadata \\ %{}) do
+      def schedule_download_to_minio(access_token, file_ids, org_id, metadata \\ %{}) do
         provider_name = __MODULE__ |> Module.split() |> List.last() |> String.downcase()
         action = "download_#{provider_name}_to_minio"
 
         params = %{
           action: action,
-          file_id: file_id,
+          file_ids: file_ids,
           org_id: org_id,
           folder_id: metadata["folder_id"],
           user_id: metadata["user_id"],
@@ -79,7 +79,7 @@ defmodule WraftDoc.CloudImport.Providers do
         }
 
         params
-        |> Worker.new()
+        |> CloudImportWorker.new()
         |> Oban.insert()
       end
 
