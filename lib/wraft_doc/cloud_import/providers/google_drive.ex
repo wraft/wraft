@@ -206,18 +206,22 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     * `{:ok, %{path: String.t(), metadata: google_file()}}` - when file is saved
     * `{:error, String.t() | %{status: integer(), body: any()}}`
   """
-  @spec download_file(String.t(), String.t(), String.t() | nil) :: {:ok, map()} | {:error, map()}
-  def download_file(access_token, file_id, org_id, output_path \\ nil) do
-    output_path = output_path || "/"
+  @spec download_file(String.t(), String.t(), Ecto.UUID.t(), map()) ::
+          {:ok, map()} | {:error, map()}
+  def download_file(access_token, file_id, organisation_id, params) do
+    repository_id = Map.get(params, "repository_id")
+    folder_id = Map.get(params, "folder_id", nil)
 
     with {:ok, metadata} <- get_file_metadata(access_token, file_id),
-         storage_item <- StorageItems.get_storage_item_by_path(org_id, output_path),
+         %StorageItem{} = storage_item <-
+           StorageItems.get_storage_item_by_org!(folder_id, repository_id, organisation_id),
          :ok <-
            save_files_to_db(
              metadata,
-             storage_item.repository_id,
+             storage_item.materialized_path,
+             repository_id,
              storage_item.id,
-             storage_item.organisation_id
+             organisation_id
            ),
          {:ok, %{status: 200, body: body}} <-
            get("#{@base_url}/files/#{file_id}",
@@ -226,6 +230,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
            ) do
       write_file_result(body, nil, metadata)
     else
+      {:ok, %{status: 401, body: body}} -> {:error, %{status: 403, body: body}}
       {:ok, %{status: status, body: body}} -> {:error, %{status: status, body: body}}
       error -> error
     end
@@ -421,9 +426,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     end
   end
 
-  defp build_storage_attrs(file, repository_id, parant_id, org_id) do
-    base_path = "/google_drive_files"
-
+  defp build_storage_attrs(file, base_path, repository_id, parant_id, org_id) do
     relative_path =
       case file["pathDisplay"] do
         nil -> ""
@@ -443,7 +446,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
       path: "/#{file["name"]}",
       materialized_path: final_path <> "/#{file["name"]}",
       mime_type: file["mimeType"],
-      item_type: "default",
+      item_type: "external file",
       metadata: %{description: file["description"] || ""},
       size: parse_size(file["size"]),
       modified_time: file["modifiedTime"],

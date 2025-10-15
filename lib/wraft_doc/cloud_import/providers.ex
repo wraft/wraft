@@ -15,7 +15,7 @@ defmodule WraftDoc.CloudImport.Providers do
   @callback get_file_metadata(access_token, file_id) :: result
   @callback list_all_pdfs(access_token, params) :: result
   @callback search_files(access_token, params) :: result
-  @callback download_file(access_token, file_id, String.t() | nil) :: result
+  @callback download_file(access_token, file_id, Ecto.UUID.t(), map()) :: result
   @callback list_all_folders(access_token, params) :: result
   @callback search_folders(access_token, params) :: result
   @callback list_files_in_folder(access_token, folder_id, params) :: result
@@ -30,6 +30,7 @@ defmodule WraftDoc.CloudImport.Providers do
       require Logger
 
       alias WraftDoc.Storage
+      alias WraftDoc.Storage.StorageItem
       alias WraftDoc.Storage.StorageItems
       alias WraftDoc.Workers.CloudImportWorker, as: Worker
 
@@ -52,7 +53,9 @@ defmodule WraftDoc.CloudImport.Providers do
              {:ok, %{"files" => files}} <- list_all_files(access_token, params) do
           files
           |> Enum.map(
-            &Task.async(fn -> save_files_to_db(&1, repository.id, parant.id, org_id) end)
+            &Task.async(fn ->
+              save_files_to_db(&1, "google_drive_files", repository.id, parant.id, org_id)
+            end)
           )
           |> Enum.map(&Task.await(&1, 15_000))
           |> calculate_sync_stats(files)
@@ -140,9 +143,9 @@ defmodule WraftDoc.CloudImport.Providers do
         end
       end
 
-      defp save_files_to_db(file, repository_id, parant_id \\ nil, org_id \\ nil) do
+      defp save_files_to_db(file, base_path, repository_id, parant_id \\ nil, org_id \\ nil) do
         file
-        |> build_storage_attrs(repository_id, parant_id, org_id)
+        |> build_storage_attrs(base_path, repository_id, parant_id, org_id)
         |> StorageItems.create_storage_item()
         |> case do
           {:ok, _} -> :ok

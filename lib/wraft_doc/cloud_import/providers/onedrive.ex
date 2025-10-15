@@ -89,7 +89,7 @@ defmodule WraftDoc.CloudImport.Providers.Onedrive do
   end
 
   @impl true
-  def download_file(access_token, file_id, output_path \\ nil) do
+  def download_file(access_token, file_id, _org, output_path) do
     "#{@base_url}/me/drive/items/#{file_id}/content"
     |> get(headers: auth_headers(access_token))
     |> case do
@@ -225,7 +225,7 @@ defmodule WraftDoc.CloudImport.Providers.Onedrive do
     |> handle_response()
   end
 
-  defp build_storage_attrs(file, repository_id, parant_id, org_id) do
+  defp build_storage_attrs(_base_path, file, repository_id, parant_id, org_id) do
     %{
       sync_source: "onedrive",
       external_id: file["id"],
