@@ -342,12 +342,11 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   @doc """
   Handles auth callback.
   """
-  @spec handle_oauth_callback(User.t(), map(), atom(), String.t()) :: String.t()
+  @spec handle_oauth_callback(User.t(), map(), atom()) :: String.t()
   def handle_oauth_callback(
         %{id: _user_id, current_org_id: org_id} = user,
-        params,
-        provider,
-        code
+        %{"code" => code} = params,
+        provider
       ) do
     with {:ok, _user_data, token_data} <-
            get_token(provider, user, code),
