@@ -15,7 +15,7 @@ defmodule WraftDoc.Workers.CloudImportWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{
-        args: %{"action" => "download", "file_id" => file_id} = args
+        args: %{"file_ids" => file_ids} = args
       }) do
     folder_id = Map.get(args, "folder_id")
     org_id = Map.get(args, "org_id")
@@ -23,7 +23,7 @@ defmodule WraftDoc.Workers.CloudImportWorker do
     minio_path = Map.get(args, "minio_path")
     user_id = Map.get(args, "user_id")
 
-    file_ids = normalize_file_ids(file_id)
+    file_ids = normalize_file_ids(file_ids)
 
     results =
       Enum.map(file_ids, fn id ->

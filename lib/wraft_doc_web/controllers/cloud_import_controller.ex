@@ -523,7 +523,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
 
     parameters do
       file_ids(:body, Schema.ref(:ImportRequest), "List of file IDs to import", required: true)
-      output_path(:query, :string, "Path in MinIO to store downloaded files", required: true)
+      folder_id(:body, :string, "Folder id of repository", required: true)
     end
 
     response(202, "Accepted", Schema.ref(:ImportResponse))
