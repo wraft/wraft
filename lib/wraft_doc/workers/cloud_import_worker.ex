@@ -10,18 +10,21 @@ defmodule WraftDoc.Workers.CloudImportWorker do
 
   require Logger
   alias WraftDoc.Client.Minio
-  # alias WraftDoc.CloudImport.Clouds
   alias WraftDoc.CloudImport.Providers.GoogleDrive
+  alias WraftDoc.Storage.StorageItems
 
   @impl Oban.Worker
   def perform(%Oban.Job{
-        args: %{"file_ids" => file_ids} = args
+        args:
+          %{
+            "file_ids" => file_ids,
+            "folder_id" => folder_id,
+            "org_id" => org_id,
+            "user_id" => user_id
+          } = args
       }) do
-    folder_id = Map.get(args, "folder_id")
-    org_id = Map.get(args, "org_id")
     store_in_minio = Map.get(args, "store_in_minio", false)
     minio_path = Map.get(args, "minio_path")
-    user_id = Map.get(args, "user_id")
 
     file_ids = normalize_file_ids(file_ids)
 
@@ -60,9 +63,11 @@ defmodule WraftDoc.Workers.CloudImportWorker do
               "Successfully downloaded file #{file_id} and stored in MinIO at #{full_minio_path}"
             )
 
+            StorageItems.update_upload_status(file_id, "completed")
             {:ok, %{file_id: file_id, result: Map.put(result, :minio_path, full_minio_path)}}
 
           {:error, minio_error} = _error ->
+            StorageItems.update_upload_status(file_id, "failed")
             Logger.error("Failed to store file #{file_id} in MinIO: #{inspect(minio_error)}")
             {:error, %{file_id: file_id, error: minio_error}}
         end
@@ -74,6 +79,7 @@ defmodule WraftDoc.Workers.CloudImportWorker do
 
       {:error, reason} = _error ->
         Logger.error("Failed to download file #{file_id}: #{inspect(reason)}")
+        StorageItems.update_upload_status(file_id, "failed")
         {:error, %{file_id: file_id, error: reason}}
     end
   end

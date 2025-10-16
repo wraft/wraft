@@ -2,6 +2,10 @@ defmodule WraftDoc.Repo.Migrations.UpdateStorageItemTableAddUniqueIndex do
   use Ecto.Migration
 
   def up do
+    alter table(:storage_items) do
+      add(:upload_status, :string, default: "processing")
+    end
+
     execute("""
     CREATE UNIQUE INDEX storage_items_name_parent_id_index
     ON storage_items (name, COALESCE(parent_id::text, 'root'))
@@ -11,5 +15,9 @@ defmodule WraftDoc.Repo.Migrations.UpdateStorageItemTableAddUniqueIndex do
 
   def down do
     execute("DROP INDEX IF EXISTS storage_items_name_parent_id_index;")
+
+    alter table(:storage_items) do
+      remove(:upload_status)
+    end
   end
 end

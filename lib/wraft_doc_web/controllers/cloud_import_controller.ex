@@ -13,6 +13,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   alias WraftDoc.CloudImport.Providers.GoogleDrive, as: Google
   alias WraftDoc.CloudImport.Providers.Onedrive
   alias WraftDoc.Integrations
+  alias WraftDoc.Storage.StorageItem
+  alias WraftDoc.Storage.StorageItems
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -536,20 +538,25 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   This endpoint accepts a list of file IDs and schedules downloads.
   params requied ,`file_ids` should be a list of file IDs to download
   """
-  def import_gdrive_file(conn, %{"file_ids" => file_ids, "folder_id" => folder_id}) do
+  def import_gdrive_file(conn, %{"file_ids" => file_ids, "folder_id" => folder_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, _token} <- Integrations.get_latest_token(current_user, "google_drive") do
-      Google.schedule_download_to_minio(current_user.id, file_ids, current_user.current_org_id, %{
-        folder_id: folder_id,
-        user_id: current_user.id
-      })
+    with {:ok, token} <- Integrations.get_latest_token(current_user, "google_drive"),
+         %StorageItem{} = storage_item <-
+           StorageItems.get_folder(folder_id, current_user.current_org_id),
+         {:ok, storage_items} <- Google.sync_import_files_to_db(token, params, current_user) do
+      Google.schedule_download_to_minio(
+        current_user,
+        file_ids,
+        storage_item
+      )
 
       conn
       |> put_status(:accepted)
       |> json(%{
         status: "processing",
-        provider: "google_drive"
+        provider: "google_drive",
+        storage_items: Enum.map(storage_items, &WraftDocWeb.Api.V1.StorageItemView.data(&1))
       })
     end
   end
@@ -842,12 +849,13 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   Downloads files from Dropbox based on provided file IDs.
   This endpoint accepts a list of file IDs and schedules downloads.
   """
-  def download_dropbox_file(conn, %{"file_ids" => file_ids}) do
-    user = conn.assigns[:current_user]
-    org = conn.assigns[:current_org]
+  def download_dropbox_file(conn, %{"file_ids" => file_ids, "folder_id" => folder_id}) do
+    current_user = conn.assigns[:current_user]
 
-    with {:ok, token} <- Integrations.get_latest_token(user, :dropbox) do
-      results = Dropbox.schedule_download_to_minio(token, file_ids, user.id, org.id)
+    with {:ok, _token} <- Integrations.get_latest_token(current_user, :dropbox),
+         %StorageItem{} = storage_item <-
+           StorageItems.get_folder(folder_id, current_user.current_org_id) do
+      results = Dropbox.schedule_download_to_minio(current_user, file_ids, storage_item)
 
       conn
       |> put_status(:accepted)
@@ -1134,13 +1142,13 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   Downloads files from OneDrive based on provided file IDs.
   This endpoint accepts a list of file IDs and schedules downloads.
   """
-  def download_onedrive_file(conn, %{"file_ids" => file_ids}) do
-    user = conn.assigns[:current_user]
-    # need to be changed
-    org = conn.assigns[:current_org]
+  def download_onedrive_file(conn, %{"file_ids" => file_ids, "folder_id" => folder_id}) do
+    current_user = conn.assigns[:current_user]
 
-    with {:ok, token} <- Integrations.get_latest_token(user, :onedrive) do
-      results = Onedrive.schedule_download_to_minio(token, file_ids, user.id, org.id)
+    with {:ok, _token} <- Integrations.get_latest_token(current_user, :onedrive),
+         %StorageItem{} = storage_item <-
+           StorageItems.get_folder(folder_id, current_user.current_org_id) do
+      results = Onedrive.schedule_download_to_minio(current_user, file_ids, storage_item)
 
       conn
       |> put_status(:accepted)
