@@ -157,6 +157,20 @@ defmodule WraftDoc.Storage.StorageItems do
   def get_storage_item!(id), do: Repo.get!(StorageItem, id)
 
   @doc """
+  Updates file upload status to completed.
+  """
+  @spec update_upload_status(StorageItem.t(), String.t()) ::
+          {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()} | {}
+  def update_upload_status(%StorageItem{} = storage_item, status),
+    do: update_storage_item(storage_item, %{"upload_status" => status})
+
+  def update_upload_status(external_id, status) do
+    StorageItem
+    |> where([s], s.external_id == ^external_id)
+    |> Repo.update_all(set: [upload_status: status])
+  end
+
+  @doc """
   Creates a storage item with the given attributes.
 
   Handles duplicate external_id gracefully by returning the existing item
@@ -622,7 +636,7 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.one!(query)
   end
 
-  def get_folder!(nil, _organisation_id) do
+  def get_folder(nil, _organisation_id) do
     %StorageItem{
       id: nil,
       mime_type: "inode/directory",
@@ -634,7 +648,7 @@ defmodule WraftDoc.Storage.StorageItems do
     }
   end
 
-  def get_folder!(folder_id, organisation_id) do
+  def get_folder(folder_id, organisation_id) do
     query =
       from(s in StorageItem,
         where: s.id == ^folder_id,
@@ -643,7 +657,7 @@ defmodule WraftDoc.Storage.StorageItems do
         where: s.is_deleted == false
       )
 
-    Repo.one!(query)
+    Repo.one(query)
   end
 
   @doc """
@@ -932,7 +946,8 @@ defmodule WraftDoc.Storage.StorageItems do
       "parent_id" => parent_id,
       "repository_id" => repository_id,
       "creator_id" => current_user && current_user.id,
-      "organisation_id" => organisation_id
+      "organisation_id" => organisation_id,
+      "upload_status" => "completed"
     }
 
     {:ok, storage_item_params}
@@ -1149,6 +1164,7 @@ defmodule WraftDoc.Storage.StorageItems do
   defp respond_with_result({:error, error}, _params, _org),
     do: {:error, error}
 
+  # TODO Move to view file.
   @spec storage_item_data(StorageItem.t(), [StorageAsset.t()]) :: map()
   defp storage_item_data(%StorageItem{} = storage_item, storage_assets \\ []) do
     %{
@@ -1175,6 +1191,7 @@ defmodule WraftDoc.Storage.StorageItems do
       repository_id: storage_item.repository_id,
       creator_id: storage_item.creator_id,
       organisation_id: storage_item.organisation_id,
+      upload_status: storage_item.upload_status,
       inserted_at: storage_item.inserted_at,
       updated_at: storage_item.updated_at,
       assets: Enum.map(storage_assets, &storage_asset_data/1)

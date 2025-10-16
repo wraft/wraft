@@ -33,6 +33,7 @@ defmodule WraftDoc.Storage.StorageItem do
     field(:download_count, :integer)
     field(:last_accessed_at, :utc_datetime)
     field(:parent_id, :binary_id)
+    field(:upload_status, :string)
 
     has_many(:storage_assets, WraftDoc.Storage.StorageAsset)
     belongs_to(:repository, WraftDoc.Storage.Repository)
@@ -71,6 +72,7 @@ defmodule WraftDoc.Storage.StorageItem do
       :last_accessed_at,
       :metadata,
       :parent_id,
+      :upload_status,
       :repository_id,
       :creator_id,
       :organisation_id

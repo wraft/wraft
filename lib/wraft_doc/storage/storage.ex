@@ -113,7 +113,7 @@ defmodule WraftDoc.Storage do
       _ ->
         next_number = find_next_available_number(similar_names, name)
         updated_name = "#{name}_#{next_number}"
-        updated_file_name = updated_name <> file_extension
+        updated_file_name = "#{updated_name} #{file_extension}"
 
         Map.merge(attrs, %{
           "name" => updated_name,

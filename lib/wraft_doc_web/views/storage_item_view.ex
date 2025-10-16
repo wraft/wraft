@@ -60,6 +60,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemView do
       metadata: storage_item.metadata,
       parent_id: storage_item.parent_id,
       repository_id: storage_item.repository_id,
+      upload_status: storage_item.upload_status,
       creator_id: storage_item.creator_id,
       organisation_id: storage_item.organisation_id,
       inserted_at: storage_item.inserted_at,
