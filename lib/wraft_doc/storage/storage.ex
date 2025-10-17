@@ -102,7 +102,7 @@ defmodule WraftDoc.Storage do
           dynamic([s], s.parent_id == ^parent_id)
         end
       )
-      |> where([s], like(s.name, ^"#{name}%"))
+      |> where([s], like(s.name, ^"#{Path.rootname(name)}%"))
       |> select([s], s.name)
       |> Repo.all()
 
@@ -111,9 +111,11 @@ defmodule WraftDoc.Storage do
         attrs
 
       _ ->
-        next_number = find_next_available_number(similar_names, name)
-        updated_name = "#{name}_#{next_number}"
-        updated_file_name = "#{updated_name}#{file_extension}"
+        next_number =
+          find_next_available_number(similar_names, name)
+
+        updated_name = "#{Path.rootname(name)}_#{next_number}"
+        updated_file_name = "#{updated_name}.#{file_extension}"
 
         Map.merge(attrs, %{
           "name" => updated_name,
