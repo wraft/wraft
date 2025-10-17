@@ -542,14 +542,14 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, token} <- Integrations.get_latest_token(current_user, "google_drive"),
-         %StorageItem{} = storage_item <-
+         %StorageItem{} = folder_item <-
            StorageItems.get_folder(folder_id, current_user.current_org_id),
          {:ok, storage_items} <-
-           Google.sync_import_files_to_db(token, params, current_user, storage_item) do
+           Google.sync_import_files_to_db(token, params, current_user, folder_item) do
       Google.schedule_download_to_minio(
         current_user,
         file_ids,
-        storage_item
+        folder_item
       )
 
       conn

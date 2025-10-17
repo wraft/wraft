@@ -159,8 +159,10 @@ defmodule WraftDoc.Storage.StorageItems do
   @doc """
   Updates file upload status to completed.
   """
-  @spec update_upload_status(StorageItem.t(), String.t()) ::
-          {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()} | {}
+  @spec update_upload_status(StorageItem.t() | Ecto.UUID.t(), String.t()) ::
+          {:ok, StorageItem.t()}
+          | {:error, Ecto.Changeset.t()}
+          | {integer(), nil | [StorageItem.t()]}
   def update_upload_status(%StorageItem{} = storage_item, status),
     do: update_storage_item(storage_item, %{"upload_status" => status})
 

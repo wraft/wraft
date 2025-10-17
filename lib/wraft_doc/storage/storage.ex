@@ -113,7 +113,7 @@ defmodule WraftDoc.Storage do
       _ ->
         next_number = find_next_available_number(similar_names, name)
         updated_name = "#{name}_#{next_number}"
-        updated_file_name = "#{updated_name} #{file_extension}"
+        updated_file_name = "#{updated_name}#{file_extension}"
 
         Map.merge(attrs, %{
           "name" => updated_name,
@@ -458,23 +458,15 @@ defmodule WraftDoc.Storage do
   def execute_upload_transaction(enriched_params) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:storage_item, fn _repo, _ ->
-      StorageItems.create_storage_item(enriched_params.storage_item)
-    end)
-    |> Ecto.Multi.insert(:storage_asset, fn %{storage_item: storage_item} ->
-      storage_asset_params =
-        Map.put(enriched_params.storage_asset, :storage_item_id, storage_item.id)
+      case Repo.get_by(StorageItem, external_id: enriched_params.storage_item["external_id"]) do
+        nil ->
+          StorageItems.create_storage_item(enriched_params.storage_item)
 
-      StorageAsset.changeset(%StorageAsset{}, storage_asset_params)
+        storage_item ->
+          {:ok, storage_item}
+      end
     end)
-    |> Ecto.Multi.update(:upload_file, fn %{storage_asset: storage_asset} ->
-      StorageAsset.file_changeset(storage_asset, %{filename: enriched_params.file_upload})
-    end)
-    |> Ecto.Multi.update(:complete_upload, fn %{upload_file: storage_asset} ->
-      StorageAsset.changeset(storage_asset, %{
-        processing_status: "completed",
-        upload_completed_at: DateTime.utc_now()
-      })
-    end)
+    |> storage_asset_multi(enriched_params)
     |> Repo.transaction()
     |> case do
       {:ok, %{storage_item: storage_item, complete_upload: storage_asset}} ->
@@ -487,11 +479,32 @@ defmodule WraftDoc.Storage do
     end
   end
 
+  def storage_asset_multi(multi, enriched_params) do
+    multi
+    |> Ecto.Multi.insert(:storage_asset, fn %{storage_item: storage_item} ->
+      storage_asset_params =
+        Map.put(enriched_params.storage_asset, :storage_item_id, storage_item.id)
+
+      StorageAsset.changeset(%StorageAsset{}, storage_asset_params)
+    end)
+    |> Ecto.Multi.update(:upload_file, fn %{storage_asset: storage_asset} ->
+      storage_asset
+      |> Repo.preload(:storage_item)
+      |> StorageAsset.file_changeset(%{filename: enriched_params.file_upload})
+    end)
+    |> Ecto.Multi.update(:complete_upload, fn %{upload_file: storage_asset} ->
+      StorageAsset.changeset(storage_asset, %{
+        processing_status: "completed",
+        upload_completed_at: DateTime.utc_now()
+      })
+    end)
+  end
+
   @doc "Calculates item hierarchy depth and materialized path"
   @spec calculate_item_hierarchy(String.t() | nil, String.t(), String.t()) ::
           {integer(), String.t()}
-  def calculate_item_hierarchy(nil, _organisation_id, _filename) do
-    {1, "/"}
+  def calculate_item_hierarchy(nil, _organisation_id, filename) do
+    {1, "/#{filename}"}
   end
 
   def calculate_item_hierarchy(parent_id, organisation_id, filename) do

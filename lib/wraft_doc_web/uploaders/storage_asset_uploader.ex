@@ -14,7 +14,7 @@ defmodule WraftDocWeb.StorageAssetUploader do
     file_extension = file.file_name |> Path.extname() |> String.downcase()
 
     case Enum.member?(
-           ~w(.jpg .jpeg .png .pdf .doc .docx .xls .xlsx .ppt .pptx .txt .odt),
+           ~w(.jpg .jpeg .png .pdf .doc .docx .xls .xlsx .ppt .pptx .txt .odt .csv),
            file_extension
          ) &&
            file_size(file) <= @max_file_size do
@@ -23,23 +23,31 @@ defmodule WraftDocWeb.StorageAssetUploader do
     end
   end
 
-  def filename(_version, {file, _}) do
-    file.file_name
-    |> Path.rootname()
-    |> String.replace(~r/\s+/, "-")
+  def filename(
+        _version,
+        {_file,
+         %{
+           storage_item: %{materialized_path: materialized_path}
+         } = _scope}
+      ) do
+    materialized_path |> Path.basename() |> Path.rootname()
   end
 
-  def storage_dir(_version, {_file, %{organisation_id: organisation_id}}) do
-    "organisations/#{organisation_id}/repo/assets"
+  def storage_dir(
+        _version,
+        {_file,
+         %{
+           organisation_id: organisation_id,
+           storage_item: %{materialized_path: materialized_path}
+         } = _scope}
+      ) do
+    "organisations/#{organisation_id}/repository/#{String.replace(materialized_path, ~r{/[^/]*$}, "")}"
   end
-
-  def storage_dir(_version, _), do: "repositories"
 
   def default_url(_version, _scope), do: Minio.generate_url("public/images/default_asset.png")
 
   defp file_size(%Waffle.File{} = file), do: file.path |> File.stat!() |> Map.get(:size)
 
-  # Add this new function to handle after_upload callback
   def after_upload({file, scope}) do
     file_extension = file.file_name |> Path.extname() |> String.downcase()
 
