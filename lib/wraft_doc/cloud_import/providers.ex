@@ -48,18 +48,29 @@ defmodule WraftDoc.CloudImport.Providers do
         recv_timeout: 15_000
       )
 
-      def sync_files_to_db(access_token, params, org_id \\ nil) do
-        with repository <-
-               Storage.get_latest_repository(org_id),
-             {:ok, parent} <- setup_sync_folder(repository),
+      def sync_files_to_db(access_token, params, organization_id \\ nil) do
+        with %{id: repository_id} = repository <- Storage.get_latest_repository(organization_id),
+             {:ok, parent_folder} <- setup_sync_folder(repository),
              {:ok, %{"files" => files}} <- list_all_files(access_token, params) do
           files
-          |> Enum.map(
-            &Task.async(fn ->
-              save_files_to_db(&1, repository.id, parent.id, org_id, "google_drive_files")
-            end)
+          |> Task.async_stream(
+            fn file ->
+              save_files_to_db(
+                file,
+                repository_id,
+                parent_folder,
+                organization_id,
+                "google_drive_files"
+              )
+            end,
+            max_concurrency: 5,
+            timeout: 30_000,
+            on_timeout: :kill_task
           )
-          |> Enum.map(&Task.await(&1, 15_000))
+          |> Enum.map(fn
+            {:ok, result} -> result
+            {:exit, reason} -> {:error, reason}
+          end)
           |> calculate_sync_stats(files)
           |> then(&{:ok, &1})
         end
@@ -91,30 +102,12 @@ defmodule WraftDoc.CloudImport.Providers do
         do: {:ok, body}
 
       defp handle_response(
-             {:ok,
-              %{
-                status: 401,
-                body:
-                  %{
-                    "error" => %{
-                      "message" => error_msg
-                    }
-                  } = _body
-              }}
+             {:ok, %{status: 401, body: %{"error" => %{"message" => error_msg}} = _body}}
            ),
            do: {:error, {403, %{errors: error_msg}}}
 
       defp handle_response(
-             {:ok,
-              %{
-                status: status,
-                body:
-                  %{
-                    "error" => %{
-                      "message" => error_msg
-                    }
-                  } = _body
-              }}
+             {:ok, %{status: status, body: %{"error" => %{"message" => error_msg}} = _body}}
            ),
            do: {:error, {status, %{errors: error_msg}}}
 
@@ -151,13 +144,13 @@ defmodule WraftDoc.CloudImport.Providers do
       defp save_files_to_db(
              file,
              repository_id,
-             parant_id,
+             folder_item,
              org_id,
              base_path,
              optional_param \\ %{}
            ) do
         file
-        |> build_storage_attrs(repository_id, parant_id, org_id, base_path, optional_param)
+        |> build_storage_attrs(repository_id, folder_item, org_id, base_path, optional_param)
         |> StorageItems.create_storage_item()
       end
 

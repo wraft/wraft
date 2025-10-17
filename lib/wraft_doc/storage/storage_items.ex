@@ -193,10 +193,7 @@ defmodule WraftDoc.Storage.StorageItems do
   """
   @spec create_storage_item(map()) :: {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()}
   def create_storage_item(attrs \\ %{}) do
-    attrs =
-      attrs
-      |> Map.put("parent_id", attrs["parent_id"])
-      |> Helper.handle_duplicate_names()
+    attrs = Helper.handle_duplicate_names(attrs)
 
     %StorageItem{}
     |> StorageItem.changeset(attrs)
