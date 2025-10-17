@@ -915,7 +915,7 @@ defmodule WraftDoc.Storage.StorageItems do
     {depth_level, materialized_path} =
       Helper.calculate_item_hierarchy(parent_id, organisation_id, file_metadata.filename)
 
-    base_name = Path.basename(file_metadata.filename, file_metadata.file_extension)
+    base_name = Path.rootname(file_metadata.filename)
     display_name = Map.get(params, "display_name", file_metadata.filename)
 
     storage_item_params = %{
