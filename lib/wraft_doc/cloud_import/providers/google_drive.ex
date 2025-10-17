@@ -441,11 +441,11 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
   # TODO add spec and doc.
   def sync_import_files_to_db(
         access_token,
-        %{"folder_id" => folder_id, "file_ids" => file_ids},
-        %{current_org_id: org_id}
+        %{"file_ids" => file_ids},
+        %{current_org_id: organisation_id},
+        %StorageItem{materialized_path: path} = folder_item
       ) do
-    with repository <- Storage.get_latest_repository(org_id),
-         %StorageItem{path: path} <- StorageItems.get_storage_item!(folder_id),
+    with %{id: repository_id} = _repository <- Storage.get_latest_repository(organisation_id),
          {:ok, files} <-
            get_files_metadata(
              access_token,
@@ -454,7 +454,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
       saved_files =
         files
         |> Enum.map(fn file ->
-          case save_files_to_db(file, repository.id, folder_id, org_id, path, %{
+          case save_files_to_db(file, repository_id, folder_item, organisation_id, path, %{
                  "upload_status" => "processing"
                }) do
             {:ok, saved} -> saved
@@ -470,8 +470,8 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
   defp build_storage_attrs(
          file,
          repository_id,
-         parant_id,
-         org_id,
+         %{id: parent_folder_id, depth_level: depth_level} = _parent_folder,
+         organisation_id,
          base_path,
          optional_param
        ) do
@@ -489,8 +489,15 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
         "sync_source" => "google_drive",
         "external_id" => file["id"],
         "name" => file["name"],
-        "organisation_id" => org_id,
-        "parent_id" => parant_id,
+        "display_name" => file["name"],
+        "depth_level" =>
+          if parent_folder_id do
+            depth_level + 1
+          else
+            1
+          end,
+        "organisation_id" => organisation_id,
+        "parent_id" => parent_folder_id,
         "repository_id" => repository_id,
         "path" => "/#{file["name"]}",
         "materialized_path" => final_path <> "/#{file["name"]}",
