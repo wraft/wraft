@@ -79,14 +79,30 @@ defmodule WraftDoc.Storage do
 
   @doc "Handles duplicate names by appending a number suffix"
   @spec handle_duplicate_names(map()) :: map()
-  def handle_duplicate_names(%{"parent_id" => parent_id, "name" => name} = attrs)
-      when is_binary(parent_id) and is_binary(name) do
-    {base_name, extension} = split_name_and_extension(name)
-
+  def handle_duplicate_names(
+        %{
+          "parent_id" => parent_id,
+          "name" => name,
+          "item_type" => item_type,
+          "file_extension" => file_extension,
+          "path" => path,
+          "materialized_path" => materialized_path,
+          "metadata" => metadata
+        } = attrs
+      )
+      when item_type != "folder" do
     similar_names =
       StorageItem
-      |> where([s], s.parent_id == ^parent_id and s.is_deleted == false)
-      |> where([s], like(s.name, ^"#{base_name}%#{extension}"))
+      |> where([s], s.is_deleted == false)
+      |> where(
+        [s],
+        ^if parent_id == nil do
+          dynamic([s], is_nil(s.parent_id))
+        else
+          dynamic([s], s.parent_id == ^parent_id)
+        end
+      )
+      |> where([s], like(s.name, ^"#{Path.rootname(name)}%"))
       |> select([s], s.name)
       |> Repo.all()
 
@@ -95,33 +111,33 @@ defmodule WraftDoc.Storage do
         attrs
 
       _ ->
-        next_number = find_next_available_number(similar_names, base_name, extension)
-        updated_name = "#{base_name}_#{next_number}#{extension}"
-        Map.put(attrs, "name", updated_name)
+        next_number =
+          find_next_available_number(similar_names, name)
+
+        updated_name = "#{Path.rootname(name)}_#{next_number}"
+        updated_file_name = "#{updated_name}#{file_extension}"
+
+        Map.merge(attrs, %{
+          "name" => updated_name,
+          "display_name" => updated_file_name,
+          "path" => Regex.replace(~r{[^/]+$}, path, updated_file_name),
+          "materialized_path" => Regex.replace(~r{[^/]+$}, materialized_path, updated_file_name),
+          "metadata" => Map.put(metadata, "filename", updated_file_name)
+        })
     end
   end
 
   def handle_duplicate_names(attrs), do: attrs
 
-  @spec split_name_and_extension(String.t()) :: {String.t(), String.t()}
-  defp split_name_and_extension(name) do
-    extension = Path.extname(name)
-    base_name = Path.rootname(name)
-    {base_name, extension}
-  end
-
-  @doc "Finds the next available number for duplicate names"
-  @spec find_next_available_number([String.t()], String.t(), String.t()) :: integer()
-  def find_next_available_number(similar_names, base_name, extension) do
-    numbers =
-      Enum.map(similar_names, fn name ->
-        case Regex.run(~r/#{base_name}_(\d+)#{extension}/, name) do
-          [_, num] -> String.to_integer(num)
-          _ -> 0
-        end
-      end)
-
-    case numbers do
+  defp find_next_available_number(similar_names, base_name) do
+    similar_names
+    |> Enum.map(fn name ->
+      case Regex.run(~r/#{base_name}_(\d+)/, name) do
+        [_, num] -> String.to_integer(num)
+        _ -> 0
+      end
+    end)
+    |> case do
       [] -> 1
       nums -> Enum.max(nums) + 1
     end
@@ -203,18 +219,9 @@ defmodule WraftDoc.Storage do
   def get_ancestors_breadcrumbs(%StorageItem{parent_id: nil} = current_item, organisation_id) do
     path = current_item.materialized_path || current_item.path
 
-    Logger.info("🔍 Building breadcrumbs for item with nil parent_id", %{
-      id: current_item.id,
-      path: path,
-      materialized_path: current_item.materialized_path
-    })
-
     if path && String.contains?(path, "/") do
-      breadcrumbs = build_breadcrumbs_from_path(current_item, organisation_id)
-      Logger.info("📍 Built breadcrumbs from path", %{breadcrumbs_count: length(breadcrumbs)})
-      breadcrumbs
+      build_breadcrumbs_from_path(current_item, organisation_id)
     else
-      Logger.info("❌ No path available for breadcrumbs")
       []
     end
   end
@@ -224,23 +231,14 @@ defmodule WraftDoc.Storage do
         organisation_id
       )
       when not is_nil(parent_id) do
-    Logger.info("🔍 Building breadcrumbs for item with parent_id", %{
-      id: current_item.id,
-      parent_id: parent_id,
-      path: current_item.path,
-      materialized_path: current_item.materialized_path
-    })
-
     case StorageItems.get_storage_item_by_org(parent_id, organisation_id) do
       nil ->
-        Logger.info("⚠️ Parent not found by parent_id, trying path-based breadcrumbs")
         build_breadcrumbs_from_path(current_item, organisation_id)
 
       parent ->
-        Logger.info("✅ Found parent, building breadcrumbs from parent_id relationships")
-        build = build_storage_ancestors(parent, organisation_id, [])
-
-        Enum.map(build, fn item ->
+        parent
+        |> build_storage_ancestors(organisation_id, [])
+        |> Enum.map(fn item ->
           %{
             id: item.id,
             name: get_meaningful_name(item),
@@ -396,18 +394,12 @@ defmodule WraftDoc.Storage do
   end
 
   @doc "Prepares upload parameters from form data"
-  @spec prepare_upload_params(map(), any(), String.t()) :: {:ok, map()} | {:error, String.t()}
+  @spec prepare_upload_params(map(), User.t(), String.t()) :: {:ok, map()} | {:error, String.t()}
   def prepare_upload_params(
         %{"file" => %Plug.Upload{} = upload} = params,
         current_user,
         organisation_id
       ) do
-    Logger.info("📁 Preparing upload parameters", %{
-      filename: upload.filename,
-      size: upload.path |> File.stat!() |> Map.get(:size),
-      organisation_id: organisation_id
-    })
-
     with {:ok, file_metadata} <- extract_file_metadata(upload),
          {:ok, storage_item_params} <-
            StorageItems.build_storage_item_params(
@@ -432,19 +424,12 @@ defmodule WraftDoc.Storage do
         organisation_id: organisation_id
       }
 
-      Logger.info("✅ Upload parameters prepared successfully")
       {:ok, enriched_params}
-    else
-      {:error, reason} ->
-        Logger.error("❌ Failed to prepare upload parameters: #{inspect(reason)}")
-        {:error, reason}
     end
   end
 
-  def prepare_upload_params(_params, _current_user, _organisation_id) do
-    Logger.error("❌ No file provided in upload parameters")
-    {:error, "File upload is required"}
-  end
+  def prepare_upload_params(_params, _current_user, _organisation_id),
+    do: {:error, "File upload is required"}
 
   @doc "Extracts metadata from uploaded file"
   @spec extract_file_metadata(Plug.Upload.t()) :: {:ok, map()} | {:error, String.t()}
@@ -473,13 +458,32 @@ defmodule WraftDoc.Storage do
   @doc "Executes file upload transaction"
   @spec execute_upload_transaction(map()) :: {:ok, map()} | {:error, Ecto.Changeset.t()}
   def execute_upload_transaction(enriched_params) do
-    Logger.info("🔄 Starting upload transaction")
-
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(
-      :storage_item,
-      StorageItem.changeset(%StorageItem{}, enriched_params.storage_item)
-    )
+    |> Ecto.Multi.run(:storage_item, fn _repo, _ ->
+      external_id = enriched_params.storage_item["external_id"]
+
+      with false <- is_nil(external_id),
+           %StorageItem{} = storage_item <- Repo.get_by(StorageItem, external_id: external_id) do
+        {:ok, storage_item}
+      else
+        _ -> StorageItems.create_storage_item(enriched_params.storage_item)
+      end
+    end)
+    |> storage_asset_multi(enriched_params)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{storage_item: storage_item, complete_upload: storage_asset}} ->
+        schedule_background_processing(storage_asset, storage_item)
+
+        {:ok, %{storage_asset: storage_asset, storage_item: storage_item}}
+
+      {:error, _stage, changeset, _changes} ->
+        {:error, changeset}
+    end
+  end
+
+  def storage_asset_multi(multi, enriched_params) do
+    multi
     |> Ecto.Multi.insert(:storage_asset, fn %{storage_item: storage_item} ->
       storage_asset_params =
         Map.put(enriched_params.storage_asset, :storage_item_id, storage_item.id)
@@ -487,7 +491,9 @@ defmodule WraftDoc.Storage do
       StorageAsset.changeset(%StorageAsset{}, storage_asset_params)
     end)
     |> Ecto.Multi.update(:upload_file, fn %{storage_asset: storage_asset} ->
-      StorageAsset.file_changeset(storage_asset, %{filename: enriched_params.file_upload})
+      storage_asset
+      |> Repo.preload(:storage_item)
+      |> StorageAsset.file_changeset(%{filename: enriched_params.file_upload})
     end)
     |> Ecto.Multi.update(:complete_upload, fn %{upload_file: storage_asset} ->
       StorageAsset.changeset(storage_asset, %{
@@ -495,33 +501,13 @@ defmodule WraftDoc.Storage do
         upload_completed_at: DateTime.utc_now()
       })
     end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{storage_item: storage_item, complete_upload: storage_asset}} ->
-        Logger.info("✅ Upload transaction completed successfully", %{
-          storage_item_id: storage_item.id,
-          storage_asset_id: storage_asset.id
-        })
-
-        schedule_background_processing(storage_asset, storage_item)
-
-        {:ok, %{storage_asset: storage_asset, storage_item: storage_item}}
-
-      {:error, stage, changeset, _changes} ->
-        Logger.error("❌ Upload transaction failed at stage: #{stage}", %{
-          errors: changeset.errors,
-          changeset: changeset
-        })
-
-        {:error, changeset}
-    end
   end
 
   @doc "Calculates item hierarchy depth and materialized path"
   @spec calculate_item_hierarchy(String.t() | nil, String.t(), String.t()) ::
           {integer(), String.t()}
-  def calculate_item_hierarchy(nil, _organisation_id, _filename) do
-    {1, "/"}
+  def calculate_item_hierarchy(nil, _organisation_id, filename) do
+    {1, "/#{filename}"}
   end
 
   def calculate_item_hierarchy(parent_id, organisation_id, filename) do
@@ -560,7 +546,7 @@ defmodule WraftDoc.Storage do
   @spec schedule_background_processing(StorageAsset.t(), StorageItem.t()) :: {:ok, pid()}
   def schedule_background_processing(storage_asset, storage_item) do
     Task.start(fn ->
-      Logger.info("🔄 Starting background processing", %{
+      Logger.info("Starting background processing", %{
         storage_asset_id: storage_asset.id,
         storage_item_id: storage_item.id
       })
@@ -576,13 +562,13 @@ defmodule WraftDoc.Storage do
 
         StorageAssets.update_storage_asset(storage_asset, %{processing_status: "completed"})
 
-        Logger.info("✅ Background processing completed", %{
+        Logger.info("Background processing completed", %{
           storage_asset_id: storage_asset.id,
           storage_item_id: storage_item.id
         })
       else
         {:error, reason} ->
-          Logger.error("❌ Background processing failed", %{
+          Logger.error("Background processing failed", %{
             storage_asset_id: storage_asset.id,
             storage_item_id: storage_item.id,
             reason: reason
@@ -607,19 +593,27 @@ defmodule WraftDoc.Storage do
 
   @doc "Updates materialized paths for all children when parent item is moved/renamed"
   @spec update_children_paths(StorageItem.t(), String.t()) :: :ok
-  def update_children_paths(%StorageItem{} = parent_item, _organisation_id) do
-    children = StorageItems.get_all_children_storage_items(parent_item.id)
-
-    Enum.each(children, fn child ->
+  def update_children_paths(
+        %StorageItem{
+          id: parent_id,
+          materialized_path: parent_materialized_path,
+          name: parent_name
+        } = _parent_item,
+        _organisation_id
+      ) do
+    parent_id
+    |> StorageItems.get_all_children_storage_items()
+    |> Enum.each(fn child ->
       new_materialized_path =
         String.replace(
           child.materialized_path,
-          parent_item.materialized_path,
-          Path.join(parent_item.materialized_path, parent_item.name)
+          parent_materialized_path,
+          Path.join(parent_materialized_path, parent_name)
         )
 
-      path = StorageItem.changeset(child, %{materialized_path: new_materialized_path})
-      Repo.update(path)
+      child
+      |> StorageItem.changeset(%{materialized_path: new_materialized_path})
+      |> Repo.update()
     end)
   end
 end

@@ -134,6 +134,19 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     |> handle_response()
   end
 
+  @spec get_files_metadata(String.t(), list(String.t())) :: {:ok, list()}
+  def get_files_metadata(access_token, file_ids) when is_list(file_ids) do
+    file_ids
+    |> Enum.map(fn file_id ->
+      case get_file_metadata(access_token, file_id) do
+        {:ok, metadata} -> metadata
+        {:error, _reason} -> nil
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> then(&{:ok, &1})
+  end
+
   @doc """
   Lists all PDF files from Google Drive.
 
@@ -206,19 +219,32 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     * `{:ok, %{path: String.t(), metadata: google_file()}}` - when file is saved
     * `{:error, String.t() | %{status: integer(), body: any()}}`
   """
-  @spec download_file(String.t(), String.t(), String.t() | nil) :: {:ok, map()} | {:error, map()}
-  def download_file(access_token, file_id, output_path \\ nil) do
-    with {:ok, metadata} <- get_file_metadata(access_token, file_id),
-         :ok <- save_files_to_db(metadata),
+  @spec download_file(Ecto.UUID.t(), String.t(), Ecto.UUID.t(), String.t()) ::
+          {:ok, map()} | {:error, map()}
+  def download_file(user_id, file_id, organisation_id, folder_id) do
+    with {:ok, access_token} <-
+           Integrations.get_latest_token(
+             %User{id: user_id, current_org_id: organisation_id},
+             "google_drive"
+           ),
+         {:ok, metadata} <- get_file_metadata(access_token, file_id),
+         %StorageItem{} = _storage_item <-
+           StorageItems.get_folder(folder_id, organisation_id),
          {:ok, %{status: 200, body: body}} <-
            get("#{@base_url}/files/#{file_id}",
              query: [alt: "media"],
              headers: auth_headers(access_token)
            ) do
-      write_file_result(body, output_path, metadata)
+      write_file_result(body, nil, metadata)
     else
-      {:ok, %{status: status, body: body}} -> {:error, %{status: status, body: body}}
-      error -> error
+      {:ok, %{status: 401, body: body}} ->
+        {:error, %{status: 403, body: body}}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, %{status: status, body: body}}
+
+      error ->
+        error
     end
   end
 
@@ -386,27 +412,118 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     |> handle_response()
   end
 
-  defp build_storage_attrs(file, org_id) do
-    %{
-      sync_source: "google_drive",
-      external_id: file["id"],
-      name: file["name"],
-      organisation_id: org_id,
-      repository_id: file["repository_id"] || nil,
-      path: file["pathDisplay"] || "root",
-      materialized_path: file["pathDisplay"] || "no_path",
-      mime_type: file["mimeType"],
-      item_type: "default",
-      metadata: %{description: file["description"] || ""},
-      size: parse_size(file["size"]),
-      modified_time: file["modifiedTime"],
-      external_metadata: %{
-        owner: file["owners"],
-        created_time: file["createdTime"],
-        parents: file["parents"]
+  def setup_sync_folder(repository) do
+    case StorageItems.get_sync_folder("google_drive_files", repository.organisation_id) do
+      nil ->
+        %{
+          "name" => "google_drive_files",
+          "path" => "/google_drive_files",
+          "item_type" => "folder",
+          "mime_type" => "inode/directory",
+          "size" => 0,
+          "depth_level" => 1,
+          "materialized_path" => "/google_drive_files",
+          "creator_id" => repository.creator_id,
+          "organisation_id" => repository.organisation_id,
+          "repository_id" => repository.id
+        }
+        |> StorageItems.create_storage_item()
+        |> case do
+          {:ok, storage_item} -> {:ok, storage_item}
+          {:error, reason} -> {:error, "Failed to create sync folder: #{reason}"}
+        end
+
+      storage_item ->
+        {:ok, storage_item}
+    end
+  end
+
+  # TODO add spec and doc.
+  def sync_import_files_to_db(
+        access_token,
+        %{"file_ids" => file_ids},
+        %{current_org_id: organisation_id},
+        %StorageItem{materialized_path: path} = folder_item
+      ) do
+    with %{id: repository_id} = _repository <- Storage.get_latest_repository(organisation_id),
+         {:ok, files} <-
+           get_files_metadata(
+             access_token,
+             file_ids
+           ) do
+      saved_files =
+        files
+        |> Enum.map(fn file ->
+          case save_files_to_db(file, repository_id, folder_item, organisation_id, path, %{
+                 "upload_status" => "processing"
+               }) do
+            {:ok, saved} -> saved
+            {:error, _reason} -> nil
+          end
+        end)
+        |> Enum.reject(&is_nil/1)
+
+      {:ok, saved_files}
+    end
+  end
+
+  defp build_storage_attrs(
+         file,
+         repository_id,
+         %{id: parent_folder_id, depth_level: depth_level} = _parent_folder,
+         organisation_id,
+         base_path,
+         optional_param
+       ) do
+    relative_path =
+      case file["pathDisplay"] do
+        nil -> ""
+        "" -> ""
+        path -> path
+      end
+
+    final_path = Path.join(base_path, relative_path)
+
+    Map.merge(
+      %{
+        "sync_source" => "google_drive",
+        "external_id" => file["id"],
+        "name" => file["name"],
+        "display_name" => file["name"],
+        "depth_level" =>
+          if parent_folder_id do
+            depth_level + 1
+          else
+            1
+          end,
+        "organisation_id" => organisation_id,
+        "parent_id" => parent_folder_id,
+        "repository_id" => repository_id,
+        "path" => "/#{file["name"]}",
+        "materialized_path" => final_path <> "/#{file["name"]}",
+        "mime_type" => file["mimeType"],
+        "item_type" => "external file",
+        "metadata" => %{description: file["description"] || ""},
+        "size" => parse_size(file["size"]),
+        "modified_time" => file["modifiedTime"],
+        "external_metadata" => %{
+          "owner" => file["owners"],
+          "created_time" => file["createdTime"],
+          "parents" => file["parents"]
+        },
+        "file_extension" => file["fileExtension"] || get_google_file_extension(file["mimeType"])
       },
-      file_extension: file["fileExtension"]
-    }
+      optional_param
+    )
+  end
+
+  defp get_google_file_extension(mime_type) do
+    case mime_type do
+      "application/vnd.google-apps.spreadsheet" -> "xlsx"
+      "application/vnd.google-apps.document" -> "docx"
+      "application/vnd.google-apps.presentation" -> "pptx"
+      _ -> ""
+    end
   end
 
   defp search_google_drive(access_token, query, content_type, limit) do

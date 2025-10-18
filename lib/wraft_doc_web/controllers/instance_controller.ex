@@ -729,7 +729,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     with %ContentType{} = c_type <- ContentTypes.show_content_type(current_user, c_type_id),
          %Instance{id: content_id} = content <-
            Documents.create_instance(current_user, c_type, params) do
-      Logger.info("Create content success")
       Typesense.create_document(content)
       Task.start(fn -> EventTrigger.trigger_document_created(content) end)
 
@@ -738,7 +737,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       |> render(:create, content: content)
     else
       error ->
-        Logger.error("Create content failed", error: error)
         error
     end
   end

@@ -10,6 +10,9 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   alias WraftDoc.Storage.StorageAssets
   alias WraftDoc.Storage.StorageItems
 
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
+
   action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do
