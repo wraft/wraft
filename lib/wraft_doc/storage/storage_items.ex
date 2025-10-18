@@ -38,7 +38,6 @@ defmodule WraftDoc.Storage.StorageItems do
   import Ecto.Query, warn: false
   alias WraftDoc.Repo
   alias WraftDoc.Storage, as: Helper
-  alias WraftDoc.Storage.StorageAsset
   alias WraftDoc.Storage.StorageAssets
   alias WraftDoc.Storage.StorageItem
 
@@ -1044,8 +1043,8 @@ defmodule WraftDoc.Storage.StorageItems do
       iex> process_index_request(%{"parent_id" => "folder-123"}, user, "org-456")
       {:ok, %{data: [...], breadcrumbs: [...], meta: %{...}}}
   """
-  @spec process_index_request(map(), map(), String.t()) :: {:ok, map()} | {:error, String.t()}
-  def process_index_request(params, _current_user, organisation_id) do
+  @spec process_index_request(User.t(), map()) :: {:ok, map()} | {:error, String.t()}
+  def process_index_request(%{current_org_id: organisation_id} = _current_user, params) do
     pagination_opts = build_pagination_opts(params)
 
     result =
@@ -1164,7 +1163,7 @@ defmodule WraftDoc.Storage.StorageItems do
 
     {:ok,
      %{
-       data: Enum.map(items, &storage_item_data/1),
+       data: items,
        breadcrumbs: breadcrumbs,
        current_folder: current_folder,
        meta: build_meta(items, breadcrumbs, params)
@@ -1176,67 +1175,6 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp respond_with_result({:error, error}, _params, _org),
     do: {:error, error}
-
-  # TODO Move to view file.
-  @spec storage_item_data(StorageItem.t(), [StorageAsset.t()]) :: map()
-  defp storage_item_data(%StorageItem{} = storage_item, _storage_assets \\ []) do
-    %{
-      id: storage_item.id,
-      name: storage_item.name,
-      display_name: storage_item.display_name,
-      item_type: storage_item.item_type,
-      path: storage_item.path,
-      mime_type: storage_item.mime_type,
-      file_extension: storage_item.file_extension,
-      size: storage_item.size,
-      is_folder: storage_item.mime_type == "inode/directory",
-      depth_level: storage_item.depth_level,
-      materialized_path: storage_item.materialized_path,
-      version_number: storage_item.version_number,
-      is_current_version: storage_item.is_current_version,
-      classification_level: storage_item.classification_level,
-      content_extracted: storage_item.content_extracted,
-      thumbnail_generated: storage_item.thumbnail_generated,
-      download_count: storage_item.download_count,
-      last_accessed_at: storage_item.last_accessed_at,
-      metadata: storage_item.metadata,
-      parent_id: storage_item.parent_id,
-      repository_id: storage_item.repository_id,
-      creator_id: storage_item.creator_id,
-      organisation_id: storage_item.organisation_id,
-      upload_status: storage_item.upload_status,
-      inserted_at: storage_item.inserted_at,
-      updated_at: storage_item.updated_at,
-      assets: Enum.map(storage_item.storage_assets, &storage_asset_data/1)
-    }
-  end
-
-  @spec storage_asset_data(StorageAsset.t()) :: map()
-  defp storage_asset_data(%StorageAsset{} = storage_asset) do
-    %{
-      id: storage_asset.id,
-      filename: storage_asset.filename,
-      storage_key: storage_asset.storage_key,
-      storage_backend: storage_asset.storage_backend,
-      file_size: storage_asset.file_size,
-      mime_type: storage_asset.mime_type,
-      processing_status: storage_asset.processing_status,
-      upload_completed_at: storage_asset.upload_completed_at,
-      checksum_sha256: storage_asset.checksum_sha256,
-      thumbnail_path: storage_asset.thumbnail_path,
-      preview_path: storage_asset.preview_path,
-      inserted_at: storage_asset.inserted_at,
-      updated_at: storage_asset.updated_at,
-      url:
-        WraftDocWeb.StorageAssetUploader.url({storage_asset.filename, storage_asset}, :original,
-          signed: true
-        ),
-      preview_url:
-        WraftDocWeb.StorageAssetUploader.url({storage_asset.filename, storage_asset}, :preview,
-          signed: true
-        )
-    }
-  end
 
   @spec parse_integer(String.t() | nil, integer(), integer(), integer() | nil) :: integer()
   defp parse_integer(value, default, min, max) when is_binary(value) do
@@ -1389,7 +1327,7 @@ defmodule WraftDoc.Storage.StorageItems do
   defp build_navigation_response(navigation_data) do
     %{
       data: %{
-        items: Enum.map(navigation_data.items, &storage_item_data/1),
+        items: navigation_data.items,
         breadcrumbs: navigation_data.breadcrumbs
       },
       meta: %{
