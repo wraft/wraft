@@ -102,9 +102,8 @@ defmodule WraftDoc.Storage.StorageItems do
         ]
   def list_storage_items(parent_id \\ nil, organisation_id \\ nil, opts \\ [])
 
-  def list_storage_items(nil, nil, _opts) do
-    Repo.all(StorageItem)
-  end
+  def list_storage_items(nil, nil, _opts),
+    do: StorageItem |> Repo.all() |> Repo.preload(storage_assets: :storage_item)
 
   def list_storage_items(parent_id, organisation_id, opts) when is_binary(organisation_id) do
     limit = Keyword.get(opts, :limit, 100)
@@ -133,7 +132,7 @@ defmodule WraftDoc.Storage.StorageItems do
         )
       end
 
-    Repo.all(query)
+    query |> Repo.all() |> Repo.preload(storage_assets: :storage_item)
   end
 
   def list_storage_items(parent_id, organisation_id, opts) do
@@ -202,7 +201,8 @@ defmodule WraftDoc.Storage.StorageItems do
     |> Repo.insert()
     |> case do
       {:ok, storage_item} ->
-        {:ok, storage_item}
+        Task.start_link(fn -> update_upload_status(storage_item, "completed") end)
+        {:ok, Repo.preload(storage_item, storage_assets: :storage_item)}
 
       {:error, changeset} ->
         if duplicate_external_id_error?(changeset) do
@@ -230,7 +230,7 @@ defmodule WraftDoc.Storage.StorageItems do
        when not is_nil(ext_id) and not is_nil(sync) do
     case Repo.get_by(StorageItem, external_id: ext_id, sync_source: sync) do
       nil -> {:error, :not_found}
-      existing -> {:ok, existing}
+      existing -> {:ok, Repo.preload(existing, storage_assets: :storage_item)}
     end
   end
 
@@ -253,6 +253,13 @@ defmodule WraftDoc.Storage.StorageItems do
     storage_item
     |> StorageItem.changeset(attrs)
     |> Repo.update()
+    |> case do
+      {:ok, updated_storage_item} ->
+        {:ok, Repo.preload(updated_storage_item, storage_assets: :storage_item)}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -392,6 +399,13 @@ defmodule WraftDoc.Storage.StorageItems do
     storage_item
     |> StorageItem.changeset(%{is_deleted: true, deleted_at: now})
     |> Repo.update()
+    |> case do
+      {:ok, updated_storage_item} ->
+        {:ok, Repo.preload(updated_storage_item, storage_assets: :storage_item)}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   def get_storage_item_by_path(organisation_id, materialized_path) do
@@ -551,7 +565,7 @@ defmodule WraftDoc.Storage.StorageItems do
         offset: ^offset
       )
 
-    Repo.all(query)
+    query |> Repo.all() |> Repo.preload(storage_assets: :storage_item)
   end
 
   @doc """
@@ -582,7 +596,7 @@ defmodule WraftDoc.Storage.StorageItems do
         offset: ^offset
       )
 
-    Repo.all(query)
+    query |> Repo.all() |> Repo.preload(storage_assets: :storage_item)
   end
 
   @doc """
@@ -609,7 +623,7 @@ defmodule WraftDoc.Storage.StorageItems do
         offset: ^offset
       )
 
-    Repo.all(query)
+    query |> Repo.all() |> Repo.preload(storage_assets: :storage_item)
   end
 
   @doc """
@@ -632,7 +646,7 @@ defmodule WraftDoc.Storage.StorageItems do
         where: s.is_deleted == false
       )
 
-    Repo.one!(query)
+    query |> Repo.one!() |> Repo.preload(storage_assets: :storage_item)
   end
 
   def get_folder(nil, _organisation_id) do
@@ -679,7 +693,7 @@ defmodule WraftDoc.Storage.StorageItems do
         where: s.is_deleted == false
       )
 
-    Repo.one(query)
+    query |> Repo.one() |> Repo.preload(storage_assets: :storage_item)
   end
 
   def get_sync_folder(folder_name, organisation_id) do
@@ -691,7 +705,7 @@ defmodule WraftDoc.Storage.StorageItems do
         where: s.is_deleted == false
       )
 
-    Repo.one(query)
+    query |> Repo.one() |> Repo.preload(storage_assets: :storage_item)
   end
 
   @doc """
@@ -855,7 +869,7 @@ defmodule WraftDoc.Storage.StorageItems do
         base_query
       end
 
-    Repo.all(query)
+    query |> Repo.all() |> Repo.preload(storage_assets: :storage_item)
   end
 
   @doc """
@@ -1165,7 +1179,7 @@ defmodule WraftDoc.Storage.StorageItems do
 
   # TODO Move to view file.
   @spec storage_item_data(StorageItem.t(), [StorageAsset.t()]) :: map()
-  defp storage_item_data(%StorageItem{} = storage_item, storage_assets \\ []) do
+  defp storage_item_data(%StorageItem{} = storage_item, _storage_assets \\ []) do
     %{
       id: storage_item.id,
       name: storage_item.name,
@@ -1193,7 +1207,7 @@ defmodule WraftDoc.Storage.StorageItems do
       upload_status: storage_item.upload_status,
       inserted_at: storage_item.inserted_at,
       updated_at: storage_item.updated_at,
-      assets: Enum.map(storage_assets, &storage_asset_data/1)
+      assets: Enum.map(storage_item.storage_assets, &storage_asset_data/1)
     }
   end
 
@@ -1213,7 +1227,14 @@ defmodule WraftDoc.Storage.StorageItems do
       preview_path: storage_asset.preview_path,
       inserted_at: storage_asset.inserted_at,
       updated_at: storage_asset.updated_at,
-      url: WraftDocWeb.StorageAssetUploader.url({storage_asset.filename, storage_asset})
+      url:
+        WraftDocWeb.StorageAssetUploader.url({storage_asset.filename, storage_asset}, :original,
+          signed: true
+        ),
+      preview_url:
+        WraftDocWeb.StorageAssetUploader.url({storage_asset.filename, storage_asset}, :preview,
+          signed: true
+        )
     }
   end
 

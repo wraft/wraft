@@ -115,7 +115,7 @@ defmodule WraftDoc.Storage do
           find_next_available_number(similar_names, name)
 
         updated_name = "#{Path.rootname(name)}_#{next_number}"
-        updated_file_name = "#{updated_name}.#{file_extension}"
+        updated_file_name = "#{updated_name}#{file_extension}"
 
         Map.merge(attrs, %{
           "name" => updated_name,
@@ -460,12 +460,13 @@ defmodule WraftDoc.Storage do
   def execute_upload_transaction(enriched_params) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:storage_item, fn _repo, _ ->
-      case Repo.get_by(StorageItem, external_id: enriched_params.storage_item["external_id"]) do
-        nil ->
-          StorageItems.create_storage_item(enriched_params.storage_item)
+      external_id = enriched_params.storage_item["external_id"]
 
-        storage_item ->
-          {:ok, storage_item}
+      with false <- is_nil(external_id),
+           %StorageItem{} = storage_item <- Repo.get_by(StorageItem, external_id: external_id) do
+        {:ok, storage_item}
+      else
+        _ -> StorageItems.create_storage_item(enriched_params.storage_item)
       end
     end)
     |> storage_asset_multi(enriched_params)

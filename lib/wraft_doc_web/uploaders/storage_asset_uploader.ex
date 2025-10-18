@@ -3,11 +3,8 @@ defmodule WraftDocWeb.StorageAssetUploader do
   use Waffle.Definition
   use Waffle.Ecto.Definition
 
-  alias WraftDoc.Client.Minio
-  alias WraftDoc.Workers.PDFMetadataWorker
+  @versions [:original, :preview]
 
-  @versions [:original]
-  # 10MB limit
   @max_file_size 10 * 1024 * 1024
 
   def validate({file, _}) do
@@ -23,8 +20,15 @@ defmodule WraftDocWeb.StorageAssetUploader do
     end
   end
 
+  def filename(:preview, {_file, %{storage_item: %{materialized_path: path}}}),
+    do:
+      path
+      |> Path.basename()
+      |> Path.rootname()
+      |> then(&"#{&1}_preview")
+
   def filename(
-        _version,
+        :original,
         {_file,
          %{
            storage_item: %{materialized_path: materialized_path}
@@ -34,29 +38,41 @@ defmodule WraftDocWeb.StorageAssetUploader do
   end
 
   def storage_dir(
-        _version,
+        :original,
         {_file,
          %{
            organisation_id: organisation_id,
            storage_item: %{materialized_path: materialized_path}
          } = _scope}
-      ) do
-    "organisations/#{organisation_id}/repository/#{String.replace(materialized_path, ~r{/[^/]*$}, "")}"
-  end
+      ),
+      do:
+        "organisations/#{organisation_id}/repository/#{String.replace(materialized_path, ~r{/[^/]*$}, "")}"
 
-  def default_url(_version, _scope), do: Minio.generate_url("public/images/default_asset.png")
+  def storage_dir(
+        :preview,
+        {_file,
+         %{
+           organisation_id: organisation_id,
+           storage_item: %{materialized_path: materialized_path}
+         } = _scope}
+      ),
+      do:
+        "organisations/#{organisation_id}/repository_previews/#{String.replace(materialized_path, ~r{/[^/]*$}, "")}"
+
+  def transform(:preview, {file, _scope}) do
+    ext = file.file_name |> Path.extname() |> String.downcase()
+
+    cond do
+      ext in ~w(.jpg .jpeg .png) ->
+        {:convert, "-strip -thumbnail 250x250^ -gravity center -extent 250x250 -format png", :png}
+
+      ext == ".pdf" ->
+        {:convert, "-thumbnail 250x250 -background white -alpha remove -format png[0]", :png}
+
+      true ->
+        :noaction
+    end
+  end
 
   defp file_size(%Waffle.File{} = file), do: file.path |> File.stat!() |> Map.get(:size)
-
-  def after_upload({file, scope}) do
-    file_extension = file.file_name |> Path.extname() |> String.downcase()
-
-    if file_extension == ".pdf" do
-      %{file_path: file.path, organisation_id: scope.organisation_id}
-      |> PDFMetadataWorker.new()
-      |> Oban.insert()
-    end
-
-    :ok
-  end
 end
