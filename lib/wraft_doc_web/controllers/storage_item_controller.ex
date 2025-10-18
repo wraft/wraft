@@ -457,13 +457,12 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
 
   def index(conn, params) do
     current_user = conn.assigns[:current_user]
-    organisation_id = current_user.current_org_id
 
     with :ok <- StorageItems.validate_uuid_param(params, "parent_id"),
          :ok <- StorageItems.validate_uuid_param(params, "repository_id"),
          {:ok, storage_items} <-
-           StorageItems.process_index_request(params, current_user, organisation_id) do
-      render(conn, "index.json", storage_items: storage_items)
+           StorageItems.process_index_request(current_user, params) do
+      render(conn, "index.json", storage_items)
     end
   end
 

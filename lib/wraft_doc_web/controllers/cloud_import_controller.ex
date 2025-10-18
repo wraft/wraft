@@ -554,10 +554,11 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
 
       conn
       |> put_status(:accepted)
-      |> json(%{
+      |> put_view(WraftDocWeb.Api.V1.StorageItemView)
+      |> render("cloud_index.json", %{
         status: "processing",
         provider: "google_drive",
-        storage_items: Enum.map(storage_items, &WraftDocWeb.Api.V1.StorageItemView.data(&1))
+        storage_items: storage_items
       })
     end
   end
