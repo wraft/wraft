@@ -185,6 +185,7 @@ defmodule WraftDoc.Storage.StorageAssets do
     |> where([sa], sa.storage_item_id == ^storage_item_id)
     |> order_by([sa], desc: sa.inserted_at)
     |> Repo.all()
+    |> Repo.preload(:storage_item)
   end
 
   @doc """

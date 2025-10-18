@@ -37,7 +37,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemView do
   @doc """
   Formats storage item data for response
   """
-  def data(%StorageItem{} = storage_item, storage_assets \\ []) do
+  def data(%StorageItem{} = storage_item, _storage_assets \\ []) do
     %{
       id: storage_item.id,
       name: storage_item.name,
@@ -65,7 +65,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemView do
       organisation_id: storage_item.organisation_id,
       inserted_at: storage_item.inserted_at,
       updated_at: storage_item.updated_at,
-      assets: Enum.map(storage_assets, &storage_asset_data/1)
+      assets: Enum.map(storage_item.storage_assets, &storage_asset_data/1)
     }
   end
 
@@ -87,11 +87,14 @@ defmodule WraftDocWeb.Api.V1.StorageItemView do
       preview_path: storage_asset.preview_path,
       inserted_at: storage_asset.inserted_at,
       updated_at: storage_asset.updated_at,
-      url: generate_url(storage_asset)
+      url: generate_url(storage_asset),
+      preview_url: generate_preview_url(storage_asset)
     }
   end
 
-  defp generate_url(storage_asset) do
-    WraftDocWeb.StorageAssetUploader.url({storage_asset.filename, storage_asset}, signed: true)
-  end
+  defp generate_url(%StorageAsset{filename: filename} = storage_asset),
+    do: WraftDocWeb.StorageAssetUploader.url({filename, storage_asset}, :original, signed: true)
+
+  defp generate_preview_url(%StorageAsset{filename: filename} = storage_asset),
+    do: WraftDocWeb.StorageAssetUploader.url({filename, storage_asset}, :preview, signed: true)
 end
