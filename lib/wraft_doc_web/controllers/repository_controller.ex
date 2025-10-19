@@ -510,4 +510,36 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
       send_resp(conn, :no_content, "")
     end
   end
+
+  swagger_path :export do
+    post("/repositories/export")
+    summary("Export repository as ZIP")
+
+    description(
+      "Exports all files in the repository as a ZIP archive and returns it as a binary download"
+    )
+
+    operation_id("exportRepository")
+    produces("application/zip")
+    tag("Repositories")
+
+    parameters do
+      file_name(:body, :string, "Optional file name for the ZIP archive")
+    end
+
+    response(200, "ZIP file returned successfully", Schema.ref(:FileDownloadResponse))
+    response(403, "Unauthorized", Schema.ref(:Error))
+    response(404, "Repository not found", Schema.ref(:Error))
+  end
+
+  def export(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %{name: repository_name} = _repository <-
+           Storage.get_latest_repository(current_user.current_org_id),
+         {:ok, zip_binary, file_name} <-
+           Storage.export_repository(current_user, Map.get(params, "file_name", repository_name)) do
+      send_download(conn, {:binary, zip_binary}, filename: "#{file_name}.zip")
+    end
+  end
 end

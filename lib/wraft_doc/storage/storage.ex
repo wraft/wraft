@@ -14,6 +14,7 @@ defmodule WraftDoc.Storage do
   import Ecto.Query, warn: false
   require Logger
 
+  alias WraftDoc.Client.Minio
   alias WraftDoc.Repo
   alias WraftDoc.Storage.Repository
   alias WraftDoc.Storage.StorageAsset
@@ -59,6 +60,71 @@ defmodule WraftDoc.Storage do
   @doc "Deletes a repository"
   @spec delete_repository(Repository.t()) :: {:ok, Repository.t()} | {:error, Ecto.Changeset.t()}
   def delete_repository(%Repository{} = repository), do: Repo.delete(repository)
+
+  @doc """
+  Exports a repository.
+  """
+  @spec export_repository(User.t(), String.t()) ::
+          {:ok, binary(), String.t()} | {:error, String.t()}
+  def export_repository(
+        %{current_org_id: current_org_id},
+        file_name
+      ) do
+    prefix = "organisations/#{current_org_id}/repository/"
+    temp_dir = Briefly.create!(directory: true)
+    File.mkdir_p(temp_dir)
+    files = Minio.list_files(prefix)
+
+    if Enum.empty?(files) do
+      {:error, "No files in repository"}
+    else
+      tmp_files =
+        files
+        |> Enum.reduce([], fn key, acc ->
+          try do
+            binary = Minio.get_object(key)
+            key = String.replace(key, prefix, "")
+            tmp_path = Path.join(temp_dir, key)
+
+            tmp_path
+            |> Path.dirname()
+            |> File.mkdir_p!()
+
+            File.write!(tmp_path, binary)
+
+            [key | acc]
+          rescue
+            e ->
+              Logger.error("""
+              [Repository Export] Failed to process file: #{key}
+              Reason: #{inspect(e)}
+              """)
+
+              acc
+          end
+        end)
+        |> Enum.reverse()
+
+      zip_path = Path.join(temp_dir, "#{file_name}.zip")
+
+      {:ok, _zip_file} =
+        :zip.create(
+          String.to_charlist(zip_path),
+          Enum.map(tmp_files, &String.to_charlist/1),
+          cwd: String.to_charlist(temp_dir)
+        )
+
+      zip_path
+      |> File.read()
+      |> case do
+        {:ok, zip_binary} ->
+          {:ok, zip_binary, file_name}
+
+        error ->
+          error
+      end
+    end
+  end
 
   @doc "Creates a changeset for a repository"
   @spec change_repository(Repository.t(), map()) :: Ecto.Changeset.t()

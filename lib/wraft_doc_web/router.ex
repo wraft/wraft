@@ -662,6 +662,7 @@ defmodule WraftDocWeb.Router do
       resources("/repositories", RepositoryController, except: [:new, :edit])
       get("/repository/check", RepositoryController, :check_setup)
       put("/repository/setup", RepositoryController, :setup_repository)
+      post("/repository/export", RepositoryController, :export)
 
       scope "/storage" do
         # Storage assets with file upload
