@@ -112,7 +112,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
     }
   end
 
-  def render("me.json", %{user: me}) do
+  def render("me.json", %{user: me, features: features}) do
     %{
       id: me.id,
       name: me.name,
@@ -124,7 +124,8 @@ defmodule WraftDocWeb.Api.V1.UserView do
       profile_pic: generate_url(me.profile),
       roles: render_many(me.roles, RegistrationView, "role.json", as: :role),
       role_names: me.role_names,
-      permissions: me.permissions
+      permissions: me.permissions,
+      features: features
     }
   end
 
