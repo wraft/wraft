@@ -15,6 +15,7 @@ defmodule WraftDoc.Storage do
   require Logger
 
   alias WraftDoc.Client.Minio
+  alias WraftDoc.CloudImport.Providers.GoogleDrive
   alias WraftDoc.Repo
   alias WraftDoc.Storage.Repository
   alias WraftDoc.Storage.StorageAsset
@@ -652,5 +653,51 @@ defmodule WraftDoc.Storage do
       |> StorageItem.changeset(%{materialized_path: new_materialized_path})
       |> Repo.update()
     end)
+  end
+
+  @doc "Downloads a file from Google Drive and uploads it to the repository"
+  @spec download_and_upload_to_repo(StorageItem.t()) ::
+          {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t() | String.t()}
+  def download_and_upload_to_repo(
+        %{
+          id: storage_item_id,
+          external_id: external_id,
+          organisation_id: organisation_id,
+          creator_id: user_id
+        } =
+          storage_item
+      ) do
+    case GoogleDrive.download_file(storage_item) do
+      {:ok, %{content: content, storage_item: storage_item}} ->
+        temp_path = Briefly.create!()
+        File.write(temp_path, content)
+
+        upload = %Plug.Upload{
+          filename: storage_item.display_name,
+          path: temp_path,
+          content_type: storage_item.mime_type
+        }
+
+        with {:ok, file_metadata} <- extract_file_metadata(upload),
+             {:ok, storage_asset_params} <-
+               StorageAssets.build_storage_asset_params(
+                 file_metadata,
+                 upload,
+                 %{id: user_id, current_org_id: organisation_id}
+               ),
+             {:ok, _} <-
+               StorageAssets.create_storage_asset_multi(
+                 Map.put(storage_asset_params, :storage_item_id, storage_item_id)
+               ) do
+          StorageItems.update_upload_status(storage_item, "completed")
+        end
+
+      {:error, reason} = _error ->
+        Logger.error("Failed to download file #{external_id}: #{inspect(reason)}")
+
+        StorageItems.update_upload_status(storage_item, "failed")
+
+        {:error, %{file_id: external_id, error: reason}}
+    end
   end
 end
