@@ -527,13 +527,15 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
       end
 
     final_path = Path.join(base_path, relative_path)
+    extension = file["fileExtension"] || get_google_file_extension(file["mimeType"])
+    display_name = Path.rootname(file["name"]) <> "." <> String.trim_leading(extension, ".")
 
     Map.merge(
       %{
         "sync_source" => "google_drive",
         "external_id" => file["id"],
         "name" => file["name"],
-        "display_name" => file["name"],
+        "display_name" => display_name,
         "depth_level" =>
           if parent_folder_id do
             depth_level + 1
@@ -544,8 +546,8 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
         "creator_id" => user_id,
         "parent_id" => parent_folder_id,
         "repository_id" => repository_id,
-        "path" => "/#{file["name"]}",
-        "materialized_path" => final_path <> "/#{file["name"]}",
+        "path" => "/#{display_name}",
+        "materialized_path" => Path.join(final_path, display_name),
         "mime_type" => file["mimeType"],
         "item_type" => "external file",
         "metadata" => %{description: file["description"] || ""},
@@ -556,7 +558,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
           "created_time" => file["createdTime"],
           "parents" => file["parents"]
         },
-        "file_extension" => file["fileExtension"] || get_google_file_extension(file["mimeType"])
+        "file_extension" => extension
       },
       optional_param
     )

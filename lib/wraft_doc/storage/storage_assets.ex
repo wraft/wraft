@@ -97,8 +97,11 @@ defmodule WraftDoc.Storage.StorageAssets do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{complete_upload: storage_asset}} -> {:ok, storage_asset}
-      {:error, _, reason, _} -> {:error, reason}
+      {:ok, %{complete_upload: storage_asset}} ->
+        {:ok, storage_asset}
+
+      {:error, _, reason, _} ->
+        {:error, reason}
     end
   end
 

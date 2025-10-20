@@ -56,7 +56,7 @@ defmodule WraftDoc.Workers.CloudImportWorker do
         File.write(temp_path, content)
 
         upload = %Plug.Upload{
-          filename: storage_item.name,
+          filename: storage_item.display_name,
           path: temp_path,
           content_type: storage_item.mime_type
         }

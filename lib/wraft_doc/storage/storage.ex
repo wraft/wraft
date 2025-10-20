@@ -181,7 +181,7 @@ defmodule WraftDoc.Storage do
           find_next_available_number(similar_names, name)
 
         updated_name = "#{Path.rootname(name)}_#{next_number}"
-        updated_file_name = "#{updated_name}#{file_extension}"
+        updated_file_name = updated_name <> "." <> String.trim_leading(file_extension, ".")
 
         Map.merge(attrs, %{
           "name" => updated_name,
@@ -521,14 +521,7 @@ defmodule WraftDoc.Storage do
   def execute_upload_transaction(enriched_params) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:storage_item, fn _repo, _ ->
-      external_id = enriched_params.storage_item["external_id"]
-
-      with false <- is_nil(external_id),
-           %StorageItem{} = storage_item <- Repo.get_by(StorageItem, external_id: external_id) do
-        {:ok, storage_item}
-      else
-        _ -> StorageItems.create_storage_item(enriched_params.storage_item)
-      end
+      StorageItems.create_storage_item(enriched_params.storage_item)
     end)
     |> Ecto.Multi.run(:storage_asset, fn _repo, %{storage_item: storage_item} ->
       enriched_params.storage_asset
@@ -537,10 +530,10 @@ defmodule WraftDoc.Storage do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{storage_item: storage_item, complete_upload: storage_asset}} ->
+      {:ok, %{storage_item: storage_item, storage_asset: storage_asset}} ->
         schedule_background_processing(storage_asset, storage_item)
-
-        {:ok, %{storage_asset: storage_asset, storage_item: storage_item}}
+        # StorageItems.update_upload_status(storage_item, "completed")
+        {:ok, storage_item}
 
       {:error, _stage, changeset, _changes} ->
         {:error, changeset}

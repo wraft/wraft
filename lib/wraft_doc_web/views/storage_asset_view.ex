@@ -30,10 +30,9 @@ defmodule WraftDocWeb.Api.V1.StorageAssetView do
     %{data: render_one(storage_asset, __MODULE__, "storage_asset.json")}
   end
 
-  def render("show_upload.json", %{storage_asset: storage_asset, storage_item: storage_item}) do
+  def render("show_upload.json", %{storage_item: storage_item}) do
     %{
       data: %{
-        storage_asset: render_one(storage_asset, __MODULE__, "storage_asset.json"),
         storage_item: render_one(storage_item, StorageItemView, "storage_item.json")
       }
     }
