@@ -10,6 +10,7 @@ defmodule WraftDoc.Storage.StorageAssets do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Multi
   alias WraftDoc.Repo
   alias WraftDoc.Storage.StorageAsset
   alias WraftDoc.Workers.StorageAssetDeletionWorker
@@ -72,6 +73,33 @@ defmodule WraftDoc.Storage.StorageAssets do
     %StorageAsset{}
     |> StorageAsset.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Creates a storage asset with the given attributes in a multi.
+  """
+  @spec create_storage_asset_multi(storage_asset_attrs()) :: storage_asset_result()
+  def create_storage_asset_multi(params) do
+    Multi.new()
+    |> Multi.insert(:storage_asset, fn _ ->
+      StorageAsset.changeset(%StorageAsset{}, params)
+    end)
+    |> Multi.update(:upload_file, fn %{storage_asset: storage_asset} ->
+      storage_asset
+      |> Repo.preload(:storage_item)
+      |> StorageAsset.file_changeset(params)
+    end)
+    |> Multi.update(:complete_upload, fn %{upload_file: storage_asset} ->
+      StorageAsset.changeset(storage_asset, %{
+        processing_status: "completed",
+        upload_completed_at: DateTime.utc_now()
+      })
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{complete_upload: storage_asset}} -> {:ok, storage_asset}
+      {:error, _, reason, _} -> {:error, reason}
+    end
   end
 
   @doc """

@@ -69,7 +69,7 @@ defmodule WraftDoc.Workers.CloudImportWorker do
                  %{id: user_id, current_org_id: organisation_id}
                ),
              {:ok, _} <-
-               StorageAssets.create_storage_asset(
+               StorageAssets.create_storage_asset_multi(
                  Map.put(storage_asset_params, :storage_item_id, storage_item_id)
                ) do
           StorageItems.update_upload_status(storage_item, "completed")
