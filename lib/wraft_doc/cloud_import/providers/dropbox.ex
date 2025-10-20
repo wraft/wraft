@@ -217,7 +217,6 @@ defmodule WraftDoc.CloudImport.Providers.Dropbox do
   - `{:ok, map()}`: Success with file content or path and metadata
   - `{:error, map()}`: Error with status and body information
   """
-  @impl true
   def download_file(access_token, file_path, _org, output_path) do
     headers =
       auth_headers(access_token) ++ [{"Dropbox-API-Arg", Jason.encode!(%{path: file_path})}]
@@ -461,7 +460,14 @@ defmodule WraftDoc.CloudImport.Providers.Dropbox do
     }
   end
 
-  defp build_storage_attrs(file, repository_id, parant_id, org_id, _base_path, _optional) do
+  defp build_storage_attrs(
+         file,
+         %{id: user_id, current_org_id: organisation_id} = _current_user,
+         repository_id,
+         parant_id,
+         _base_path,
+         _optional
+       ) do
     file_name = Map.get(file, "name", "")
 
     %{
@@ -478,7 +484,8 @@ defmodule WraftDoc.CloudImport.Providers.Dropbox do
       modified_time: get_modified_time(file),
       external_metadata: build_external_metadata(file),
       file_extension: get_file_extension(file_name),
-      org_id: org_id
+      organisation_id: organisation_id,
+      creator_id: user_id
     }
   end
 

@@ -219,23 +219,26 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     * `{:ok, %{path: String.t(), metadata: google_file()}}` - when file is saved
     * `{:error, String.t() | %{status: integer(), body: any()}}`
   """
-  @spec download_file(Ecto.UUID.t(), String.t(), Ecto.UUID.t(), String.t()) ::
+  @spec download_file(StorageItem.t()) ::
           {:ok, map()} | {:error, map()}
-  def download_file(user_id, file_id, organisation_id, folder_id) do
+  def download_file(
+        %{
+          external_id: file_id,
+          creator_id: user_id,
+          organisation_id: organisation_id,
+          parent_id: folder_id
+        } = storage_item
+      ) do
     with {:ok, access_token} <-
            Integrations.get_latest_token(
              %User{id: user_id, current_org_id: organisation_id},
              "google_drive"
            ),
-         {:ok, metadata} <- get_file_metadata(access_token, file_id),
          %StorageItem{} = _storage_item <-
            StorageItems.get_folder(folder_id, organisation_id),
          {:ok, %{status: 200, body: body}} <-
-           get("#{@base_url}/files/#{file_id}",
-             query: [alt: "media"],
-             headers: auth_headers(access_token)
-           ) do
-      write_file_result(body, nil, metadata)
+           do_download_file(storage_item, access_token, file_id) do
+      write_file_result(body, nil, storage_item)
     else
       {:ok, %{status: 401, body: body}} ->
         {:error, %{status: 403, body: body}}
@@ -246,6 +249,40 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
       error ->
         error
     end
+  end
+
+  @export_mime_types %{
+    "application/vnd.google-apps.document" =>
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.google-apps.spreadsheet" =>
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.google-apps.presentation" =>
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.google-apps.drawing" => "application/pdf",
+    "application/vnd.google-apps.script" => "application/vnd.google-apps.script+json",
+    "application/vnd.google-apps.jam" => "application/pdf",
+    "application/vnd.google-apps.map" => "application/vnd.google-earth.kml+xml"
+  }
+
+  @google_mime_types Map.keys(@export_mime_types)
+
+  defp do_download_file(%{mime_type: mime_type}, access_token, file_id)
+       when mime_type in @google_mime_types do
+    export_mime_type = @export_mime_types[mime_type]
+
+    url = "#{@base_url}/files/#{file_id}/export"
+
+    get(url,
+      query: [mimeType: export_mime_type],
+      headers: auth_headers(access_token)
+    )
+  end
+
+  defp do_download_file(_storage_item, access_token, file_id) do
+    get("#{@base_url}/files/#{file_id}",
+      query: [alt: "media"],
+      headers: auth_headers(access_token)
+    )
   end
 
   @doc """
@@ -442,7 +479,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
   def sync_import_files_to_db(
         access_token,
         %{"file_ids" => file_ids},
-        %{current_org_id: organisation_id},
+        %{current_org_id: organisation_id} = current_user,
         %StorageItem{materialized_path: path} = folder_item
       ) do
     with %{id: repository_id} = _repository <- Storage.get_latest_repository(organisation_id),
@@ -454,9 +491,16 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
       saved_files =
         files
         |> Enum.map(fn file ->
-          case save_files_to_db(file, repository_id, folder_item, organisation_id, path, %{
-                 "upload_status" => "processing"
-               }) do
+          case save_files_to_db(
+                 file,
+                 current_user,
+                 repository_id,
+                 folder_item,
+                 path,
+                 %{
+                   "upload_status" => "processing"
+                 }
+               ) do
             {:ok, saved} -> saved
             {:error, _reason} -> nil
           end
@@ -469,9 +513,9 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
 
   defp build_storage_attrs(
          file,
+         %{id: user_id, current_org_id: organisation_id} = _current_user,
          repository_id,
          %{id: parent_folder_id, depth_level: depth_level} = _parent_folder,
-         organisation_id,
          base_path,
          optional_param
        ) do
@@ -497,6 +541,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
             1
           end,
         "organisation_id" => organisation_id,
+        "creator_id" => user_id,
         "parent_id" => parent_folder_id,
         "repository_id" => repository_id,
         "path" => "/#{file["name"]}",

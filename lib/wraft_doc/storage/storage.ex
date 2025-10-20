@@ -460,41 +460,36 @@ defmodule WraftDoc.Storage do
   end
 
   @doc "Prepares upload parameters from form data"
-  @spec prepare_upload_params(map(), User.t(), String.t()) :: {:ok, map()} | {:error, String.t()}
+  @spec prepare_upload_params(map(), User.t()) :: {:ok, map()} | {:error, String.t()}
   def prepare_upload_params(
         %{"file" => %Plug.Upload{} = upload} = params,
-        current_user,
-        organisation_id
+        current_user
       ) do
     with {:ok, file_metadata} <- extract_file_metadata(upload),
          {:ok, storage_item_params} <-
            StorageItems.build_storage_item_params(
              params,
              file_metadata,
-             current_user,
-             organisation_id
+             current_user
            ),
          {:ok, storage_asset_params} <-
            StorageAssets.build_storage_asset_params(
-             params,
              file_metadata,
              upload,
-             current_user,
-             organisation_id
+             current_user
            ) do
       enriched_params = %{
         storage_item: storage_item_params,
         storage_asset: storage_asset_params,
         file_upload: upload,
-        current_user: current_user,
-        organisation_id: organisation_id
+        current_user: current_user
       }
 
       {:ok, enriched_params}
     end
   end
 
-  def prepare_upload_params(_params, _current_user, _organisation_id),
+  def prepare_upload_params(_params, _current_user),
     do: {:error, "File upload is required"}
 
   @doc "Extracts metadata from uploaded file"

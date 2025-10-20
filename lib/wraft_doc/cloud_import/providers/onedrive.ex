@@ -88,7 +88,6 @@ defmodule WraftDoc.CloudImport.Providers.Onedrive do
     search_onedrive(access_token, query, content_type, limit)
   end
 
-  @impl true
   def download_file(access_token, file_id, _org, output_path) do
     "#{@base_url}/me/drive/items/#{file_id}/content"
     |> get(headers: auth_headers(access_token))
@@ -225,12 +224,19 @@ defmodule WraftDoc.CloudImport.Providers.Onedrive do
     |> handle_response()
   end
 
-  defp build_storage_attrs(file, repository_id, parant_id, org_id, _base_path, _optional) do
+  defp build_storage_attrs(
+         file,
+         %{id: user_id, current_org_id: organisation_id} = _current_user,
+         repository_id,
+         parent_id,
+         _base_path,
+         _optional
+       ) do
     %{
       sync_source: "onedrive",
       external_id: file["id"],
       name: file["name"],
-      parent_id: parant_id,
+      parent_id: parent_id,
       repository_id: repository_id,
       path: file["pathDisplay"] || "",
       materalized_path: file["pathDisplay"] || "",
@@ -244,7 +250,8 @@ defmodule WraftDoc.CloudImport.Providers.Onedrive do
         parents: file["parents"]
       },
       file_extension: file["fileExtension"],
-      org_id: org_id
+      organisation_id: organisation_id,
+      creator_id: user_id
     }
   end
 

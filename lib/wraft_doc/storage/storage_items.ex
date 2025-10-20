@@ -164,12 +164,6 @@ defmodule WraftDoc.Storage.StorageItems do
   def update_upload_status(%StorageItem{} = storage_item, status),
     do: update_storage_item(storage_item, %{"upload_status" => status})
 
-  def update_upload_status(external_id, status) do
-    StorageItem
-    |> where([s], s.external_id == ^external_id)
-    |> Repo.update_all(set: [upload_status: status])
-  end
-
   @doc """
   Creates a storage item with the given attributes.
 
@@ -200,8 +194,8 @@ defmodule WraftDoc.Storage.StorageItems do
     |> Repo.insert()
     |> case do
       {:ok, storage_item} ->
-        Task.start_link(fn -> update_upload_status(storage_item, "completed") end)
-        {:ok, Repo.preload(storage_item, storage_assets: :storage_item)}
+        {:ok,
+         Repo.preload(storage_item, [:organisation, :repository, storage_assets: :storage_item])}
 
       {:error, changeset} ->
         if duplicate_external_id_error?(changeset) do
@@ -883,28 +877,8 @@ defmodule WraftDoc.Storage.StorageItems do
   """
   @spec create_storage_asset_with_item(map(), map()) :: {:ok, map()} | {:error, any()}
   def create_storage_asset_with_item(current_user, params) do
-    organisation_id = current_user.current_org_id
-
     with {:ok, enriched_params} <-
-           Helper.prepare_upload_params(params, current_user, organisation_id),
-         {:ok, result} <- Helper.execute_upload_transaction(enriched_params) do
-      {:ok, result}
-    else
-      {:error, error} -> {:error, error}
-    end
-  end
-
-  @doc """
-  Creates a storage asset with file upload for public access (no user required).
-
-  ## Examples
-
-      iex> create_storage_asset_with_item_public(%{"file" => upload}, "org-123")
-      {:ok, %{storage_item: %StorageItem{}, storage_asset: %StorageAsset{}}}
-  """
-  @spec create_storage_asset_with_item_public(map(), String.t()) :: {:ok, map()} | {:error, any()}
-  def create_storage_asset_with_item_public(params, organisation_id) do
-    with {:ok, enriched_params} <- Helper.prepare_upload_params(params, nil, organisation_id),
+           Helper.prepare_upload_params(params, current_user),
          {:ok, result} <- Helper.execute_upload_transaction(enriched_params) do
       {:ok, result}
     else
@@ -920,8 +894,12 @@ defmodule WraftDoc.Storage.StorageItems do
       iex> build_storage_item_params(params, file_metadata, user, "org-123")
       {:ok, %{name: "document", mime_type: "application/pdf", ...}}
   """
-  @spec build_storage_item_params(map(), map(), map() | nil, String.t()) :: {:ok, map()}
-  def build_storage_item_params(params, file_metadata, current_user, organisation_id) do
+  @spec build_storage_item_params(map(), map(), map() | nil) :: {:ok, map()}
+  def build_storage_item_params(
+        params,
+        file_metadata,
+        %{id: user_id, current_org_id: organisation_id} = _current_user
+      ) do
     parent_id = Map.get(params, "parent_id")
     repository_id = Map.get(params, "repository_id")
 
@@ -957,7 +935,7 @@ defmodule WraftDoc.Storage.StorageItems do
       },
       "parent_id" => parent_id,
       "repository_id" => repository_id,
-      "creator_id" => current_user && current_user.id,
+      "creator_id" => user_id,
       "organisation_id" => organisation_id,
       "upload_status" => "completed"
     }

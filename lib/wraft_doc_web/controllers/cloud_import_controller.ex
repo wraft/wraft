@@ -513,7 +513,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
 
     with {:ok, token} <-
            Integrations.get_latest_token(current_user, "google_drive"),
-         {:ok, result} <- Google.sync_files_to_db(token, params, current_user.current_org_id) do
+         {:ok, result} <- Google.sync_files_to_db(token, params, current_user) do
       json(conn, %{"status" => "success", "sync_result" => result})
     end
   end
@@ -538,7 +538,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   This endpoint accepts a list of file IDs and schedules downloads.
   params requied ,`file_ids` should be a list of file IDs to download
   """
-  def import_gdrive_file(conn, %{"file_ids" => file_ids, "folder_id" => folder_id} = params) do
+  def import_gdrive_file(conn, %{"folder_id" => folder_id} = params) do
     current_user = conn.assigns[:current_user]
 
     with {:ok, token} <- Integrations.get_latest_token(current_user, "google_drive"),
@@ -548,7 +548,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
            Google.sync_import_files_to_db(token, params, current_user, folder_item) do
       Google.schedule_download_to_minio(
         current_user,
-        file_ids,
+        storage_items,
         folder_item
       )
 
@@ -825,7 +825,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, token} <- Integrations.get_latest_token(current_user, :dropbox),
-         {:ok, result} <- Dropbox.sync_files_to_db(token, params) do
+         {:ok, result} <- Dropbox.sync_files_to_db(token, params, current_user) do
       json(conn, %{"status" => "success", "sync_result" => result})
     end
   end
@@ -1118,7 +1118,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, token} <- Integrations.get_latest_token(current_user, :onedrive),
-         {:ok, result} <- Onedrive.sync_files_to_db(token, params) do
+         {:ok, result} <- Onedrive.sync_files_to_db(token, params, current_user) do
       json(conn, %{"status" => "success", "sync_result" => result})
     end
   end

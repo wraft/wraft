@@ -204,20 +204,22 @@ defmodule WraftDoc.Storage.StorageAssets do
 
   ## Examples
 
-      iex> build_storage_asset_params(%{}, file_metadata, "test.pdf", user, 123)
+      iex> build_storage_asset_params(%{}, file_metadata, "test.pdf", user)
       {:ok, %{filename: "test.pdf", storage_key: "key123", ...}}
 
   """
   @spec build_storage_asset_params(
-          map(),
           file_metadata(),
           String.t(),
-          user(),
-          organisation_id()
+          User.t()
         ) :: {:ok, storage_asset_attrs()}
-  def build_storage_asset_params(_params, file_metadata, upload, current_user, organisation_id) do
+  def build_storage_asset_params(
+        file_metadata,
+        file_upload,
+        %{current_org_id: organisation_id} = current_user
+      ) do
     storage_asset_params = %{
-      filename: upload,
+      filename: file_upload,
       storage_key: file_metadata.storage_key,
       # TODO: Make configurable - could be "s3", "minio" based on config
       storage_backend: "local",

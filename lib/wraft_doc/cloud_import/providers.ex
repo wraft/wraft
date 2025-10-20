@@ -15,7 +15,6 @@ defmodule WraftDoc.CloudImport.Providers do
   @callback get_file_metadata(access_token, file_id) :: result
   @callback list_all_pdfs(access_token, params) :: result
   @callback search_files(access_token, params) :: result
-  @callback download_file(Ecto.UUID.t(), file_id, Ecto.UUID.t(), String.t()) :: result
   @callback list_all_folders(access_token, params) :: result
   @callback search_folders(access_token, params) :: result
   @callback list_files_in_folder(access_token, folder_id, params) :: result
@@ -48,8 +47,9 @@ defmodule WraftDoc.CloudImport.Providers do
         recv_timeout: 15_000
       )
 
-      def sync_files_to_db(access_token, params, organization_id \\ nil) do
-        with %{id: repository_id} = repository <- Storage.get_latest_repository(organization_id),
+      def sync_files_to_db(access_token, params, current_user) do
+        with %{id: repository_id} = repository <-
+               Storage.get_latest_repository(current_user.current_org_id),
              {:ok, parent_folder} <- setup_sync_folder(repository),
              {:ok, %{"files" => files}} <- list_all_files(access_token, params) do
           files
@@ -57,9 +57,9 @@ defmodule WraftDoc.CloudImport.Providers do
             fn file ->
               save_files_to_db(
                 file,
+                current_user,
                 repository_id,
                 parent_folder,
-                organization_id,
                 "google_drive_files"
               )
             end,
@@ -78,21 +78,15 @@ defmodule WraftDoc.CloudImport.Providers do
 
       def schedule_download_to_minio(
             %{id: user_id, current_org_id: org_id},
-            file_ids,
+            storage_items,
             %StorageItem{id: folder_id, materialized_path: materialized_path}
           ) do
         provider_name = __MODULE__ |> Module.split() |> List.last() |> String.downcase()
         action = "download_#{provider_name}_to_minio"
 
         %{
-          "action" => action,
-          "file_ids" => file_ids,
-          "org_id" => org_id,
-          "folder_id" => folder_id,
-          "user_id" => user_id,
-          "store_in_minio" => true,
-          "minio_path" => materialized_path,
-          "notification_enabled" => true
+          "storage_item_ids" => Enum.map(storage_items, & &1.id),
+          "action" => action
         }
         |> CloudImportWorker.new()
         |> Oban.insert()
@@ -124,13 +118,12 @@ defmodule WraftDoc.CloudImport.Providers do
         }
       end
 
-      defp parse_size(nil), do: 0
       defp parse_size(size) when is_binary(size), do: String.to_integer(size)
       defp parse_size(size) when is_integer(size), do: size
       defp parse_size(_), do: 0
 
-      defp write_file_result(content, nil, metadata),
-        do: {:ok, %{content: content, metadata: metadata}}
+      defp write_file_result(content, nil, storage_item),
+        do: {:ok, %{content: content, storage_item: storage_item}}
 
       defp write_file_result(content, output_path, metadata) do
         output_path
@@ -143,14 +136,20 @@ defmodule WraftDoc.CloudImport.Providers do
 
       defp save_files_to_db(
              file,
+             current_user,
              repository_id,
              folder_item,
-             org_id,
              base_path,
              optional_param \\ %{}
            ) do
         file
-        |> build_storage_attrs(repository_id, folder_item, org_id, base_path, optional_param)
+        |> build_storage_attrs(
+          current_user,
+          repository_id,
+          folder_item,
+          base_path,
+          optional_param
+        )
         |> StorageItems.create_storage_item()
       end
 
