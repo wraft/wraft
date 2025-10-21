@@ -32,7 +32,6 @@ defmodule WraftDoc.Application do
       # )
       WraftDoc.Schedulers.RefreshDashboardStats,
       WraftDoc.Utils.CloakVault,
-      {WraftDoc.CloudImport.TokenStore, []},
       {Registry, keys: :unique, name: WraftDoc.TokenRegistry},
       {DynamicSupervisor, strategy: :one_for_one, name: WraftDoc.TokenSupervisor}
     ]

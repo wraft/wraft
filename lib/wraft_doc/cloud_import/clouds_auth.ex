@@ -13,7 +13,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   alias Assent.Strategy.Google
   alias Assent.Strategy.OAuth2
   alias WraftDoc.CloudImport.StateStore
-  alias WraftDoc.CloudImport.Token.Manager, as: TokenManager
   alias WraftDoc.Integrations
   alias WraftDoc.Integrations.Integration
 
@@ -107,16 +106,10 @@ defmodule WraftDoc.CloudImport.CloudAuth do
          user: google_user,
          token:
            %{
-             "refresh_token" => refresh_token,
              "expires_in" => access_token_expires_in,
              "refresh_token_expires_in" => refresh_token_expires_in
            } = token
        }} ->
-        TokenManager.start(
-          organisation_id,
-          refresh_token
-        )
-
         now = DateTime.utc_now()
 
         access_token_expires_at = DateTime.add(now, access_token_expires_in, :second)

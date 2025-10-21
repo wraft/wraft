@@ -77,7 +77,8 @@ config :wraft_doc, Oban,
     mailer: 20,
     scheduled: 10,
     webhooks: 15,
-    cloud_provider: 15
+    cloud_provider: 15,
+    integrations: 15
   ],
   plugins: [
     Oban.Plugins.Pruner,
@@ -87,6 +88,7 @@ config :wraft_doc, Oban,
        #  {"0 0 * * MON", WraftDoc.Workers.ScheduledWorker,
        #   queue: :scheduled, tags: ["unused_assets"]},
        {"0 0 * * *", WraftDoc.Workers.ReminderWorker, queue: :scheduled, tags: ["reminders"]},
+       {"*/5 * * * *", WraftDoc.Workers.TokenRefreshWorker},
        {"@weekly", WraftDoc.Workers.ScheduledWorker,
         queue: :scheduled,
         tags: ["hard_delete_organisation_records"],

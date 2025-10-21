@@ -5,6 +5,7 @@ defmodule WraftDoc.Integrations do
 
   import Ecto.Query, warn: false
   alias WraftDoc.Account.User
+  alias WraftDoc.CloudImport.CloudAuth
   alias WraftDoc.Integrations.Integration
   alias WraftDoc.Repo
 
@@ -180,6 +181,85 @@ defmodule WraftDoc.Integrations do
     Enum.filter(Integration.available_providers(), fn provider ->
       Integration.provider_category(provider) == category
     end)
+  end
+
+  @doc """
+  Refreshes expiring access tokens for active integrations.
+
+  This function scans the `integrations` table for records where:
+
+    * The `access_token_expires_at` (stored inside `metadata`) is less than
+      **5 minutes from now** — meaning the token will expire soon.
+    * The `refresh_token_expires_at` (also in `metadata`) is **still valid**
+      (i.e., in the future).
+
+  For each integration that matches, the corresponding access token is refreshed
+  using `refresh_token_for_integration/1`. The refreshed tokens and expiry times
+  are then updated back into the database.
+
+  This ensures all integrations (e.g., Google Drive, OneDrive, Dropbox) maintain
+  valid access tokens without user re-authentication, provided their refresh tokens
+  are still active.
+  """
+  @spec refresh_expiring_tokens() :: :ok
+  def refresh_expiring_tokens do
+    now = current_iso_time()
+    five_minutes_from_now = current_iso_time(300)
+
+    query =
+      from(i in Integration,
+        where:
+          fragment("?->>'access_token_expires_at' < ?", i.metadata, ^five_minutes_from_now) and
+            fragment("?->>'refresh_token_expires_at' > ?", i.metadata, ^now)
+      )
+
+    Repo.transaction(fn ->
+      query
+      |> Repo.stream()
+      |> Stream.each(&refresh_token_for_integration/1)
+      |> Stream.run()
+    end)
+
+    :ok
+  end
+
+  defp current_iso_time(offset_seconds \\ 0) do
+    DateTime.utc_now()
+    |> DateTime.add(offset_seconds, :second)
+    |> DateTime.to_iso8601()
+  end
+
+  defp refresh_token_for_integration(
+         %Integration{
+           provider: "google_drive",
+           organisation_id: organisation_id,
+           metadata: metadata
+         } =
+           integration
+       ) do
+    with {:ok,
+          %{
+            "access_token" => access_token,
+            "expires_in" => expires_in
+          }} <-
+           CloudAuth.refresh_token(
+             :google_drive,
+             organisation_id,
+             metadata["refresh_token"]
+           ) do
+      expires_at =
+        DateTime.utc_now()
+        |> DateTime.add(expires_in, :second)
+        |> DateTime.to_iso8601()
+
+      update_metadata(
+        integration,
+        Map.merge(metadata, %{
+          "access_token_expires_at" => expires_at,
+          "access_token" => access_token
+        })
+      )
+    end
   end
 
   defp maybe_add_category(%{"provider" => provider} = attrs) do
