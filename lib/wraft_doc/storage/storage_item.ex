@@ -35,10 +35,12 @@ defmodule WraftDoc.Storage.StorageItem do
     field(:parent_id, :binary_id)
     field(:upload_status, :string)
 
-    has_many(:storage_assets, WraftDoc.Storage.StorageAsset)
     belongs_to(:repository, WraftDoc.Storage.Repository)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+
+    has_one(:storage_asset, WraftDoc.Storage.StorageAsset)
+
     timestamps()
   end
 

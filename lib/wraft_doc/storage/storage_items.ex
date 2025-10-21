@@ -102,7 +102,7 @@ defmodule WraftDoc.Storage.StorageItems do
   def list_storage_items(parent_id \\ nil, organisation_id \\ nil, opts \\ [])
 
   def list_storage_items(nil, nil, _opts),
-    do: StorageItem |> Repo.all() |> Repo.preload(storage_assets: :storage_item)
+    do: StorageItem |> Repo.all() |> Repo.preload(storage_asset: :storage_item)
 
   def list_storage_items(parent_id, organisation_id, opts) when is_binary(organisation_id) do
     limit = Keyword.get(opts, :limit, 100)
@@ -131,7 +131,7 @@ defmodule WraftDoc.Storage.StorageItems do
         )
       end
 
-    query |> Repo.all() |> Repo.preload(storage_assets: :storage_item)
+    query |> Repo.all() |> Repo.preload(storage_asset: :storage_item)
   end
 
   def list_storage_items(parent_id, organisation_id, opts) do
@@ -195,7 +195,7 @@ defmodule WraftDoc.Storage.StorageItems do
     |> case do
       {:ok, storage_item} ->
         {:ok,
-         Repo.preload(storage_item, [:organisation, :repository, storage_assets: :storage_item])}
+         Repo.preload(storage_item, [:organisation, :repository, storage_asset: :storage_item])}
 
       {:error, changeset} ->
         if duplicate_external_id_error?(changeset) do
@@ -223,7 +223,7 @@ defmodule WraftDoc.Storage.StorageItems do
        when not is_nil(ext_id) and not is_nil(sync) do
     case Repo.get_by(StorageItem, external_id: ext_id, sync_source: sync) do
       nil -> {:error, :not_found}
-      existing -> {:ok, Repo.preload(existing, storage_assets: :storage_item)}
+      existing -> {:ok, Repo.preload(existing, storage_asset: :storage_item)}
     end
   end
 
@@ -248,7 +248,7 @@ defmodule WraftDoc.Storage.StorageItems do
     |> Repo.update()
     |> case do
       {:ok, updated_storage_item} ->
-        {:ok, Repo.preload(updated_storage_item, storage_assets: :storage_item)}
+        {:ok, Repo.preload(updated_storage_item, storage_asset: :storage_item)}
 
       {:error, changeset} ->
         {:error, changeset}
@@ -558,7 +558,7 @@ defmodule WraftDoc.Storage.StorageItems do
         offset: ^offset
       )
 
-    query |> Repo.all() |> Repo.preload(storage_assets: :storage_item)
+    query |> Repo.all() |> Repo.preload(storage_asset: :storage_item)
   end
 
   @doc """
@@ -589,7 +589,7 @@ defmodule WraftDoc.Storage.StorageItems do
         offset: ^offset
       )
 
-    query |> Repo.all() |> Repo.preload(storage_assets: :storage_item)
+    query |> Repo.all() |> Repo.preload(storage_asset: :storage_item)
   end
 
   @doc """
@@ -616,7 +616,7 @@ defmodule WraftDoc.Storage.StorageItems do
         offset: ^offset
       )
 
-    query |> Repo.all() |> Repo.preload(storage_assets: :storage_item)
+    query |> Repo.all() |> Repo.preload(storage_asset: :storage_item)
   end
 
   @doc """
@@ -639,7 +639,7 @@ defmodule WraftDoc.Storage.StorageItems do
         where: s.is_deleted == false
       )
 
-    query |> Repo.one!() |> Repo.preload(storage_assets: :storage_item)
+    query |> Repo.one!() |> Repo.preload(storage_asset: :storage_item)
   end
 
   def get_folder(nil, _organisation_id) do
@@ -686,7 +686,7 @@ defmodule WraftDoc.Storage.StorageItems do
         where: s.is_deleted == false
       )
 
-    query |> Repo.one() |> Repo.preload(storage_assets: :storage_item)
+    query |> Repo.one() |> Repo.preload(storage_asset: :storage_item)
   end
 
   def get_sync_folder(folder_name, organisation_id) do
@@ -698,7 +698,7 @@ defmodule WraftDoc.Storage.StorageItems do
         where: s.is_deleted == false
       )
 
-    query |> Repo.one() |> Repo.preload(storage_assets: :storage_item)
+    query |> Repo.one() |> Repo.preload(storage_asset: :storage_item)
   end
 
   @doc """
@@ -862,7 +862,7 @@ defmodule WraftDoc.Storage.StorageItems do
         base_query
       end
 
-    query |> Repo.all() |> Repo.preload(storage_assets: :storage_item)
+    query |> Repo.all() |> Repo.preload(storage_asset: :storage_item)
   end
 
   @doc """

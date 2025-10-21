@@ -722,7 +722,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
 
       render(conn, "storage_item.json",
         storage_item: storage_item,
-        storage_assets: storage_assets
+        storage_asset: storage_assets
       )
     else
       nil ->

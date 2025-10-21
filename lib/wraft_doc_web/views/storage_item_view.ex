@@ -31,7 +31,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemView do
       organisation_id: storage_item.organisation_id,
       inserted_at: storage_item.inserted_at,
       updated_at: storage_item.updated_at,
-      assets: render_many(storage_item.storage_assets, StorageAssetView, "storage_asset.json")
+      asset: render_one(storage_item.storage_asset, StorageAssetView, "storage_asset.json")
     }
   end
 
