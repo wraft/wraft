@@ -29,7 +29,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     color: "#ffffff"
   }
 
-  @invalid_attrs %{name: ""}
+  @invalid_attrs %{"name" => "", "layout_id" => Ecto.UUID.generate()}
 
   describe "create/2" do
     test "create content types by valid attrs", %{conn: conn} do
