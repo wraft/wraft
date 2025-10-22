@@ -24,6 +24,8 @@ config :wraft_doc, Oban, queues: false, plugins: false
 
 config :wraft_doc, WraftDocWeb.Mailer, adapter: Swoosh.Adapters.Test
 
+config :wraft_doc, WraftDoc.TypesenseServer, start: false
+
 config :wraft_doc, permissions_file: "test/mix/tasks/csv/test_permissions.csv"
 
 config :wraft_doc, :test_module, minio: ExAwsMock, razorpay: WraftDoc.Client.RazorpayMock

@@ -88,7 +88,7 @@ defmodule WraftDoc.Mixfile do
       {:mix_test_watch, "~> 1.2", only: [:dev, :test], runtime: false},
       {:mjml, "~> 4.0"},
       {:mjml_eex, "~> 0.12"},
-      {:mox, "~> 1.1"},
+      {:mox, "~> 1.1", only: :test},
       {:oban, "~> 2.20"},
       {:oban_web, "~> 2.11"},
       {:opus, "~> 0.8"},

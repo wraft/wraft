@@ -282,7 +282,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
     with %Block{} = block <- Blocks.get_block(id, current_user),
          {:ok, %Block{}} <- Blocks.delete_block(block) do
-      Typesense.delete_document(block, "block")
+      Typesense.delete_document(block.id, "block")
       render(conn, "block.json", block: block)
     end
   end
