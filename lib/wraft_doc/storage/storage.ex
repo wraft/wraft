@@ -634,19 +634,18 @@ defmodule WraftDoc.Storage do
   def update_children_paths(
         %StorageItem{
           id: parent_id,
-          materialized_path: parent_materialized_path,
-          name: parent_name
+          materialized_path: parent_materialized_path
         } = _parent_item,
-        _organisation_id
+        old_materialized_path
       ) do
     parent_id
     |> StorageItems.get_all_children_storage_items()
     |> Enum.each(fn child ->
       new_materialized_path =
-        String.replace(
+        String.replace_prefix(
           child.materialized_path,
-          parent_materialized_path,
-          Path.join(parent_materialized_path, parent_name)
+          old_materialized_path,
+          parent_materialized_path
         )
 
       child

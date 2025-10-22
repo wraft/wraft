@@ -36,6 +36,8 @@ defmodule WraftDoc.Storage.StorageItems do
 
   require Logger
   import Ecto.Query, warn: false
+
+  alias WraftDoc.Client.Minio
   alias WraftDoc.Repo
   alias WraftDoc.Storage, as: Helper
   alias WraftDoc.Storage.StorageAssets
@@ -950,63 +952,122 @@ defmodule WraftDoc.Storage.StorageItems do
 
       iex> rename_storage_item(storage_item, "new_name", "org-123")
       {:ok, %StorageItem{name: "new_name"}}
-
-      iex> rename_storage_item(storage_item, "invalid/name", "org-123")
-      {:error, :invalid_name}
   """
   @spec rename_storage_item(StorageItem.t(), String.t(), String.t()) ::
           {:ok, StorageItem.t()} | {:error, atom()}
   def rename_storage_item(%StorageItem{} = storage_item, new_name, organisation_id) do
-    with :ok <- validate_name(new_name),
-         :ok <- check_duplicate_name(storage_item, new_name, organisation_id),
-         {:ok, updated_item} <- update_storage_item_name(storage_item, new_name) do
-      maybe_update_children_paths(updated_item, organisation_id)
-      {:ok, updated_item}
+    with new_name <- validate_name(storage_item, new_name),
+         :ok <- check_duplicate_name(storage_item, new_name, organisation_id) do
+      update_storage_item_name(storage_item, new_name)
     end
   end
 
-  @spec validate_name(String.t()) :: :ok | {:error, :invalid_name}
-  defp validate_name(name) do
-    if String.contains?(name, "/") do
-      {:error, :invalid_name}
-    else
-      :ok
-    end
+  defp validate_name(%StorageItem{item_type: "folder"}, name) do
+    name
+    |> String.trim("/")
+    |> String.replace("/", " ")
   end
 
-  @spec check_duplicate_name(StorageItem.t(), String.t(), String.t()) ::
-          :ok | {:error, :duplicate_name}
+  defp validate_name(%StorageItem{file_extension: file_extension}, name) do
+    name =
+      name
+      |> String.trim("/")
+      |> String.replace("/", " ")
+
+    Path.rootname(name) <> "." <> String.trim_leading(file_extension, ".")
+  end
+
   defp check_duplicate_name(storage_item, new_name, organisation_id) do
-    duplicate_check_query =
-      from(s in StorageItem,
-        where: s.parent_id == ^storage_item.parent_id,
-        where: s.organisation_id == ^organisation_id,
-        where: s.is_deleted == false,
-        where: s.id != ^storage_item.id,
-        where: s.name == ^new_name
-      )
+    base_query =
+      StorageItem
+      |> where([s], s.organisation_id == ^organisation_id)
+      |> where([s], s.is_deleted == false)
+      |> where([s], s.id != ^storage_item.id)
+      |> where([s], s.name == ^new_name)
 
-    case Repo.one(duplicate_check_query) do
+    query =
+      if is_nil(storage_item.parent_id) do
+        where(base_query, [s], is_nil(s.parent_id))
+      else
+        where(base_query, [s], s.parent_id == ^storage_item.parent_id)
+      end
+
+    case Repo.one(query) do
       nil -> :ok
       _existing_item -> {:error, :duplicate_name}
     end
   end
 
-  @spec update_storage_item_name(StorageItem.t(), String.t()) ::
-          {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()}
-  defp update_storage_item_name(storage_item, new_name) do
+  defp update_storage_item_name(
+         %{
+           item_type: "folder",
+           path: path,
+           materialized_path: materialized_path,
+           organisation_id: organisation_id
+         } = storage_item,
+         new_name
+       ) do
+    new_path = Path.join(Path.dirname(path), new_name)
+    new_materialized_path = Path.join(Path.dirname(materialized_path), new_name)
+
     storage_item
-    |> StorageItem.changeset(%{
-      name: new_name,
-      display_name: new_name
+    |> update_storage_item(%{
+      name: Path.rootname(new_name),
+      display_name: new_name,
+      path: new_path,
+      materialized_path: new_materialized_path
     })
-    |> Repo.update()
+    |> case do
+      {:ok, updated_item} ->
+        minio_path = "organisations/#{organisation_id}/repository/"
+
+        Minio.rename_folder(
+          Path.join(minio_path, materialized_path),
+          Path.join(minio_path, new_materialized_path)
+        )
+
+        maybe_update_children_paths(updated_item, materialized_path)
+        {:ok, updated_item}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
-  @spec maybe_update_children_paths(StorageItem.t(), String.t()) :: any()
-  defp maybe_update_children_paths(updated_item, organisation_id) do
+  defp update_storage_item_name(
+         %{path: path, materialized_path: materialized_path, organisation_id: organisation_id} =
+           storage_item,
+         new_name
+       ) do
+    new_path = Path.join(Path.dirname(path), new_name)
+    new_materialized_path = Path.join(Path.dirname(materialized_path), new_name)
+
+    storage_item
+    |> update_storage_item(%{
+      name: Path.rootname(new_name),
+      display_name: new_name,
+      path: new_path,
+      materialized_path: new_materialized_path
+    })
+    |> case do
+      {:ok, updated_item} ->
+        minio_path = "organisations/#{organisation_id}/repository/"
+
+        Minio.rename_file(
+          Path.join(minio_path, materialized_path),
+          Path.join(minio_path, new_materialized_path)
+        )
+
+        {:ok, updated_item}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  defp maybe_update_children_paths(updated_item, old_materialized_path) do
     if updated_item.mime_type == "inode/directory" do
-      Helper.update_children_paths(updated_item, organisation_id)
+      Helper.update_children_paths(updated_item, old_materialized_path)
     end
   end
 
@@ -1040,7 +1101,6 @@ defmodule WraftDoc.Storage.StorageItems do
     respond_with_result(result, params, organisation_id)
   end
 
-  @spec build_pagination_opts(map()) :: storage_item_opts()
   defp build_pagination_opts(params) do
     limit = parse_integer(params["limit"], 100, 1, 1000)
     offset = parse_integer(params["offset"], 0, 0, nil)
@@ -1055,16 +1115,12 @@ defmodule WraftDoc.Storage.StorageItems do
     ]
   end
 
-  @spec valid_parent_id?(map()) :: boolean()
   defp valid_parent_id?(%{"parent_id" => parent_id}), do: parent_id != ""
   defp valid_parent_id?(_), do: false
 
-  @spec valid_repository_id?(map()) :: boolean()
   defp valid_repository_id?(%{"repository_id" => repository_id}), do: repository_id != ""
   defp valid_repository_id?(_), do: false
 
-  @spec handle_parent_flow(map(), String.t(), storage_item_opts()) ::
-          {:ok, map()} | {:error, atom()}
   defp handle_parent_flow(params, organisation_id, pagination_opts) do
     parent_id = params["parent_id"]
 
@@ -1085,7 +1141,6 @@ defmodule WraftDoc.Storage.StorageItems do
     end
   end
 
-  @spec handle_repository_flow(map(), String.t(), storage_item_opts()) :: {:ok, map()}
   defp handle_repository_flow(params, organisation_id, pagination_opts) do
     repository_id = params["repository_id"]
     parent_id = Map.get(params, "parent_id")
@@ -1125,13 +1180,10 @@ defmodule WraftDoc.Storage.StorageItems do
     {:ok, %{items: items, breadcrumbs: breadcrumbs, current_folder: current_folder}}
   end
 
-  @spec handle_root_flow(String.t(), storage_item_opts()) :: {:ok, map()}
   defp handle_root_flow(organisation_id, pagination_opts) do
     {:ok, list_storage_items_with_breadcrumbs(nil, organisation_id, pagination_opts)}
   end
 
-  @spec respond_with_result({:ok, map()} | {:error, atom()}, map(), String.t()) ::
-          {:ok, map()} | {:error, String.t()}
   defp respond_with_result(
          {:ok, %{items: items, breadcrumbs: breadcrumbs, current_folder: current_folder}},
          params,
@@ -1154,7 +1206,6 @@ defmodule WraftDoc.Storage.StorageItems do
   defp respond_with_result({:error, error}, _params, _org),
     do: {:error, error}
 
-  @spec parse_integer(String.t() | nil, integer(), integer(), integer() | nil) :: integer()
   defp parse_integer(value, default, min, max) when is_binary(value) do
     case Integer.parse(value) do
       {int, ""} when int >= min ->
@@ -1167,7 +1218,6 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp parse_integer(_, default, _, _), do: default
 
-  @spec get_folder_name(StorageItem.t()) :: String.t()
   defp get_folder_name(%StorageItem{} = item) do
     item.display_name
     |> fallback(item.name)
@@ -1176,17 +1226,14 @@ defmodule WraftDoc.Storage.StorageItems do
     |> default_if_blank("Unnamed Folder")
   end
 
-  @spec fallback(String.t() | nil, String.t() | nil) :: String.t() | nil
   defp fallback(nil, fallback), do: fallback
   defp fallback("", fallback), do: fallback
   defp fallback(value, _fallback), do: value
 
-  @spec default_if_blank(String.t() | nil, String.t()) :: String.t()
   defp default_if_blank(nil, default), do: default
   defp default_if_blank("", default), do: default
   defp default_if_blank(value, _default), do: value
 
-  @spec extract_name_from_path(String.t() | nil) :: String.t()
   defp extract_name_from_path(path) when is_binary(path) do
     path
     |> String.trim()
@@ -1203,7 +1250,6 @@ defmodule WraftDoc.Storage.StorageItems do
   defp extract_name_from_path(_), do: "Unknown"
 
   # TODO - verify logging cases
-  @spec log_success(String.t(), [StorageItem.t()], [breadcrumb_item()], map() | nil, map()) :: :ok
   defp log_success(organisation_id, items, breadcrumbs, current_folder, params) do
     Logger.info("Storage items listed", %{
       organisation_id: organisation_id,
@@ -1224,7 +1270,6 @@ defmodule WraftDoc.Storage.StorageItems do
     })
   end
 
-  @spec build_meta([StorageItem.t()], [breadcrumb_item()], map()) :: map()
   defp build_meta(items, breadcrumbs, params) do
     %{
       count: length(items),
@@ -1291,7 +1336,6 @@ defmodule WraftDoc.Storage.StorageItems do
   end
 
   # TODO - verify logging cases
-  @spec log_navigation_retrieved(String.t(), String.t() | nil, map()) :: :ok
   defp log_navigation_retrieved(organisation_id, parent_id, navigation_data) do
     Logger.info("Storage navigation data retrieved", %{
       organisation_id: organisation_id,

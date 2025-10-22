@@ -849,19 +849,19 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   Renames a storage item (file or folder).
 
   ## Route
-  POST /api/v1/storage/items/:id/rename
+  PUT /api/v1/storage/items/:id/rename
 
   ## Parameters
   - id: Item UUID (path parameter)
   - new_name: New name for the item (body parameter)
 
   ## Examples
-      POST /api/v1/storage/items/550e8400-e29b-41d4-a716-446655440000/rename
+      PUT /api/v1/storage/items/550e8400-e29b-41d4-a716-446655440000/rename
       {
         "new_name": "Renamed Document.pdf"
       }
   """
-  def rename(conn, %{"id" => id, "new_name" => new_name}) do
+  def rename(conn, %{"storage_item_id" => id, "new_name" => new_name}) do
     organisation_id = conn.assigns[:current_user].current_org_id
 
     case StorageItems.get_storage_item_by_org(id, organisation_id) do

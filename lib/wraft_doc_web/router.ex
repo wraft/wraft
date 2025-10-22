@@ -675,7 +675,7 @@ defmodule WraftDocWeb.Router do
         # Storage items routes
         resources "/items", StorageItemController,
           only: [:index, :show, :create, :update, :delete] do
-          post("/rename", StorageItemController, :rename)
+          put("/rename", StorageItemController, :rename)
         end
 
         # list_storage_items
