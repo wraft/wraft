@@ -53,8 +53,24 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
   @spec list_all_files(String.t(), map()) :: {:ok, map()} | {:error, map()}
   def list_all_files(access_token, params) when is_binary(access_token) and is_map(params) do
     page_size = Map.get(params, "page_size", 1000)
-    query = Map.get(params, "query", "")
+    query = Map.get(params, "q", "")
     page_token = Map.get(params, "page_token")
+
+    query = """
+    #{query} and (
+      mimeType = 'application/pdf' or
+      mimeType = 'application/vnd.google-apps.document' or
+      mimeType = 'application/msword' or
+      mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' or
+      mimeType = 'text/plain' or
+      mimeType contains 'image/'
+    ) and (
+      mimeType != 'application/vnd.google-apps.spreadsheet' and
+      mimeType != 'application/vnd.ms-excel' and
+      mimeType != 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' and
+      mimeType != 'text/csv'
+    )
+    """
 
     fields =
       "nextPageToken,files(id,name,mimeType,description,size,createdTime,modifiedTime,owners,parents,fileExtension)"

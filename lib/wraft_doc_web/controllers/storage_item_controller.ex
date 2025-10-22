@@ -818,7 +818,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   end
 
   swagger_path :rename do
-    post("/storage/items/{id}/rename")
+    put("/storage/items/{id}/rename")
     summary("Rename a storage item")
 
     description("""
