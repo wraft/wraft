@@ -1,8 +1,14 @@
-Application.ensure_all_started(:wraft_doc)
+# test/test_helper.exs
+
+# Explicitly require Mox first
+Code.ensure_loaded?(Mox)
+
+# Then define mocks
+Mox.defmock(ExAwsMock, for: ExAws.Behaviour)
+Mox.defmock(WraftDoc.Client.RazorpayMock, for: WraftDoc.Client.Razorpay.Behaviour)
 
 # Set up Mox expectations for test environment
 Mox.set_mox_global()
-ExUnit.start()
 
 # Set up global expectations for ExAwsMock
 Mox.expect(ExAwsMock, :request, fn operation ->
@@ -14,6 +20,11 @@ Mox.expect(ExAwsMock, :request, fn operation ->
       {:ok, %{status_code: 200}}
   end
 end)
+
+# Now start the application
+Application.ensure_all_started(:wraft_doc)
+
+ExUnit.start()
 
 Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, :manual)
 
