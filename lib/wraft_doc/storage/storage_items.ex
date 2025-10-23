@@ -103,11 +103,8 @@ defmodule WraftDoc.Storage.StorageItems do
         ]
   def list_storage_items(parent_id \\ nil, organisation_id \\ nil, opts \\ [])
 
-  def list_storage_items(nil, nil, _opts),
-    do: StorageItem |> Repo.all() |> Repo.preload(storage_asset: :storage_item)
-
   def list_storage_items(parent_id, organisation_id, opts) when is_binary(organisation_id) do
-    limit = Keyword.get(opts, :limit, 100)
+    limit = Keyword.get(opts, :limit, 50)
     offset = Keyword.get(opts, :offset, 0)
     sort_by = Keyword.get(opts, :sort_by, "created")
     sort_order = Keyword.get(opts, :sort_order, "desc")

@@ -536,10 +536,15 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     current_user = conn.assigns[:current_user]
 
     with %{name: repository_name} = _repository <-
-           Storage.get_latest_repository(current_user.current_org_id),
-         {:ok, zip_binary, file_name} <-
-           Storage.export_repository(current_user, Map.get(params, "file_name", repository_name)) do
-      send_download(conn, {:binary, zip_binary}, filename: "#{file_name}.zip")
+           Storage.get_latest_repository(current_user.current_org_id) do
+      Storage.repository_export_worker(
+        current_user,
+        Map.get(params, "file_name", repository_name)
+      )
+
+      json(conn, %{
+        message: "Repository export started. You will receive an email when it’s ready."
+      })
     end
   end
 end

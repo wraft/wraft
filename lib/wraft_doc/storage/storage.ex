@@ -22,6 +22,7 @@ defmodule WraftDoc.Storage do
   alias WraftDoc.Storage.StorageAssets
   alias WraftDoc.Storage.StorageItem
   alias WraftDoc.Storage.StorageItems
+  alias WraftDoc.Workers.RepositoryWorker
 
   @doc "Lists all repositories"
   @spec list_repositories() :: [Repository.t()]
@@ -63,6 +64,26 @@ defmodule WraftDoc.Storage do
   def delete_repository(%Repository{} = repository), do: Repo.delete(repository)
 
   @doc """
+  Starts a repository export worker.
+  """
+  @spec repository_export_worker(User.t(), String.t()) :: Oban.Job.t()
+  def repository_export_worker(current_user, file_name) do
+    %{current_user: current_user, file_name: file_name}
+    |> RepositoryWorker.new()
+    |> Oban.insert()
+  end
+
+  @doc """
+  Starts a repository zip deletion worker.
+  """
+  @spec repository_zip_deletion_worker(String.t()) :: Oban.Job.t()
+  def repository_zip_deletion_worker(minio_key) do
+    %{key: minio_key}
+    |> RepositoryWorker.new(scheduled_at: DateTime.add(DateTime.utc_now(), 600))
+    |> Oban.insert()
+  end
+
+  @doc """
   Exports a repository.
   """
   @spec export_repository(User.t(), String.t()) ::
@@ -71,6 +92,7 @@ defmodule WraftDoc.Storage do
         %{current_org_id: current_org_id},
         file_name
       ) do
+    download_zip_path = "organisations/#{current_org_id}/exports/#{file_name}"
     prefix = "organisations/#{current_org_id}/repository/"
     temp_dir = Briefly.create!(directory: true)
     File.mkdir_p(temp_dir)
@@ -106,24 +128,14 @@ defmodule WraftDoc.Storage do
         end)
         |> Enum.reverse()
 
-      zip_path = Path.join(temp_dir, "#{file_name}.zip")
-
       {:ok, _zip_file} =
         :zip.create(
-          String.to_charlist(zip_path),
+          String.to_charlist(download_zip_path),
           Enum.map(tmp_files, &String.to_charlist/1),
           cwd: String.to_charlist(temp_dir)
         )
 
-      zip_path
-      |> File.read()
-      |> case do
-        {:ok, zip_binary} ->
-          {:ok, zip_binary, file_name}
-
-        error ->
-          error
-      end
+      download_zip_path
     end
   end
 

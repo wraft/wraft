@@ -78,7 +78,8 @@ config :wraft_doc, Oban,
     scheduled: 10,
     webhooks: 15,
     cloud_provider: 15,
-    integrations: 15
+    integrations: 15,
+    repository: 15
   ],
   plugins: [
     Oban.Plugins.Pruner,
