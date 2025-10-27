@@ -482,12 +482,24 @@ defmodule WraftDoc.Storage.StorageItems do
 
   @spec build_breadcrumbs_and_folder(String.t() | nil, String.t()) ::
           {[breadcrumb_item()], map() | nil}
-  defp build_breadcrumbs_and_folder(nil, _organisation_id), do: {[], nil}
+  defp build_breadcrumbs_and_folder(nil, _organisation_id),
+    do:
+      {[
+         %{
+           id: "",
+           name: "",
+           path: "/",
+           materialized_path: "/",
+           is_folder: true
+         }
+       ], nil}
 
   defp build_breadcrumbs_and_folder(parent_id, organisation_id) do
     case get_storage_item_by_org(parent_id, organisation_id) do
       %StorageItem{} = folder ->
-        breadcrumbs = Helper.get_ancestors_breadcrumbs(folder, organisation_id)
+        breadcrumbs =
+          get_storage_item_breadcrumb_navigation(parent_id, organisation_id)
+
         current_folder = build_folder_map(folder)
         {breadcrumbs, current_folder}
 
