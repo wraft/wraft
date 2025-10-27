@@ -1278,8 +1278,12 @@ defmodule WraftDoc.Storage.StorageItems do
   end
 
   defp build_meta(items, breadcrumbs, params) do
-    [limit: limit, sort_by: sort_by, sort_order: sort_order, page: page] =
-      build_pagination_opts(params)
+    pagination_opts = build_pagination_opts(params)
+
+    limit = Keyword.get(pagination_opts, :limit)
+    page = Keyword.get(pagination_opts, :page)
+    sort_by = Keyword.get(pagination_opts, :sort_by)
+    sort_order = Keyword.get(pagination_opts, :sort_order)
 
     total_entries = length(items)
     total_pages = div(total_entries + limit - 1, limit)
