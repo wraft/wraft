@@ -417,7 +417,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
         maximum: 1000
       )
 
-      offset(:query, :integer, "Number of items to skip", default: 0, minimum: 0)
+      page(:query, :integer, "Page number", default: 1)
 
       sort_by(:query, :string, "Sort field",
         enum: ["name", "created", "updated", "size", "type"],
@@ -425,6 +425,8 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
       )
 
       sort_order(:query, :string, "Sort direction", enum: ["asc", "desc"], default: "desc")
+
+      search(:query, :string, "Search query")
     end
 
     response(200, "OK", Schema.ref(:StorageItemsList))

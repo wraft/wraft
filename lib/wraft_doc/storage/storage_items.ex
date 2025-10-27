@@ -108,6 +108,7 @@ defmodule WraftDoc.Storage.StorageItems do
     offset = Keyword.get(opts, :offset, 0)
     sort_by = Keyword.get(opts, :sort_by, "created")
     sort_order = Keyword.get(opts, :sort_order, "desc")
+    search = Keyword.get(opts, :search, nil)
 
     # Parse sorting options
     order_by_clause = Helper.parse_sort_options(sort_by, sort_order)
@@ -120,6 +121,13 @@ defmodule WraftDoc.Storage.StorageItems do
         limit: ^limit,
         offset: ^offset
       )
+
+    base_query =
+      if search && search != "" do
+        from(s in base_query, where: ilike(s.name, ^"%#{search}%"))
+      else
+        base_query
+      end
 
     query =
       if parent_id do
@@ -1100,13 +1108,15 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp build_pagination_opts(params) do
     limit = parse_integer(params["limit"], 100, 1, 1000)
-    offset = parse_integer(params["offset"], 0, 0, nil)
+    page = parse_integer(params["page"], 1, 1, nil)
+    offset = (page - 1) * limit
     sort_by = Map.get(params, "sort_by", "created")
     sort_order = Map.get(params, "sort_order", "desc")
 
     [
       limit: limit,
       offset: offset,
+      page: page,
       sort_by: sort_by,
       sort_order: sort_order
     ]
@@ -1268,11 +1278,19 @@ defmodule WraftDoc.Storage.StorageItems do
   end
 
   defp build_meta(items, breadcrumbs, params) do
+    [limit: limit, sort_by: sort_by, sort_order: sort_order, page: page] =
+      build_pagination_opts(params)
+
+    total_entries = length(items)
+    total_pages = div(total_entries + limit - 1, limit)
+
     %{
-      count: length(items),
+      total_entries: total_entries,
       breadcrumbs_count: length(breadcrumbs),
-      sort_by: Map.get(params, "sort_by"),
-      sort_order: Map.get(params, "sort_order"),
+      sort_by: sort_by,
+      sort_order: sort_order,
+      page_number: page,
+      total_pages: total_pages,
       timestamp: DateTime.utc_now()
     }
   end
