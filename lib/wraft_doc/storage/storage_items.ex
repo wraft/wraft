@@ -471,6 +471,19 @@ defmodule WraftDoc.Storage.StorageItems do
           }
   def list_storage_items_with_breadcrumbs(parent_id \\ nil, organisation_id, opts \\ []) do
     items = list_storage_items(parent_id, organisation_id, opts)
+
+    items =
+      Enum.map(items, fn item ->
+        case item do
+          %{mime_type: "inode/directory", id: folder_id} = folder ->
+            total_size = calculate_folder_size(folder_id, organisation_id)
+            Map.put(folder, :size, total_size)
+
+          file ->
+            file
+        end
+      end)
+
     {breadcrumbs, current_folder} = build_breadcrumbs_and_folder(parent_id, organisation_id)
 
     %{
@@ -478,6 +491,40 @@ defmodule WraftDoc.Storage.StorageItems do
       breadcrumbs: breadcrumbs,
       current_folder: current_folder
     }
+  end
+
+  defp calculate_folder_size(folder_id, organisation_id) do
+    folder_id = Ecto.UUID.dump!(folder_id)
+    organisation_id = Ecto.UUID.dump!(organisation_id)
+
+    {:ok, %{rows: rows}} =
+      Repo.query(
+        """
+          WITH RECURSIVE folder_tree AS (
+            -- Base case: direct children
+            SELECT id, parent_id, mime_type, size, 1 as level
+            FROM storage_items
+            WHERE parent_id = $1 AND organisation_id = $2 AND is_deleted = false
+
+            UNION ALL
+
+            -- Recursive case: children of children
+            SELECT si.id, si.parent_id, si.mime_type, si.size, ft.level + 1
+            FROM storage_items si
+            INNER JOIN folder_tree ft ON ft.id = si.parent_id
+            WHERE si.is_deleted = false AND si.organisation_id = $2
+          )
+          SELECT
+            COALESCE(SUM(CASE WHEN mime_type != 'inode/directory' THEN size ELSE 0 END), 0) as total_size
+          FROM folder_tree;
+        """,
+        [folder_id, organisation_id]
+      )
+
+    case rows do
+      [[total_size]] -> total_size
+      _ -> 0
+    end
   end
 
   @spec build_breadcrumbs_and_folder(String.t() | nil, String.t()) ::

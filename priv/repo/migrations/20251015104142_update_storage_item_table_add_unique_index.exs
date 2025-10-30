@@ -13,10 +13,17 @@ defmodule WraftDoc.Repo.Migrations.UpdateStorageItemTableAddUniqueIndex do
     ON storage_items (name, COALESCE(parent_id::text, 'root'))
     WHERE deleted_at IS NULL;
     """)
+
+    execute("""
+    CREATE INDEX idx_storage_items_parent_org
+    ON storage_items (parent_id, organisation_id)
+    WHERE is_deleted = false;
+    """)
   end
 
   def down do
     execute("DROP INDEX IF EXISTS storage_items_name_parent_id_index;")
+    execute("DROP INDEX IF EXISTS idx_storage_items_parent_org;")
 
     alter table(:storage_items) do
       remove(:upload_status)
