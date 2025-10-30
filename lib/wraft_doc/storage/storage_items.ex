@@ -1166,19 +1166,17 @@ defmodule WraftDoc.Storage.StorageItems do
   end
 
   defp build_pagination_opts(params) do
-    limit = parse_integer(params["limit"], 100, 1, 1000)
     page = parse_integer(params["page"], 1, 1, nil)
-    offset = (page - 1) * limit
-    sort_by = Map.get(params, "sort_by", "created")
+    per_page = parse_integer(params["limit"], 100, 1, 1000)
+    sort_by = Map.get(params, "sort_by", "inserted_at")
     sort_order = Map.get(params, "sort_order", "desc")
 
-    [
-      limit: limit,
-      offset: offset,
+    %{
       page: page,
-      sort_by: sort_by,
-      sort_order: sort_order
-    ]
+      page_size: per_page,
+      sort_by: String.to_atom(sort_by),
+      sort_direction: String.to_atom(sort_order)
+    }
   end
 
   defp valid_parent_id?(%{"parent_id" => parent_id}), do: parent_id != ""
@@ -1192,12 +1190,20 @@ defmodule WraftDoc.Storage.StorageItems do
 
     case get_storage_item_by_org(parent_id, organisation_id) do
       %StorageItem{mime_type: "inode/directory"} ->
-        {:ok,
-         list_storage_items_with_breadcrumbs(
-           parent_id,
-           organisation_id,
-           pagination_opts
-         )}
+        query =
+          from(si in StorageItem,
+            where:
+              si.parent_id == ^parent_id and si.organisation_id == ^organisation_id and
+                is_nil(si.deleted_at),
+            order_by: [{^pagination_opts.sort_direction, ^pagination_opts.sort_by}]
+          )
+
+        items = Repo.paginate(query, pagination_opts)
+        {breadcrumbs, current_folder} = build_breadcrumbs_and_folder(parent_id, organisation_id)
+        # breadcrumbs = get_storage_item_breadcrumb_navigation(parent_id, organisation_id)
+        # current_folder = get_folder(parent_id, organisation_id)
+
+        {:ok, %{items: items, breadcrumbs: breadcrumbs, current_folder: current_folder}}
 
       %StorageItem{} ->
         {:error, :not_a_directory}
@@ -1211,13 +1217,17 @@ defmodule WraftDoc.Storage.StorageItems do
     repository_id = params["repository_id"]
     parent_id = Map.get(params, "parent_id")
 
-    items =
-      Helper.list_repository_storage_items(
-        repository_id,
-        parent_id,
-        organisation_id,
-        pagination_opts
+    query =
+      from(si in StorageItem,
+        where:
+          si.repository_id == ^repository_id and
+            si.organisation_id == ^organisation_id and
+            si.parent_id == ^parent_id and
+            is_nil(si.deleted_at),
+        order_by: [{^pagination_opts.sort_direction, ^pagination_opts.sort_by}]
       )
+
+    items = Repo.paginate(query, pagination_opts)
 
     breadcrumbs =
       if parent_id,
@@ -1247,22 +1257,47 @@ defmodule WraftDoc.Storage.StorageItems do
   end
 
   defp handle_root_flow(organisation_id, pagination_opts) do
-    {:ok, list_storage_items_with_breadcrumbs(nil, organisation_id, pagination_opts)}
+    query =
+      from(si in StorageItem,
+        where:
+          is_nil(si.parent_id) and
+            si.organisation_id == ^organisation_id and
+            is_nil(si.deleted_at),
+        order_by: [{^pagination_opts.sort_direction, ^pagination_opts.sort_by}]
+      )
+
+    items = Repo.paginate(query, pagination_opts)
+    {:ok, %{items: items, breadcrumbs: [], current_folder: nil}}
   end
 
   defp respond_with_result(
-         {:ok, %{items: items, breadcrumbs: breadcrumbs, current_folder: current_folder}},
+         {:ok,
+          %{
+            items: %Scrivener.Page{} = paginated_items,
+            breadcrumbs: breadcrumbs,
+            current_folder: current_folder
+          }},
          params,
          organisation_id
        ) do
-    log_success(organisation_id, items, breadcrumbs, current_folder, params)
+    items =
+      Enum.map(paginated_items.entries, fn item ->
+        case item do
+          %{mime_type: "inode/directory", id: folder_id} = folder ->
+            total_size = calculate_folder_size(folder_id, organisation_id)
+            Map.put(folder, :size, total_size)
+
+          file ->
+            file
+        end
+      end)
 
     {:ok,
      %{
-       data: items,
+       data: Repo.preload(items, storage_asset: :storage_item),
        breadcrumbs: breadcrumbs,
        current_folder: current_folder,
-       meta: build_meta(items, breadcrumbs, params)
+       meta: build_meta(paginated_items, breadcrumbs, params)
      }}
   end
 
@@ -1315,45 +1350,17 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp extract_name_from_path(_), do: "Unknown"
 
-  # TODO - verify logging cases
-  defp log_success(organisation_id, items, breadcrumbs, current_folder, params) do
-    Logger.info("Storage items listed", %{
-      organisation_id: organisation_id,
-      count: length(items),
-      breadcrumbs_count: length(breadcrumbs),
-      current_folder: current_folder,
-      sort_by: Map.get(params, "sort_by"),
-      sort_order: Map.get(params, "sort_order"),
-      params:
-        Map.take(params, [
-          "parent_id",
-          "repository_id",
-          "limit",
-          "offset",
-          "sort_by",
-          "sort_order"
-        ])
-    })
-  end
-
-  defp build_meta(items, breadcrumbs, params) do
-    pagination_opts = build_pagination_opts(params)
-
-    limit = Keyword.get(pagination_opts, :limit)
-    page = Keyword.get(pagination_opts, :page)
-    sort_by = Keyword.get(pagination_opts, :sort_by)
-    sort_order = Keyword.get(pagination_opts, :sort_order)
-
-    total_entries = length(items)
-    total_pages = div(total_entries + limit - 1, limit)
+  defp build_meta(%Scrivener.Page{} = items, breadcrumbs, params) do
+    sort_by = Map.get(params, "sort_by", "created")
+    sort_order = Map.get(params, "sort_order", "desc")
 
     %{
-      total_entries: total_entries,
+      total_entries: items.total_entries,
       breadcrumbs_count: length(breadcrumbs),
       sort_by: sort_by,
       sort_order: sort_order,
-      page_number: page,
-      total_pages: total_pages,
+      page_number: items.page_number,
+      total_pages: items.total_pages,
       timestamp: DateTime.utc_now()
     }
   end
