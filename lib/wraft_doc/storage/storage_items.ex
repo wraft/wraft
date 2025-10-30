@@ -1170,12 +1170,14 @@ defmodule WraftDoc.Storage.StorageItems do
     per_page = parse_integer(params["limit"], 100, 1, 1000)
     sort_by = Map.get(params, "sort_by", "inserted_at")
     sort_order = Map.get(params, "sort_order", "desc")
+    search = Map.get(params, "search", nil)
 
     %{
       page: page,
       page_size: per_page,
       sort_by: String.to_atom(sort_by),
-      sort_direction: String.to_atom(sort_order)
+      sort_direction: String.to_atom(sort_order),
+      search: search
     }
   end
 
@@ -1191,17 +1193,10 @@ defmodule WraftDoc.Storage.StorageItems do
     case get_storage_item_by_org(parent_id, organisation_id) do
       %StorageItem{mime_type: "inode/directory"} ->
         query =
-          from(si in StorageItem,
-            where:
-              si.parent_id == ^parent_id and si.organisation_id == ^organisation_id and
-                is_nil(si.deleted_at),
-            order_by: [{^pagination_opts.sort_direction, ^pagination_opts.sort_by}]
-          )
+          base_storage_query(organisation_id, pagination_opts, parent_id: parent_id)
 
         items = Repo.paginate(query, pagination_opts)
         {breadcrumbs, current_folder} = build_breadcrumbs_and_folder(parent_id, organisation_id)
-        # breadcrumbs = get_storage_item_breadcrumb_navigation(parent_id, organisation_id)
-        # current_folder = get_folder(parent_id, organisation_id)
 
         {:ok, %{items: items, breadcrumbs: breadcrumbs, current_folder: current_folder}}
 
@@ -1218,13 +1213,9 @@ defmodule WraftDoc.Storage.StorageItems do
     parent_id = Map.get(params, "parent_id")
 
     query =
-      from(si in StorageItem,
-        where:
-          si.repository_id == ^repository_id and
-            si.organisation_id == ^organisation_id and
-            si.parent_id == ^parent_id and
-            is_nil(si.deleted_at),
-        order_by: [{^pagination_opts.sort_direction, ^pagination_opts.sort_by}]
+      base_storage_query(organisation_id, pagination_opts,
+        repository_id: repository_id,
+        parent_id: parent_id
       )
 
     items = Repo.paginate(query, pagination_opts)
@@ -1258,13 +1249,7 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp handle_root_flow(organisation_id, pagination_opts) do
     query =
-      from(si in StorageItem,
-        where:
-          is_nil(si.parent_id) and
-            si.organisation_id == ^organisation_id and
-            is_nil(si.deleted_at),
-        order_by: [{^pagination_opts.sort_direction, ^pagination_opts.sort_by}]
-      )
+      base_storage_query(organisation_id, pagination_opts, parent_id: nil)
 
     items = Repo.paginate(query, pagination_opts)
     {:ok, %{items: items, breadcrumbs: [], current_folder: nil}}
@@ -1306,6 +1291,28 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp respond_with_result({:error, error}, _params, _org),
     do: {:error, error}
+
+  defp base_storage_query(organisation_id, pagination_opts, filters) do
+    StorageItem
+    |> where([si], si.organisation_id == ^organisation_id and is_nil(si.deleted_at))
+    |> maybe_filter(:parent_id, filters[:parent_id])
+    |> maybe_filter(:repository_id, filters[:repository_id])
+    |> maybe_search(pagination_opts.search)
+    |> order_by([{^pagination_opts.sort_direction, ^pagination_opts.sort_by}])
+  end
+
+  defp maybe_filter(query, _field, nil), do: query
+
+  defp maybe_filter(query, field, value) do
+    from(s in query, where: field(s, ^field) == ^value)
+  end
+
+  defp maybe_search(query, nil), do: query
+  defp maybe_search(query, ""), do: query
+
+  defp maybe_search(query, search) do
+    from(s in query, where: ilike(s.name, ^"%#{search}%"))
+  end
 
   defp parse_integer(value, default, min, max) when is_binary(value) do
     case Integer.parse(value) do
