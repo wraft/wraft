@@ -1149,17 +1149,18 @@ defmodule WraftDoc.Storage.StorageItems do
   @spec process_index_request(User.t(), map()) :: {:ok, map()} | {:error, String.t()}
   def process_index_request(%{current_org_id: organisation_id} = _current_user, params) do
     pagination_opts = build_pagination_opts(params)
+    filters = build_storage_filters(params)
 
     result =
       cond do
         valid_parent_id?(params) ->
-          handle_parent_flow(params, organisation_id, pagination_opts)
+          handle_parent_flow(params, organisation_id, pagination_opts, filters)
 
         valid_repository_id?(params) ->
-          handle_repository_flow(params, organisation_id, pagination_opts)
+          handle_repository_flow(params, organisation_id, pagination_opts, filters)
 
         true ->
-          handle_root_flow(organisation_id, pagination_opts)
+          handle_root_flow(organisation_id, pagination_opts, filters)
       end
 
     respond_with_result(result, params, organisation_id)
@@ -1181,19 +1182,30 @@ defmodule WraftDoc.Storage.StorageItems do
     }
   end
 
+  defp build_storage_filters(params) do
+    %{
+      repository_id: params["repository_id"],
+      parent_id: params["parent_id"],
+      item_type: params["type"],
+      file_type: params["file_type"],
+      date_modified: params["date_range"],
+      file_size: params["size_range"]
+    }
+  end
+
   defp valid_parent_id?(%{"parent_id" => parent_id}), do: parent_id != ""
   defp valid_parent_id?(_), do: false
 
   defp valid_repository_id?(%{"repository_id" => repository_id}), do: repository_id != ""
   defp valid_repository_id?(_), do: false
 
-  defp handle_parent_flow(params, organisation_id, pagination_opts) do
+  defp handle_parent_flow(params, organisation_id, pagination_opts, filters) do
     parent_id = params["parent_id"]
 
     case get_storage_item_by_org(parent_id, organisation_id) do
       %StorageItem{mime_type: "inode/directory"} ->
         query =
-          base_storage_query(organisation_id, pagination_opts, parent_id: parent_id)
+          base_storage_query(organisation_id, pagination_opts, filters)
 
         items = Repo.paginate(query, pagination_opts)
         {breadcrumbs, current_folder} = build_breadcrumbs_and_folder(parent_id, organisation_id)
@@ -1208,15 +1220,11 @@ defmodule WraftDoc.Storage.StorageItems do
     end
   end
 
-  defp handle_repository_flow(params, organisation_id, pagination_opts) do
-    repository_id = params["repository_id"]
+  defp handle_repository_flow(params, organisation_id, pagination_opts, filters) do
     parent_id = Map.get(params, "parent_id")
 
     query =
-      base_storage_query(organisation_id, pagination_opts,
-        repository_id: repository_id,
-        parent_id: parent_id
-      )
+      base_storage_query(organisation_id, pagination_opts, filters)
 
     items = Repo.paginate(query, pagination_opts)
 
@@ -1247,9 +1255,9 @@ defmodule WraftDoc.Storage.StorageItems do
     {:ok, %{items: items, breadcrumbs: breadcrumbs, current_folder: current_folder}}
   end
 
-  defp handle_root_flow(organisation_id, pagination_opts) do
+  defp handle_root_flow(organisation_id, pagination_opts, filters) do
     query =
-      base_storage_query(organisation_id, pagination_opts, parent_id: nil)
+      base_storage_query(organisation_id, pagination_opts, filters)
 
     items = Repo.paginate(query, pagination_opts)
     {:ok, %{items: items, breadcrumbs: [], current_folder: nil}}
@@ -1297,15 +1305,79 @@ defmodule WraftDoc.Storage.StorageItems do
     |> where([si], si.organisation_id == ^organisation_id and is_nil(si.deleted_at))
     |> maybe_filter(:parent_id, filters[:parent_id])
     |> maybe_filter(:repository_id, filters[:repository_id])
+    |> maybe_item_type_filter(filters[:item_type])
+    |> maybe_file_type_filter(filters[:file_type])
+    |> maybe_date_modified_filter(filters[:date_modified])
+    |> maybe_file_size_filter(filters[:file_size])
     |> maybe_search(pagination_opts.search)
     |> order_by([{^pagination_opts.sort_direction, ^pagination_opts.sort_by}])
   end
 
   defp maybe_filter(query, _field, nil), do: query
 
-  defp maybe_filter(query, field, value) do
-    from(s in query, where: field(s, ^field) == ^value)
+  defp maybe_filter(query, field, value),
+    do: from(s in query, where: field(s, ^field) == ^value)
+
+  defp maybe_item_type_filter(query, nil), do: query
+
+  defp maybe_item_type_filter(query, "folders") do
+    from(s in query, where: s.item_type == "folder")
   end
+
+  defp maybe_item_type_filter(query, "files") do
+    from(s in query, where: s.item_type in ["file", "external file"])
+  end
+
+  defp maybe_item_type_filter(query, _), do: query
+
+  defp maybe_file_type_filter(query, nil), do: query
+  defp maybe_file_type_filter(query, ""), do: query
+
+  defp maybe_file_type_filter(query, file_type) do
+    pattern = "%#{String.downcase(file_type)}%"
+
+    from(s in query,
+      where: not is_nil(s.file_extension) and ilike(s.file_extension, ^pattern)
+    )
+  end
+
+  defp maybe_date_modified_filter(query, "today") do
+    from(s in query, where: fragment("DATE(?) = CURRENT_DATE", s.updated_at))
+  end
+
+  defp maybe_date_modified_filter(query, "week") do
+    from(s in query,
+      where: fragment("DATE_PART('week', ?) = DATE_PART('week', CURRENT_DATE)", s.updated_at)
+    )
+  end
+
+  defp maybe_date_modified_filter(query, "month") do
+    from(s in query,
+      where: fragment("DATE_PART('month', ?) = DATE_PART('month', CURRENT_DATE)", s.updated_at)
+    )
+  end
+
+  defp maybe_date_modified_filter(query, "year") do
+    from(s in query,
+      where: fragment("DATE_PART('year', ?) = DATE_PART('year', CURRENT_DATE)", s.updated_at)
+    )
+  end
+
+  defp maybe_date_modified_filter(query, _), do: query
+
+  defp maybe_file_size_filter(query, "small") do
+    from(s in query, where: s.size < 1_000_000)
+  end
+
+  defp maybe_file_size_filter(query, "medium") do
+    from(s in query, where: s.size >= 1_000_000 and s.size <= 10_000_000)
+  end
+
+  defp maybe_file_size_filter(query, "large") do
+    from(s in query, where: s.size > 10_000_000)
+  end
+
+  defp maybe_file_size_filter(query, _), do: query
 
   defp maybe_search(query, nil), do: query
   defp maybe_search(query, ""), do: query
