@@ -1,33 +1,22 @@
 # test/test_helper.exs
+ExUnit.start(formatters: [ExUnit.CLIFormatter, Bureaucrat.Formatter])
 
-# Explicitly require Mox first
+# Start dependencies
+{:ok, _} = Application.ensure_all_started(:wraft_doc)
+{:ok, _} = Application.ensure_all_started(:ex_machina)
+{:ok, _} = Application.ensure_all_started(:bypass)
+Faker.start()
+
+# Mock definitions
 Code.ensure_loaded?(Mox)
 
-# Then define mocks
 Mox.defmock(ExAwsMock, for: ExAws.Behaviour)
 Mox.defmock(WraftDoc.Client.RazorpayMock, for: WraftDoc.Client.Razorpay.Behaviour)
 
-# Set up Mox expectations for test environment
-Mox.set_mox_global()
-
-# Set up global expectations for ExAwsMock
-Mox.expect(ExAwsMock, :request, fn operation ->
-  case operation do
-    %ExAws.Operation.S3{http_method: :head, path: "/"} ->
-      {:ok, %{status_code: 200}}
-
-    _ ->
-      {:ok, %{status_code: 200}}
-  end
-end)
-
-# Now start the application
-Application.ensure_all_started(:wraft_doc)
-
-ExUnit.start()
-
+# Set SQL sandbox mode
 Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, :manual)
 
+# Bureaucrat setup
 Bureaucrat.start(
   env_var: "DOC",
   writer: Bureaucrat.SwaggerSlateMarkdownWriter,
@@ -35,8 +24,5 @@ Bureaucrat.start(
   swagger: "priv/static/swagger.json" |> File.read!() |> Jason.decode!()
 )
 
-Faker.start()
-{:ok, _} = Application.ensure_all_started(:ex_machina)
-Application.ensure_all_started(:bypass)
-
-ExUnit.start(formatters: [ExUnit.CLIFormatter, Bureaucrat.Formatter])
+# No Mox.set_mox_global() here!
+# We’ll use :set_mox_from_context in each test case instead
