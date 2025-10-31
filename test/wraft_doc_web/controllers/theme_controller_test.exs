@@ -10,6 +10,9 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
   alias WraftDoc.Repo
   alias WraftDoc.Themes.Theme
 
+  setup :set_mox_from_context
+  setup :verify_on_exit!
+
   @valid_attrs %{
     name: "Official Letter Theme",
     font: "Malery",
