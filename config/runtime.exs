@@ -142,10 +142,6 @@ config :wraft_doc, :onedrive,
   redirect_uri: System.get_env("REDIRECT_URI"),
   tenant_id: System.get_env("ONEDRIVE_TENANT_ID")
 
-config :wraft_doc, WraftDocWeb.Mailer, api_key: System.fetch_env!("RESEND_API_KEY")
-
-config :wraft_doc, sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"
-
 config :pdf_generator,
   wkhtml_path: System.get_env("WKHTMLTOPDF_PATH"),
   pdftk_path: System.get_env("PDFTK_PATH")
@@ -169,14 +165,48 @@ config :wraft_doc,
     )
 
 # Configure Sentry
-config :sentry,
-  dsn: System.get_env("SENTRY_DSN"),
-  environment_name: :prod,
-  enable_source_code_context: true,
-  root_source_code_path: File.cwd!(),
-  tags: %{
-    env: "production"
-  }
+if sentry_dsn = System.get_env("SENTRY_DSN") do
+  config :sentry,
+    dsn: System.get_env("SENTRY_DSN"),
+    environment_name: :prod,
+    enable_source_code_context: true,
+    root_source_code_path: File.cwd!(),
+    tags: %{
+      env: "production"
+    }
+end
+
+config :wraft_doc, sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"
+
+# Configure Resend mail
+if api_key = System.get_env("RESEND_API_KEY") do
+  config :wraft_doc, WraftDocWeb.Mailer,
+    adapter: Resend.Swoosh.Adapter,
+    api_key: api_key
+end
+
+# Configure SMTP
+if smtp_host = System.get_env("SMTP_HOST") do
+  smtp_port = String.to_integer(System.get_env("SMTP_PORT") || "587")
+  smtp_username = System.get_env("SMTP_USERNAME")
+  smtp_password = System.get_env("SMTP_PASSWORD")
+  smtp_ssl = System.get_env("SMTP_SSL") || false
+
+  config :wraft_doc, WraftDocWeb.Mailer,
+    adapter: Swoosh.Adapters.SMTP,
+    relay: smtp_host,
+    username: smtp_username,
+    password: smtp_password,
+    ssl: smtp_ssl,
+    tls: :always,
+    auth: :always,
+    port: smtp_port,
+    retries: 2,
+    no_mx_lookups: true,
+    tls_options: [
+      verify: :verify_none
+    ]
+end
 
 # Do not print debug messages in production
 config :logger,
