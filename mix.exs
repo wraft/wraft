@@ -112,7 +112,7 @@ defmodule WraftDoc.Mixfile do
       {:sentry, "~> 10.8"},
       {:sizeable, "~> 1.0"},
       {:sweet_xml, "~> 0.7"},
-      {:swoosh, "~> 1.19.7"},
+      {:swoosh, "~> 1.19.8"},
       {:gen_smtp, "~> 1.3.0"},
       {:resend, "~> 0.4.0"},
       {:tesla, "~> 1.12"},

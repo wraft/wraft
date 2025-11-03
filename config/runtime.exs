@@ -187,29 +187,24 @@ end
 
 # Configure SMTP
 if smtp_host = System.get_env("SMTP_HOST") do
+  smtp_port = String.to_integer(System.get_env("SMTP_PORT") || "587")
+  smtp_username = System.get_env("SMTP_USERNAME")
+  smtp_password = System.get_env("SMTP_PASSWORD")
+
   config :wraft_doc, WraftDocWeb.Mailer,
     adapter: Swoosh.Adapters.SMTP,
     relay: smtp_host,
-    port: String.to_integer(System.get_env("SMTP_PORT") || "587"),
-    ssl: true,
+    username: smtp_username,
+    password: smtp_password,
+    ssl: false,
     tls: :always,
-    auth: :always
-
-  if username = System.get_env("SMTP_USERNAME") do
-    config :wraft_doc, WraftDocWeb.Mailer, username: username
-  end
-
-  if password = System.get_env("SMTP_PASSWORD") do
-    config :wraft_doc, WraftDocWeb.Mailer, password: password
-  end
-
-  if retries = System.get_env("SMTP_RETRIES") do
-    config :wraft_doc, WraftDocWeb.Mailer, retries: String.to_integer(retries)
-  end
-
-  if no_mx_lookups = System.get_env("SMTP_NO_MX_LOOKUPS") do
-    config :wraft_doc, WraftDocWeb.Mailer, no_mx_lookups: no_mx_lookups
-  end
+    auth: :always,
+    port: smtp_port,
+    retries: 2,
+    no_mx_lookups: true,
+    tls_options: [
+      verify: :verify_none
+    ]
 end
 
 # Do not print debug messages in production
