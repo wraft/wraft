@@ -190,13 +190,14 @@ if smtp_host = System.get_env("SMTP_HOST") do
   smtp_port = String.to_integer(System.get_env("SMTP_PORT") || "587")
   smtp_username = System.get_env("SMTP_USERNAME")
   smtp_password = System.get_env("SMTP_PASSWORD")
+  smtp_ssl = System.get_env("SMTP_SSL") || false
 
   config :wraft_doc, WraftDocWeb.Mailer,
     adapter: Swoosh.Adapters.SMTP,
     relay: smtp_host,
     username: smtp_username,
     password: smtp_password,
-    ssl: false,
+    ssl: smtp_ssl,
     tls: :always,
     auth: :always,
     port: smtp_port,
