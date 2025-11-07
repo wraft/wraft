@@ -41,6 +41,10 @@ defmodule WraftDocWeb.Api.V1.StorageAssetView do
   defp generate_url(%StorageAsset{filename: filename} = storage_asset),
     do: WraftDocWeb.StorageAssetUploader.url({filename, storage_asset}, :original, signed: true)
 
+  defp generate_url(_), do: nil
+
   defp generate_preview_url(%StorageAsset{filename: filename} = storage_asset),
     do: WraftDocWeb.StorageAssetUploader.url({filename, storage_asset}, :preview, signed: true)
+
+  defp generate_preview_url(_), do: nil
 end

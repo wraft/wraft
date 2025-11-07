@@ -44,9 +44,10 @@ defmodule WraftDocWeb.StorageAssetUploader do
            organisation_id: organisation_id,
            storage_item: %{materialized_path: materialized_path}
          } = _scope}
-      ),
-      do:
-        "organisations/#{organisation_id}/repository/#{String.replace(materialized_path, ~r{/[^/]*$}, "")}"
+      ) do
+    repo = Path.join(["organisations", organisation_id, "repository"])
+    Path.join([repo, String.replace(materialized_path, ~r{/[^/]*$}, "")])
+  end
 
   def storage_dir(
         :preview,
@@ -55,9 +56,10 @@ defmodule WraftDocWeb.StorageAssetUploader do
            organisation_id: organisation_id,
            storage_item: %{materialized_path: materialized_path}
          } = _scope}
-      ),
-      do:
-        "organisations/#{organisation_id}/repository_previews/#{String.replace(materialized_path, ~r{/[^/]*$}, "")}"
+      ) do
+    repo = Path.join(["organisations", organisation_id, "repository_previews"])
+    Path.join([repo, String.replace(materialized_path, ~r{/[^/]*$}, "")])
+  end
 
   def transform(:preview, {file, _scope}) do
     ext = file.file_name |> Path.extname() |> String.downcase()
