@@ -711,4 +711,71 @@ defmodule WraftDoc.Storage do
         {:error, %{file_id: external_id, error: reason}}
     end
   end
+
+  @doc """
+  Calculates the total storage size used by a repository.
+  Returns the total size in bytes.
+
+  ## Parameters
+
+    * repository_id - The ID of the repository
+    * organisation_id - The ID of the organisation
+
+  ## Examples
+
+      iex> get_repository_storage_size("repo_123", "org_456")
+      {:ok, 1048576} # Returns total size in bytes
+
+  """
+  @spec get_repository_storage_size(String.t(), String.t()) ::
+          {:ok, integer()} | {:error, :not_found}
+  def get_repository_storage_size(repository_id, organisation_id) do
+    query =
+      from(si in StorageItem,
+        where:
+          si.repository_id == ^repository_id and
+            si.organisation_id == ^organisation_id and
+            si.is_deleted == false,
+        select: sum(si.size)
+      )
+
+    case Repo.one(query) do
+      nil -> {:ok, 0}
+      total_size -> {:ok, total_size}
+    end
+  end
+
+  @doc """
+  Updates repository's total storage size. This should be called:
+  1. In a background job periodically
+  2. After bulk operations
+  3. When calculating real-time size is needed
+  """
+  def update_repository_storage_size(repository_id, organisation_id) do
+    base_query =
+      where(
+        StorageItem,
+        [si],
+        si.repository_id == ^repository_id and
+          si.organisation_id == ^organisation_id and
+          si.is_deleted == false and
+          si.item_type != "folder"
+      )
+
+    {total_size, item_count} =
+      base_query
+      |> select([si], {sum(si.size), count(si.id)})
+      |> Repo.one()
+      |> case do
+        {nil, nil} -> {0, 0}
+        result -> result
+      end
+
+    WraftDoc.Storage.Repository
+    |> where([r], r.id == ^repository_id)
+    |> update(set: [current_storage_used: ^total_size, item_count: ^item_count])
+    |> Repo.update_all([])
+
+    {:ok, %{total_size: total_size, item_count: item_count}}
+  end
 end

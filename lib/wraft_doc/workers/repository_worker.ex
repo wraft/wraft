@@ -56,6 +56,17 @@ defmodule WraftDoc.Workers.RepositoryWorker do
     {:ok, :deleted}
   end
 
+  def perform(%Oban.Job{args: %{"action" => "update_repo_size"}}) do
+    Enum.each(Storage.list_repositories(), fn repository ->
+      Storage.update_repository_storage_size(
+        repository.id,
+        repository.organisation_id
+      )
+    end)
+
+    :ok
+  end
+
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
     Logger.error("Invalid job arguments: #{inspect(args)}")
