@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.StorageAssetView do
   use WraftDocWeb, :view
 
-  alias WraftDoc.Storage.StorageAsset
+  alias WraftDoc.Storages.StorageAsset
   alias WraftDocWeb.Api.V1.StorageItemView
 
   def render("storage_asset.json", %{storage_asset: storage_asset}) do

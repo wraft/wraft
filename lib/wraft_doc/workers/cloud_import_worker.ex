@@ -3,14 +3,14 @@ defmodule WraftDoc.Workers.CloudImportWorker do
   Oban worker for handling Google Drive operations in the background.
   Supports downloading and exporting files from Google Drive.
   Can handle single file IDs or lists of file IDs.
-  Can store files locally or in MinIO storage.
+  Can store files locally or in MinIO Storages.
   """
 
   use Oban.Worker, queue: :cloud_provider, max_attempts: 3
   require Logger
 
-  alias WraftDoc.Storage
-  alias WraftDoc.Storage.StorageItems
+  alias WraftDoc.Storages
+  alias WraftDoc.Storages.StorageItems
 
   @impl Oban.Worker
   def perform(%Oban.Job{
@@ -23,7 +23,7 @@ defmodule WraftDoc.Workers.CloudImportWorker do
       storage_item_ids
       |> Enum.map(&StorageItems.get_storage_item!/1)
       |> Enum.map(fn storage_item ->
-        Storage.download_and_upload_to_repo(storage_item)
+        Storages.download_and_upload_to_repo(storage_item)
       end)
 
     {:ok, results}

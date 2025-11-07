@@ -30,9 +30,9 @@ defmodule WraftDoc.CloudImport.Providers do
 
       alias WraftDoc.Account.User
       alias WraftDoc.Integrations
-      alias WraftDoc.Storage
-      alias WraftDoc.Storage.StorageItem
-      alias WraftDoc.Storage.StorageItems
+      alias WraftDoc.Storages
+      alias WraftDoc.Storages.StorageItem
+      alias WraftDoc.Storages.StorageItems
       alias WraftDoc.Workers.CloudImportWorker
 
       @base_url unquote(base_url)
@@ -49,7 +49,7 @@ defmodule WraftDoc.CloudImport.Providers do
 
       def sync_files_to_db(access_token, params, current_user) do
         with %{id: repository_id} = repository <-
-               Storage.get_latest_repository(current_user.current_org_id),
+               Storages.get_latest_repository(current_user.current_org_id),
              {:ok, parent_folder} <- setup_sync_folder(repository),
              {:ok, %{"files" => files}} <- list_all_files(access_token, params) do
           files

@@ -3,7 +3,7 @@ defmodule WraftDocWeb.StorageSyncJobControllerTest do
 
   import WraftDoc.StorageFixtures
 
-  alias WraftDoc.Storage.SyncJob
+  alias WraftDoc.Storages.SyncJob
 
   @create_attrs %{
     status: "some status",

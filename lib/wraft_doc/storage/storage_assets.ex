@@ -1,4 +1,4 @@
-defmodule WraftDoc.Storage.StorageAssets do
+defmodule WraftDoc.Storages.StorageAssets do
   @moduledoc """
   Context module for managing storage assets, repositories, access logs, and sync jobs.
 
@@ -12,7 +12,7 @@ defmodule WraftDoc.Storage.StorageAssets do
 
   alias Ecto.Multi
   alias WraftDoc.Repo
-  alias WraftDoc.Storage.StorageAsset
+  alias WraftDoc.Storages.StorageAsset
   alias WraftDoc.Workers.StorageAssetDeletionWorker
 
   @type storage_asset_attrs :: map()

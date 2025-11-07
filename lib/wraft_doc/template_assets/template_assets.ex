@@ -1468,7 +1468,7 @@ defmodule WraftDoc.TemplateAssets do
   defp storage_url, do: Path.join(System.get_env("MINIO_URL"), System.get_env("MINIO_BUCKET"))
 
   @doc """
-  Download template from storage.
+  Download template from Storages.
   """
   @spec download_public_template(String.t()) :: {:ok, binary()} | {:error, String.t()}
   def download_public_template(template_name) do

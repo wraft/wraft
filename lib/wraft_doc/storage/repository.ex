@@ -1,4 +1,4 @@
-defmodule WraftDoc.Storage.Repository do
+defmodule WraftDoc.Storages.Repository do
   @moduledoc """
   The sync job model.
   Represents a repository in the storage system, including metadata such as

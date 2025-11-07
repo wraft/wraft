@@ -498,7 +498,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
         %{current_org_id: organisation_id} = current_user,
         %StorageItem{materialized_path: path} = folder_item
       ) do
-    with %{id: repository_id} = _repository <- Storage.get_latest_repository(organisation_id),
+    with %{id: repository_id} = _repository <- Storages.get_latest_repository(organisation_id),
          {:ok, files} <-
            get_files_metadata(
              access_token,

@@ -1,4 +1,4 @@
-defmodule WraftDoc.Storage do
+defmodule WraftDoc.Storages do
   @moduledoc """
   The Storage context provides functionality for managing file storage, repositories,
   and storage items within organizations.
@@ -17,11 +17,11 @@ defmodule WraftDoc.Storage do
   alias WraftDoc.Client.Minio
   alias WraftDoc.CloudImport.Providers.GoogleDrive
   alias WraftDoc.Repo
-  alias WraftDoc.Storage.Repository
-  alias WraftDoc.Storage.StorageAsset
-  alias WraftDoc.Storage.StorageAssets
-  alias WraftDoc.Storage.StorageItem
-  alias WraftDoc.Storage.StorageItems
+  alias WraftDoc.Storages.Repository
+  alias WraftDoc.Storages.StorageAsset
+  alias WraftDoc.Storages.StorageAssets
+  alias WraftDoc.Storages.StorageItem
+  alias WraftDoc.Storages.StorageItems
   alias WraftDoc.Workers.RepositoryWorker
 
   @doc "Lists all repositories"
@@ -771,7 +771,7 @@ defmodule WraftDoc.Storage do
         result -> result
       end
 
-    WraftDoc.Storage.Repository
+    WraftDoc.Storages.Repository
     |> where([r], r.id == ^repository_id)
     |> update(set: [current_storage_used: ^total_size, item_count: ^item_count])
     |> Repo.update_all([])

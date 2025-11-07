@@ -3,7 +3,7 @@ defmodule WraftDocWeb.RepositoryControllerTest do
 
   import WraftDoc.StorageFixtures
 
-  alias WraftDoc.Storage.Repository
+  alias WraftDoc.Storages.Repository
 
   @create_attrs %{
     name: "some name",

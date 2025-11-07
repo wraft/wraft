@@ -13,8 +13,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   alias WraftDoc.CloudImport.Providers.GoogleDrive, as: Google
   alias WraftDoc.CloudImport.Providers.Onedrive
   alias WraftDoc.Integrations
-  alias WraftDoc.Storage.StorageItem
-  alias WraftDoc.Storage.StorageItems
+  alias WraftDoc.Storages.StorageItem
+  alias WraftDoc.Storages.StorageItems
 
   action_fallback(WraftDocWeb.FallbackController)
 

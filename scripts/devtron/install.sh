@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
+# kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-Storages.yaml
 
 helm repo add devtron https://helm.devtron.ai
 

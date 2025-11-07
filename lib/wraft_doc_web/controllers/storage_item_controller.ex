@@ -20,11 +20,11 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   use PhoenixSwagger
   require Logger
 
-  alias WraftDoc.Storage
-  alias WraftDoc.Storage.Repository
-  alias WraftDoc.Storage.StorageAssets
-  alias WraftDoc.Storage.StorageItem
-  alias WraftDoc.Storage.StorageItems
+  alias WraftDoc.Storages
+  alias WraftDoc.Storages.Repository
+  alias WraftDoc.Storages.StorageAssets
+  alias WraftDoc.Storages.StorageItem
+  alias WraftDoc.Storages.StorageItems
 
   import WraftDocWeb.ErrorHelpers
 
@@ -661,7 +661,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
 
     folder_depth_level = StorageItems.calculate_depth_level(folder_params["path"])
 
-    case Storage.get_latest_repository(organisation_id) do
+    case Storages.get_latest_repository(organisation_id) do
       %Repository{id: repository_id} = _repository ->
         folder_params =
           folder_params

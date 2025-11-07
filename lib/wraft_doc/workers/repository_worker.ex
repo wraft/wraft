@@ -3,7 +3,7 @@ defmodule WraftDoc.Workers.RepositoryWorker do
   Oban worker for handling Google Drive operations in the background.
   Supports downloading and exporting files from Google Drive.
   Can handle single file IDs or lists of file IDs.
-  Can store files locally or in MinIO storage.
+  Can store files locally or in MinIO Storages.
   """
 
   use Oban.Worker, queue: :repository, max_attempts: 3
@@ -11,7 +11,7 @@ defmodule WraftDoc.Workers.RepositoryWorker do
 
   alias WraftDoc.Client.Minio
   alias WraftDoc.Notifications.Delivery
-  alias WraftDoc.Storage
+  alias WraftDoc.Storages
 
   @impl Oban.Worker
   def perform(%Oban.Job{
@@ -29,7 +29,7 @@ defmodule WraftDoc.Workers.RepositoryWorker do
     file_name = "#{file_name}_#{System.system_time(:second)}.zip"
     minio_key = "organisations/#{org_id}/exports/#{file_name}"
 
-    zip_path = Storage.export_repository(current_user, file_name)
+    zip_path = Storages.export_repository(current_user, file_name)
 
     Minio.upload_file(zip_path)
 
@@ -46,7 +46,7 @@ defmodule WraftDoc.Workers.RepositoryWorker do
       metadata: %{}
     })
 
-    Storage.repository_zip_deletion_worker(minio_key)
+    Storages.repository_zip_deletion_worker(minio_key)
 
     {:ok, :export_completed}
   end
@@ -57,8 +57,8 @@ defmodule WraftDoc.Workers.RepositoryWorker do
   end
 
   def perform(%Oban.Job{args: %{"action" => "update_repo_size"}}) do
-    Enum.each(Storage.list_repositories(), fn repository ->
-      Storage.update_repository_storage_size(
+    Enum.each(Storages.list_repositories(), fn repository ->
+      Storages.update_repository_storage_size(
         repository.id,
         repository.organisation_id
       )

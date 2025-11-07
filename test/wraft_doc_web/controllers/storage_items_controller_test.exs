@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
   import WraftDoc.AccountFixtures
   import WraftDoc.EnterpriseFixtures
 
-  alias WraftDoc.Storage
+  alias WraftDoc.Storages
 
   setup %{conn: conn} do
     user = user_fixture()

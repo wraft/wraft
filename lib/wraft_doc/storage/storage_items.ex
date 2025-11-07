@@ -1,4 +1,4 @@
-defmodule WraftDoc.Storage.StorageItems do
+defmodule WraftDoc.Storages.StorageItems do
   @moduledoc """
   Storage items management - handles CRUD operations, navigation, and organization
   of storage items including files and folders.
@@ -39,9 +39,9 @@ defmodule WraftDoc.Storage.StorageItems do
 
   alias WraftDoc.Client.Minio
   alias WraftDoc.Repo
-  alias WraftDoc.Storage, as: Helper
-  alias WraftDoc.Storage.StorageAssets
-  alias WraftDoc.Storage.StorageItem
+  alias WraftDoc.Storages, as: Helper
+  alias WraftDoc.Storages.StorageAssets
+  alias WraftDoc.Storages.StorageItem
 
   @type storage_item_opts :: [
           limit: pos_integer(),

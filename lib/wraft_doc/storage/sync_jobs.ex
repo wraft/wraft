@@ -1,4 +1,4 @@
-defmodule WraftDoc.Storage.SyncJobs do
+defmodule WraftDoc.Storages.SyncJobs do
   @moduledoc """
   Context module for managing storage synchronization jobs.
 
@@ -7,7 +7,7 @@ defmodule WraftDoc.Storage.SyncJobs do
   """
 
   alias WraftDoc.Repo
-  alias WraftDoc.Storage.SyncJob
+  alias WraftDoc.Storages.SyncJob
 
   @type sync_job_attrs :: map()
   @type sync_job_result :: {:ok, SyncJob.t()} | {:error, Ecto.Changeset.t()}
