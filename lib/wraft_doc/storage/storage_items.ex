@@ -429,29 +429,33 @@ defmodule WraftDoc.Storages.StorageItems do
   """
   @spec get_all_children_storage_items(String.t()) :: [StorageItem.t()]
   def get_all_children_storage_items(parent_id) do
-    parent_id
-    |> fetch_immediate_children()
-    |> Enum.flat_map(fn child ->
-      process_child(child)
-    end)
-  end
-
-  @spec fetch_immediate_children(String.t()) :: [StorageItem.t()]
-  defp fetch_immediate_children(parent_id) do
-    fetch =
+    base_query =
       from(s in StorageItem,
         where: s.parent_id == ^parent_id and s.is_deleted == false
       )
 
-    Repo.all(fetch)
-  end
+    recursive_query =
+      from(s in StorageItem,
+        join: ct in "child_tree",
+        on: s.parent_id == ct.id,
+        where: s.is_deleted == false,
+        select: s
+      )
 
-  @spec process_child(StorageItem.t()) :: [StorageItem.t()]
-  defp process_child(%StorageItem{mime_type: "inode/directory", id: id} = child) do
-    [child | get_all_children_storage_items(id)]
-  end
+    cte_query = union_all(base_query, ^recursive_query)
 
-  defp process_child(child), do: [child]
+    query =
+      with_cte(
+        from(ct in "child_tree",
+          as: :storage_item,
+          select: map(ct, ^StorageItem.__schema__(:fields))
+        ),
+        "child_tree",
+        as: ^cte_query
+      )
+
+    Repo.all(query)
+  end
 
   @doc """
   Lists storage items with breadcrumb navigation data.
