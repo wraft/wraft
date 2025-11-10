@@ -1317,6 +1317,9 @@ defmodule WraftDoc.Storages.StorageItems do
     |> order_by([{^pagination_opts.sort_direction, ^pagination_opts.sort_by}])
   end
 
+  defp maybe_filter(query, :parent_id = field, nil),
+    do: from(s in query, where: is_nil(field(s, ^field)))
+
   defp maybe_filter(query, _field, nil), do: query
 
   defp maybe_filter(query, field, value),
