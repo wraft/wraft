@@ -105,11 +105,11 @@ defmodule WraftDocWeb.WaitingListAdmin do
 
       {:ok, waiting_list}
     else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, waiting_list, format_changeset_errors(changeset)}
+
       {:error, reason} ->
         {:error, waiting_list, reason}
-
-      _error ->
-        {:error, waiting_list, "unexpected error during approval"}
     end
   end
 
@@ -131,5 +131,11 @@ defmodule WraftDocWeb.WaitingListAdmin do
       _user ->
         {:error, "user already exists"}
     end
+  end
+
+  defp format_changeset_errors(changeset) do
+    Enum.map_join(changeset.errors, ", ", fn {field, {msg, _opts}} ->
+      "#{Phoenix.Naming.humanize(field)} #{msg}"
+    end)
   end
 end
