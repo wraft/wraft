@@ -15,6 +15,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias WraftDoc.ContentTypes
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Documents.Engine
+  alias WraftDoc.Enterprise
   alias WraftDoc.Fields
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
@@ -22,7 +23,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias WraftDoc.Themes.ThemeAsset
 
   @superadmin_role "superadmin"
-
+  @default_flow_name "Wraft Flow"
   @theme_folder_path Application.compile_env!(:wraft_doc, [:theme_folder])
 
   @wraft_theme_args %{
@@ -79,8 +80,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
   def perform(%Job{
         args: %{
           "organisation_id" => organisation_id,
-          "current_user_id" => current_user_id,
-          "flow_id" => flow_id
+          "current_user_id" => current_user_id
         },
         tags: ["wraft_templates"]
       }) do
@@ -99,6 +99,12 @@ defmodule WraftDoc.Workers.DefaultWorker do
     } = load_all_templates()
 
     Multi.new()
+    |> Multi.run(:flow, fn _repo, _ ->
+      Enterprise.create_flow(current_user, %{
+        "name" => @default_flow_name,
+        "organisation_id" => organisation_id
+      })
+    end)
     |> Multi.insert(
       :theme,
       Theme.changeset(%Theme{}, Map.put(@wraft_theme_args, :organisation_id, organisation_id))
@@ -130,9 +136,9 @@ defmodule WraftDoc.Workers.DefaultWorker do
     |> Multi.run(:upload_theme_asset, fn _, %{theme: theme} ->
       create_wraft_theme_assets(theme, organisation_id)
     end)
-    |> Multi.run(:content_type_1, fn _, %{theme: theme, layout: layout} ->
+    |> Multi.run(:content_type_1, fn _, %{flow: flow, theme: theme, layout: layout} ->
       wraft_variant =
-        create_wraft_variant(current_user, theme, layout, flow_id, offer_letter_content_type)
+        create_wraft_variant(current_user, theme, layout, flow.id, offer_letter_content_type)
 
       {:ok, wraft_variant}
     end)
@@ -145,8 +151,8 @@ defmodule WraftDoc.Workers.DefaultWorker do
         })
       )
     end)
-    |> Multi.run(:content_type_2, fn _, %{theme: theme, contract_layout: layout} ->
-      wraft_variant = create_wraft_variant(current_user, theme, layout, flow_id, nda_content_type)
+    |> Multi.run(:content_type_2, fn _, %{flow: flow, theme: theme, contract_layout: layout} ->
+      wraft_variant = create_wraft_variant(current_user, theme, layout, flow.id, nda_content_type)
       {:ok, wraft_variant}
     end)
     |> Multi.insert(:data_template_2, fn %{content_type_2: content_type} ->

@@ -6,6 +6,7 @@ defmodule WraftDocWeb.WaitingListAdmin do
 
   alias WraftDoc.Account
   alias WraftDoc.AuthTokens
+  alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Kaffy.CustomDataAdmin
   alias WraftDoc.Repo
   alias WraftDoc.WaitingLists
@@ -97,7 +98,7 @@ defmodule WraftDocWeb.WaitingListAdmin do
     FunWithFlags.enable(:waiting_list_organisation_create_control, for_actor: %{email: email})
 
     with {:ok, %{user: user}} <- create_account(waiting_list),
-         {:ok, token} <- AuthTokens.create_set_password_token(user) do
+         %AuthToken{} = token <- AuthTokens.create_set_password_token(user) do
       %{name: "#{first_name} #{last_name}", email: email, token: token.value}
       |> EmailWorker.new(queue: "mailer", tags: ["waiting_list_acceptance"])
       |> Oban.insert()
@@ -107,7 +108,7 @@ defmodule WraftDocWeb.WaitingListAdmin do
       {:error, reason} ->
         {:error, waiting_list, reason}
 
-      _ ->
+      _error ->
         {:error, waiting_list, "unexpected error during approval"}
     end
   end
