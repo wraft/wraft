@@ -107,7 +107,7 @@ defmodule WraftDoc.Account do
         update_last_signed_in_org(user, personal_org.id)
         {:ok, %{user: Repo.preload(user, :profile), organisations: [personal_org]}}
 
-      {:error, :user, changeset, _} ->
+      {:error, _, changeset, _} ->
         {:error, changeset}
     end
   end
