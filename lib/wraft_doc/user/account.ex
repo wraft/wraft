@@ -135,7 +135,6 @@ defmodule WraftDoc.Account do
     |> setup_personal_organisation(params)
     |> establish_user_organisation_relationship()
     |> assign_personal_organisation_roles()
-    # |> create_default_workflow()
     |> setup_default_templates()
   end
 
