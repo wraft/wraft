@@ -34,6 +34,7 @@ defmodule WraftDoc.Account.Profile do
     |> validate_required([:name, :user_id])
     |> validate_format(:name, ~r/^[A-z ]+$/)
     |> validate_length(:name, min: 2)
+    |> unique_constraint(:user_id, name: :basic_profile_user_id_index)
 
     # |> validate_dob
   end
