@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.RepositoryView do
   use WraftDocWeb, :view
-  # alias WraftDoc.Storage.Repository
+  # alias WraftDoc.Storages.Repository
 
   def render("index.json", %{repositories: repositories}) do
     %{data: render_many(repositories, __MODULE__, "repository.json")}

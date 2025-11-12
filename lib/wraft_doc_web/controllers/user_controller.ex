@@ -15,6 +15,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise
+  alias WraftDoc.FeatureFlags
   alias WraftDoc.Notifications.Delivery
   alias WraftDocWeb.Guardian
 
@@ -590,7 +591,13 @@ defmodule WraftDocWeb.Api.V1.UserController do
   @spec me(Plug.Conn.t(), map) :: Plug.Conn.t()
   def me(conn, _params) do
     current_user = conn.assigns.current_user
-    render(conn, "me.json", %{user: current_user})
+
+    features =
+      current_user.current_org_id
+      |> Enterprise.get_organisation()
+      |> FeatureFlags.get_organization_features()
+
+    render(conn, "me.json", %{user: current_user, features: features})
   end
 
   @doc """
@@ -975,8 +982,6 @@ defmodule WraftDocWeb.Api.V1.UserController do
         render(conn, "token.json", access_token: access_token, refresh_token: refresh_token)
 
       {:error, error} ->
-        Logger.error("Refresh token creation failed. Invalid input data provided.", error: error)
-
         conn
         |> put_status(401)
         |> render("token.json", error: error)

@@ -3,7 +3,7 @@ defmodule WraftDocWeb.StorageAssetControllerTest do
 
   import WraftDoc.StorageFixtures
 
-  alias WraftDoc.Storage.StorageAsset
+  alias WraftDoc.Storages.StorageAsset
 
   @create_attrs %{
     storage_key: "some storage_key",

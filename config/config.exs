@@ -70,7 +70,17 @@ config :wraft_doc, :phoenix_swagger,
 # Cron jobs Overview https://github.com/sorentwo/oban#periodic-jobs
 config :wraft_doc, Oban,
   repo: WraftDoc.Repo,
-  queues: [default: 10, events: 50, media: 20, mailer: 20, scheduled: 10, webhooks: 15],
+  queues: [
+    default: 10,
+    events: 50,
+    media: 20,
+    mailer: 20,
+    scheduled: 10,
+    webhooks: 15,
+    cloud_provider: 15,
+    integrations: 15,
+    repository: 15
+  ],
   plugins: [
     Oban.Plugins.Pruner,
     {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(5)},
@@ -78,7 +88,12 @@ config :wraft_doc, Oban,
      crontab: [
        #  {"0 0 * * MON", WraftDoc.Workers.ScheduledWorker,
        #   queue: :scheduled, tags: ["unused_assets"]},
+       {"0 3 * * *", WraftDoc.Workers.RepositoryWorker,
+        queue: :repository,
+        tags: ["repository_size_update"],
+        args: %{"action" => "update_repo_size"}},
        {"0 0 * * *", WraftDoc.Workers.ReminderWorker, queue: :scheduled, tags: ["reminders"]},
+       {"*/5 * * * *", WraftDoc.Workers.TokenRefreshWorker},
        {"@weekly", WraftDoc.Workers.ScheduledWorker,
         queue: :scheduled,
         tags: ["hard_delete_organisation_records"],
@@ -90,7 +105,8 @@ config :wraft_doc, Oban,
 
 # File Upload config
 config :waffle,
-  storage: Waffle.Storage.S3
+  storage: Waffle.Storage.S3,
+  version_timeout: 30_000
 
 config :ex_aws,
   json_codec: Jason,

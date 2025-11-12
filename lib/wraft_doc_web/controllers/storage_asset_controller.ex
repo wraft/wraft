@@ -6,9 +6,12 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   use PhoenixSwagger
   require Logger
 
-  alias WraftDoc.Storage.StorageAsset
-  alias WraftDoc.Storage.StorageAssets
-  alias WraftDoc.Storage.StorageItems
+  alias WraftDoc.Storages.StorageAsset
+  alias WraftDoc.Storages.StorageAssets
+  alias WraftDoc.Storages.StorageItems
+
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -292,12 +295,11 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   def upload(conn, %{"file" => _file} = params) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, %{storage_asset: storage_asset, storage_item: storage_item}} <-
+    with {:ok, storage_item} <-
            StorageItems.create_storage_asset_with_item(current_user, params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", "/api/v1/storage/assets/#{storage_asset.id}")
-      |> render(:show_upload, storage_asset: storage_asset, storage_item: storage_item)
+      |> render(:show_upload, storage_item: storage_item)
     end
   end
 

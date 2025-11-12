@@ -20,13 +20,16 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   use PhoenixSwagger
   require Logger
 
-  alias WraftDoc.Storage
-  alias WraftDoc.Storage.Repository
-  alias WraftDoc.Storage.StorageAssets
-  alias WraftDoc.Storage.StorageItem
-  alias WraftDoc.Storage.StorageItems
+  alias WraftDoc.Storages
+  alias WraftDoc.Storages.Repository
+  alias WraftDoc.Storages.StorageAssets
+  alias WraftDoc.Storages.StorageItem
+  alias WraftDoc.Storages.StorageItems
 
   import WraftDocWeb.ErrorHelpers
+
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -380,21 +383,6 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
             items: [],
             breadcrumbs: []
           })
-        end,
-      Error:
-        swagger_schema do
-          title("Error")
-          description("Error response")
-
-          properties do
-            error(:string, "Error message", required: true)
-            details(:string, "Additional error details")
-          end
-
-          example(%{
-            error: "Storage item not found",
-            details: "The requested storage item does not exist"
-          })
         end
     }
   end
@@ -429,7 +417,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
         maximum: 1000
       )
 
-      offset(:query, :integer, "Number of items to skip", default: 0, minimum: 0)
+      page(:query, :integer, "Page number", default: 1)
 
       sort_by(:query, :string, "Sort field",
         enum: ["name", "created", "updated", "size", "type"],
@@ -437,6 +425,8 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
       )
 
       sort_order(:query, :string, "Sort direction", enum: ["asc", "desc"], default: "desc")
+
+      search(:query, :string, "Search query")
     end
 
     response(200, "OK", Schema.ref(:StorageItemsList))
@@ -469,13 +459,12 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
 
   def index(conn, params) do
     current_user = conn.assigns[:current_user]
-    organisation_id = current_user.current_org_id
 
     with :ok <- StorageItems.validate_uuid_param(params, "parent_id"),
          :ok <- StorageItems.validate_uuid_param(params, "repository_id"),
          {:ok, storage_items} <-
-           StorageItems.process_index_request(params, current_user, organisation_id) do
-      render(conn, "index.json", storage_items: storage_items)
+           StorageItems.process_index_request(current_user, params) do
+      render(conn, "index.json", storage_items)
     end
   end
 
@@ -670,24 +659,10 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
     current_user = conn.assigns[:current_user]
     organisation_id = current_user.current_org_id
 
-    Logger.info("📁 Starting folder creation", %{
-      user_id: current_user.id,
-      organisation_id: organisation_id,
-      folder_name: folder_params["name"],
-      parent_id: folder_params["parent_id"]
-    })
-
     folder_depth_level = StorageItems.calculate_depth_level(folder_params["path"])
 
-    # Get the latest repository for the current organisation
-    case Storage.get_latest_repository(organisation_id) do
-      %Repository{} = repository ->
-        Logger.info("Found repository for folder creation", %{
-          repository_id: repository.id,
-          organisation_id: organisation_id
-        })
-
-        # Prepare folder parameters with required metadata
+    case Storages.get_latest_repository(organisation_id) do
+      %Repository{id: repository_id} = _repository ->
         folder_params =
           folder_params
           |> Map.put("item_type", "folder")
@@ -697,41 +672,20 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
           |> Map.put("materialized_path", folder_params["path"])
           |> Map.put("creator_id", current_user.id)
           |> Map.put("organisation_id", organisation_id)
-          |> Map.put("repository_id", repository.id)
+          |> Map.put("repository_id", repository_id)
 
-        # Create the folder in storage
         case StorageItems.create_storage_item(folder_params) do
           {:ok, %StorageItem{} = storage_item} ->
-            Logger.info("Folder created successfully", %{
-              folder_id: storage_item.id,
-              folder_name: storage_item.name,
-              path: storage_item.path
-            })
-
             conn
             |> put_status(:created)
             |> put_resp_header("location", "/api/v1/storage/items/#{storage_item.id}")
             |> render("show.json", storage_item: storage_item)
 
-          {:error, %Ecto.Changeset{} = changeset} ->
-            Logger.error("Failed to create folder", %{
-              errors: Ecto.Changeset.traverse_errors(changeset, &translate_error/1),
-              organisation_id: organisation_id
-            })
-
-            conn
-            |> put_status(:unprocessable_entity)
-            |> json(%{
-              error: "Invalid folder data",
-              details: Ecto.Changeset.traverse_errors(changeset, &translate_error/1)
-            })
+          {:error, error} ->
+            {:error, error}
         end
 
       nil ->
-        Logger.warning("No repositories found for organisation", %{
-          organisation_id: organisation_id
-        })
-
         conn
         |> put_status(:not_found)
         |> json(%{
@@ -770,7 +724,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
 
       render(conn, "storage_item.json",
         storage_item: storage_item,
-        storage_assets: storage_assets
+        storage_asset: storage_assets
       )
     else
       nil ->
@@ -817,46 +771,6 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
       render(conn, :show, storage_item: storage_item)
     end
   end
-
-  #   swagger_path :stats do
-  #     get("/storage/assets/stats")
-  #     summary("Get storage statistics")
-  #     description("Returns statistics for a folder or root directory")
-  #     operation_id("getStorageStats")
-  #     produces("application/json")
-  #     tag("Storage Assets")
-
-  #     parameters do
-  #       parent_id(:query, :string, "Parent folder ID", format: "uuid")
-  #     end
-
-  #     response(200, "OK", Schema.ref(:StorageStats))
-  #     response(400, "Bad Request", Schema.ref(:Error))
-  #     response(401, "Unauthorized", Schema.ref(:Error))
-  #   end
-
-  #   @doc """
-  #   Gets statistics for a folder or root directory.
-  #   """
-  # def stats(conn, params) do
-  #   current_user = conn.assigns[:current_user]
-  #   organisation_id = current_user.current_org_id
-  #   parent_id = Map.get(params, "parent_id")
-
-  #   case validate_uuid_param(params, "parent_id") do
-  #     :ok ->
-  #       stats = StorageItems.get_storage_item_stats(parent_id, organisation_id)
-
-  #       json(conn, %{
-  #         data: stats
-  #       })
-
-  #     {:error, _field} ->
-  #       conn
-  #       |> put_status(:bad_request)
-  #       |> json(%{error: "Invalid UUID format for parent_id"})
-  #   end
-  # end
 
   swagger_path :delete do
     PhoenixSwagger.Path.delete("/storage/items/{id}")
@@ -906,7 +820,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   end
 
   swagger_path :rename do
-    post("/storage/items/{id}/rename")
+    put("/storage/items/{id}/rename")
     summary("Rename a storage item")
 
     description("""
@@ -937,19 +851,19 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   Renames a storage item (file or folder).
 
   ## Route
-  POST /api/v1/storage/items/:id/rename
+  PUT /api/v1/storage/items/:id/rename
 
   ## Parameters
   - id: Item UUID (path parameter)
   - new_name: New name for the item (body parameter)
 
   ## Examples
-      POST /api/v1/storage/items/550e8400-e29b-41d4-a716-446655440000/rename
+      PUT /api/v1/storage/items/550e8400-e29b-41d4-a716-446655440000/rename
       {
         "new_name": "Renamed Document.pdf"
       }
   """
-  def rename(conn, %{"id" => id, "new_name" => new_name}) do
+  def rename(conn, %{"storage_item_id" => id, "new_name" => new_name}) do
     organisation_id = conn.assigns[:current_user].current_org_id
 
     case StorageItems.get_storage_item_by_org(id, organisation_id) do
@@ -961,12 +875,6 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
       storage_item ->
         case StorageItems.rename_storage_item(storage_item, new_name, organisation_id) do
           {:ok, updated_item} ->
-            Logger.info("Storage item renamed", %{
-              item_id: id,
-              new_name: new_name,
-              organisation_id: organisation_id
-            })
-
             conn
             |> put_status(:ok)
             |> render("show.json", storage_item: updated_item)

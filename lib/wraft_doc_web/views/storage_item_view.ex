@@ -1,43 +1,9 @@
 defmodule WraftDocWeb.Api.V1.StorageItemView do
   use WraftDocWeb, :view
-  alias WraftDoc.Storage.StorageAsset
-  alias WraftDoc.Storage.StorageItem
 
-  def render("index.json", %{storage_items: storage_items}) do
-    storage_items
-  end
+  alias WraftDocWeb.Api.V1.StorageAssetView
 
-  def render("breadcrumbs.json", %{breadcrumbs: breadcrumbs}) do
-    %{data: breadcrumbs}
-  end
-
-  def render("navigation.json", %{navigation_data: navigation_data}) do
-    %{data: navigation_data}
-  end
-
-  def render("show.json", %{storage_item: storage_item, storage_assets: storage_assets}) do
-    %{data: data(storage_item, storage_assets)}
-  end
-
-  def render("storage_item.json", %{storage_item: storage_item, storage_assets: storage_assets}) do
-    %{data: data(storage_item, storage_assets)}
-  end
-
-  def render("delete.json", %{delete: delete}) do
-    delete
-  end
-
-  @doc """
-  Renders a single storage item.
-  """
-  def show(%{storage_item: storage_item}) do
-    %{data: data(storage_item)}
-  end
-
-  @doc """
-  Formats storage item data for response
-  """
-  def data(%StorageItem{} = storage_item, storage_assets \\ []) do
+  def render("storage_item.json", %{storage_item: storage_item}) do
     %{
       id: storage_item.id,
       name: storage_item.name,
@@ -60,37 +26,54 @@ defmodule WraftDocWeb.Api.V1.StorageItemView do
       metadata: storage_item.metadata,
       parent_id: storage_item.parent_id,
       repository_id: storage_item.repository_id,
+      upload_status: storage_item.upload_status,
       creator_id: storage_item.creator_id,
       organisation_id: storage_item.organisation_id,
       inserted_at: storage_item.inserted_at,
       updated_at: storage_item.updated_at,
-      assets: Enum.map(storage_assets, &storage_asset_data/1)
+      asset: render_one(storage_item.storage_asset, StorageAssetView, "storage_asset.json")
     }
   end
 
-  @doc """
-  Formats storage asset data for response
-  """
-  def storage_asset_data(%StorageAsset{} = storage_asset) do
+  def render("index.json", %{
+        data: storage_items,
+        meta: meta,
+        breadcrumbs: breadcrumbs,
+        current_folder: current_folder
+      }) do
     %{
-      id: storage_asset.id,
-      filename: storage_asset.filename,
-      storage_key: storage_asset.storage_key,
-      storage_backend: storage_asset.storage_backend,
-      file_size: storage_asset.file_size,
-      mime_type: storage_asset.mime_type,
-      processing_status: storage_asset.processing_status,
-      upload_completed_at: storage_asset.upload_completed_at,
-      checksum_sha256: storage_asset.checksum_sha256,
-      thumbnail_path: storage_asset.thumbnail_path,
-      preview_path: storage_asset.preview_path,
-      inserted_at: storage_asset.inserted_at,
-      updated_at: storage_asset.updated_at,
-      url: generate_url(storage_asset)
+      data: render_many(storage_items, __MODULE__, "storage_item.json"),
+      meta: meta,
+      breadcrumbs: breadcrumbs,
+      current_folder: current_folder
     }
   end
 
-  defp generate_url(storage_asset) do
-    WraftDocWeb.StorageAssetUploader.url({storage_asset.filename, storage_asset}, signed: true)
+  def render("cloud_index.json", %{
+        status: status,
+        provider: provider,
+        storage_items: storage_items
+      }) do
+    %{
+      status: status,
+      provider: provider,
+      storage_items: render_many(storage_items, __MODULE__, "storage_item.json")
+    }
+  end
+
+  def render("breadcrumbs.json", %{breadcrumbs: breadcrumbs}) do
+    %{data: breadcrumbs}
+  end
+
+  def render("navigation.json", %{navigation_data: navigation_data}) do
+    %{data: navigation_data}
+  end
+
+  def render("show.json", %{storage_item: storage_item}) do
+    %{data: render_one(storage_item, __MODULE__, "storage_item.json")}
+  end
+
+  def render("delete.json", %{delete: delete}) do
+    delete
   end
 end

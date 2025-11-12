@@ -28,7 +28,8 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Notifications.Settings
   alias WraftDoc.Repo
-  alias WraftDoc.Storage
+  alias WraftDoc.Storages
+  alias WraftDoc.TaskSupervisor
   alias WraftDoc.Workers.DefaultWorker
   alias WraftDoc.Workers.EmailWorker
   alias WraftDoc.Workers.ScheduledWorker
@@ -747,7 +748,7 @@ defmodule WraftDoc.Enterprise do
     }
 
     repository_attrs
-    |> Storage.create_repository()
+    |> Storages.create_repository()
     |> case do
       {:ok, repository} ->
         {:ok, %{organisation: organisation, repository: repository}}

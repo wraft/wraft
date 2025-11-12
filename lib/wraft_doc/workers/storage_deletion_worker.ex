@@ -6,7 +6,7 @@ defmodule WraftDoc.Workers.StorageDeletionWorker do
 
   require Logger
   alias WraftDoc.Repo
-  alias WraftDoc.Storage.StorageItem
+  alias WraftDoc.Storages.StorageItem
   import Ecto.Query
 
   @impl Oban.Worker

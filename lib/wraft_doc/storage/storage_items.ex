@@ -1,4 +1,4 @@
-defmodule WraftDoc.Storage.StorageItems do
+defmodule WraftDoc.Storages.StorageItems do
   @moduledoc """
   Storage items management - handles CRUD operations, navigation, and organization
   of storage items including files and folders.
@@ -36,11 +36,12 @@ defmodule WraftDoc.Storage.StorageItems do
 
   require Logger
   import Ecto.Query, warn: false
+
+  alias WraftDoc.Client.Minio
   alias WraftDoc.Repo
-  alias WraftDoc.Storage, as: Helper
-  alias WraftDoc.Storage.StorageAsset
-  alias WraftDoc.Storage.StorageAssets
-  alias WraftDoc.Storage.StorageItem
+  alias WraftDoc.Storages, as: Helper
+  alias WraftDoc.Storages.StorageAssets
+  alias WraftDoc.Storages.StorageItem
 
   @type storage_item_opts :: [
           limit: pos_integer(),
@@ -102,15 +103,12 @@ defmodule WraftDoc.Storage.StorageItems do
         ]
   def list_storage_items(parent_id \\ nil, organisation_id \\ nil, opts \\ [])
 
-  def list_storage_items(nil, nil, _opts) do
-    Repo.all(StorageItem)
-  end
-
   def list_storage_items(parent_id, organisation_id, opts) when is_binary(organisation_id) do
-    limit = Keyword.get(opts, :limit, 100)
+    limit = Keyword.get(opts, :limit, 50)
     offset = Keyword.get(opts, :offset, 0)
     sort_by = Keyword.get(opts, :sort_by, "created")
     sort_order = Keyword.get(opts, :sort_order, "desc")
+    search = Keyword.get(opts, :search, nil)
 
     # Parse sorting options
     order_by_clause = Helper.parse_sort_options(sort_by, sort_order)
@@ -124,6 +122,13 @@ defmodule WraftDoc.Storage.StorageItems do
         offset: ^offset
       )
 
+    base_query =
+      if search && search != "" do
+        from(s in base_query, where: ilike(s.name, ^"%#{search}%"))
+      else
+        base_query
+      end
+
     query =
       if parent_id do
         from(s in base_query, where: s.parent_id == ^parent_id)
@@ -133,7 +138,7 @@ defmodule WraftDoc.Storage.StorageItems do
         )
       end
 
-    Repo.all(query)
+    query |> Repo.all() |> Repo.preload(storage_asset: :storage_item)
   end
 
   def list_storage_items(parent_id, organisation_id, opts) do
@@ -155,6 +160,16 @@ defmodule WraftDoc.Storage.StorageItems do
   """
   @spec get_storage_item!(String.t()) :: StorageItem.t()
   def get_storage_item!(id), do: Repo.get!(StorageItem, id)
+
+  @doc """
+  Updates file upload status to completed.
+  """
+  @spec update_upload_status(StorageItem.t() | Ecto.UUID.t(), String.t()) ::
+          {:ok, StorageItem.t()}
+          | {:error, Ecto.Changeset.t()}
+          | {integer(), nil | [StorageItem.t()]}
+  def update_upload_status(%StorageItem{} = storage_item, status),
+    do: update_storage_item(storage_item, %{"upload_status" => status})
 
   @doc """
   Creates a storage item with the given attributes.
@@ -181,11 +196,13 @@ defmodule WraftDoc.Storage.StorageItems do
   def create_storage_item(attrs \\ %{}) do
     attrs = Helper.handle_duplicate_names(attrs)
 
-    case %StorageItem{}
-         |> StorageItem.changeset(attrs)
-         |> Repo.insert() do
+    %StorageItem{}
+    |> StorageItem.changeset(attrs)
+    |> Repo.insert()
+    |> case do
       {:ok, storage_item} ->
-        {:ok, storage_item}
+        {:ok,
+         Repo.preload(storage_item, [:organisation, :repository, storage_asset: :storage_item])}
 
       {:error, changeset} ->
         if duplicate_external_id_error?(changeset) do
@@ -213,7 +230,7 @@ defmodule WraftDoc.Storage.StorageItems do
        when not is_nil(ext_id) and not is_nil(sync) do
     case Repo.get_by(StorageItem, external_id: ext_id, sync_source: sync) do
       nil -> {:error, :not_found}
-      existing -> {:ok, existing}
+      existing -> {:ok, Repo.preload(existing, storage_asset: :storage_item)}
     end
   end
 
@@ -236,6 +253,13 @@ defmodule WraftDoc.Storage.StorageItems do
     storage_item
     |> StorageItem.changeset(attrs)
     |> Repo.update()
+    |> case do
+      {:ok, updated_storage_item} ->
+        {:ok, Repo.preload(updated_storage_item, storage_asset: :storage_item)}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -375,6 +399,24 @@ defmodule WraftDoc.Storage.StorageItems do
     storage_item
     |> StorageItem.changeset(%{is_deleted: true, deleted_at: now})
     |> Repo.update()
+    |> case do
+      {:ok, updated_storage_item} ->
+        {:ok, Repo.preload(updated_storage_item, storage_assets: :storage_item)}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  def get_storage_item_by_path(organisation_id, materialized_path) do
+    Repo.one(
+      from(s in StorageItem,
+        where:
+          s.organisation_id == ^organisation_id and
+            s.materialized_path == ^materialized_path and
+            s.is_deleted == false
+      )
+    )
   end
 
   @doc """
@@ -387,29 +429,33 @@ defmodule WraftDoc.Storage.StorageItems do
   """
   @spec get_all_children_storage_items(String.t()) :: [StorageItem.t()]
   def get_all_children_storage_items(parent_id) do
-    parent_id
-    |> fetch_immediate_children()
-    |> Enum.flat_map(fn child ->
-      process_child(child)
-    end)
-  end
-
-  @spec fetch_immediate_children(String.t()) :: [StorageItem.t()]
-  defp fetch_immediate_children(parent_id) do
-    fetch =
+    base_query =
       from(s in StorageItem,
         where: s.parent_id == ^parent_id and s.is_deleted == false
       )
 
-    Repo.all(fetch)
-  end
+    recursive_query =
+      from(s in StorageItem,
+        join: ct in "child_tree",
+        on: s.parent_id == ct.id,
+        where: s.is_deleted == false,
+        select: s
+      )
 
-  @spec process_child(StorageItem.t()) :: [StorageItem.t()]
-  defp process_child(%StorageItem{mime_type: "inode/directory", id: id} = child) do
-    [child | get_all_children_storage_items(id)]
-  end
+    cte_query = union_all(base_query, ^recursive_query)
 
-  defp process_child(child), do: [child]
+    query =
+      with_cte(
+        from(ct in "child_tree",
+          as: :storage_item,
+          select: map(ct, ^StorageItem.__schema__(:fields))
+        ),
+        "child_tree",
+        as: ^cte_query
+      )
+
+    Repo.all(query)
+  end
 
   @doc """
   Lists storage items with breadcrumb navigation data.
@@ -429,6 +475,19 @@ defmodule WraftDoc.Storage.StorageItems do
           }
   def list_storage_items_with_breadcrumbs(parent_id \\ nil, organisation_id, opts \\ []) do
     items = list_storage_items(parent_id, organisation_id, opts)
+
+    items =
+      Enum.map(items, fn item ->
+        case item do
+          %{mime_type: "inode/directory", id: folder_id} = folder ->
+            total_size = calculate_folder_size(folder_id, organisation_id)
+            Map.put(folder, :size, total_size)
+
+          file ->
+            file
+        end
+      end)
+
     {breadcrumbs, current_folder} = build_breadcrumbs_and_folder(parent_id, organisation_id)
 
     %{
@@ -438,14 +497,60 @@ defmodule WraftDoc.Storage.StorageItems do
     }
   end
 
+  defp calculate_folder_size(folder_id, organisation_id) do
+    folder_id = Ecto.UUID.dump!(folder_id)
+    organisation_id = Ecto.UUID.dump!(organisation_id)
+
+    {:ok, %{rows: rows}} =
+      Repo.query(
+        """
+          WITH RECURSIVE folder_tree AS (
+            -- Base case: direct children
+            SELECT id, parent_id, mime_type, size, 1 as level
+            FROM storage_items
+            WHERE parent_id = $1 AND organisation_id = $2 AND is_deleted = false
+
+            UNION ALL
+
+            -- Recursive case: children of children
+            SELECT si.id, si.parent_id, si.mime_type, si.size, ft.level + 1
+            FROM storage_items si
+            INNER JOIN folder_tree ft ON ft.id = si.parent_id
+            WHERE si.is_deleted = false AND si.organisation_id = $2
+          )
+          SELECT
+            COALESCE(SUM(CASE WHEN mime_type != 'inode/directory' THEN size ELSE 0 END), 0) as total_size
+          FROM folder_tree;
+        """,
+        [folder_id, organisation_id]
+      )
+
+    case rows do
+      [[total_size]] -> total_size
+      _ -> 0
+    end
+  end
+
   @spec build_breadcrumbs_and_folder(String.t() | nil, String.t()) ::
           {[breadcrumb_item()], map() | nil}
-  defp build_breadcrumbs_and_folder(nil, _organisation_id), do: {[], nil}
+  defp build_breadcrumbs_and_folder(nil, _organisation_id),
+    do:
+      {[
+         %{
+           id: "",
+           name: "",
+           path: "/",
+           materialized_path: "/",
+           is_folder: true
+         }
+       ], nil}
 
   defp build_breadcrumbs_and_folder(parent_id, organisation_id) do
     case get_storage_item_by_org(parent_id, organisation_id) do
       %StorageItem{} = folder ->
-        breadcrumbs = Helper.get_ancestors_breadcrumbs(folder, organisation_id)
+        breadcrumbs =
+          get_storage_item_breadcrumb_navigation(parent_id, organisation_id)
+
         current_folder = build_folder_map(folder)
         {breadcrumbs, current_folder}
 
@@ -523,7 +628,7 @@ defmodule WraftDoc.Storage.StorageItems do
         offset: ^offset
       )
 
-    Repo.all(query)
+    query |> Repo.all() |> Repo.preload(storage_asset: :storage_item)
   end
 
   @doc """
@@ -554,7 +659,7 @@ defmodule WraftDoc.Storage.StorageItems do
         offset: ^offset
       )
 
-    Repo.all(query)
+    query |> Repo.all() |> Repo.preload(storage_asset: :storage_item)
   end
 
   @doc """
@@ -581,7 +686,7 @@ defmodule WraftDoc.Storage.StorageItems do
         offset: ^offset
       )
 
-    Repo.all(query)
+    query |> Repo.all() |> Repo.preload(storage_asset: :storage_item)
   end
 
   @doc """
@@ -604,7 +709,31 @@ defmodule WraftDoc.Storage.StorageItems do
         where: s.is_deleted == false
       )
 
-    Repo.one!(query)
+    query |> Repo.one!() |> Repo.preload(storage_asset: :storage_item)
+  end
+
+  def get_folder(nil, _organisation_id) do
+    %StorageItem{
+      id: nil,
+      mime_type: "inode/directory",
+      is_deleted: false,
+      repository_id: nil,
+      materialized_path: "/",
+      depth_level: 1,
+      parent_id: nil
+    }
+  end
+
+  def get_folder(folder_id, organisation_id) do
+    query =
+      from(s in StorageItem,
+        where: s.id == ^folder_id,
+        where: s.mime_type == "inode/directory",
+        where: s.organisation_id == ^organisation_id,
+        where: s.is_deleted == false
+      )
+
+    Repo.one(query)
   end
 
   @doc """
@@ -627,7 +756,19 @@ defmodule WraftDoc.Storage.StorageItems do
         where: s.is_deleted == false
       )
 
-    Repo.one(query)
+    query |> Repo.one() |> Repo.preload(storage_asset: :storage_item)
+  end
+
+  def get_sync_folder(folder_name, organisation_id) do
+    query =
+      from(s in StorageItem,
+        where: s.name == ^folder_name,
+        where: s.organisation_id == ^organisation_id,
+        where: s.mime_type == "inode/directory",
+        where: s.is_deleted == false
+      )
+
+    query |> Repo.one() |> Repo.preload(storage_asset: :storage_item)
   end
 
   @doc """
@@ -791,7 +932,7 @@ defmodule WraftDoc.Storage.StorageItems do
         base_query
       end
 
-    Repo.all(query)
+    query |> Repo.all() |> Repo.preload(storage_asset: :storage_item)
   end
 
   @doc """
@@ -806,28 +947,8 @@ defmodule WraftDoc.Storage.StorageItems do
   """
   @spec create_storage_asset_with_item(map(), map()) :: {:ok, map()} | {:error, any()}
   def create_storage_asset_with_item(current_user, params) do
-    organisation_id = current_user.current_org_id
-
     with {:ok, enriched_params} <-
-           Helper.prepare_upload_params(params, current_user, organisation_id),
-         {:ok, result} <- Helper.execute_upload_transaction(enriched_params) do
-      {:ok, result}
-    else
-      {:error, error} -> {:error, error}
-    end
-  end
-
-  @doc """
-  Creates a storage asset with file upload for public access (no user required).
-
-  ## Examples
-
-      iex> create_storage_asset_with_item_public(%{"file" => upload}, "org-123")
-      {:ok, %{storage_item: %StorageItem{}, storage_asset: %StorageAsset{}}}
-  """
-  @spec create_storage_asset_with_item_public(map(), String.t()) :: {:ok, map()} | {:error, any()}
-  def create_storage_asset_with_item_public(params, organisation_id) do
-    with {:ok, enriched_params} <- Helper.prepare_upload_params(params, nil, organisation_id),
+           Helper.prepare_upload_params(params, current_user),
          {:ok, result} <- Helper.execute_upload_transaction(enriched_params) do
       {:ok, result}
     else
@@ -843,45 +964,50 @@ defmodule WraftDoc.Storage.StorageItems do
       iex> build_storage_item_params(params, file_metadata, user, "org-123")
       {:ok, %{name: "document", mime_type: "application/pdf", ...}}
   """
-  @spec build_storage_item_params(map(), map(), map() | nil, String.t()) :: {:ok, map()}
-  def build_storage_item_params(params, file_metadata, current_user, organisation_id) do
+  @spec build_storage_item_params(map(), map(), map() | nil) :: {:ok, map()}
+  def build_storage_item_params(
+        params,
+        file_metadata,
+        %{id: user_id, current_org_id: organisation_id} = _current_user
+      ) do
     parent_id = Map.get(params, "parent_id")
     repository_id = Map.get(params, "repository_id")
 
     {depth_level, materialized_path} =
       Helper.calculate_item_hierarchy(parent_id, organisation_id, file_metadata.filename)
 
-    base_name = Path.basename(file_metadata.filename, file_metadata.file_extension)
+    base_name = Path.rootname(file_metadata.filename)
     display_name = Map.get(params, "display_name", file_metadata.filename)
 
     storage_item_params = %{
-      name: base_name,
-      display_name: display_name,
-      item_type: "file",
-      path: "/#{file_metadata.filename}",
-      path_hash: Base.encode16(:crypto.hash(:sha256, file_metadata.filename), case: :lower),
-      depth_level: depth_level,
-      materialized_path: materialized_path,
-      mime_type: file_metadata.mime_type,
-      file_extension: file_metadata.file_extension,
-      size: file_metadata.file_size,
-      checksum_sha256: file_metadata.checksum_sha256,
-      version_number: "1.0",
-      is_current_version: true,
-      classification_level: Map.get(params, "classification_level", "public"),
-      is_deleted: false,
-      content_extracted: false,
-      thumbnail_generated: false,
-      download_count: 0,
-      metadata: %{
-        original_filename: file_metadata.filename,
-        filename: file_metadata.filename,
-        upload_source: "web_ui"
+      "name" => base_name,
+      "display_name" => display_name,
+      "item_type" => "file",
+      "path" => "/#{file_metadata.filename}",
+      "path_hash" => Base.encode16(:crypto.hash(:sha256, file_metadata.filename), case: :lower),
+      "depth_level" => depth_level,
+      "materialized_path" => materialized_path,
+      "mime_type" => file_metadata.mime_type,
+      "file_extension" => file_metadata.file_extension,
+      "size" => file_metadata.file_size,
+      "checksum_sha256" => file_metadata.checksum_sha256,
+      "version_number" => "1.0",
+      "is_current_version" => true,
+      "classification_level" => Map.get(params, "classification_level", "public"),
+      "is_deleted" => false,
+      "content_extracted" => false,
+      "thumbnail_generated" => false,
+      "download_count" => 0,
+      "metadata" => %{
+        "original_filename" => file_metadata.filename,
+        "filename" => file_metadata.filename,
+        "upload_source" => "web_ui"
       },
-      parent_id: parent_id,
-      repository_id: repository_id,
-      creator_id: current_user && current_user.id,
-      organisation_id: organisation_id
+      "parent_id" => parent_id,
+      "repository_id" => repository_id,
+      "creator_id" => user_id,
+      "organisation_id" => organisation_id,
+      "upload_status" => "completed"
     }
 
     {:ok, storage_item_params}
@@ -894,63 +1020,122 @@ defmodule WraftDoc.Storage.StorageItems do
 
       iex> rename_storage_item(storage_item, "new_name", "org-123")
       {:ok, %StorageItem{name: "new_name"}}
-
-      iex> rename_storage_item(storage_item, "invalid/name", "org-123")
-      {:error, :invalid_name}
   """
   @spec rename_storage_item(StorageItem.t(), String.t(), String.t()) ::
           {:ok, StorageItem.t()} | {:error, atom()}
   def rename_storage_item(%StorageItem{} = storage_item, new_name, organisation_id) do
-    with :ok <- validate_name(new_name),
-         :ok <- check_duplicate_name(storage_item, new_name, organisation_id),
-         {:ok, updated_item} <- update_storage_item_name(storage_item, new_name) do
-      maybe_update_children_paths(updated_item, organisation_id)
-      {:ok, updated_item}
+    with new_name <- validate_name(storage_item, new_name),
+         :ok <- check_duplicate_name(storage_item, new_name, organisation_id) do
+      update_storage_item_name(storage_item, new_name)
     end
   end
 
-  @spec validate_name(String.t()) :: :ok | {:error, :invalid_name}
-  defp validate_name(name) do
-    if String.contains?(name, "/") do
-      {:error, :invalid_name}
-    else
-      :ok
-    end
+  defp validate_name(%StorageItem{item_type: "folder"}, name) do
+    name
+    |> String.trim("/")
+    |> String.replace("/", " ")
   end
 
-  @spec check_duplicate_name(StorageItem.t(), String.t(), String.t()) ::
-          :ok | {:error, :duplicate_name}
+  defp validate_name(%StorageItem{file_extension: file_extension}, name) do
+    name =
+      name
+      |> String.trim("/")
+      |> String.replace("/", " ")
+
+    Path.rootname(name) <> "." <> String.trim_leading(file_extension, ".")
+  end
+
   defp check_duplicate_name(storage_item, new_name, organisation_id) do
-    duplicate_check_query =
-      from(s in StorageItem,
-        where: s.parent_id == ^storage_item.parent_id,
-        where: s.organisation_id == ^organisation_id,
-        where: s.is_deleted == false,
-        where: s.id != ^storage_item.id,
-        where: s.name == ^new_name
-      )
+    base_query =
+      StorageItem
+      |> where([s], s.organisation_id == ^organisation_id)
+      |> where([s], s.is_deleted == false)
+      |> where([s], s.id != ^storage_item.id)
+      |> where([s], s.name == ^new_name)
 
-    case Repo.one(duplicate_check_query) do
+    query =
+      if is_nil(storage_item.parent_id) do
+        where(base_query, [s], is_nil(s.parent_id))
+      else
+        where(base_query, [s], s.parent_id == ^storage_item.parent_id)
+      end
+
+    case Repo.one(query) do
       nil -> :ok
       _existing_item -> {:error, :duplicate_name}
     end
   end
 
-  @spec update_storage_item_name(StorageItem.t(), String.t()) ::
-          {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()}
-  defp update_storage_item_name(storage_item, new_name) do
+  defp update_storage_item_name(
+         %{
+           item_type: "folder",
+           path: path,
+           materialized_path: materialized_path,
+           organisation_id: organisation_id
+         } = storage_item,
+         new_name
+       ) do
+    new_path = Path.join(Path.dirname(path), new_name)
+    new_materialized_path = Path.join(Path.dirname(materialized_path), new_name)
+
     storage_item
-    |> StorageItem.changeset(%{
-      name: new_name,
-      display_name: new_name
+    |> update_storage_item(%{
+      name: Path.rootname(new_name),
+      display_name: new_name,
+      path: new_path,
+      materialized_path: new_materialized_path
     })
-    |> Repo.update()
+    |> case do
+      {:ok, updated_item} ->
+        minio_path = "organisations/#{organisation_id}/repository/"
+
+        Minio.rename_folder(
+          Path.join(minio_path, materialized_path),
+          Path.join(minio_path, new_materialized_path)
+        )
+
+        maybe_update_children_paths(updated_item, materialized_path)
+        {:ok, updated_item}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
-  @spec maybe_update_children_paths(StorageItem.t(), String.t()) :: any()
-  defp maybe_update_children_paths(updated_item, organisation_id) do
+  defp update_storage_item_name(
+         %{path: path, materialized_path: materialized_path, organisation_id: organisation_id} =
+           storage_item,
+         new_name
+       ) do
+    new_path = Path.join(Path.dirname(path), new_name)
+    new_materialized_path = Path.join(Path.dirname(materialized_path), new_name)
+
+    storage_item
+    |> update_storage_item(%{
+      name: Path.rootname(new_name),
+      display_name: new_name,
+      path: new_path,
+      materialized_path: new_materialized_path
+    })
+    |> case do
+      {:ok, updated_item} ->
+        minio_path = "organisations/#{organisation_id}/repository/"
+
+        Minio.rename_file(
+          Path.join(minio_path, materialized_path),
+          Path.join(minio_path, new_materialized_path)
+        )
+
+        {:ok, updated_item}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  defp maybe_update_children_paths(updated_item, old_materialized_path) do
     if updated_item.mime_type == "inode/directory" do
-      Helper.update_children_paths(updated_item, organisation_id)
+      Helper.update_children_paths(updated_item, old_materialized_path)
     end
   end
 
@@ -965,109 +1150,87 @@ defmodule WraftDoc.Storage.StorageItems do
       iex> process_index_request(%{"parent_id" => "folder-123"}, user, "org-456")
       {:ok, %{data: [...], breadcrumbs: [...], meta: %{...}}}
   """
-  @spec process_index_request(map(), map(), String.t()) :: {:ok, map()} | {:error, String.t()}
-  def process_index_request(params, _current_user, organisation_id) do
+  @spec process_index_request(User.t(), map()) :: {:ok, map()} | {:error, String.t()}
+  def process_index_request(%{current_org_id: organisation_id} = _current_user, params) do
     pagination_opts = build_pagination_opts(params)
+    filters = build_storage_filters(params)
 
     result =
       cond do
         valid_parent_id?(params) ->
-          handle_parent_flow(params, organisation_id, pagination_opts)
+          handle_parent_flow(params, organisation_id, pagination_opts, filters)
 
         valid_repository_id?(params) ->
-          handle_repository_flow(params, organisation_id, pagination_opts)
+          handle_repository_flow(params, organisation_id, pagination_opts, filters)
 
         true ->
-          handle_root_flow(organisation_id, pagination_opts)
+          handle_root_flow(organisation_id, pagination_opts, filters)
       end
 
     respond_with_result(result, params, organisation_id)
   end
 
-  @spec build_pagination_opts(map()) :: storage_item_opts()
   defp build_pagination_opts(params) do
-    limit = parse_integer(params["limit"], 100, 1, 1000)
-    offset = parse_integer(params["offset"], 0, 0, nil)
-    sort_by = Map.get(params, "sort_by", "created")
+    page = parse_integer(params["page"], 1, 1, nil)
+    per_page = parse_integer(params["limit"], 100, 1, 1000)
+    sort_by = Map.get(params, "sort_by", "inserted_at")
     sort_order = Map.get(params, "sort_order", "desc")
+    search = Map.get(params, "search", nil)
 
-    [
-      limit: limit,
-      offset: offset,
-      sort_by: sort_by,
-      sort_order: sort_order
-    ]
+    %{
+      page: page,
+      page_size: per_page,
+      sort_by: String.to_atom(sort_by),
+      sort_direction: String.to_atom(sort_order),
+      search: search
+    }
   end
 
-  @spec valid_parent_id?(map()) :: boolean()
+  defp build_storage_filters(params) do
+    %{
+      repository_id: params["repository_id"],
+      parent_id: params["parent_id"],
+      item_type: params["type"],
+      file_type: params["file_type"],
+      date_modified: params["date_range"],
+      file_size: params["size_range"]
+    }
+  end
+
   defp valid_parent_id?(%{"parent_id" => parent_id}), do: parent_id != ""
   defp valid_parent_id?(_), do: false
 
-  @spec valid_repository_id?(map()) :: boolean()
   defp valid_repository_id?(%{"repository_id" => repository_id}), do: repository_id != ""
   defp valid_repository_id?(_), do: false
 
-  @spec handle_parent_flow(map(), String.t(), storage_item_opts()) ::
-          {:ok, map()} | {:error, atom()}
-  defp handle_parent_flow(params, organisation_id, pagination_opts) do
+  defp handle_parent_flow(params, organisation_id, pagination_opts, filters) do
     parent_id = params["parent_id"]
-    sort_by = pagination_opts[:sort_by]
-    sort_order = pagination_opts[:sort_order]
-
-    Logger.info("📁 Fetching contents of folder", %{
-      parent_id: parent_id,
-      organisation_id: organisation_id,
-      sort_by: sort_by,
-      sort_order: sort_order
-    })
 
     case get_storage_item_by_org(parent_id, organisation_id) do
       %StorageItem{mime_type: "inode/directory"} ->
-        Logger.info("✅ Folder found, listing contents", %{parent_id: parent_id})
+        query =
+          base_storage_query(organisation_id, pagination_opts, filters)
 
-        {:ok,
-         list_storage_items_with_breadcrumbs(
-           parent_id,
-           organisation_id,
-           pagination_opts
-         )}
+        items = Repo.paginate(query, pagination_opts)
+        {breadcrumbs, current_folder} = build_breadcrumbs_and_folder(parent_id, organisation_id)
+
+        {:ok, %{items: items, breadcrumbs: breadcrumbs, current_folder: current_folder}}
 
       %StorageItem{} ->
-        Logger.warning("❌ Item exists but is not a directory", %{parent_id: parent_id})
         {:error, :not_a_directory}
 
       nil ->
-        Logger.warning("❌ Folder not found", %{
-          parent_id: parent_id,
-          organisation_id: organisation_id
-        })
-
-        {:error, :folder_not_found}
+        {:error, "folder not found"}
     end
   end
 
-  @spec handle_repository_flow(map(), String.t(), storage_item_opts()) :: {:ok, map()}
-  defp handle_repository_flow(params, organisation_id, pagination_opts) do
-    repository_id = params["repository_id"]
+  defp handle_repository_flow(params, organisation_id, pagination_opts, filters) do
     parent_id = Map.get(params, "parent_id")
-    sort_by = pagination_opts[:sort_by]
-    sort_order = pagination_opts[:sort_order]
 
-    Logger.info("🗄️ Fetching repository contents", %{
-      repository_id: repository_id,
-      parent_id: parent_id,
-      organisation_id: organisation_id,
-      sort_by: sort_by,
-      sort_order: sort_order
-    })
+    query =
+      base_storage_query(organisation_id, pagination_opts, filters)
 
-    items =
-      Helper.list_repository_storage_items(
-        repository_id,
-        parent_id,
-        organisation_id,
-        pagination_opts
-      )
+    items = Repo.paginate(query, pagination_opts)
 
     breadcrumbs =
       if parent_id,
@@ -1096,89 +1259,140 @@ defmodule WraftDoc.Storage.StorageItems do
     {:ok, %{items: items, breadcrumbs: breadcrumbs, current_folder: current_folder}}
   end
 
-  @spec handle_root_flow(String.t(), storage_item_opts()) :: {:ok, map()}
-  defp handle_root_flow(organisation_id, pagination_opts) do
-    Logger.info("🏠 Fetching root level items", %{organisation_id: organisation_id})
-    {:ok, list_storage_items_with_breadcrumbs(nil, organisation_id, pagination_opts)}
+  defp handle_root_flow(organisation_id, pagination_opts, filters) do
+    query =
+      base_storage_query(organisation_id, pagination_opts, filters)
+
+    items = Repo.paginate(query, pagination_opts)
+    {:ok, %{items: items, breadcrumbs: [], current_folder: nil}}
   end
 
-  @spec respond_with_result({:ok, map()} | {:error, atom()}, map(), String.t()) ::
-          {:ok, map()} | {:error, String.t()}
   defp respond_with_result(
-         {:ok, %{items: items, breadcrumbs: breadcrumbs, current_folder: current_folder}},
+         {:ok,
+          %{
+            items: %Scrivener.Page{} = paginated_items,
+            breadcrumbs: breadcrumbs,
+            current_folder: current_folder
+          }},
          params,
          organisation_id
        ) do
-    log_success(organisation_id, items, breadcrumbs, current_folder, params)
+    items =
+      Enum.map(paginated_items.entries, fn item ->
+        case item do
+          %{mime_type: "inode/directory", id: folder_id} = folder ->
+            total_size = calculate_folder_size(folder_id, organisation_id)
+            Map.put(folder, :size, total_size)
+
+          file ->
+            file
+        end
+      end)
 
     {:ok,
      %{
-       data: Enum.map(items, &storage_item_data/1),
+       data: Repo.preload(items, storage_asset: :storage_item),
        breadcrumbs: breadcrumbs,
        current_folder: current_folder,
-       meta: build_meta(items, breadcrumbs, params)
+       meta: build_meta(paginated_items, breadcrumbs, params)
      }}
   end
 
   defp respond_with_result({:error, :not_a_directory}, _params, _org),
     do: {:error, "The specified ID is not a directory"}
 
-  defp respond_with_result({:error, :folder_not_found}, _params, _org),
-    do: {:error, "Folder not found"}
+  defp respond_with_result({:error, error}, _params, _org),
+    do: {:error, error}
 
-  @spec storage_item_data(StorageItem.t(), [StorageAsset.t()]) :: map()
-  defp storage_item_data(%StorageItem{} = storage_item, storage_assets \\ []) do
-    %{
-      id: storage_item.id,
-      name: storage_item.name,
-      display_name: storage_item.display_name,
-      item_type: storage_item.item_type,
-      path: storage_item.path,
-      mime_type: storage_item.mime_type,
-      file_extension: storage_item.file_extension,
-      size: storage_item.size,
-      is_folder: storage_item.mime_type == "inode/directory",
-      depth_level: storage_item.depth_level,
-      materialized_path: storage_item.materialized_path,
-      version_number: storage_item.version_number,
-      is_current_version: storage_item.is_current_version,
-      classification_level: storage_item.classification_level,
-      content_extracted: storage_item.content_extracted,
-      thumbnail_generated: storage_item.thumbnail_generated,
-      download_count: storage_item.download_count,
-      last_accessed_at: storage_item.last_accessed_at,
-      metadata: storage_item.metadata,
-      parent_id: storage_item.parent_id,
-      repository_id: storage_item.repository_id,
-      creator_id: storage_item.creator_id,
-      organisation_id: storage_item.organisation_id,
-      inserted_at: storage_item.inserted_at,
-      updated_at: storage_item.updated_at,
-      assets: Enum.map(storage_assets, &storage_asset_data/1)
-    }
+  defp base_storage_query(organisation_id, pagination_opts, filters) do
+    StorageItem
+    |> where([si], si.organisation_id == ^organisation_id and is_nil(si.deleted_at))
+    |> maybe_filter(:parent_id, filters[:parent_id])
+    |> maybe_filter(:repository_id, filters[:repository_id])
+    |> maybe_item_type_filter(filters[:item_type])
+    |> maybe_file_type_filter(filters[:file_type])
+    |> maybe_date_modified_filter(filters[:date_modified])
+    |> maybe_file_size_filter(filters[:file_size])
+    |> maybe_search(pagination_opts.search)
+    |> order_by([{^pagination_opts.sort_direction, ^pagination_opts.sort_by}])
   end
 
-  @spec storage_asset_data(StorageAsset.t()) :: map()
-  defp storage_asset_data(%StorageAsset{} = storage_asset) do
-    %{
-      id: storage_asset.id,
-      filename: storage_asset.filename,
-      storage_key: storage_asset.storage_key,
-      storage_backend: storage_asset.storage_backend,
-      file_size: storage_asset.file_size,
-      mime_type: storage_asset.mime_type,
-      processing_status: storage_asset.processing_status,
-      upload_completed_at: storage_asset.upload_completed_at,
-      checksum_sha256: storage_asset.checksum_sha256,
-      thumbnail_path: storage_asset.thumbnail_path,
-      preview_path: storage_asset.preview_path,
-      inserted_at: storage_asset.inserted_at,
-      updated_at: storage_asset.updated_at,
-      url: WraftDocWeb.StorageAssetUploader.url({storage_asset.filename, storage_asset})
-    }
+  defp maybe_filter(query, :parent_id = field, nil),
+    do: from(s in query, where: is_nil(field(s, ^field)))
+
+  defp maybe_filter(query, _field, nil), do: query
+
+  defp maybe_filter(query, field, value),
+    do: from(s in query, where: field(s, ^field) == ^value)
+
+  defp maybe_item_type_filter(query, nil), do: query
+
+  defp maybe_item_type_filter(query, "folders") do
+    from(s in query, where: s.item_type == "folder")
   end
 
-  @spec parse_integer(String.t() | nil, integer(), integer(), integer() | nil) :: integer()
+  defp maybe_item_type_filter(query, "files") do
+    from(s in query, where: s.item_type in ["file", "external file"])
+  end
+
+  defp maybe_item_type_filter(query, _), do: query
+
+  defp maybe_file_type_filter(query, nil), do: query
+  defp maybe_file_type_filter(query, ""), do: query
+
+  defp maybe_file_type_filter(query, file_type) do
+    pattern = "%#{String.downcase(file_type)}%"
+
+    from(s in query,
+      where: not is_nil(s.file_extension) and ilike(s.file_extension, ^pattern)
+    )
+  end
+
+  defp maybe_date_modified_filter(query, "today") do
+    from(s in query, where: fragment("DATE(?) = CURRENT_DATE", s.updated_at))
+  end
+
+  defp maybe_date_modified_filter(query, "week") do
+    from(s in query,
+      where: fragment("DATE_PART('week', ?) = DATE_PART('week', CURRENT_DATE)", s.updated_at)
+    )
+  end
+
+  defp maybe_date_modified_filter(query, "month") do
+    from(s in query,
+      where: fragment("DATE_PART('month', ?) = DATE_PART('month', CURRENT_DATE)", s.updated_at)
+    )
+  end
+
+  defp maybe_date_modified_filter(query, "year") do
+    from(s in query,
+      where: fragment("DATE_PART('year', ?) = DATE_PART('year', CURRENT_DATE)", s.updated_at)
+    )
+  end
+
+  defp maybe_date_modified_filter(query, _), do: query
+
+  defp maybe_file_size_filter(query, "small") do
+    from(s in query, where: s.size < 1_000_000)
+  end
+
+  defp maybe_file_size_filter(query, "medium") do
+    from(s in query, where: s.size >= 1_000_000 and s.size <= 10_000_000)
+  end
+
+  defp maybe_file_size_filter(query, "large") do
+    from(s in query, where: s.size > 10_000_000)
+  end
+
+  defp maybe_file_size_filter(query, _), do: query
+
+  defp maybe_search(query, nil), do: query
+  defp maybe_search(query, ""), do: query
+
+  defp maybe_search(query, search) do
+    from(s in query, where: ilike(s.name, ^"%#{search}%"))
+  end
+
   defp parse_integer(value, default, min, max) when is_binary(value) do
     case Integer.parse(value) do
       {int, ""} when int >= min ->
@@ -1191,7 +1405,6 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp parse_integer(_, default, _, _), do: default
 
-  @spec get_folder_name(StorageItem.t()) :: String.t()
   defp get_folder_name(%StorageItem{} = item) do
     item.display_name
     |> fallback(item.name)
@@ -1200,17 +1413,14 @@ defmodule WraftDoc.Storage.StorageItems do
     |> default_if_blank("Unnamed Folder")
   end
 
-  @spec fallback(String.t() | nil, String.t() | nil) :: String.t() | nil
   defp fallback(nil, fallback), do: fallback
   defp fallback("", fallback), do: fallback
   defp fallback(value, _fallback), do: value
 
-  @spec default_if_blank(String.t() | nil, String.t()) :: String.t()
   defp default_if_blank(nil, default), do: default
   defp default_if_blank("", default), do: default
   defp default_if_blank(value, _default), do: value
 
-  @spec extract_name_from_path(String.t() | nil) :: String.t()
   defp extract_name_from_path(path) when is_binary(path) do
     path
     |> String.trim()
@@ -1226,34 +1436,17 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp extract_name_from_path(_), do: "Unknown"
 
-  @spec log_success(String.t(), [StorageItem.t()], [breadcrumb_item()], map() | nil, map()) :: :ok
-  defp log_success(organisation_id, items, breadcrumbs, current_folder, params) do
-    Logger.info("Storage items listed", %{
-      organisation_id: organisation_id,
-      count: length(items),
-      breadcrumbs_count: length(breadcrumbs),
-      current_folder: current_folder,
-      sort_by: Map.get(params, "sort_by"),
-      sort_order: Map.get(params, "sort_order"),
-      params:
-        Map.take(params, [
-          "parent_id",
-          "repository_id",
-          "limit",
-          "offset",
-          "sort_by",
-          "sort_order"
-        ])
-    })
-  end
+  defp build_meta(%Scrivener.Page{} = items, breadcrumbs, params) do
+    sort_by = Map.get(params, "sort_by", "created")
+    sort_order = Map.get(params, "sort_order", "desc")
 
-  @spec build_meta([StorageItem.t()], [breadcrumb_item()], map()) :: map()
-  defp build_meta(items, breadcrumbs, params) do
     %{
-      count: length(items),
+      total_entries: items.total_entries,
       breadcrumbs_count: length(breadcrumbs),
-      sort_by: Map.get(params, "sort_by"),
-      sort_order: Map.get(params, "sort_order"),
+      sort_by: sort_by,
+      sort_order: sort_order,
+      page_number: items.page_number,
+      total_pages: items.total_pages,
       timestamp: DateTime.utc_now()
     }
   end
@@ -1313,7 +1506,7 @@ defmodule WraftDoc.Storage.StorageItems do
     {:ok, response}
   end
 
-  @spec log_navigation_retrieved(String.t(), String.t() | nil, map()) :: :ok
+  # TODO - verify logging cases
   defp log_navigation_retrieved(organisation_id, parent_id, navigation_data) do
     Logger.info("Storage navigation data retrieved", %{
       organisation_id: organisation_id,
@@ -1327,7 +1520,7 @@ defmodule WraftDoc.Storage.StorageItems do
   defp build_navigation_response(navigation_data) do
     %{
       data: %{
-        items: Enum.map(navigation_data.items, &storage_item_data/1),
+        items: navigation_data.items,
         breadcrumbs: navigation_data.breadcrumbs
       },
       meta: %{

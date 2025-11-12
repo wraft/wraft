@@ -3,7 +3,7 @@ defmodule WraftDoc.Account.User do
   The user model.
   """
   use WraftDoc.Schema
-  @derive {Jason.Encoder, only: [:name, :email, :current_org_id]}
+  @derive {Jason.Encoder, only: [:id, :name, :email, :current_org_id]}
 
   schema "user" do
     field(:name, :string)
@@ -47,10 +47,6 @@ defmodule WraftDoc.Account.User do
     has_many(:field_types, WraftDoc.Fields.FieldType, foreign_key: :creator_id)
 
     has_many(:auth_tokens, WraftDoc.AuthTokens.AuthToken, foreign_key: :user_id)
-
-    has_many(:repository_cloud_tokens, WraftDoc.CloudImport.RepositoryCloudToken,
-      foreign_key: :user_id
-    )
 
     has_many(:instance_versions, WraftDoc.Documents.Instance.Version, foreign_key: :author_id)
     has_many(:user_roles, WraftDoc.Account.UserRole)

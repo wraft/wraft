@@ -49,3 +49,5 @@ webhook:show,Webhook,Show
 workspace:delete,Workspace,Delete
 workspace:invite,Workspace,Invite
 workspace:update,Workspace,Update
+integration:show,Integration,Show
+integration:manage,Integration,Manage

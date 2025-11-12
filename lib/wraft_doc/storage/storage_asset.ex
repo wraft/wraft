@@ -1,4 +1,4 @@
-defmodule WraftDoc.Storage.StorageAsset do
+defmodule WraftDoc.Storages.StorageAsset do
   @moduledoc """
   The sync job model.
   """
@@ -20,7 +20,7 @@ defmodule WraftDoc.Storage.StorageAsset do
     field(:preview_path, :string)
     field(:processing_status, :string)
     field(:upload_completed_at, :utc_datetime)
-    belongs_to(:storage_item, WraftDoc.Storage.StorageItem)
+    belongs_to(:storage_item, WraftDoc.Storages.StorageItem)
 
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)

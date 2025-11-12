@@ -3,7 +3,7 @@ defmodule WraftDocWeb.StorageItemControllerTest do
 
   import WraftDoc.StorageFixtures
 
-  alias WraftDoc.Storage.StorageItem
+  alias WraftDoc.Storages.StorageItem
 
   @create_attrs %{
     name: "some name",

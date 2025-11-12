@@ -218,6 +218,23 @@ defmodule WraftDoc.Notifications.Template do
     channels([:in_app])
   end
 
+  defnotification "repository.exported" do
+    title("Repository Exported")
+    description("Get notified when your repository export is completed")
+
+    message(fn _params ->
+      "Repository Export completed."
+    end)
+
+    channels([:in_app, :email])
+
+    email_template(MJML.Notification)
+
+    email_subject(fn _ ->
+      "Repository export completed."
+    end)
+  end
+
   @doc """
     List all available notification types.
   """

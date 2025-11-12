@@ -1,11 +1,25 @@
 defmodule WraftDocWeb.Api.V1.StorageAssetView do
   use WraftDocWeb, :view
-  alias WraftDoc.Storage.StorageAsset
-  alias WraftDoc.Storage.StorageItem
+
+  alias WraftDoc.Storages.StorageAsset
+  alias WraftDocWeb.Api.V1.StorageItemView
+
+  def render("storage_asset.json", %{storage_asset: storage_asset}) do
+    %{
+      id: storage_asset.id,
+      file_name: storage_asset.filename,
+      file_size: storage_asset.file_size,
+      mime_type: storage_asset.mime_type,
+      url: generate_url(storage_asset),
+      preview_url: generate_preview_url(storage_asset),
+      inserted_at: storage_asset.inserted_at,
+      updated_at: storage_asset.updated_at
+    }
+  end
 
   def render("index.json", %{storage_assets: storage_assets}) do
     %{
-      data: Enum.map(storage_assets, &storage_asset_json/1),
+      data: render_many(storage_assets, __MODULE__, "storage_asset.json"),
       meta: %{
         count: length(storage_assets)
       }
@@ -13,38 +27,24 @@ defmodule WraftDocWeb.Api.V1.StorageAssetView do
   end
 
   def render("show.json", %{storage_asset: storage_asset}) do
-    %{data: storage_asset_json(storage_asset)}
+    %{data: render_one(storage_asset, __MODULE__, "storage_asset.json")}
   end
 
-  def render("show_upload.json", %{storage_asset: storage_asset, storage_item: storage_item}) do
+  def render("show_upload.json", %{storage_item: storage_item}) do
     %{
       data: %{
-        storage_asset: storage_asset_json(storage_asset),
-        storage_item: storage_item_json(storage_item)
+        storage_item: render_one(storage_item, StorageItemView, "storage_item.json")
       }
     }
   end
 
-  defp storage_asset_json(%StorageAsset{} = asset) do
-    %{
-      id: asset.id,
-      file_name: asset.filename,
-      file_size: asset.file_size,
-      mime_type: asset.mime_type,
-      storage_key: asset.storage_key,
-      inserted_at: asset.inserted_at,
-      updated_at: asset.updated_at
-    }
-  end
+  defp generate_url(%StorageAsset{filename: filename} = storage_asset),
+    do: WraftDocWeb.StorageAssetUploader.url({filename, storage_asset}, :original, signed: true)
 
-  defp storage_item_json(%StorageItem{} = item) do
-    %{
-      id: item.id,
-      display_name: item.display_name,
-      parent_id: item.parent_id,
-      repository_id: item.repository_id,
-      inserted_at: item.inserted_at,
-      updated_at: item.updated_at
-    }
-  end
+  defp generate_url(_), do: nil
+
+  defp generate_preview_url(%StorageAsset{filename: filename} = storage_asset),
+    do: WraftDocWeb.StorageAssetUploader.url({filename, storage_asset}, :preview, signed: true)
+
+  defp generate_preview_url(_), do: nil
 end

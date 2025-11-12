@@ -175,5 +175,75 @@ defmodule WraftDoc.Client.Minio do
     end
   end
 
+  @doc """
+  Check if a prefix exists in MinIO.
+  """
+  @spec prefix_exists?(String.t()) :: boolean()
+  def prefix_exists?(prefix) do
+    bucket()
+    |> S3.list_objects(prefix: prefix, max_keys: 1)
+    |> @ex_aws_module.request()
+    |> case do
+      {:ok, %{body: %{contents: []}}} -> false
+      {:ok, %{body: %{contents: _}}} -> true
+      _ -> false
+    end
+  end
+
+  @doc """
+  Renames a single file in MinIO (copy + delete).
+  Returns {:ok, new_path} on success.
+  """
+  @spec rename_file(String.t(), String.t()) :: ex_aws_response()
+  def rename_file(old_path, new_path) do
+    with {:ok, _} <- copy_files(new_path, old_path),
+         {:ok, _} <- delete_file(old_path) do
+      {:ok, new_path}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Renames a folder (prefix) and all files under it.
+  - Copies all objects from old_prefix -> new_prefix.
+  - Deletes the old ones after successful copy.
+
+  Example:
+      rename_folder("organisations/123/old/", "organisations/123/new/")
+  """
+  @spec rename_folder(String.t(), String.t()) :: :ok | {:error, any()}
+  def rename_folder(old_prefix, new_prefix) do
+    old_prefix = String.trim_trailing(old_prefix, "/") <> "/"
+    new_prefix = String.trim_trailing(new_prefix, "/") <> "/"
+
+    if prefix_exists?(old_prefix) do
+      bucket()
+      |> S3.list_objects_v2(prefix: old_prefix)
+      |> @ex_aws_module.stream!()
+      |> Task.async_stream(
+        fn %{key: old_key} ->
+          new_key = String.replace_prefix(old_key, old_prefix, new_prefix)
+
+          with {:ok, _} <- copy_files(new_key, old_key),
+               {:ok, _} <- delete_files(old_key) do
+            {:ok, new_key}
+          else
+            {:error, reason} ->
+              Logger.error("Failed to rename #{old_key}: #{inspect(reason)}")
+              {:error, reason}
+          end
+        end,
+        max_concurrency: 5,
+        timeout: :infinity
+      )
+      |> Enum.reduce_while(:ok, fn
+        {:ok, {:ok, _}}, acc -> {:cont, acc}
+        {:ok, {:error, reason}}, _ -> {:halt, {:error, reason}}
+        {:exit, reason}, _ -> {:halt, {:error, reason}}
+      end)
+    end
+  end
+
   defp bucket, do: System.get_env("MINIO_BUCKET")
 end

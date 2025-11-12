@@ -31,7 +31,9 @@ defmodule WraftDoc.Application do
       #   restart: :permanent
       # )
       WraftDoc.Schedulers.RefreshDashboardStats,
-      WraftDoc.Utils.Vault
+      WraftDoc.Utils.CloakVault,
+      {Registry, keys: :unique, name: WraftDoc.TokenRegistry},
+      {DynamicSupervisor, strategy: :one_for_one, name: WraftDoc.TokenSupervisor}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

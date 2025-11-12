@@ -18,7 +18,7 @@ defmodule WraftDoc.StorageFixtures do
         status: "some status",
         storage_limit: 42
       })
-      |> WraftDoc.Storage.create_repository()
+      |> WraftDoc.Storages.create_repository()
 
     repository
   end
@@ -42,7 +42,7 @@ defmodule WraftDoc.StorageFixtures do
         thumbnail_path: "some thumbnail_path",
         upload_completed_at: ~U[2025-06-07 20:42:00Z]
       })
-      |> WraftDoc.Storage.create_storage_asset()
+      |> WraftDoc.Storages.create_storage_asset()
 
     storage_asset
   end
@@ -80,7 +80,7 @@ defmodule WraftDoc.StorageFixtures do
         thumbnail_generated: true,
         version_number: "some version_number"
       })
-      |> WraftDoc.Storage.create_storage_item()
+      |> WraftDoc.Storages.create_storage_item()
 
     storage_item
   end
@@ -99,7 +99,7 @@ defmodule WraftDoc.StorageFixtures do
         success: true,
         user_agent: "some user_agent"
       })
-      |> WraftDoc.Storage.create_access_log()
+      |> WraftDoc.Storages.create_access_log()
 
     access_log
   end
@@ -120,7 +120,7 @@ defmodule WraftDoc.StorageFixtures do
         status: "some status",
         sync_source: "some sync_source"
       })
-      |> WraftDoc.Storage.create_sync_job()
+      |> WraftDoc.Storages.create_sync_job()
 
     sync_job
   end

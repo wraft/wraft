@@ -1,4 +1,4 @@
-defmodule WraftDoc.Storage.StorageAssets do
+defmodule WraftDoc.Storages.StorageAssets do
   @moduledoc """
   Context module for managing storage assets, repositories, access logs, and sync jobs.
 
@@ -10,8 +10,9 @@ defmodule WraftDoc.Storage.StorageAssets do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Multi
   alias WraftDoc.Repo
-  alias WraftDoc.Storage.StorageAsset
+  alias WraftDoc.Storages.StorageAsset
   alias WraftDoc.Workers.StorageAssetDeletionWorker
 
   @type storage_asset_attrs :: map()
@@ -72,6 +73,36 @@ defmodule WraftDoc.Storage.StorageAssets do
     %StorageAsset{}
     |> StorageAsset.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Creates a storage asset with the given attributes in a multi.
+  """
+  @spec create_storage_asset_multi(storage_asset_attrs()) :: storage_asset_result()
+  def create_storage_asset_multi(params) do
+    Multi.new()
+    |> Multi.insert(:storage_asset, fn _ ->
+      StorageAsset.changeset(%StorageAsset{}, params)
+    end)
+    |> Multi.update(:upload_file, fn %{storage_asset: storage_asset} ->
+      storage_asset
+      |> Repo.preload(:storage_item)
+      |> StorageAsset.file_changeset(params)
+    end)
+    |> Multi.update(:complete_upload, fn %{upload_file: storage_asset} ->
+      StorageAsset.changeset(storage_asset, %{
+        processing_status: "completed",
+        upload_completed_at: DateTime.utc_now()
+      })
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{complete_upload: storage_asset}} ->
+        {:ok, storage_asset}
+
+      {:error, _, reason, _} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -185,6 +216,7 @@ defmodule WraftDoc.Storage.StorageAssets do
     |> where([sa], sa.storage_item_id == ^storage_item_id)
     |> order_by([sa], desc: sa.inserted_at)
     |> Repo.all()
+    |> Repo.preload(:storage_item)
   end
 
   @doc """
@@ -203,20 +235,22 @@ defmodule WraftDoc.Storage.StorageAssets do
 
   ## Examples
 
-      iex> build_storage_asset_params(%{}, file_metadata, "test.pdf", user, 123)
+      iex> build_storage_asset_params(%{}, file_metadata, "test.pdf", user)
       {:ok, %{filename: "test.pdf", storage_key: "key123", ...}}
 
   """
   @spec build_storage_asset_params(
-          map(),
           file_metadata(),
           String.t(),
-          user(),
-          organisation_id()
+          User.t()
         ) :: {:ok, storage_asset_attrs()}
-  def build_storage_asset_params(_params, file_metadata, upload, current_user, organisation_id) do
+  def build_storage_asset_params(
+        file_metadata,
+        file_upload,
+        %{current_org_id: organisation_id} = current_user
+      ) do
     storage_asset_params = %{
-      filename: upload,
+      filename: file_upload,
       storage_key: file_metadata.storage_key,
       # TODO: Make configurable - could be "s3", "minio" based on config
       storage_backend: "local",

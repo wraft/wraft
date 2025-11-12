@@ -1,4 +1,4 @@
-defmodule WraftDoc.Storage.StorageItem do
+defmodule WraftDoc.Storages.StorageItem do
   @moduledoc """
   The sync job model.
   """
@@ -33,11 +33,14 @@ defmodule WraftDoc.Storage.StorageItem do
     field(:download_count, :integer)
     field(:last_accessed_at, :utc_datetime)
     field(:parent_id, :binary_id)
+    field(:upload_status, :string)
 
-    has_many(:storage_assets, WraftDoc.Storage.StorageAsset)
-    belongs_to(:repository, WraftDoc.Storage.Repository)
+    belongs_to(:repository, WraftDoc.Storages.Repository)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+
+    has_one(:storage_asset, WraftDoc.Storages.StorageAsset)
+
     timestamps()
   end
 
@@ -71,12 +74,16 @@ defmodule WraftDoc.Storage.StorageItem do
       :last_accessed_at,
       :metadata,
       :parent_id,
+      :upload_status,
       :repository_id,
       :creator_id,
       :organisation_id
     ])
-    # :path, :materialized_path, :mime_type])
     |> validate_required([:name, :mime_type])
+    |> unique_constraint([:name, :parent_id],
+      name: :storage_items_name_parent_id_index,
+      message: "Folder already exists"
+    )
     |> unique_constraint([:external_id, :sync_source],
       name: :storage_items_external_id_sync_source_index
     )

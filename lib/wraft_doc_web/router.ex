@@ -578,7 +578,7 @@ defmodule WraftDocWeb.Router do
 
         get("/files", CloudImportController, :list_gdrive_files)
         get("/file/:file_id", CloudImportController, :get_gdrive_file)
-        post("/download", CloudImportController, :download_gdrive_file)
+        post("/import", CloudImportController, :import_gdrive_file)
         get("/search", CloudImportController, :search_gdrive_files)
         get("/pdfs", CloudImportController, :list_all_gdrive_pdfs)
         post("/sync_files", CloudImportController, :sync_gdrive_files)
@@ -618,10 +618,51 @@ defmodule WraftDocWeb.Router do
         get("/folder/:folder_id/files", CloudImportController, :list_onedrive_folder_files)
       end
 
+      # Integration routes
+      scope "/integrations" do
+        get("/", IntegrationController, :index)
+        post("/new", IntegrationController, :create)
+
+        scope "/:id" do
+          put("/enable", IntegrationController, :enable)
+          put("/disable", IntegrationController, :disable)
+          put("/config", IntegrationController, :update_config)
+          put("/events", IntegrationController, :update_events)
+        end
+
+        # Integration configuration routes
+        get("/configs", IntegrationConfigController, :index)
+        get("/configs/categories", IntegrationConfigController, :categories)
+        get("/configs/:id", IntegrationConfigController, :show)
+        get("/:provider/config", IntegrationConfigController, :config)
+
+        # Signature
+        post("/send_document", DocumentSignController, :send_document)
+        post("/document/get_status", DocumentSignController, :get_document_status)
+        post("/document/download", DocumentSignController, :download_document)
+
+        # Docusign
+        scope "/docusign" do
+          # post("/send_document", DocusignController, :send_envelope)
+          # post("/:id/document_status", DocusignController, :status)
+          # post("/download", DocusignController, :download)
+          get("/auth", IntegrationAuthController, :auth)
+          get("/callback", IntegrationAuthController, :callback)
+        end
+
+        # Documenso
+        # scope "/documenso" do
+        #   post("/send_document", DocumensoController, :send_doc)
+        #   post("/:id/document_status", DocumensoController, :status)
+        #   post("/download", DocumensoController, :download)
+        # end
+      end
+
       # Repositories
       resources("/repositories", RepositoryController, except: [:new, :edit])
       get("/repository/check", RepositoryController, :check_setup)
       put("/repository/setup", RepositoryController, :setup_repository)
+      post("/repository/export", RepositoryController, :export)
 
       scope "/storage" do
         # Storage assets with file upload
@@ -634,7 +675,7 @@ defmodule WraftDocWeb.Router do
         # Storage items routes
         resources "/items", StorageItemController,
           only: [:index, :show, :create, :update, :delete] do
-          post("/rename", StorageItemController, :rename)
+          put("/rename", StorageItemController, :rename)
         end
 
         # list_storage_items

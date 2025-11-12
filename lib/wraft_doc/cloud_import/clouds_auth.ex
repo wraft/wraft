@@ -12,8 +12,9 @@ defmodule WraftDoc.CloudImport.CloudAuth do
 
   alias Assent.Strategy.Google
   alias Assent.Strategy.OAuth2
-  alias WraftDoc.CloudImport.RepositoryCloudTokens, as: AuthTokens
   alias WraftDoc.CloudImport.StateStore
+  alias WraftDoc.Integrations
+  alias WraftDoc.Integrations.Integration
 
   @scopes %{
     # Google Drive scopes
@@ -41,19 +42,23 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   Generates an authorization URL for the specified provider.
   """
   @spec authorize_url!(atom(), atom() | nil) :: {:ok, String.t()} | {:error, String.t()}
-  def authorize_url!(provider, scope \\ nil)
+  def authorize_url!(provider, _organisation_id, scope \\ nil)
 
-  def authorize_url!(:google_drive, scope) do
-    scope
-    |> get_google_config()
-    |> Google.authorize_url()
+  def authorize_url!(:google_drive, organisation_id, scope) do
+    organisation_id
+    |> get_google_config(scope)
     |> case do
-      {:ok, %{url: url, session_params: session_params}} ->
-        {:ok, url, session_params}
+      {:error, reason} ->
+        {:error, reason}
 
-      {:error, error} ->
-        Logger.error("Google Drive authorization URL error: #{inspect(error)}")
-        {:error, "Failed to generate Google Drive authorization URL #{inspect(error)}"}
+      config ->
+        case Google.authorize_url(config) do
+          {:ok, %{url: url, session_params: session_params}} ->
+            {:ok, url, session_params}
+
+          {:error, error} ->
+            {:error, "Failed to generate Google Drive authorization URL: #{inspect(error)}"}
+        end
     end
   end
 
@@ -67,7 +72,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   #       {:ok, url}
 
   #     {:error, error} ->
-  #       Logger.error("Dropbox authorization URL error: #{inspect(error)}")
   #       {:error, "Failed to generate Dropbox authorization URL"}
   #   end
   # end
@@ -80,7 +84,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   #       {:ok, url}
 
   #     {:error, error} ->
-  #       Logger.error("OneDrive authorization URL error: #{inspect(error)}")
   #       {:error, "Failed to generate OneDrive authorization URL"}
   #   end
   # end
@@ -88,20 +91,38 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   @doc """
   Exchanges authorization code for access token.
   """
-  @spec get_token(atom(), String.t(), String.t()) ::
+  @spec get_token(atom(), User.t(), String.t()) ::
           {:ok, map(), String.t()} | {:error, String.t()}
-  def get_token(:google_drive, user_id, code) do
-    {:ok, session_params} = StateStore.get(user_id, :google_drive)
+  def get_token(:google_drive, %{current_org_id: organisation_id} = user, code) do
+    {:ok, session_params} = StateStore.get(user.id, :google_drive)
 
-    get_google_config()
+    organisation_id
+    |> get_google_config()
     |> Keyword.put(:session_params, session_params)
     |> OAuth2.callback(%{"code" => code, "state" => session_params.state}, Google)
     |> case do
-      {:ok, %{user: user, token: token}} ->
-        {:ok, user, token}
+      {:ok,
+       %{
+         user: google_user,
+         token:
+           %{
+             "expires_in" => access_token_expires_in,
+             "refresh_token_expires_in" => refresh_token_expires_in
+           } = token
+       }} ->
+        now = DateTime.utc_now()
 
-      {:error, error} ->
-        Logger.error("Google Drive token exchange error: #{inspect(error)}")
+        access_token_expires_at = DateTime.add(now, access_token_expires_in, :second)
+        refresh_token_expires_at = DateTime.add(now, refresh_token_expires_in, :second)
+
+        {:ok, google_user,
+         Map.merge(token, %{
+           "updated_at" => now,
+           "access_token_expires_at" => access_token_expires_at,
+           "refresh_token_expires_at" => refresh_token_expires_at
+         })}
+
+      {:error, _error} ->
         {:error, "Failed to exchange Google Drive authorization code"}
     end
   end
@@ -128,7 +149,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   #       {:ok, normalize_token(token)}
 
   #     {:error, error} ->
-  #       Logger.error("OneDrive token exchange error: #{inspect(error)}")
   #       {:error, "Failed to exchange OneDrive authorization code"}
   #   end
   # end
@@ -136,18 +156,36 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   @doc """
   Refreshes an access token for any provider.
   """
-  @spec refresh_token(atom(), String.t()) :: {:ok, map()} | {:error, String.t()}
-  def refresh_token(:google_drive, refresh_token) do
-    get_google_config()
-    |> OAuth2.refresh_access_token(%{"refresh_token" => refresh_token})
-    |> case do
-      {:ok, token} ->
-        {:ok, normalize_token(token)}
+  @spec refresh_token(atom(), String.t(), String.t()) :: {:ok, map()} | {:error, String.t()}
+  def refresh_token(:google_drive, organisation_id, refresh_token) do
+    with integration <- Integrations.get_integration_by_provider(organisation_id, "google_drive"),
+         {:ok, token} <-
+           organisation_id
+           |> get_google_config()
+           |> OAuth2.refresh_access_token(%{"refresh_token" => refresh_token}),
+         normalized <- normalize_token(token),
+         {:ok, _updated} <- update_integration_metadata(integration, normalized) do
+      {:ok, normalized}
+    else
+      nil ->
+        {:error, "Integration not found"}
 
-      {:error, error} ->
-        Logger.error("Google Drive token refresh error: #{inspect(error)}")
+      {:error, _reason} ->
         {:error, "Failed to refresh Google Drive token"}
     end
+  end
+
+  defp update_integration_metadata(
+         %Integration{} = integration,
+         %{"access_token" => at, "expires_in" => expires_in}
+       ) do
+    updated_metadata =
+      Map.merge(integration.metadata || %{}, %{
+        "access_token" => at,
+        "expires_in" => expires_in
+      })
+
+    Integrations.update_metadata(integration, updated_metadata)
   end
 
   # TODO: Uncomment and implement Dropbox authorization URL generation when Dropbox integration is enabled
@@ -159,7 +197,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   #       {:ok, normalize_token(token)}
 
   #     {:error, error} ->
-  #       Logger.error("Dropbox token refresh error: #{inspect(error)}")
   #       {:error, "Failed to refresh Dropbox token"}
   #   end
   # end
@@ -172,7 +209,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   #       {:ok, normalize_token(token)}
 
   #     {:error, error} ->
-  #       Logger.error("OneDrive token refresh error: #{inspect(error)}")
   #       {:error, "Failed to refresh OneDrive token"}
   #   end
   # end
@@ -190,23 +226,28 @@ defmodule WraftDoc.CloudImport.CloudAuth do
 
   def token_valid?(_), do: false
 
-  defp get_google_config(scope \\ nil) do
+  defp get_google_config(organisation_id, scope \\ nil) do
     scopes = get_scopes(:google_drive, scope)
 
-    :google_drive
-    |> get_base_config()
-    |> Keyword.put(:scope, Enum.join(scopes, " "))
-    |> Keyword.put(:base_url, "https://accounts.google.com")
-    |> Keyword.put(:authorize_url, "/o/oauth2/v2/auth")
-    |> Keyword.put(:token_url, "https://oauth2.googleapis.com/token")
-    |> Keyword.put(:issuer, "https://accounts.google.com")
-    |> Keyword.put(:authorization_params,
-      access_type: "offline",
-      prompt: "consent",
-      scope: "https://www.googleapis.com/auth/drive"
-    )
-    |> Keyword.put(:user_url, "https://openidconnect.googleapis.com/v1/userinfo")
-    |> Keyword.put(:auth_method, :client_secret_post)
+    case get_base_config("google_drive", organisation_id) do
+      {:ok, config} ->
+        config
+        |> Keyword.put(:scope, Enum.join(scopes, " "))
+        |> Keyword.put(:base_url, "https://accounts.google.com")
+        |> Keyword.put(:authorize_url, "/o/oauth2/v2/auth")
+        |> Keyword.put(:token_url, "https://oauth2.googleapis.com/token")
+        |> Keyword.put(:issuer, "https://accounts.google.com")
+        |> Keyword.put(:authorization_params,
+          access_type: "offline",
+          prompt: "consent",
+          scope: "https://www.googleapis.com/auth/drive"
+        )
+        |> Keyword.put(:user_url, "https://openidconnect.googleapis.com/v1/userinfo")
+        |> Keyword.put(:auth_method, :client_secret_post)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   # TODO: Uncomment and implement Dropbox authorization URL generation when Dropbox integration is enabled
@@ -236,30 +277,50 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   #   |> Keyword.put(:token_url, "/#{tenant_id}/oauth2/v2.0/token")
   # end
 
-  defp get_base_config(provider) do
-    app_config = Application.fetch_env!(:wraft_doc, provider)
-    validate_config!(app_config, provider)
+  defp get_base_config(provider, organisation_id) do
+    case Integrations.get_integration_by_provider(organisation_id, provider) do
+      nil ->
+        {:error, "No integration found for #{provider}"}
 
-    [
-      client_id: app_config[:client_id],
-      client_secret: app_config[:client_secret],
-      redirect_uri: app_config[:redirect_uri]
-    ]
+      %{config: config} ->
+        app_config =
+          config
+          |> Map.to_list()
+          |> Enum.map(fn {k, v} -> {safe_to_atom(k), v} end)
+
+        case validate_config(app_config, provider) do
+          :ok ->
+            {:ok,
+             [
+               client_id: app_config[:client_id],
+               client_secret: app_config[:client_secret],
+               redirect_uri: app_config[:redirect_uri]
+             ]}
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+    end
+  end
+
+  defp safe_to_atom(key) when is_binary(key) do
+    String.to_existing_atom(key)
+  rescue
+    ArgumentError -> String.to_atom(key)
+  end
+
+  defp validate_config(config, provider) do
+    required_keys = [:client_id, :client_secret, :redirect_uri]
+
+    case Enum.find(required_keys, fn key -> is_nil(config[key]) or config[key] == "" end) do
+      nil -> :ok
+      missing -> {:error, "Missing required configuration for #{provider}: #{missing}"}
+    end
   end
 
   defp get_scopes(provider, scope_key) do
     scope_key = scope_key || @default_scopes[provider]
     @scopes[scope_key] || @scopes[@default_scopes[provider]]
-  end
-
-  defp validate_config!(config, provider) do
-    required_keys = [:client_id, :client_secret, :redirect_uri]
-
-    Enum.each(required_keys, fn key ->
-      if is_nil(config[key]) or config[key] == "" do
-        raise "Missing required configuration for #{provider}: #{key}"
-      end
-    end)
   end
 
   defp normalize_token(
@@ -272,7 +333,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     %{
       "access_token" => access_token,
       "refresh_token" => refresh_token,
-      "expires_at" => calculate_expires_at(expires_in),
+      "expires_in" => expires_in,
       "token_type" => Map.get(token, "token_type", "Bearer"),
       "scope" => Map.get(token, "scope")
     }
@@ -282,51 +343,32 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     %{
       "access_token" => token["access_token"],
       "refresh_token" => token["refresh_token"],
-      "expires_at" => token["expires_at"] || calculate_expires_at(token["expires_in"]),
+      "expires_in" => token["expires_in"],
       "token_type" => token["token_type"] || "Bearer",
       "scope" => token["scope"]
     }
   end
 
-  defp calculate_expires_at(nil), do: nil
-
-  defp calculate_expires_at(seconds) when is_integer(seconds) do
-    DateTime.utc_now()
-    |> DateTime.add(seconds, :second)
-    |> DateTime.to_unix()
-  end
-
-  defp calculate_expires_at(seconds) when is_binary(seconds) do
-    seconds
-    |> Integer.parse()
-    |> case do
-      {int_seconds, _} -> calculate_expires_at(int_seconds)
-      :error -> nil
-    end
-  end
-
   @doc """
   Handles auth callback.
   """
-  @spec handle_oauth_callback(User.t(), map(), atom(), String.t()) :: String.t()
+  @spec handle_oauth_callback(User.t(), map(), atom()) :: String.t()
   def handle_oauth_callback(
-        %{id: user_id} = user,
-        params,
-        provider,
-        code
+        %{id: _user_id, current_org_id: org_id} = user,
+        %{"code" => code} = params,
+        provider
       ) do
-    with {:ok, user_data, token_data} <-
-           get_token(provider, user.id, code),
+    with {:ok, _user_data, token_data} <-
+           get_token(provider, user, code),
+         integration <-
+           Integrations.get_integration_by_provider(org_id, "google_drive"),
          {:ok, _token} <-
-           AuthTokens.save_token_data(user, token_data, provider, user_data) do
-      Logger.info("Successfully authenticated with #{token_data["access_token"]}")
+           Integrations.update_integration(integration, %{
+             "metadata" => Map.merge(integration.metadata || %{}, token_data)
+           }) do
       get_redirect_path(params)
     else
-      {:error, reason} ->
-        Logger.error(
-          "#{format_provider_name(provider)} authentication failed for user #{user_id}: #{inspect(reason)}"
-        )
-
+      {:error, _reason} ->
         get_redirect_path(params, "/")
     end
   end
@@ -355,9 +397,4 @@ defmodule WraftDoc.CloudImport.CloudAuth do
         default
     end
   end
-
-  defp format_provider_name(:google_drive), do: "Google Drive"
-  defp format_provider_name(:dropbox), do: "Dropbox"
-  defp format_provider_name(:onedrive), do: "OneDrive"
-  defp format_provider_name(provider), do: provider |> to_string() |> String.capitalize()
 end

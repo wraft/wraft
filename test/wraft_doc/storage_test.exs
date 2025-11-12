@@ -1,7 +1,7 @@
 defmodule WraftDoc.StorageTest do
   use WraftDoc.DataCase
 
-  alias WraftDoc.Storage
+  alias WraftDoc.Storages
 
   describe "repositories" do
     alias WraftDoc.Storage.Repository
@@ -92,9 +92,9 @@ defmodule WraftDoc.StorageTest do
   end
 
   describe "storage_assets" do
-    alias WraftDoc.Storage.StorageAsset
+    alias WraftDoc.Storages.StorageAsset
 
-    import WraftDoc.StorageFixtures
+    import WraftDoc.StoragesFixtures
 
     @invalid_attrs %{
       storage_key: nil,
@@ -208,7 +208,7 @@ defmodule WraftDoc.StorageTest do
   end
 
   describe "storage_items" do
-    alias WraftDoc.Storage.StorageItem
+    alias WraftDoc.Storages.StorageItem
 
     import WraftDoc.StorageFixtures
 
@@ -394,7 +394,7 @@ defmodule WraftDoc.StorageTest do
   end
 
   describe "storage_access_logs" do
-    alias WraftDoc.Storage.AccessLog
+    alias WraftDoc.Storages.AccessLog
 
     import WraftDoc.StorageFixtures
 
@@ -409,12 +409,12 @@ defmodule WraftDoc.StorageTest do
 
     test "list_storage_access_logs/0 returns all storage_access_logs" do
       access_log = access_log_fixture()
-      assert Storage.list_storage_access_logs() == [access_log]
+      assert Storages.list_storage_access_logs() == [access_log]
     end
 
     test "get_access_log!/1 returns the access_log with given id" do
       access_log = access_log_fixture()
-      assert Storage.get_access_log!(access_log.id) == access_log
+      assert Storages.get_access_log!(access_log.id) == access_log
     end
 
     test "create_access_log/1 with valid data creates a access_log" do
@@ -427,7 +427,7 @@ defmodule WraftDoc.StorageTest do
         user_agent: "some user_agent"
       }
 
-      assert {:ok, %AccessLog{} = access_log} = Storage.create_access_log(valid_attrs)
+      assert {:ok, %AccessLog{} = access_log} = Storages.create_access_log(valid_attrs)
       assert access_log.success == true
       assert access_log.metadata == %{}
       assert access_log.action == "some action"
@@ -437,7 +437,7 @@ defmodule WraftDoc.StorageTest do
     end
 
     test "create_access_log/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Storage.create_access_log(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Storages.create_access_log(@invalid_attrs)
     end
 
     test "update_access_log/2 with valid data updates the access_log" do
@@ -453,7 +453,7 @@ defmodule WraftDoc.StorageTest do
       }
 
       assert {:ok, %AccessLog{} = access_log} =
-               Storage.update_access_log(access_log, update_attrs)
+               Storages.update_access_log(access_log, update_attrs)
 
       assert access_log.success == false
       assert access_log.metadata == %{}
@@ -465,24 +465,24 @@ defmodule WraftDoc.StorageTest do
 
     test "update_access_log/2 with invalid data returns error changeset" do
       access_log = access_log_fixture()
-      assert {:error, %Ecto.Changeset{}} = Storage.update_access_log(access_log, @invalid_attrs)
-      assert access_log == Storage.get_access_log!(access_log.id)
+      assert {:error, %Ecto.Changeset{}} = Storages.update_access_log(access_log, @invalid_attrs)
+      assert access_log == Storages.get_access_log!(access_log.id)
     end
 
     test "delete_access_log/1 deletes the access_log" do
       access_log = access_log_fixture()
-      assert {:ok, %AccessLog{}} = Storage.delete_access_log(access_log)
-      assert_raise Ecto.NoResultsError, fn -> Storage.get_access_log!(access_log.id) end
+      assert {:ok, %AccessLog{}} = Storages.delete_access_log(access_log)
+      assert_raise Ecto.NoResultsError, fn -> Storages.get_access_log!(access_log.id) end
     end
 
     test "change_access_log/1 returns a access_log changeset" do
       access_log = access_log_fixture()
-      assert %Ecto.Changeset{} = Storage.change_access_log(access_log)
+      assert %Ecto.Changeset{} = Storages.change_access_log(access_log)
     end
   end
 
   describe "storage_sync_jobs" do
-    alias WraftDoc.Storage.SyncJob
+    alias WraftDoc.Storages.SyncJob
 
     import WraftDoc.StorageFixtures
 
@@ -499,12 +499,12 @@ defmodule WraftDoc.StorageTest do
 
     test "list_storage_sync_jobs/0 returns all storage_sync_jobs" do
       sync_job = sync_job_fixture()
-      assert Storage.list_storage_sync_jobs() == [sync_job]
+      assert Storages.list_storage_sync_jobs() == [sync_job]
     end
 
     test "get_sync_job!/1 returns the sync_job with given id" do
       sync_job = sync_job_fixture()
-      assert Storage.get_sync_job!(sync_job.id) == sync_job
+      assert Storages.get_sync_job!(sync_job.id) == sync_job
     end
 
     test "create_sync_job/1 with valid data creates a sync_job" do
@@ -519,7 +519,7 @@ defmodule WraftDoc.StorageTest do
         error_details: %{}
       }
 
-      assert {:ok, %SyncJob{} = sync_job} = Storage.create_sync_job(valid_attrs)
+      assert {:ok, %SyncJob{} = sync_job} = Storages.create_sync_job(valid_attrs)
       assert sync_job.status == "some status"
       assert sync_job.started_at == ~U[2025-06-07 21:00:00Z]
       assert sync_job.job_type == "some job_type"
@@ -531,7 +531,7 @@ defmodule WraftDoc.StorageTest do
     end
 
     test "create_sync_job/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Storage.create_sync_job(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Storages.create_sync_job(@invalid_attrs)
     end
 
     test "update_sync_job/2 with valid data updates the sync_job" do
@@ -548,7 +548,7 @@ defmodule WraftDoc.StorageTest do
         error_details: %{}
       }
 
-      assert {:ok, %SyncJob{} = sync_job} = Storage.update_sync_job(sync_job, update_attrs)
+      assert {:ok, %SyncJob{} = sync_job} = Storages.update_sync_job(sync_job, update_attrs)
       assert sync_job.status == "some updated status"
       assert sync_job.started_at == ~U[2025-06-08 21:00:00Z]
       assert sync_job.job_type == "some updated job_type"
@@ -561,19 +561,19 @@ defmodule WraftDoc.StorageTest do
 
     test "update_sync_job/2 with invalid data returns error changeset" do
       sync_job = sync_job_fixture()
-      assert {:error, %Ecto.Changeset{}} = Storage.update_sync_job(sync_job, @invalid_attrs)
-      assert sync_job == Storage.get_sync_job!(sync_job.id)
+      assert {:error, %Ecto.Changeset{}} = Storages.update_sync_job(sync_job, @invalid_attrs)
+      assert sync_job == Storages.get_sync_job!(sync_job.id)
     end
 
     test "delete_sync_job/1 deletes the sync_job" do
       sync_job = sync_job_fixture()
-      assert {:ok, %SyncJob{}} = Storage.delete_sync_job(sync_job)
-      assert_raise Ecto.NoResultsError, fn -> Storage.get_sync_job!(sync_job.id) end
+      assert {:ok, %SyncJob{}} = Storages.delete_sync_job(sync_job)
+      assert_raise Ecto.NoResultsError, fn -> Storages.get_sync_job!(sync_job.id) end
     end
 
     test "change_sync_job/1 returns a sync_job changeset" do
       sync_job = sync_job_fixture()
-      assert %Ecto.Changeset{} = Storage.change_sync_job(sync_job)
+      assert %Ecto.Changeset{} = Storages.change_sync_job(sync_job)
     end
   end
 end

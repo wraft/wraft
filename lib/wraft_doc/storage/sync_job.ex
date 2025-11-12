@@ -1,4 +1,4 @@
-defmodule WraftDoc.Storage.SyncJob do
+defmodule WraftDoc.Storages.SyncJob do
   @moduledoc """
   The sync job model.
   """

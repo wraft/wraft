@@ -14,8 +14,11 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  alias WraftDoc.Storage
-  alias WraftDoc.Storage.Repository
+  alias WraftDoc.Storages
+  alias WraftDoc.Storages.Repository
+
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -289,33 +292,33 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
   end
 
   def index(conn, _params) do
-    repositories = Storage.list_repositories()
+    repositories = Storages.list_repositories()
     render(conn, "index.json", repositories: repositories)
   end
 
-  # swagger_path :create do
-  #   post("/repositories")
-  #   summary("Create a repository")
-  #   description("Creates a new storage repository")
-  #   operation_id("createRepository")
-  #   consumes("application/json")
-  #   produces("application/json")
-  #   tag("Repositories")
+  swagger_path :create do
+    post("/repositories")
+    summary("Create a repository")
+    description("Creates a new storage repository")
+    operation_id("createRepository")
+    consumes("application/json")
+    produces("application/json")
+    tag("Repositories")
 
-  #   parameters do
-  #     repository(:body, Schema.ref(:RepositoryCreateParams), "Repository creation parameters",
-  #       required: true
-  #     )
-  #   end
+    parameters do
+      repository(:body, Schema.ref(:RepositoryCreateParams), "Repository creation parameters",
+        required: true
+      )
+    end
 
-  #   response(201, "Created", Schema.ref(:Repository))
-  #   response(400, "Bad Request", Schema.ref(:Error))
-  #   response(401, "Unauthorized", Schema.ref(:Error))
-  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
-  # end
+    response(201, "Created", Schema.ref(:Repository))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(403, "Unauthorized", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
 
   def create(conn, %{"repository" => repository_params}) do
-    with {:ok, %Repository{} = repository} <- Storage.create_repository(repository_params) do
+    with {:ok, %Repository{} = repository} <- Storages.create_repository(repository_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", "/api/repositories/#{repository.id}")
@@ -341,7 +344,7 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
   end
 
   def show(conn, %{"id" => id}) do
-    repository = Storage.get_repository!(id)
+    repository = Storages.get_repository!(id)
     render(conn, :show, repository: repository)
   end
 
@@ -401,7 +404,7 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     user_id = conn.assigns.current_user.id
     organisation_id = conn.assigns.current_user.current_org_id
 
-    repositories = Storage.list_repositories_by_user_and_organisation(user_id, organisation_id)
+    repositories = Storages.list_repositories_by_user_and_organisation(user_id, organisation_id)
 
     render(conn, :index, repositories: repositories)
   end
@@ -441,7 +444,7 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
       "organisation_id" => organisation_id
     }
 
-    with {:ok, %Repository{} = repository} <- Storage.create_repository(repository_params) do
+    with {:ok, %Repository{} = repository} <- Storages.create_repository(repository_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", "/api/repositories/#{repository.id}")
@@ -449,36 +452,36 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     end
   end
 
-  # swagger_path :update do
-  #   patch("/repositories/{id}")
-  #   put("/api/repositories/{id}")
-  #   summary("Update repository")
-  #   description("Updates an existing repository")
-  #   operation_id("updateRepository")
-  #   consumes("application/json")
-  #   produces("application/json")
-  #   tag("Repositories")
+  swagger_path :update do
+    patch("/repositories/{id}")
+    put("/api/repositories/{id}")
+    summary("Update repository")
+    description("Updates an existing repository")
+    operation_id("updateRepository")
+    consumes("application/json")
+    produces("application/json")
+    tag("Repositories")
 
-  #   parameters do
-  #     id(:path, :string, "ID of the repository to update", required: true, format: "uuid")
+    parameters do
+      id(:path, :string, "ID of the repository to update", required: true, format: "uuid")
 
-  #     repository(:body, Schema.ref(:RepositoryUpdateParams), "Repository update parameters",
-  #       required: true
-  #     )
-  #   end
+      repository(:body, Schema.ref(:RepositoryUpdateParams), "Repository update parameters",
+        required: true
+      )
+    end
 
-  #   response(200, "OK", Schema.ref(:Repository))
-  #   response(400, "Bad Request", Schema.ref(:Error))
-  #   response(401, "Unauthorized", Schema.ref(:Error))
-  #   response(404, "Not Found", Schema.ref(:Error))
-  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
-  # end
+    response(200, "OK", Schema.ref(:Repository))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
 
   def update(conn, %{"id" => id, "repository" => repository_params}) do
-    repository = Storage.get_repository!(id)
+    repository = Storages.get_repository!(id)
 
     with {:ok, %Repository{} = repository} <-
-           Storage.update_repository(repository, repository_params) do
+           Storages.update_repository(repository, repository_params) do
       render(conn, :show, repository: repository)
     end
   end
@@ -501,10 +504,47 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
   end
 
   def delete(conn, %{"id" => id}) do
-    repository = Storage.get_repository!(id)
+    repository = Storages.get_repository!(id)
 
-    with {:ok, %Repository{}} <- Storage.delete_repository(repository) do
+    with {:ok, %Repository{}} <- Storages.delete_repository(repository) do
       send_resp(conn, :no_content, "")
+    end
+  end
+
+  swagger_path :export do
+    post("/repositories/export")
+    summary("Export repository as ZIP")
+
+    description(
+      "Exports all files in the repository as a ZIP archive and returns it as a binary download"
+    )
+
+    operation_id("exportRepository")
+    produces("application/zip")
+    tag("Repositories")
+
+    parameters do
+      file_name(:body, :string, "Optional file name for the ZIP archive")
+    end
+
+    response(200, "ZIP file returned successfully", Schema.ref(:FileDownloadResponse))
+    response(403, "Unauthorized", Schema.ref(:Error))
+    response(404, "Repository not found", Schema.ref(:Error))
+  end
+
+  def export(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %{name: repository_name} = _repository <-
+           Storages.get_latest_repository(current_user.current_org_id) do
+      Storages.repository_export_worker(
+        current_user,
+        Map.get(params, "file_name", repository_name)
+      )
+
+      json(conn, %{
+        message: "Repository export started. You will receive an email when it’s ready."
+      })
     end
   end
 end
