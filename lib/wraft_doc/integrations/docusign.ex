@@ -102,7 +102,8 @@ defmodule WraftDoc.Integrations.DocuSign do
   @spec send_document(String.t(), Ecto.UUID.t(), map()) :: {:ok, map()} | {:error, any()}
   def send_document(document_id, org_id, signers_param) do
     document = Documents.get_instance(document_id, %{current_org_id: org_id})
-    account_id = "40730823"
+    # TODO Implement retrieving account_id.
+    account_id = ""
     access_token = get_config(org_id).metadata["access_token"]
 
     path =

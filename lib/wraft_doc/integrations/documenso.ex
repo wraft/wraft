@@ -11,8 +11,12 @@ defmodule WraftDoc.Integrations.Documenso do
 
   @base_url "https://app.documenso.com/api/v1"
 
-  defp api_token,
-    do: Application.get_env(:wraft_doc, :documenso_api_token, "api_lcver61xyuodpzv9")
+  defp api_token do
+    case Application.get_env(:wraft_doc, :documenso_api_token) do
+      nil -> raise "DOCUMENSO_API_TOKEN not configured"
+      token -> token
+    end
+  end
 
   defp headers,
     do: [

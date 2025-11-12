@@ -12,11 +12,9 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
     %{
       "slack" => %{
         name: "Slack",
-        # to -do filter based onfeature enabled
         is_feature_enabled: false,
         category: "communication",
         description: "Integrate with Slack for notifications and updates",
-        # Frontend can map this to an actual icon
         icon: "slack-icon",
         config_structure: %{
           bot_token: %{
@@ -200,7 +198,6 @@ defmodule WraftDoc.Integrations.IntegrationConfig do
           },
           redirect_uri: %{
             type: "string",
-            # value is getting null in response
             value: "#{System.get_env("FRONTEND_URL")}/integrations/google-drive/callback",
             label: "Redirect URI",
             description: "OAuth2 Redirect URI",
