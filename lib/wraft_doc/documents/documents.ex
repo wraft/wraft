@@ -2540,11 +2540,22 @@ defmodule WraftDoc.Documents do
         %Instance{
           id: instance_id,
           serialized: %{"title" => document_title},
-          approval_status: approval_status
+          approval_status: approval_status,
+          content_type: content_type
         } = _instance,
         %Organisation{id: current_org_id, name: organisation_name} = _organisation,
         state
       ) do
+    state =
+      if state do
+        state
+      else
+        Flow
+        |> Repo.get(content_type.flow_id)
+        |> Enterprise.initial_state()
+        |> Repo.preload(:approvers)
+      end
+
     next_state = next_state(state)
     document_url = URI.encode("#{System.get_env("FRONTEND_URL")}/documents/#{instance_id}")
 
