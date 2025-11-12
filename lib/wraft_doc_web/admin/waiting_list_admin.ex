@@ -6,7 +6,9 @@ defmodule WraftDocWeb.WaitingListAdmin do
 
   alias WraftDoc.Account
   alias WraftDoc.AuthTokens
+  alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Kaffy.CustomDataAdmin
+  alias WraftDoc.Repo
   alias WraftDoc.WaitingLists
   alias WraftDoc.WaitingLists.WaitingList
   alias WraftDoc.Workers.EmailWorker
@@ -92,31 +94,48 @@ defmodule WraftDocWeb.WaitingListAdmin do
           last_name: last_name
         } = waiting_list
       ) do
-    # Flag Enable
     FunWithFlags.enable(:waiting_list_registration_control, for_actor: %{email: email})
     FunWithFlags.enable(:waiting_list_organisation_create_control, for_actor: %{email: email})
-    {:ok, %{user: user}} = create_account(waiting_list)
-    token = AuthTokens.create_set_password_token(user)
-    # Send email notification
-    %{name: "#{first_name} #{last_name}", email: email, token: token.value}
-    |> EmailWorker.new(queue: "mailer", tags: ["waiting_list_acceptance"])
-    |> Oban.insert()
 
-    {:ok, waiting_list}
+    with {:ok, %{user: user}} <- create_account(waiting_list),
+         %AuthToken{} = token <- AuthTokens.create_set_password_token(user) do
+      %{name: "#{first_name} #{last_name}", email: email, token: token.value}
+      |> EmailWorker.new(queue: "mailer", tags: ["waiting_list_acceptance"])
+      |> Oban.insert()
+
+      {:ok, waiting_list}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, waiting_list, format_changeset_errors(changeset)}
+
+      {:error, reason} ->
+        {:error, waiting_list, reason}
+    end
   end
 
   def after_update(_conn, waiting_list), do: {:ok, waiting_list}
 
   defp create_account(%WaitingList{email: email, first_name: first_name, last_name: last_name}) do
-    random_password = 8 |> :crypto.strong_rand_bytes() |> Base.encode16() |> binary_part(0, 8)
+    case Repo.get_by(WraftDoc.Account.User, email: email) do
+      nil ->
+        random_password = 8 |> :crypto.strong_rand_bytes() |> Base.encode16() |> binary_part(0, 8)
+        # New user → go through full registration pipeline
+        params = %{
+          "name" => "#{first_name} #{last_name}",
+          "email" => email,
+          "password" => random_password
+        }
 
-    params =
-      %{
-        "name" => "#{first_name} #{last_name}",
-        "email" => email,
-        "password" => random_password
-      }
+        Account.registration(params)
 
-    Account.registration(params)
+      _user ->
+        {:error, "user already exists"}
+    end
+  end
+
+  defp format_changeset_errors(changeset) do
+    Enum.map_join(changeset.errors, ", ", fn {field, {msg, _opts}} ->
+      "#{Phoenix.Naming.humanize(field)} #{msg}"
+    end)
   end
 end

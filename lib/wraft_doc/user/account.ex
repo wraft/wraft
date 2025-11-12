@@ -32,7 +32,6 @@ defmodule WraftDoc.Account do
 
   # Constants for registration process
   @personal_org_name "Personal"
-  @default_flow_name "Wraft Flow"
   @personal_org_roles_job "personal_organisation_roles"
   @wraft_templates_job "wraft_templates"
 
@@ -107,7 +106,7 @@ defmodule WraftDoc.Account do
         update_last_signed_in_org(user, personal_org.id)
         {:ok, %{user: Repo.preload(user, :profile), organisations: [personal_org]}}
 
-      {:error, :user, changeset, _} ->
+      {:error, _, changeset, _} ->
         {:error, changeset}
     end
   end
@@ -136,7 +135,6 @@ defmodule WraftDoc.Account do
     |> setup_personal_organisation(params)
     |> establish_user_organisation_relationship()
     |> assign_personal_organisation_roles()
-    |> create_default_workflow()
     |> setup_default_templates()
   end
 
@@ -243,34 +241,17 @@ defmodule WraftDoc.Account do
     end)
   end
 
-  # Creates the default workflow for the personal organisation
-  @spec create_default_workflow(Multi.t()) :: Multi.t()
-  defp create_default_workflow(multi) do
-    Multi.run(multi, :default_flow, fn _repo,
-                                       %{
-                                         user: user,
-                                         personal_organisation: %{organisation: organisation}
-                                       } ->
-      Enterprise.create_flow(Map.put(user, :current_org_id, organisation.id), %{
-        "name" => @default_flow_name,
-        "organisation_id" => organisation.id
-      })
-    end)
-  end
-
   # Sets up default templates for the organisation
   @spec setup_default_templates(Multi.t()) :: Multi.t()
   defp setup_default_templates(multi) do
     Multi.run(multi, :default_templates, fn _repo,
                                             %{
                                               user: user,
-                                              personal_organisation: %{organisation: organisation},
-                                              default_flow: flow
+                                              personal_organisation: %{organisation: organisation}
                                             } ->
       Enterprise.create_default_worker_job(
         %{
           organisation_id: organisation.id,
-          flow_id: flow.id,
           current_user_id: user.id
         },
         @wraft_templates_job

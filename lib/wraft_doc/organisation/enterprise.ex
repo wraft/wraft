@@ -126,7 +126,7 @@ defmodule WraftDoc.Enterprise do
     |> Repo.insert(ex_audit_custom: [user_id: current_user.id])
     |> case do
       {:ok, flow} ->
-        Task.start_link(fn -> create_default_states(current_user, flow, true) end)
+        create_default_states(current_user, flow, true)
         flow = Repo.preload(flow, :creator)
         {:ok, flow}
 
@@ -144,9 +144,7 @@ defmodule WraftDoc.Enterprise do
     |> Repo.insert()
     |> case do
       {:ok, flow} ->
-        Task.Supervisor.start_child(TaskSupervisor, fn ->
-          create_default_states(current_user, flow)
-        end)
+        create_default_states(current_user, flow)
 
         flow = Repo.preload(flow, :creator)
         {:ok, flow}
