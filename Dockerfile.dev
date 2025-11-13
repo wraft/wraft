@@ -19,10 +19,13 @@ RUN apt-get update && apt-get install -y --fix-missing \
     texlive-xetex \
     curl \
     imagemagick \
+    ghostscript \
     ca-certificates \
     openjdk-17-jdk && \
     update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
+
+RUN sed -i 's/<policy domain="coder" rights="none" pattern="PDF" \/>/<policy domain="coder" rights="read|write" pattern="PDF" \/>/' /etc/ImageMagick-6/policy.xml
 
 # Install Rust toolchain for Rustler
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y

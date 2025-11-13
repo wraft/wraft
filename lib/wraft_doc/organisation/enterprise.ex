@@ -29,7 +29,6 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Notifications.Settings
   alias WraftDoc.Repo
   alias WraftDoc.Storages
-  alias WraftDoc.TaskSupervisor
   alias WraftDoc.Workers.DefaultWorker
   alias WraftDoc.Workers.EmailWorker
   alias WraftDoc.Workers.ScheduledWorker

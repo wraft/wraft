@@ -78,12 +78,16 @@ RUN apt-get update && \
     texlive-latex-extra \
     texlive-xetex \
     imagemagick \
+    ghostscript \
     curl \
     ca-certificates \
     openjdk-17-jdk && \
     update-ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Fix ImageMagick PDF security policy
+RUN sed -i 's/<policy domain="coder" rights="none" pattern="PDF" \/>/<policy domain="coder" rights="read|write" pattern="PDF" \/>/' /etc/ImageMagick-6/policy.xml
 
 # Install Pandoc
 RUN ARCH=$(dpkg --print-architecture) && \

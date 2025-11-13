@@ -34,7 +34,9 @@ defmodule WraftDocWeb.StorageAssetUploader do
            storage_item: %{materialized_path: materialized_path}
          } = _scope}
       ) do
-    materialized_path |> Path.basename() |> Path.rootname()
+    materialized_path
+    |> Path.basename()
+    |> Path.rootname()
   end
 
   def storage_dir(
@@ -69,7 +71,9 @@ defmodule WraftDocWeb.StorageAssetUploader do
         {:convert, "-strip -thumbnail 250x250^ -gravity center -extent 250x250 -format png", :png}
 
       ext == ".pdf" ->
-        {:convert, "-thumbnail 250x250 -background white -alpha remove -format png[0]", :png}
+        {:convert,
+         "-density 150 -flatten -thumbnail 250x250 -background white -alpha remove -format png",
+         :png}
 
       true ->
         :noaction
