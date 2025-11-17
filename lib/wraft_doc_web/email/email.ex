@@ -28,8 +28,10 @@ defmodule WraftDocWeb.Mailer.Email do
         subject,
         email_params
       ) do
+    email_address = email_params[:email] || email_params["email"]
+
     new()
-    |> to(email_params["email"])
+    |> to(email_address)
     |> from({"Wraft", sender_email()})
     |> subject(subject)
     |> html_body(template.render(email_params))
