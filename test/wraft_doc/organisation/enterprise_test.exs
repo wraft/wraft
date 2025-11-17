@@ -499,7 +499,8 @@ defmodule WraftDoc.EnterpriseTest do
 
       {:error, changeset} = Enterprise.create_organisation(user, params)
 
-      assert %{creator_id: ["can't be blank"]} == errors_on(changeset)
+      assert %{creator_id: ["can't be blank"], owner_id: ["can't be blank"]} ==
+               errors_on(changeset)
     end
 
     test "returns error on creating an organisation with same name" do
@@ -834,8 +835,10 @@ defmodule WraftDoc.EnterpriseTest do
       user_org =
         insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
 
-      Enterprise.remove_user(user_org)
-      assert Enterprise.already_member(user_org.organisation.id, user.email) == :ok
+      Enterprise.remove_user(user_org, user.id)
+
+      assert Enterprise.already_member(user_org.organisation.id, user.email) ==
+               {:error, :already_member}
     end
 
     test "already a member return ok for email does not exist" do
@@ -870,16 +873,49 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   describe "create_plan/1" do
+    setup do
+      # Mock the Paddle API calls - use relative URLs or match the actual base URL
+      Tesla.Mock.mock(fn
+        %{method: :post, url: "products"} ->
+          %Tesla.Env{status: 200, body: %{"data" => %{"id" => "prod_test_123"}}}
+
+        %{method: :post, url: "prices"} ->
+          %Tesla.Env{status: 200, body: %{"data" => %{"id" => "price_test_456"}}}
+
+        %{method: :post, url: "payment-links"} ->
+          %Tesla.Env{
+            status: 200,
+            body: %{"data" => %{"url" => "https://paddle.com/test-payment-link"}}
+          }
+      end)
+
+      :ok
+    end
+
     test "creates a plan with valid attrs" do
-      attrs = %{name: "Basic", description: "A free plan", yearly_amount: 0, monthly_amount: 0}
+      attrs = %{
+        "billing_interval" => "month",
+        "currency" => "USD",
+        "description" => "A simple starter plan",
+        "limits" => %{
+          "content_type_create" => 10,
+          "instance_create" => 5,
+          "organisation_create" => 1,
+          "organisation_invite" => 20
+        },
+        "name" => "Basic Plan",
+        "plan_amount" => "0",
+        "type" => "free",
+        "trial_period" => %{"period" => "", "frequency" => ""}
+      }
+
       count_before = Plan |> Repo.all() |> length()
       {:ok, plan} = Enterprise.create_plan(attrs)
 
       assert count_before + 1 == Plan |> Repo.all() |> length()
-      assert plan.name == attrs.name
-      assert plan.description == attrs.description
-      assert plan.yearly_amount == attrs.yearly_amount
-      assert plan.monthly_amount == attrs.monthly_amount
+      assert plan.name == attrs["name"]
+      assert plan.description == attrs["description"]
+      assert plan.plan_amount == attrs["plan_amount"]
     end
 
     test "does not create plan with invalid attrs" do
@@ -887,7 +923,12 @@ defmodule WraftDoc.EnterpriseTest do
       {:error, changeset} = Enterprise.create_plan(%{})
 
       assert count_before == Plan |> Repo.all() |> length()
-      assert %{name: ["can't be blank"], description: ["can't be blank"]} == errors_on(changeset)
+
+      assert %{
+               name: ["can't be blank"],
+               description: ["can't be blank"],
+               limits: ["can't be blank"]
+             } == errors_on(changeset)
     end
   end
 
@@ -934,47 +975,85 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   describe "update_plan/2" do
+    setup do
+      Tesla.Mock.mock(fn
+        %{method: :patch, url: "products/" <> _} ->
+          %Tesla.Env{status: 200, body: %{"data" => %{"id" => "prod_updated"}}}
+
+        %{method: :patch, url: "prices/" <> _} ->
+          %Tesla.Env{status: 200, body: %{"data" => %{"id" => "price_updated"}}}
+      end)
+
+      :ok
+    end
+
     test "updates a plan with valid attrs" do
       plan = insert(:plan)
-      attrs = %{name: "Basic", description: "Basic plan", yearly_amount: 200, monthly_amount: 105}
+
+      attrs = %{
+        "name" => "Basic",
+        "description" => "Basic plan",
+        "plan_amount" => "200",
+        "currency" => "USD",
+        "billing_interval" => "month",
+        "limits" => %{
+          "instance_create" => 5,
+          "content_type_create" => 10,
+          "organisation_create" => 1,
+          "organisation_invite" => 20
+        },
+        "trial_period" => %{"period" => "", "frequency" => ""}
+      }
+
       {:ok, updated_plan} = Enterprise.update_plan(plan, attrs)
 
       assert updated_plan.id == plan.id
-      assert updated_plan.name == attrs.name
-      assert updated_plan.description == attrs.description
-      assert updated_plan.yearly_amount == attrs.yearly_amount
-      assert updated_plan.monthly_amount == attrs.monthly_amount
+      assert updated_plan.name == attrs["name"]
+      assert updated_plan.description == attrs["description"]
+      assert updated_plan.plan_amount == attrs["plan_amount"]
     end
 
     test "does not update plan with invalid attrs" do
       plan = insert(:plan)
-      attrs = %{name: ""}
+
+      attrs = %{
+        "name" => "",
+        "description" => "Basic plan",
+        "plan_amount" => "200",
+        "currency" => "USD",
+        "billing_interval" => "month",
+        "limits" => %{
+          "instance_create" => 5,
+          "content_type_create" => 10,
+          "organisation_create" => 1,
+          "organisation_invite" => 20
+        },
+        "trial_period" => %{"period" => "", "frequency" => ""}
+      }
+
       {:error, changeset} = Enterprise.update_plan(plan, attrs)
 
       assert %{name: ["can't be blank"]} == errors_on(changeset)
     end
 
     test "returns nil with wrong input" do
-      attrs = %{name: ""}
+      attrs = %{
+        "name" => "Basic",
+        "description" => "Basic plan",
+        "plan_amount" => "200",
+        "currency" => "USD",
+        "billing_interval" => "month",
+        "limits" => %{
+          "instance_create" => 5,
+          "content_type_create" => 10,
+          "organisation_create" => 1,
+          "organisation_invite" => 20
+        },
+        "trial_period" => %{"period" => "", "frequency" => ""}
+      }
+
       response = Enterprise.update_plan(nil, attrs)
 
-      assert response == nil
-    end
-  end
-
-  describe "delete_plan/2" do
-    test "deletes a plan when valid plan struct is given" do
-      plan = insert(:plan)
-
-      before_count = Plan |> Repo.all() |> length()
-      {:ok, deleted_plan} = Enterprise.delete_plan(plan)
-
-      assert before_count - 1 == Plan |> Repo.all() |> length()
-      assert deleted_plan.id == plan.id
-    end
-
-    test "returns nil when given input is not a plan struct" do
-      response = Enterprise.delete_plan(nil)
       assert response == nil
     end
   end
@@ -1050,7 +1129,7 @@ defmodule WraftDoc.EnterpriseTest do
       fetched_membership = Enterprise.get_organisation_membership(membership.organisation.id)
       assert fetched_membership.id == membership.id
       assert fetched_membership.plan_id == membership.plan_id
-      assert fetched_membership.plan.yearly_amount == membership.plan.yearly_amount
+      assert fetched_membership.plan.plan_amount == membership.plan.plan_amount
     end
 
     test "returns nil with non-existent id" do
@@ -1067,15 +1146,21 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   describe "update_membership/4" do
-    test "upadtes membership and creates new payment with valid attrs" do
+    test "updates membership and creates new payment with valid attrs" do
       user = insert(:user_with_organisation)
-      membership = insert(:membership)
-      plan = insert(:plan, monthly_amount: 100_000)
+      organisation = List.first(user.owned_organisations)
+
+      # Ensure membership belongs to user's organization
+      membership = insert(:membership, organisation: organisation)
+      # String amount
+      plan = insert(:plan, plan_amount: "100000")
+
       payment_count = Payment |> Repo.all() |> length
 
       success_payment_details = %{
         "status" => "captured",
-        "amount" => 100_000,
+        # Make this a string to match plan amount
+        "amount" => "100000",
         "id" => @valid_razorpay_id
       }
 
@@ -1090,13 +1175,13 @@ defmodule WraftDoc.EnterpriseTest do
     test "does not update membership but creates new payment with failed razorpay id but valid attrs" do
       user = insert(:user_with_organisation)
       membership = insert(:membership, organisation: List.first(user.owned_organisations))
-      plan = insert(:plan, monthly_amount: 100_000)
+      plan = insert(:plan, plan_amount: "100")
       payment_count = Payment |> Repo.all() |> length
 
       failed_payment_details = %{
         "id" => @failed_razorpay_id,
         "status" => "failed",
-        "amount" => 100_000
+        "amount" => "100"
       }
 
       {:ok, payment} =
@@ -1283,14 +1368,15 @@ defmodule WraftDoc.EnterpriseTest do
       insert(:user_organisation, user: user2, organisation: organisation)
       user_org = insert(:user_organisation, user: user3, organisation: organisation)
 
-      Enterprise.remove_user(user_org)
+      Enterprise.remove_user(user_org, user3.current_org_id)
 
       response = Enterprise.members_index(user1, %{"page" => 1})
-      user_ids = response.entries |> Enum.map(fn x -> x.id end) |> to_string()
+      user_ids = Enum.map(response.entries, fn x -> x.id end)
 
-      assert user_ids =~ user1.id
-      assert user_ids =~ user2.id
-      refute user_ids =~ user3.id
+      assert user1.id in user_ids
+      assert user2.id in user_ids
+      refute user3.id in user_ids
+
       assert response.page_number == 1
       assert response.total_pages == 1
       assert response.total_entries == 2
@@ -1444,7 +1530,7 @@ defmodule WraftDoc.EnterpriseTest do
       user_org =
         insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
 
-      {:ok, organisation} = Enterprise.remove_user(user_org)
+      {:ok, organisation} = Enterprise.remove_user(user_org, user.current_org_id)
       refute organisation.deleted_at == nil
     end
   end

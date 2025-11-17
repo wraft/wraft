@@ -5,117 +5,119 @@
     <title>Wraft Doc</title>
 
     <style>
-    .invoice-box {
-        width: 210mm;
-        min-height: 180mm;
-        padding: 5mm;
-        margin: 10mm auto;
-        border-radius: 5px;
-        background: white;
-        font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
-        font-size: 14px;
-        line-height: 24px;
-        color: #333;
-        position: relative;
-    }
+        .invoice-box {
+            width: 210mm;
+            min-height: 180mm;
+            padding: 5mm;
+            margin: 10mm auto;
+            border-radius: 5px;
+            background: white;
+            font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            line-height: 24px;
+            color: #333;
+            position: relative;
+        }
 
-    .invoice-box table {
-        width: 100%;
-        line-height: inherit;
-        text-align: left;
-    }
-
-    .invoice-box table td {
-        padding: 5px;
-        vertical-align: top;
-    }
-
-    .invoice-box table tr td:nth-child(2) {
-        text-align: right;
-    }
-
-    .invoice-box table tr.top table td {
-        padding-bottom: 20px;
-    }
-
-    .invoice-box table tr.top table td.title {
-        font-size: 45px;
-        line-height: 45px;
-        color: #333;
-    }
-
-    .invoice-box table tr.information table td {
-        padding-bottom: 40px;
-    }
-
-    .invoice-box table tr.heading td {
-        background: #333;
-        border-bottom: 1px solid #333;
-        font-weight: bold;
-        color: #fff;
-    }
-
-    .invoice-box table tr.details td {
-        padding-bottom: 20px;
-    }
-
-    .invoice-box table tr.item td{
-        border-bottom: 1px solid #333;
-    }
-
-    .invoice-box table tr.item.last td {
-        border-bottom: none;
-    }
-
-    .invoice-box table tr.total td:nth-child(2) {
-        border-top: 2px solid #333;
-        font-weight: bold;
-    }
-    .footer {
-        font-size: 12px;
-        line-height: 1.4;
-        text-align: center;
-        background: #333;
-        padding: 8px;
-        margin-top:20px;
-        position: absolute;
-        bottom: 0;
-        width: 100%;
-        color: #fff;
-    }
-    .footer__sub{
-        position: absolute;
-        bottom: 80px;
-        width: 100%;
-    }
-
-    @media only screen and (max-width: 600px) {
-        .invoice-box table tr.top table td {
+        .invoice-box table {
             width: 100%;
-            display: block;
-            text-align: center;
+            line-height: inherit;
+            text-align: left;
+        }
+
+        .invoice-box table td {
+            padding: 5px;
+            vertical-align: top;
+        }
+
+        .invoice-box table tr td:nth-child(2) {
+            text-align: right;
+        }
+
+        .invoice-box table tr.top table td {
+            padding-bottom: 20px;
+        }
+
+        .invoice-box table tr.top table td.title {
+            font-size: 45px;
+            line-height: 45px;
+            color: #333;
         }
 
         .invoice-box table tr.information table td {
-            width: 100%;
-            display: block;
-            text-align: center;
+            padding-bottom: 40px;
         }
-    }
 
-    /** RTL **/
-    .rtl {
-        direction: rtl;
-        font-family: Tahoma, 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
-    }
+        .invoice-box table tr.heading td {
+            background: #333;
+            border-bottom: 1px solid #333;
+            font-weight: bold;
+            color: #fff;
+        }
 
-    .rtl table {
-        text-align: right;
-    }
+        .invoice-box table tr.details td {
+            padding-bottom: 20px;
+        }
 
-    .rtl table tr td:nth-child(2) {
-        text-align: left;
-    }
+        .invoice-box table tr.item td {
+            border-bottom: 1px solid #333;
+        }
+
+        .invoice-box table tr.item.last td {
+            border-bottom: none;
+        }
+
+        .invoice-box table tr.total td:nth-child(2) {
+            border-top: 2px solid #333;
+            font-weight: bold;
+        }
+
+        .footer {
+            font-size: 12px;
+            line-height: 1.4;
+            text-align: center;
+            background: #333;
+            padding: 8px;
+            margin-top: 20px;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            color: #fff;
+        }
+
+        .footer__sub {
+            position: absolute;
+            bottom: 80px;
+            width: 100%;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .invoice-box table tr.top table td {
+                width: 100%;
+                display: block;
+                text-align: center;
+            }
+
+            .invoice-box table tr.information table td {
+                width: 100%;
+                display: block;
+                text-align: center;
+            }
+        }
+
+        /* RTL */
+        .rtl {
+            direction: rtl;
+            font-family: Tahoma, 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+        }
+
+        .rtl table {
+            text-align: right;
+        }
+
+        .rtl table tr td:nth-child(2) {
+            text-align: left;
+        }
     </style>
 </head>
 
@@ -123,30 +125,37 @@
     <div class="invoice-box">
         <div style="padding: 5px;">
             <div style="display: block; overflow: hidden;">
-            <img src="https://wraftdoc-dev.s3.ap-south-1.amazonaws.com/functionary-logo.png" style="width:100%; max-width:140px; float: left; display: block; overflow: hidden;">
-                <!-- <h5 style="font-size: 20px; margin: -3px; display: block; overflow: hidden; padding-left: 12px;">Duru Cooperation Private Limited</h5> -->
+                <img src="https://wraftdoc-dev.s3.ap-south-1.amazonaws.com/functionary-logo.png"
+                     style="width:100%; max-width:140px; float: left; display: block; overflow: hidden;">
+
                 <div style="float: right; display: block; overflow: hidden; line-height: 1.6; text-align: right; padding-left: 12px; padding-top: 8px; color: #333;">
-                    <div ><b>Invoice #:  <%= @invoice_number %> </b></div>
-                    <div>Date: <%= @payment.meta["created_at"] |> Timex.from_unix |> humanize_time %></div>
+                    <div><b>Invoice #: <%= @invoice_number %></b></div>
+                    <div>
+                        Date:
+                        <%= if @payment.meta["created_at"] do %>
+                            <%= @payment.meta["created_at"] |> Timex.from_unix() |> humanize_time() %>
+                        <% else %>
+                            <%= Timex.format!(DateTime.utc_now(), "{D}/{M}/{YYYY}") %>
+                        <% end %>
+                    </div>
                 </div>
             </div>
-            <div style="display: block; overflow: hidden; margin-top: 25px; margin-bottom: 25px;">
-                <div style="float: left; width: 60%; display: block; overflow: hidden; font-size: 14px; line-height: 1.5;">
-                    Functionary Labs Pvt Ltd. <br>
-                    #24, Caravel Building, 1st Main Rd,<br>
-                    S.T. Bed, Koramangala 4th Block,<br>
-                    Bengaluru, Karnataka 560095<br>
-                    <%!-- C.I.N : U74999KA2017PTC106639<br> --%>
-                    <%!-- GSTIN : 29AAGCD3648A1ZT --%>
-                </div>
-                <div style="float: left; display: block; overflow: hidden; font-size: 14px; line-height: 1.5;">
-                    To:<br>
-                    <%= @membership.organisation.legal_name %><br>
-                    <%= @membership.organisation.address %><br>
-                    <%= @membership.organisation.email %><br>
-                </div>
+        </div>
+
+        <div style="display: block; overflow: hidden; margin-top: 25px; margin-bottom: 25px;">
+            <div style="float: left; width: 60%; display: block; overflow: hidden; font-size: 14px; line-height: 1.5;">
+                Functionary Labs Pvt Ltd. <br>
+                #24, Caravel Building, 1st Main Rd,<br>
+                S.T. Bed, Koramangala 4th Block,<br>
+                Bengaluru, Karnataka 560095<br>
             </div>
 
+            <div style="float: left; display: block; overflow: hidden; font-size: 14px; line-height: 1.5;">
+                To:<br>
+                <%= @membership.organisation.legal_name %><br>
+                <%= @membership.organisation.address %><br>
+                <%= @membership.organisation.email %><br>
+            </div>
         </div>
 
         <table cellpadding="0" cellspacing="0">
@@ -160,23 +169,31 @@
                 <td>&#x20B9; <%= @payment.amount |> calculate_plan_amount() %></td>
             </tr>
 
-            <tr >
+            <tr>
                 <td></td>
-                <td> 18% GST : &#x20B9; <%= @payment.amount |> calculate_gst()   %> </td>
+                <td>
+                    18% GST :
+                    &#x20B9; <%= @payment.amount |> calculate_gst() %>
+                </td>
             </tr>
+
             <tr class="total">
                 <td></td>
-                <td>Total: &#x20B9; <%= @payment.amount |> convert_to_rupee()  %></td>
+                <td>Total: &#x20B9; <%= @payment.amount |> convert_to_rupee() %></td>
             </tr>
         </table>
+
         <div class="footer__sub">
-            <div style="padding: 5px; margin-top:30px;">
+            <div style="padding: 5px; margin-top: 30px;">
                 Your subscription is valid till <%= humanize_date(@payment.end_date) %>
             </div>
-            <div style="padding: 5px; margin-top:50px;">
-                For questions/concerns regarding this invoice, please contact <span style="color: #0071cc;">payment@wraftdoc.com</span>
+
+            <div style="padding: 5px; margin-top: 50px;">
+                For questions/concerns regarding this invoice, please contact
+                <span style="color: #0071cc;">payment@wraftdoc.com</span>
             </div>
         </div>
+
         <div class="footer">
             <b>www.functionary.co</b>
         </div>

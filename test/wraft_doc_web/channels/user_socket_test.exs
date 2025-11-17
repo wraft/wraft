@@ -10,7 +10,7 @@ defmodule WraftDocWeb.UserSocketTest do
   alias WraftDocWeb.UserSocket
 
   test "fail to authenticate without token" do
-    assert :error = connect(UserSocket, %{})
+    assert {:error, :unauthorized_connection} = connect(UserSocket, %{})
   end
 
   test "fail to authenticate with invalid token" do

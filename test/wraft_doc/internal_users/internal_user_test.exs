@@ -1,6 +1,7 @@
 defmodule WraftDocs.InternalUsers.InternalUserTest do
   use WraftDoc.ModelCase
 
+  alias WraftDoc.InternalUsers
   alias WraftDoc.InternalUsers.InternalUser
   import WraftDoc.Factory
 
@@ -71,16 +72,17 @@ defmodule WraftDocs.InternalUsers.InternalUserTest do
   describe "update_changeset/2" do
     test "returns a valid changeset with valid params" do
       internal_user = insert(:internal_user)
-      changeset = InternalUser.changeset(internal_user, %{"is_deactivated" => "true"})
+      changeset = InternalUser.update_changeset(internal_user, %{"is_deactivated" => "true"})
 
       assert changeset.valid?
     end
 
     test "returns an invalid changeset with invalid params" do
       internal_user = insert(:internal_user)
-      changeset = InternalUser.changeset(internal_user, %{"is_deactivated" => nil})
+      changeset = InternalUser.update_changeset(internal_user, %{"is_deactivated" => nil})
 
       refute changeset.valid?
+      assert "can't be blank" in errors_on(changeset, :is_deactivated)
     end
   end
 end
