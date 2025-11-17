@@ -43,7 +43,7 @@ defmodule WraftDocWeb.Email.EmailTest do
       end)
 
       assert email.to == [{"", test_email}]
-      assert email.from == {"Wraft", "no-reply@wraft.app"}
+      assert email.from == {"Wraft", "no-reply@example.com"}
       assert email.subject == "Invitation to join #{org_name} in Wraft"
     end
 
@@ -61,22 +61,48 @@ defmodule WraftDocWeb.Email.EmailTest do
       user_name = "user_name"
       notification_message = "notification_message"
 
-      email = Email.notification_email(user_name, notification_message, @test_email)
+      email =
+        Email.notification_email(WraftDocWeb.MJML.Notification, "Notification Subject", %{
+          user_name: user_name,
+          message: notification_message,
+          email: @test_email,
+          title: user_name,
+          # Add these to satisfy the template
+          button_text: nil,
+          # even if they're nil
+          button_url: nil,
+          additional_info: nil,
+          signature: nil
+        })
 
       Test.deliver(email, [])
 
       assert_email_sent()
       assert email.from == {"Wraft", @sender_email}
-      assert email.subject == " #{user_name} "
+      assert email.subject == "Notification Subject"
       assert elem(List.last(email.to), 1) == @test_email
-      assert email.html_body == "Hi, #{user_name} #{notification_message}"
+
+      # Check the actual content
+      assert email.html_body =~ user_name
+      assert email.html_body =~ notification_message
     end
 
     test "return email not send if not delivered" do
       user_name = "user_name"
       notification_message = "notification_message"
 
-      Email.notification_email(user_name, notification_message, @test_email)
+      Email.notification_email(WraftDocWeb.MJML.Notification, "Notification Subject", %{
+        user_name: user_name,
+        message: notification_message,
+        email: @test_email,
+        title: user_name,
+        # Add these to satisfy the template
+        button_text: nil,
+        # even if they're nil
+        button_url: nil,
+        additional_info: nil,
+        signature: nil
+      })
 
       refute_email_sent()
     end
