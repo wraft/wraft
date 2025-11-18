@@ -79,7 +79,8 @@ config :wraft_doc, Oban,
     webhooks: 15,
     cloud_provider: 15,
     integrations: 15,
-    repository: 15
+    repository: 15,
+    workflows: 10
   ],
   plugins: [
     Oban.Plugins.Pruner,

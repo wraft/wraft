@@ -18,6 +18,8 @@ defmodule WraftDoc.Forms do
   alias WraftDoc.Pipelines.TriggerHistories
   alias WraftDoc.Repo
   alias WraftDoc.Validations.Validator
+  alias WraftDoc.Workflows.{Workflow, WorkflowEdge, WorkflowJob}
+  alias WraftDoc.Workflows.WorkflowRuns
 
   require Logger
 
@@ -368,8 +370,13 @@ defmodule WraftDoc.Forms do
 
     if check_data_mapping(fields, data) do
       case validate_form_entry(fields, data_map) do
-        [] -> insert_form_entry(current_user, form, data_map)
-        error_list -> {:error, error_list}
+        [] ->
+          {:ok, form_entry} = insert_form_entry(current_user, form, data_map)
+          trigger_connected_workflows(current_user, form, form_entry)
+          {:ok, form_entry}
+
+        error_list ->
+          {:error, error_list}
       end
     else
       {:error, :invalid_data}
@@ -589,5 +596,37 @@ defmodule WraftDoc.Forms do
         %{order: Map.get(fields, field_id)}
       )
     end)
+  end
+
+  @doc """
+  Trigger all active workflows that start with a Form Submit Trigger matching this form.
+  """
+  @spec trigger_connected_workflows(User.t(), Form.t(), FormEntry.t()) :: :ok
+  def trigger_connected_workflows(
+        %User{current_org_id: org_id} = current_user,
+        %Form{id: form_id},
+        %FormEntry{data: data}
+      ) do
+    query =
+      from(w in Workflow,
+        join: j in WorkflowJob,
+        on: j.workflow_id == w.id,
+        left_join: e in WorkflowEdge,
+        on: e.target_job_id == j.id and e.enabled == true,
+        where:
+          w.organisation_id == ^org_id and
+            j.adaptor == "form" and
+            fragment("( ?->>'form_id') = ?", j.config, ^form_id) and
+            is_nil(e.id),
+        select: %{workflow_id: w.id}
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.each(fn %{workflow_id: id} ->
+      WorkflowRuns.create_and_execute_run(current_user, id, data)
+    end)
+
+    :ok
   end
 end

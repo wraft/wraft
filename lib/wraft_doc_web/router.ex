@@ -111,6 +111,8 @@ defmodule WraftDocWeb.Router do
         # Show and index plans
         get("/plans/active_plans", PlanController, :active_plans)
         resources("/plans", PlanController, only: [:show, :index])
+        # Public webhook trigger endpoint (no auth required)
+        post("/workflows/:id/trigger", WorkflowWebhookController, :trigger)
       end
 
       # Verify access to a document instance
@@ -274,6 +276,36 @@ defmodule WraftDocWeb.Router do
         put("/settings", NotificationController, :update_settings)
         get("/events", NotificationController, :get_events)
       end
+
+      # Workflows
+      scope "/workflows" do
+        # Workflow jobs
+        delete("/:workflow_id/jobs/:job_id", WorkflowController, :delete_job)
+
+        resources("/", WorkflowController, only: [:index, :show, :create, :update])
+        # patch("/:id", WorkflowController, :update)
+
+        # Workflow execution
+        post("/:workflow_id/execute", WorkflowRunController, :execute)
+        get("/:workflow_id/runs", WorkflowRunController, :index)
+        get("/:workflow_id/runs/:id", WorkflowRunController, :show)
+      end
+
+      # Workflow Credentials
+      scope "/workflow_credentials" do
+        resources("/", WorkflowCredentialController,
+          only: [:create, :index, :show, :update, :delete]
+        )
+      end
+
+      # Adaptors
+      resources("/adaptors", AdaptorController, only: [:index])
+
+      # Actions
+      resources("/actions", ActionController, only: [:index, :show, :update])
+
+      # Adapter Settings
+      resources("/adapter_settings", AdapterSettingController, only: [:index, :create, :update])
 
       # Theme
       resources("/themes", ThemeController, only: [:create, :index, :show, :update, :delete])

@@ -40,6 +40,9 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Themes.ThemeAsset
   alias WraftDoc.Vendors.Vendor
+  alias WraftDoc.Workflows.Workflow
+  alias WraftDoc.Workflows.WorkflowEdge
+  alias WraftDoc.Workflows.WorkflowJob
 
   require Logger
 
@@ -501,6 +504,240 @@ defmodule WraftDoc.Seed do
         field_id: field.id
       })
     end)
+  end
+
+  def seed_dag_workflow(user, organisation) do
+    seed_age_based_workflow(user, organisation)
+    seed_document_approval_workflow(user, organisation)
+    seed_onboarding_workflow(user, organisation)
+    seed_http_api_workflow(user, organisation)
+  end
+
+  defp seed_age_based_workflow(user, organisation) do
+    workflow =
+      Repo.insert!(%Workflow{
+        name: "Age based greeting",
+        description: "Sends greeting based on age category",
+        organisation_id: organisation.id,
+        creator_id: user.id,
+        is_active: true
+      })
+
+    job_age_check =
+      Repo.insert!(%WorkflowJob{
+        name: "Check Age Category",
+        adaptor: "condition",
+        config: %{
+          "condition" => "if data[\"age\"] < 18 do \"minor\" else \"adult\" end"
+        },
+        workflow_id: workflow.id,
+        order: 1,
+        position_x: 200,
+        position_y: 200
+      })
+
+    job_minor =
+      Repo.insert!(%WorkflowJob{
+        name: "Send Minor Greeting",
+        adaptor: "email",
+        config: %{
+          "subject" => "Hello Young Champ!",
+          "body" => "You are classified as a minor."
+        },
+        workflow_id: workflow.id,
+        order: 2,
+        position_x: 400,
+        position_y: 100
+      })
+
+    job_adult =
+      Repo.insert!(%WorkflowJob{
+        name: "Send Adult Greeting",
+        adaptor: "email",
+        config: %{
+          "subject" => "Hello Adult!",
+          "body" => "You are classified as an adult."
+        },
+        workflow_id: workflow.id,
+        order: 3,
+        position_x: 400,
+        position_y: 300
+      })
+
+    Repo.insert!(%WorkflowEdge{
+      source_job_id: job_age_check.id,
+      target_job_id: job_minor.id,
+      enabled: true
+      # condition: "result == \"minor\""
+    })
+
+    Repo.insert!(%WorkflowEdge{
+      source_job_id: job_age_check.id,
+      target_job_id: job_adult.id,
+      enabled: true
+      # condition: "result == \"adult\""
+    })
+  end
+
+  defp seed_document_approval_workflow(user, organisation) do
+    workflow =
+      Repo.insert!(%Workflow{
+        name: "Document Approval Process",
+        description: "Auto approve document based on score",
+        organisation_id: organisation.id,
+        creator_id: user.id,
+        is_active: true
+      })
+
+    job_score =
+      Repo.insert!(%WorkflowJob{
+        name: "Calculate Score",
+        adaptor: "script",
+        config: %{
+          "script" => "score = data[\"field1\"] + data[\"field2\"]; score"
+        },
+        workflow_id: workflow.id,
+        order: 1,
+        position_x: 200,
+        position_y: 150
+      })
+
+    job_approve =
+      Repo.insert!(%WorkflowJob{
+        name: "Approve Document",
+        adaptor: "document",
+        config: %{
+          "action" => "approve"
+        },
+        workflow_id: workflow.id,
+        order: 2,
+        position_x: 450,
+        position_y: 100
+      })
+
+    job_reject =
+      Repo.insert!(%WorkflowJob{
+        name: "Reject Document",
+        adaptor: "document",
+        config: %{
+          "action" => "reject"
+        },
+        workflow_id: workflow.id,
+        order: 3,
+        position_x: 450,
+        position_y: 250
+      })
+
+    Repo.insert!(%WorkflowEdge{
+      source_job_id: job_score.id,
+      target_job_id: job_approve.id,
+      enabled: true
+      # condition: "result >= 50"
+    })
+
+    Repo.insert!(%WorkflowEdge{
+      source_job_id: job_score.id,
+      target_job_id: job_reject.id,
+      enabled: true
+      # condition: "result < 50"
+    })
+  end
+
+  defp seed_onboarding_workflow(user, organisation) do
+    workflow =
+      Repo.insert!(%Workflow{
+        name: "Employee Onboarding Workflow",
+        description: "Sends welcome email and sets up employee profile",
+        organisation_id: organisation.id,
+        creator_id: user.id,
+        is_active: true
+      })
+
+    job_welcome =
+      Repo.insert!(%WorkflowJob{
+        name: "Send Welcome Email",
+        adaptor: "email",
+        config: %{
+          "subject" => "Welcome to the company!",
+          "body" => "We’re excited to have you onboard."
+        },
+        workflow_id: workflow.id,
+        order: 1,
+        position_x: 200,
+        position_y: 150
+      })
+
+    job_setup =
+      Repo.insert!(%WorkflowJob{
+        name: "Setup Employee Profile",
+        adaptor: "http",
+        config: %{
+          "method" => "POST",
+          "url" => "https://example.com/api/employees",
+          "body" => %{"name" => "{{name}}", "email" => "{{email}}"}
+        },
+        workflow_id: workflow.id,
+        order: 2,
+        position_x: 450,
+        position_y: 150
+      })
+
+    Repo.insert!(%WorkflowEdge{
+      source_job_id: job_welcome.id,
+      target_job_id: job_setup.id,
+      enabled: true
+    })
+  end
+
+  defp seed_http_api_workflow(user, organisation) do
+    workflow =
+      Repo.insert!(%Workflow{
+        name: "HTTP API Integration Example",
+        description: "Example workflow using HTTP adaptor to call external APIs",
+        is_active: true,
+        organisation_id: organisation.id,
+        creator_id: user.id
+      })
+
+    # Job 1 — API GET Call
+    job_api_call =
+      Repo.insert!(%WorkflowJob{
+        name: "Fetch User Data",
+        adaptor: "http",
+        config: %{
+          "url" => "https://jsonplaceholder.typicode.com/users/{{user_id}}",
+          "method" => "GET",
+          "headers" => %{
+            "Content-Type" => "application/json"
+          }
+        },
+        workflow_id: workflow.id,
+        position_x: 250.0,
+        position_y: 150.0,
+        order: 1
+      })
+
+    # Job 2 — Transform response
+    job_transform =
+      Repo.insert!(%WorkflowJob{
+        name: "Transform Response",
+        adaptor: "transform",
+        config: %{
+          "script" => "return %{name: data[\"name\"], email: data[\"email\"]}"
+        },
+        workflow_id: workflow.id,
+        position_x: 550.0,
+        position_y: 150.0,
+        order: 2
+      })
+
+    Repo.insert!(%WorkflowEdge{
+      source_job_id: job_api_call.id,
+      target_job_id: job_transform.id,
+      enabled: true
+    })
+
+    workflow
   end
 
   def seed_dashboard_stats do
