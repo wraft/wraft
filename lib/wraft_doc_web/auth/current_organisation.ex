@@ -27,6 +27,15 @@ defmodule WraftDocWeb.CurrentOrganisation do
   end
 
   def call(conn, _opts) do
+    # If current_user already has org_id (e.g., from API key auth), skip Guardian processing
+    if conn.assigns[:current_user] && conn.assigns.current_user.current_org_id do
+      conn
+    else
+      process_jwt_org(conn)
+    end
+  end
+
+  defp process_jwt_org(conn) do
     %{"organisation_id" => org_id} = current_claims(conn)
 
     case Repo.get(Organisation, org_id) do
