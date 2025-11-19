@@ -62,7 +62,7 @@ defmodule WraftDoc.Factory do
   def user_factory do
     %User{
       name: "wrafts user",
-      email: sequence(:email, &"wraftuser-#{&1}-#{System.unique_integer()}@wmail.com"),
+      email: "#{Base.encode16(:crypto.strong_rand_bytes(10), case: :lower)}@wmail.com",
       email_verify: true,
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
@@ -73,7 +73,7 @@ defmodule WraftDoc.Factory do
   end
 
   def user_with_personal_organisation_factory do
-    unique_email = sequence(:email, &"personal-user-#{&1}-#{System.unique_integer()}@wmail.com")
+    unique_email = "#{Base.encode16(:crypto.strong_rand_bytes(10), case: :lower)}@wmail.com"
     organisation = insert(:organisation, name: "Personal", email: unique_email)
 
     %User{
@@ -91,7 +91,7 @@ defmodule WraftDoc.Factory do
   def user_with_organisation_factory do
     organisation = insert(:organisation)
     # Use consistent sequence pattern
-    unique_email = sequence(:email, &"org-user-#{&1}-#{System.unique_integer()}@wmail.com")
+    unique_email = "#{Base.encode16(:crypto.strong_rand_bytes(10), case: :lower)}@wmail.com"
 
     %User{
       name: "wrafts user",
@@ -113,7 +113,7 @@ defmodule WraftDoc.Factory do
       gstin: sequence(:gstin, &"32AASDGGDGDDGDG#{&1}"),
       phone: sequence(:phone, &"985222332#{&1}"),
       # Add unique integer
-      email: sequence(:email, &"org-#{&1}-#{System.unique_integer()}@gmail.com"),
+      email: "#{Base.encode16(:crypto.strong_rand_bytes(10), case: :lower)}@gmail.com",
       url: sequence(:url, &"acborg#{&1}@profile.com")
     }
   end
@@ -265,21 +265,24 @@ defmodule WraftDoc.Factory do
   end
 
   # In your factory file, ensure the instance factory creates proper associations:
+def instance_factory(attrs) do
+  creator = Map.get(attrs, :creator) || build(:user_with_organisation)
+  creator_org = List.first(creator.owned_organisations)
 
-  def instance_factory(attrs) do
-    creator = Map.get(attrs, :creator) || build(:user_with_organisation)
-    creator_org = List.first(creator.owned_organisations)
+  content_type =
+    build(:content_type,
+      organisation: creator_org,
+      flow: build(:flow, organisation: creator_org)
+    )
 
-    content_type =
-      build(:content_type,
-        organisation: creator_org,
-        flow: build(:flow, organisation: creator_org)
-      )
-
-    instance = %Instance{
+  instance =
+    %Instance{
       instance_id: sequence(:instance_id, &"Prefix#{&1}"),
       raw: "Content",
-      serialized: %{"title" => "Title of the content", "body" => "Body of the content"},
+      serialized: %{
+        "title" => "Title of the content",
+        "body" => "Body of the content"
+      },
       editable: true,
       state: build(:state, organisation: creator_org, flow: content_type.flow),
       content_type: content_type,
@@ -291,14 +294,18 @@ defmodule WraftDoc.Factory do
       type: 1
     }
 
-    merge_attributes(instance, attrs)
-  end
+  merge_attributes(instance, attrs)
+end
+
 
   def instance_version_factory do
     %Version{
       version_number: 1,
       raw: "Content",
       serialized: %{title: "Title of the content", body: "Body of the content"},
+      content: build(:instance),
+      # Add explicit type to avoid nil comparison
+      type: "save"
       content: build(:instance),
       # Add explicit type to avoid nil comparison
       type: "save"
