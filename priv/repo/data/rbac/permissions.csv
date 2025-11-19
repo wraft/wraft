@@ -51,3 +51,6 @@ workspace:invite,Workspace,Invite
 workspace:update,Workspace,Update
 integration:show,Integration,Show
 integration:manage,Integration,Manage
+api_key:delete,API Key,Delete
+api_key:manage,API Key,Manage
+api_key:show,API Key,Show

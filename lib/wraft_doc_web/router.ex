@@ -19,7 +19,7 @@ defmodule WraftDocWeb.Router do
   end
 
   pipeline :api_auth do
-    plug(WraftDocWeb.Guardian.AuthPipeline)
+    plug(WraftDocWeb.Guardian.FlexibleAuthPipeline)
   end
 
   pipeline :valid_membership do
@@ -210,6 +210,10 @@ defmodule WraftDocWeb.Router do
       post("/webhooks/:id/test", WebhookController, :test)
       get("/webhooks/:id/logs", WebhookController, :logs)
       get("/webhooks/:id/stats", WebhookController, :stats)
+
+      # API Keys
+      resources("/api_keys", ApiKeyController, only: [:create, :index, :show, :update, :delete])
+      patch("/api_keys/:id/toggle", ApiKeyController, :toggle_status)
 
       scope "/content_types" do
         # Content type

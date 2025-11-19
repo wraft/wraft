@@ -13,6 +13,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Account.User.Audience
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
+  alias WraftDoc.ApiKeys.ApiKey
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Authorization.Permission
   alias WraftDoc.AuthTokens.AuthToken
@@ -520,8 +521,8 @@ defmodule WraftDoc.Factory do
       action: Enum.random(1..3),
       status: Enum.random([1, 2, 3]),
       meta: %{id: sequence(:invoice, &"Razorpay-#{&1}")},
-      from_plan: build(:plan),
-      to_plan: build(:plan)
+      from_plan: build(:plan, coupon: nil),
+      to_plan: build(:plan, coupon: nil)
     }
   end
 
@@ -717,6 +718,32 @@ defmodule WraftDoc.Factory do
           }
         }
       ]
+    }
+  end
+
+  def api_key_factory do
+    organisation = build(:organisation)
+    user = build(:user)
+
+    # Generate a sample API key
+    prefix = :crypto.strong_rand_bytes(4) |> Base.encode16(case: :lower)
+    random_part = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false) |> binary_part(0, 32)
+    full_key = "wraft_#{prefix}_#{random_part}"
+    
+    %ApiKey{
+      name: sequence(:api_key_name, &"API Key #{&1}"),
+      key_hash: Bcrypt.hash_pwd_salt(full_key),
+      key_prefix: prefix,
+      organisation: organisation,
+      user: user,
+      created_by: user,
+      expires_at: nil,
+      is_active: true,
+      rate_limit: 1000,
+      ip_whitelist: [],
+      last_used_at: nil,
+      usage_count: 0,
+      metadata: %{}
     }
   end
 end
