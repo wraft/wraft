@@ -6,6 +6,8 @@ defmodule WraftDoc.Workflows.Adaptors.TemplateAdaptor do
   @behaviour WraftDoc.Workflows.Adaptors.Adaptor
 
   alias WraftDoc.Documents
+  alias WraftDoc.Repo
+
   require Logger
 
   @impl true
@@ -13,10 +15,14 @@ defmodule WraftDoc.Workflows.Adaptors.TemplateAdaptor do
     template_id = config["template_id"]
     template = WraftDoc.DataTemplates.get_data_template(template_id)
 
-    input_tables = get_in(input_data, ["data", "tables"]) || %{}
+    input_tables = input_data["tables"] || %{}
 
     merged_serialized =
-      inject_smart_tables(template.serialized, input_tables)
+      if map_size(input_tables) > 0 do
+        inject_smart_tables(template.serialized, input_tables)
+      else
+        template.serialized
+      end
 
     params =
       %{}
@@ -28,13 +34,31 @@ defmodule WraftDoc.Workflows.Adaptors.TemplateAdaptor do
       |> WraftDoc.Account.get_user_by_uuid()
       |> Map.put(:current_org_id, input_data["org_id"])
 
-    Documents.create_instance(
-      current_user,
-      template.content_type,
-      params
-    )
+    instance =
+      current_user
+      |> Documents.create_instance(
+        template.content_type,
+        params
+      )
+      |> Repo.preload(:versions)
 
-    {:ok, %{generated_at: DateTime.utc_now(), metadata: %{}}}
+    # TODO: Implement logic to handle errors during document generation
+    # Documents.build_doc(instance, template.content_type.layout)
+
+    Documents.bulk_build(current_user, instance, template.content_type.layout)
+
+    %{id: document_id, build: document_url} =
+      instance
+      |> Repo.preload(:versions)
+      |> Documents.get_built_document()
+
+    {:ok,
+     %{
+       generated_at: DateTime.utc_now(),
+       document_id: document_id,
+       document_url: document_url,
+       metadata: %{}
+     }}
   end
 
   # TODO: Move into token replacement engine

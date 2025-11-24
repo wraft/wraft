@@ -1305,6 +1305,7 @@ defmodule WraftDoc.Documents do
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file, opts)
   end
 
+  # TODO : Remove and try with token replacement engine.
   defp replace_unhandled_tokens(content) when is_binary(content) do
     Regex.replace(~r/\[SMART_TABLE_PLACEHOLDER:[^\]]+\]/, content, "")
   end

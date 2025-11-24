@@ -79,8 +79,21 @@ defmodule WraftDoc.DataTemplates do
       )
 
     case Repo.one(query) do
-      %DataTemplate{} = data_template -> Repo.preload(data_template, :content_type)
-      _ -> {:error, :invalid_id, "DataTemplate"}
+      %DataTemplate{} = data_template ->
+        Repo.preload(data_template,
+          content_type: [
+            layout: [
+              :asset,
+              :creator,
+              :organisation,
+              :engine,
+              frame: [:asset]
+            ]
+          ]
+        )
+
+      _ ->
+        {:error, :invalid_id, "DataTemplate"}
     end
   end
 
