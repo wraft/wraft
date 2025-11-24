@@ -31,7 +31,11 @@ defmodule WraftDocWeb.Api.V1.ApiKeyController do
 
           properties do
             name(:string, "Descriptive name for the API key", required: true)
-            user_id(:string, "User ID for authentication (defaults to current user)", required: false)
+
+            user_id(:string, "User ID for authentication (defaults to current user)",
+              required: false
+            )
+
             expires_at(:string, "Optional: Expiration datetime (ISO-8601)", required: false)
             rate_limit(:integer, "Requests per hour limit", required: false)
             ip_whitelist(:array, "Optional: List of allowed IP addresses", required: false)
@@ -308,4 +312,3 @@ defmodule WraftDocWeb.Api.V1.ApiKeyController do
     end
   end
 end
-

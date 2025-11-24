@@ -726,10 +726,13 @@ defmodule WraftDoc.Factory do
     user = build(:user)
 
     # Generate a sample API key
-    prefix = :crypto.strong_rand_bytes(4) |> Base.encode16(case: :lower)
-    random_part = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false) |> binary_part(0, 32)
+    prefix = Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)
+
+    encoded = Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
+    random_part = binary_part(encoded, 0, 32)
+
     full_key = "wraft_#{prefix}_#{random_part}"
-    
+
     %ApiKey{
       name: sequence(:api_key_name, &"API Key #{&1}"),
       key_hash: Bcrypt.hash_pwd_salt(full_key),

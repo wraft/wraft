@@ -18,7 +18,7 @@ defmodule WraftDocWeb.Api.V1.ApiKeyView do
   end
 
   def render("api_key.json", %{api_key: api_key}) do
-    %{
+    base_map = %{
       id: api_key.id,
       name: api_key.name,
       key_prefix: api_key.key_prefix,
@@ -34,7 +34,8 @@ defmodule WraftDocWeb.Api.V1.ApiKeyView do
       user: render_user(api_key),
       created_by: render_created_by(api_key)
     }
-    |> maybe_add_key(api_key)
+
+    maybe_add_key(base_map, api_key)
   end
 
   def render("api_key_list.json", %{api_key: api_key}) do
@@ -85,4 +86,3 @@ defmodule WraftDocWeb.Api.V1.ApiKeyView do
     }
   end
 end
-
