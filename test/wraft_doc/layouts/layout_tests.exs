@@ -1,5 +1,5 @@
 defmodule WraftDoc.LayoutsTest do
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
   import WraftDoc.Factory
   import Mox
 

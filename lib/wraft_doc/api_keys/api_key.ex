@@ -102,8 +102,7 @@ defmodule WraftDoc.ApiKeys.ApiKey do
   Changeset for updating usage statistics.
   """
   def usage_changeset(api_key, attrs \\ %{}) do
-    api_key
-    |> cast(attrs, [:last_used_at, :usage_count])
+    cast(api_key, attrs, [:last_used_at, :usage_count])
   end
 
   # Private functions
@@ -144,12 +143,12 @@ defmodule WraftDoc.ApiKeys.ApiKey do
 
   defp generate_prefix do
     # Generate a 8-character prefix for easy identification
-    :crypto.strong_rand_bytes(4)
-    |> Base.encode16(case: :lower)
+    Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)
   end
 
   defp generate_random_string(length) do
-    :crypto.strong_rand_bytes(length)
+    length
+    |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
     |> binary_part(0, length)
   end

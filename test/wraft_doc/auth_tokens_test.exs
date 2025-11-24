@@ -1,6 +1,6 @@
 defmodule WraftDoc.AuthTokensTest do
   @moduledoc false
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
 
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
@@ -54,6 +54,7 @@ defmodule WraftDoc.AuthTokensTest do
   end
 
   describe "delete_auth_token!/1" do
+    # FIXME
     test "deletes the given auth token" do
       auth_token = insert(:auth_token)
       deleted_auth_token = AuthTokens.delete_auth_token!(auth_token)

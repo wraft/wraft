@@ -48,6 +48,7 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
   end
 
   describe "GET /permissions" do
+    # FIX_ME
     test "returns all the permissions grouped by resource", %{conn: conn} do
       conn = get(conn, Routes.v1_permission_path(conn, :index))
       json = json_response(conn, 200)

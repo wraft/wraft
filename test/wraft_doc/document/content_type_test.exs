@@ -124,6 +124,7 @@ defmodule WraftDoc.ContentTypes.ContentTypeTest do
   end
 
   describe "update_changeset/2" do
+    # FIXME
     test "returns a valid changeset with valid attributes" do
       organisation = insert(:organisation)
       %{id: theme_id} = insert(:theme, organisation: organisation)

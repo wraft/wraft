@@ -1,5 +1,5 @@
 defmodule WraftDoc.EnterpriseTest do
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
 
   import Mox
   @moduletag :enterprise

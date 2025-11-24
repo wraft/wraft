@@ -9,6 +9,7 @@ defmodule WraftDoc.ApiKeysTest do
   import WraftDoc.Factory
 
   describe "list_api_keys/2" do
+    # FIX_ME
     test "returns paginated list of API keys for user's organisation" do
       user = insert(:user_with_organisation)
       api_key_1 = insert(:api_key, organisation_id: user.current_org_id)
@@ -142,6 +143,7 @@ defmodule WraftDoc.ApiKeysTest do
   end
 
   describe "create_api_key/2" do
+    # FIX_ME
     test "creates API key with valid attributes" do
       user = insert(:user_with_organisation)
 
@@ -177,6 +179,7 @@ defmodule WraftDoc.ApiKeysTest do
       assert api_key.created_by_id == creator.id
     end
 
+    # FIX_ME
     test "returns error with invalid attributes" do
       user = insert(:user_with_organisation)
 
@@ -190,6 +193,7 @@ defmodule WraftDoc.ApiKeysTest do
   end
 
   describe "update_api_key/2" do
+    # FIX_ME
     test "updates API key with valid attributes" do
       api_key = insert(:api_key, name: "Old Name", rate_limit: 500)
 
@@ -227,6 +231,7 @@ defmodule WraftDoc.ApiKeysTest do
   end
 
   describe "toggle_api_key_status/1" do
+    # FIX_ME
     test "toggles active status to inactive" do
       api_key = insert(:api_key, is_active: true)
 
@@ -277,6 +282,7 @@ defmodule WraftDoc.ApiKeysTest do
       assert result.organisation.id == user.current_org_id
     end
 
+    # FIX_ME
     test "returns error for invalid key" do
       {:error, reason} = ApiKeys.verify_api_key("wraft_invalid_key")
 
@@ -303,6 +309,7 @@ defmodule WraftDoc.ApiKeysTest do
       assert reason == :api_key_inactive
     end
 
+    # FIX_ME
     test "returns error for expired key" do
       user = insert(:user_with_organisation)
       past_date = DateTime.add(DateTime.utc_now(), -3600, :second)

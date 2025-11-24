@@ -22,6 +22,7 @@ defmodule WraftDoc.Storages do
   alias WraftDoc.Storages.StorageAssets
   alias WraftDoc.Storages.StorageItem
   alias WraftDoc.Storages.StorageItems
+  alias WraftDoc.Storages.SyncJobs
   alias WraftDoc.Workers.RepositoryWorker
 
   @doc "Lists all repositories"
@@ -778,4 +779,9 @@ defmodule WraftDoc.Storages do
 
     {:ok, %{total_size: total_size, item_count: item_count}}
   end
+
+  # Delegate functions for test fixtures
+  defdelegate create_storage_asset(attrs), to: StorageAssets
+  defdelegate create_storage_item(attrs), to: StorageItems
+  defdelegate create_sync_job(attrs), to: SyncJobs
 end

@@ -2,7 +2,6 @@ defmodule WraftDoc.Documents.LayoutAssetTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
   alias WraftDoc.Layouts.LayoutAsset
-  alias WraftDoc.Repo
   @moduletag :document
   @invalid_attrs %{layout_id: nil, asset_id: nil}
   # TO_DO remove layout assets make it into assets , as per the new revamps

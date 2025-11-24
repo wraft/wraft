@@ -1,6 +1,6 @@
 defmodule WraftDoc.Documents.InstanceTest do
   use WraftDoc.ModelCase
-  alias WraftDoc.{Documents.Instance, Repo}
+  alias WraftDoc.Documents.Instance
   import WraftDoc.Factory
   @moduletag :document
 

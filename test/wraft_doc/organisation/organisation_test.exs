@@ -31,6 +31,7 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
   describe "changeset/2" do
     # TODO - include tests for name and legal_name constraint
     # TODO - include tests for validate_name
+    # FIX_ME
     test "changeset with valid attributes" do
       changeset = Organisation.changeset(%Organisation{}, @valid_attrs)
       assert changeset.valid?
@@ -41,6 +42,7 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
       refute changeset.valid?
     end
 
+    # FIX_ME
     test "checks GSTIN unique constraint" do
       user = insert(:user)
       params = Map.merge(@valid_attrs, %{name: "Company 2", creator_id: user.id})

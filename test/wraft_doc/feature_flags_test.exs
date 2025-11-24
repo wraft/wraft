@@ -3,10 +3,8 @@ defmodule WraftDoc.FeatureFlagsTest do
 
   import WraftDoc.Factory
 
-  alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.FeatureFlags
 
-  @valid_features [:ai_features, :repository, :document_extraction]
   @invalid_feature :non_existent_feature
 
   describe "enabled?/2" do
@@ -171,6 +169,7 @@ defmodule WraftDoc.FeatureFlagsTest do
   end
 
   describe "setup_defaults/1" do
+    # FIXME
     test "sets up all features as disabled for new organisation" do
       organisation = insert(:organisation)
 
@@ -201,9 +200,10 @@ defmodule WraftDoc.FeatureFlagsTest do
   end
 
   describe "global feature flags" do
+    # FIXME
     test "enable_globally/1 enables feature for all organisations" do
-      org1 = insert(:organisation)
-      org2 = insert(:organisation)
+      _org1 = insert(:organisation)
+      _org2 = insert(:organisation)
 
       # FIX: Handle tuple return value
       {:ok, true} = FeatureFlags.enable_globally(:ai_features)

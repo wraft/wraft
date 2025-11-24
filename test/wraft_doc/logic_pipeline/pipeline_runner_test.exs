@@ -1,5 +1,5 @@
 defmodule WraftDoc.PipelineRunnerTest do
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
   import WraftDoc.Factory
   use ExUnit.Case
   alias WraftDoc.{Documents.Instance, PipelineRunner}

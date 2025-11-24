@@ -1,6 +1,6 @@
 defmodule WraftDoc.WaitingListsTest do
   @moduledoc false
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
   @moduletag :waiting_list
 
   alias WraftDoc.WaitingLists

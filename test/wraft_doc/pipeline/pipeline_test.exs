@@ -1,5 +1,5 @@
 defmodule WraftDoc.Pipeline.PipelineTest do
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
   import WraftDoc.Factory
   import Mox
 
@@ -120,6 +120,7 @@ defmodule WraftDoc.Pipeline.PipelineTest do
       assert %{data_template_id: ["Already added.!"]} == errors_on(changeset)
     end
 
+    # FIXME
     test "returns nil with non-existent UUIDs of datas" do
       user = insert(:user_with_organisation)
       pipeline = insert(:pipeline)
@@ -519,6 +520,7 @@ defmodule WraftDoc.Pipeline.PipelineTest do
       assert %{name: ["can't be blank"]} == errors_on(changeset)
     end
 
+    # FIXME
     test "returns nil with wrong data" do
       response = Pipelines.pipeline_update(nil, nil, %{})
       assert response == nil
@@ -739,8 +741,8 @@ defmodule WraftDoc.Pipeline.PipelineTest do
     end
   end
 
-  @tag :cict
   describe "create_instance_content_types" do
+    @describetag :cict
     test "creates relations for approval systems of content type" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -1059,6 +1061,7 @@ defmodule WraftDoc.Pipeline.PipelineTest do
       assert field.meta == params.meta
     end
 
+    # FIXME
     test "returns error changeset with invalid attrs" do
       field_type = insert(:field_type)
       assert {:error, %Ecto.Changeset{}} = Fields.create_field(field_type, %{})

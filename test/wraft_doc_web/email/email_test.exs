@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   @moduledoc """
   Test to ensure the correct delivery of the email
   """
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
   import Swoosh.TestAssertions
 
   alias Swoosh.Adapters.Test
@@ -57,6 +57,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on notification message" do
+    # FIXME
     test "return email sent if mail delivered" do
       user_name = "user_name"
       notification_message = "notification_message"
@@ -137,6 +138,7 @@ defmodule WraftDocWeb.Email.EmailTest do
       end)
     end
 
+    # FIXME
     test "return email not send if not delivered" do
       auth_token = insert(:auth_token, value: @token, token_type: "password_verify")
 
@@ -147,6 +149,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on user account verification" do
+    # FIXME
     test "return email sent if mail delivered" do
       email = Email.email_verification(@test_email, @token)
 
@@ -170,6 +173,7 @@ defmodule WraftDocWeb.Email.EmailTest do
       end)
     end
 
+    # FIXME
     test "return email not send if not delivered" do
       Email.email_verification(@test_email, @token)
 
@@ -193,6 +197,7 @@ defmodule WraftDocWeb.Email.EmailTest do
       assert email.html_body =~ "Click here to continue"
     end
 
+    # 165
     test "return email not send if not delivered" do
       Email.waiting_list_approved(@test_email, @name, "token")
 
@@ -201,6 +206,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on joining waiting list" do
+    # FIXME
     test "return email sent if mail delivered" do
       email = Email.waiting_list_join(@test_email, @name)
       Test.deliver(email, [])
@@ -214,6 +220,7 @@ defmodule WraftDocWeb.Email.EmailTest do
                "Thank you for signing up to join Wraft's waiting list! We appreciate your interest in our document automation tool"
     end
 
+    # FIXME
     test "return email not send if not delivered" do
       Email.waiting_list_join(@test_email, @name)
 
@@ -235,6 +242,7 @@ defmodule WraftDocWeb.Email.EmailTest do
                "If you did not request this deletion, you can ignore this email and your organization will not be deleted."
     end
 
+    # FIXME
     test "return email not send if not delivered" do
       Email.organisation_delete_code(@test_email, "code", @name, "org_name")
 
