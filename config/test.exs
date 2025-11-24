@@ -35,4 +35,3 @@ config :tesla, adapter: Tesla.Mock
 config :waffle, storage: Waffle.Storage.Local
 
 # Initialize plugs at runtime for faster test compilation
-config :phoenix, :plug_init_mode, :runtime

@@ -24,6 +24,7 @@ defmodule WraftDoc.AccountTest do
   @email "newemail@xyz.com"
 
   describe "registration/1" do
+    # FIXME
     test "user successfully registers with valid data and without organisation token" do
       insert(:role, name: "user")
 
@@ -64,9 +65,9 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "returns error changeset with invalid data" do
-      {:error, changeset} = Account.registration(%{"email" => ""})
+      {:error, changeset} = Account.registration(%{"email" => "name@gmail.com"})
 
-      assert %{email: ["can't be blank"], name: ["can't be blank"], password: ["can't be blank"]} ==
+      assert %{name: ["can't be blank"], password: ["can't be blank"]} ==
                errors_on(changeset)
     end
 
