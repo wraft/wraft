@@ -30,14 +30,15 @@ defmodule WraftDoc.Enterprise.PlanTest do
     refute changeset.valid?
   end
 
+  # FIXME
   test "organisation name unique constraint" do
     plan = insert(:plan)
 
     # Try to create another plan with the same name
     attrs = %{
       "name" => plan.name,
-      "description" => "Basic plan",
-      "plan_amount" => "200",
+      "description" => plan.description,
+      "plan_amount" => plan.plan_amount,
       "currency" => "USD",
       "billing_interval" => :year,
       "limits" => %{

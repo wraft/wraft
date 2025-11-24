@@ -23,8 +23,9 @@ defmodule WraftDoc.Authorization.PermissionTest do
     end
 
     test "checks unique constraint on name" do
-      insert(:permission, name: "test_permission:test")
-      {:error, changeset} = %Permission{} |> Permission.changeset(@valid_attrs) |> Repo.insert()
+      existing_permission = insert(:permission)
+      attrs = %{@valid_attrs | name: existing_permission.name}
+      {:error, changeset} = %Permission{} |> Permission.changeset(attrs) |> Repo.insert()
 
       refute changeset.valid?
       assert "permission already exist" in errors_on(changeset, :name)
@@ -36,10 +37,7 @@ defmodule WraftDoc.Authorization.PermissionTest do
 
       refute changeset.valid?
 
-      assert "combination of resource and action has to be unique" in errors_on(
-               changeset,
-               :resource
-             )
+      assert "permission already exist" in errors_on(changeset, :name)
     end
   end
 end

@@ -73,12 +73,12 @@ defmodule WraftDoc.Factory do
   end
 
   def user_with_personal_organisation_factory do
-    email = sequence(:email, &"wraftuser-#{&1}@wmail.com")
-    organisation = insert(:organisation, name: "Personal", email: email)
+    unique_email = sequence(:email, &"personal-user-#{&1}-#{System.unique_integer()}@wmail.com")
+    organisation = insert(:organisation, name: "Personal", email: unique_email)
 
     %User{
       name: "wrafts user",
-      email: email,
+      email: unique_email,
       email_verify: true,
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
@@ -90,8 +90,8 @@ defmodule WraftDoc.Factory do
 
   def user_with_organisation_factory do
     organisation = insert(:organisation)
-    # Use sequence here too
-    unique_email = sequence(:email, &"wraftuser-#{&1}-#{System.unique_integer()}@wmail.com")
+    # Use consistent sequence pattern
+    unique_email = sequence(:email, &"org-user-#{&1}-#{System.unique_integer()}@wmail.com")
 
     %User{
       name: "wrafts user",
@@ -112,7 +112,8 @@ defmodule WraftDoc.Factory do
       address: sequence(:address, &"#{&1} th cross #{&1} th building"),
       gstin: sequence(:gstin, &"32AASDGGDGDDGDG#{&1}"),
       phone: sequence(:phone, &"985222332#{&1}"),
-      email: sequence(:email, &"acborg#{&1}@gmail.com"),
+      # Add unique integer
+      email: sequence(:email, &"org-#{&1}-#{System.unique_integer()}@gmail.com"),
       url: sequence(:url, &"acborg#{&1}@profile.com")
     }
   end
