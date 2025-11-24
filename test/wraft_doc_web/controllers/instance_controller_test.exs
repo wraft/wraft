@@ -22,6 +22,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   setup :verify_on_exit!
 
+  # FIX_ME
   test "create instances by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:profile, user: user)
@@ -41,6 +42,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert count_before + 1 == Instance |> Repo.all() |> length()
   end
 
+  # FIX_ME
   test "adds log on succesfully creating an instance", %{conn: conn} do
     Logger.configure(level: :info)
     user = conn.assigns.current_user
@@ -75,6 +77,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert count_before == Instance |> Repo.all() |> length()
   end
 
+  # FIX_ME
   test "adds error log when create instance fails", %{conn: conn} do
     user = conn.assigns.current_user
     [organisation] = user.owned_organisations
@@ -87,6 +90,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
            end) =~ "Create content failed"
   end
 
+  # FIX_ME
   test "create instance from content type with approval system also create instance approval systems",
        %{conn: conn} do
     user = conn.assigns.current_user
@@ -176,7 +180,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert List.to_string(instances) =~ dt2.raw
   end
 
-  # FIXME
+  # FIX_ME
   test "all templates lists all instances under an organisation", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:profile, user: user)
@@ -261,6 +265,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     end
   end
 
+  # FIX_ME
   test "error invalid id for user from another organisation", %{conn: conn} do
     instance = insert(:instance)
 
@@ -287,7 +292,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       assert response["state"]["id"] == state.id
     end
 
-    # FIXME
+    # FIX_ME
     test "returns 400 when update fails", %{conn: conn} do
       current_user = conn.assigns[:current_user]
       [organisation] = current_user.owned_organisations
@@ -325,7 +330,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       assert %{"errors" => "The Instance id does not exist..!"} == response
     end
 
-    # FIXME
+    # FIX_ME
     test "returns 400 when state is not found", %{conn: conn} do
       current_user = conn.assigns[:current_user]
 
@@ -381,7 +386,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
              "The instance is not avaliable to edit..!!"
   end
 
-  # FIXME
+  # FIX_ME
   test "search instances searches instances by title on serialized", %{conn: conn} do
     current_user = conn.assigns[:current_user]
     insert(:profile, user: current_user)
@@ -440,6 +445,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   describe "approve/2" do
+    # FIX_ME
     test "approve instance changes the state of instance to post state of approval system", %{
       conn: conn
     } do

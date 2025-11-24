@@ -1443,7 +1443,6 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  # FIXME
   describe "update_instance/2" do
     @describetag :skip
     test "updates instance on valid attrs" do
@@ -1454,8 +1453,6 @@ defmodule WraftDoc.DocumentTest do
       assert instance.raw == @valid_instance_attrs["raw"]
       assert instance.serialized == @valid_instance_attrs["serialized"]
     end
-
-    # FIXME
 
     @tag :skip
     test "returns error changeset on invalid attrs" do
@@ -1603,7 +1600,6 @@ defmodule WraftDoc.DocumentTest do
     #   assert count_before + 1 == count_after
     # end
 
-    # FIXME
     @tag :skip
     test "Same as add_build_history/3, but creator will not be stored." do
       user = insert(:user)

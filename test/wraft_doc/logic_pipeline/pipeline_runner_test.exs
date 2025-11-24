@@ -136,7 +136,6 @@ defmodule WraftDoc.PipelineRunnerTest do
   end
 
   describe "instances_created?/1" do
-    # FIXME
     @tag :skip
     test "returns true when the list of instances contains only instance structs" do
       # FIX: Use unique email for this test
@@ -148,7 +147,6 @@ defmodule WraftDoc.PipelineRunnerTest do
       assert response == true
     end
 
-    # FIXME
     @tag :skip
     test "returns false when the list of instances contains error tuples also" do
       instance1 = insert(:instance)
@@ -197,7 +195,6 @@ defmodule WraftDoc.PipelineRunnerTest do
   # end
 
   describe "build_failed?/1" do
-    # FIXME
     @tag :skip
     test "returns a map with list of maps of build failed instances and their error codes when there are failed builds" do
       instances = insert_list(3, :instance)
@@ -219,7 +216,6 @@ defmodule WraftDoc.PipelineRunnerTest do
       assert failed_instance_ids == failed_build_instance_ids
     end
 
-    # FIXME
     @tag :skip
     test "returns a map with empty list for the faile_builds key when there are no failed builds" do
       instances = insert_list(3, :instance)
@@ -232,7 +228,6 @@ defmodule WraftDoc.PipelineRunnerTest do
   end
 
   describe "zip_builds/1" do
-    # FIXME
     @tag :skip
     test "builds a zip file" do
       instance1 = insert(:instance)

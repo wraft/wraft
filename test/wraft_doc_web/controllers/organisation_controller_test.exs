@@ -499,7 +499,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 200)["total_entries"] == 2
     end
 
-    # FIXME
     test "only list existing members ", %{conn: conn} do
       user = conn.assigns[:current_user]
       insert(:profile, user: user)
@@ -535,7 +534,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   end
 
   describe "index" do
-    # FIXME
     test "list all existing organisation details", %{conn: conn} do
       o1 = insert(:organisation)
       o2 = insert(:organisation)
@@ -591,7 +589,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   end
 
   describe "verify_invite_token/2" do
-    # FIXME
     test "verify_invite_token returns 200 and renders the verify_invite_token.json template with the correct data" do
       conn = build_conn()
       organisation = insert(:organisation)

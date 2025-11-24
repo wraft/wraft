@@ -8,7 +8,6 @@ defmodule WraftDocWeb.ErrorViewTest do
     assert render_to_string(WraftDocWeb.ErrorView, "404.html", []) == "Not Found"
   end
 
-  # FIXME
   test "renders 500.html" do
     assert render_to_string(WraftDocWeb.ErrorView, "500.html", []) == "Internal Server Error"
   end

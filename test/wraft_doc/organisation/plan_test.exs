@@ -30,7 +30,7 @@ defmodule WraftDoc.Enterprise.PlanTest do
     refute changeset.valid?
   end
 
-  # FIXME
+  # FIX_ME
   test "organisation name unique constraint" do
     plan = insert(:plan)
 

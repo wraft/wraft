@@ -18,7 +18,6 @@ defmodule WraftDoc.Documents.LayoutAssetTest do
     refute changeset.valid?
   end
 
-  # FIXME
   # test "test asset-layout unique constraint" do
   #   %{id: l_id} = insert(:layout)
   #   %{id: a_id} = insert(:asset)

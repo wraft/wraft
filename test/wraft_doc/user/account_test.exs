@@ -24,7 +24,6 @@ defmodule WraftDoc.AccountTest do
   @email "newemail@xyz.com"
 
   describe "registration/1" do
-    # FIXME
     test "user successfully registers with valid data and without organisation token" do
       insert(:role, name: "user")
 
@@ -804,7 +803,6 @@ defmodule WraftDoc.AccountTest do
       assert %{password: ["should be at least 8 character(s)"]} == errors_on(changeset)
     end
 
-    # FIX_ME
     test "return error when token is invalid" do
       value = WraftDoc.create_phx_token("invalid", "email")
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")
