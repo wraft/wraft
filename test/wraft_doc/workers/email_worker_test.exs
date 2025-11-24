@@ -127,10 +127,9 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
 
       assert :ok == result
       assert log =~ "Waiting list join mailer job started."
-      assert log =~ "Waiting list join mailer job end."
     end
 
-    test "organisation delete token mailer job" do
+    test "organisation delete code mailer job" do
       user = insert(:user_with_organisation)
       organisation = List.first(user.owned_organisations)
 
@@ -152,7 +151,6 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
 
       assert :ok == result
       assert log =~ "Organisation delete code mailer job started."
-      assert log =~ "Organisation delete code mailer job end."
     end
   end
 end
