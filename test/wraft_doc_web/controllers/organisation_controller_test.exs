@@ -1,9 +1,8 @@
 defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
-  use WraftDocWeb.ConnCase, async: true
+  use WraftDocWeb.ConnCase, async: false
 
   import WraftDoc.Factory
 
-  alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.InvitedUsers
@@ -121,6 +120,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
              "#{System.get_env("MINIO_URL")}/organisations/#{organisation.id}/logo/logo_#{organisation.id}.png"
   end
 
+  # FIX_ME
   test "does not update name of personal organisation", %{conn: conn} do
     %{owned_organisations: [organisation]} = user = insert(:user_with_personal_organisation)
     role = insert(:role, organisation: organisation)
@@ -194,6 +194,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
 
+    # FIX_ME
     test "return error if user is not member of the organisation" do
       user = insert(:user_with_personal_organisation)
       [organisation] = user.owned_organisations
@@ -213,6 +214,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 401)["errors"] == "User is not a member of this organisation!"
     end
 
+    # FIX_ME
     test "returns error when trying to delete personal organisation" do
       user = insert(:user_with_personal_organisation)
       [organisation] = user.owned_organisations

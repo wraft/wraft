@@ -70,6 +70,7 @@ defmodule WraftDoc.Document.AssetTest do
   end
 
   describe "file_changeset/2" do
+    # FIX_ME
     test "returns valid changeset with valid data", %{asset: asset} do
       changeset = Asset.file_changeset(asset, @file_attrs)
       assert changeset.valid?

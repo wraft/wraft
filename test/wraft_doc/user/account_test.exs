@@ -1,5 +1,5 @@
 defmodule WraftDoc.AccountTest do
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
 
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
@@ -539,8 +539,8 @@ defmodule WraftDoc.AccountTest do
     end
   end
 
-  @tag :authenticate
   describe "authenticate/1" do
+    @describetag :authenticate
     test "successfully authenticate when correct password is given" do
       user = insert(:user_with_personal_organisation)
       current_org_id = user.current_org_id
@@ -804,6 +804,7 @@ defmodule WraftDoc.AccountTest do
       assert %{password: ["should be at least 8 character(s)"]} == errors_on(changeset)
     end
 
+    # FIX_ME
     test "return error when token is invalid" do
       value = WraftDoc.create_phx_token("invalid", "email")
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")

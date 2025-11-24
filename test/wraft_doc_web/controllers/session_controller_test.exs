@@ -14,7 +14,7 @@ defmodule WraftDocWeb.SessionControllerTest do
       conn = post(conn, Routes.session_path(conn, :create), params)
 
       assert redirected_to(conn) == "/admin"
-      assert get_flash(conn, :info) == "Signed in successfully."
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Signed in successfully."
       assert get_session(conn, :admin_id) == user.id
     end
 
@@ -27,7 +27,7 @@ defmodule WraftDocWeb.SessionControllerTest do
       assert redirected_to(conn) == Routes.session_path(conn, :new)
 
       # Debug: Check what flash message is actually set
-      flash_message = get_flash(conn, :error)
+      flash_message = Phoenix.Flash.get(conn.assigns.flash, :error)
 
       # If the flash is nil, the controller might be handling deactivated users differently
       # Let's make the test more flexible to handle different possible behaviors
@@ -59,7 +59,10 @@ defmodule WraftDocWeb.SessionControllerTest do
       conn = post(conn, Routes.session_path(conn, :create), params)
 
       assert redirected_to(conn) == Routes.session_path(conn, :new)
-      assert get_flash(conn, :error) == "Please provide the correct login credentials to login."
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Please provide the correct login credentials to login."
+
       assert get_session(conn, :admin_id) == nil
     end
 
@@ -69,7 +72,10 @@ defmodule WraftDocWeb.SessionControllerTest do
       conn = post(conn, Routes.session_path(conn, :create), params)
 
       assert redirected_to(conn) == Routes.session_path(conn, :new)
-      assert get_flash(conn, :error) == "Please provide the correct login credentials to login."
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Please provide the correct login credentials to login."
+
       assert get_session(conn, :admin_id) == nil
     end
   end
@@ -84,7 +90,7 @@ defmodule WraftDocWeb.SessionControllerTest do
       conn = delete(conn, Routes.session_path(conn, :delete))
 
       assert get_session(conn, :admin_id) == nil
-      assert get_flash(conn, :info) == "Signed out successfully."
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Signed out successfully."
     end
   end
 end

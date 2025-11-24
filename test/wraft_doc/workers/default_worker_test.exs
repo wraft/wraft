@@ -2,7 +2,7 @@ defmodule WraftDoc.Workers.DefaultWorkerTest do
   @moduledoc """
   Tests for Oban worker for default jobs.
   """
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
 
   # TODO - Add tests to check the oban job is executed to create roles for personal organisation
   # TODO - Add tests to check if role is created

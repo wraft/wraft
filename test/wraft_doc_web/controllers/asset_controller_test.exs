@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   @moduledoc """
   Test module for asset controller
   """
-  use WraftDocWeb.ConnCase, async: true
+  use WraftDocWeb.ConnCase, async: false
   @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.Assets.Asset

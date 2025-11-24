@@ -18,7 +18,7 @@ config :wraft_doc, WraftDoc.Repo,
   database: System.get_env("POSTGRES_DB") || "wraft_doc_test",
   hostname: System.get_env("POSTGRES_HOST") || "localhost",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10
+  pool_size: 20
 
 config :wraft_doc, Oban, queues: false, plugins: false
 

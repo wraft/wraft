@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   @moduledoc """
   Test module for field type controller.
   """
-  use WraftDocWeb.ConnCase, async: true
+  use WraftDocWeb.ConnCase, async: false
   @moduletag :controller
 
   import WraftDoc.Factory

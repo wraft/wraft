@@ -15,14 +15,6 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
     "unit" => "cm",
     "slug" => "Pandoc"
   }
-
-  # FIX: Make sure these are truly invalid
-  @invalid_attrs %{
-    # Empty name should be invalid
-    "name" => "",
-    "description" => "test",
-    "engine_id" => nil
-  }
   describe "create/2" do
     test "create layouts on valid attrs", %{conn: conn} do
       user = conn.assigns[:current_user]
@@ -49,7 +41,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       response = json_response(conn, 200)
 
       # FIX: Check the correct field for asset - might be "asset" not "assets"
-      asset_name =
+      _asset_name =
         case get_in(response, ["asset", "name"]) do
           nil -> ""
           name -> name

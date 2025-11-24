@@ -106,12 +106,12 @@ defmodule WraftDocWeb.Router do
       # Verify Email Verification Token
       get("/user/verify_email_token/:token", UserController, :verify_email_token)
 
-      unless Enterprise.self_hosted?() do
-        post("/vendors/webhook", VendorsWebhookController, :webhook)
-        # Show and index plans
-        get("/plans/active_plans", PlanController, :active_plans)
-        resources("/plans", PlanController, only: [:show, :index])
-      end
+      # unless Enterprise.self_hosted?() do
+      post("/vendors/webhook", VendorsWebhookController, :webhook)
+      # Show and index plans
+      get("/plans/active_plans", PlanController, :active_plans)
+      resources("/plans", PlanController, only: [:show, :index])
+      # end
 
       # Verify access to a document instance
       get(

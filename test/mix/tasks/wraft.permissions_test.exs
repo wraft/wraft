@@ -2,7 +2,7 @@ defmodule Mix.Tasks.Wraft.PermissionsTest do
   @moduledoc """
   Test to ensure that permission table is updated using `mix update_permissions` command
   """
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
   import ExUnit.CaptureLog
   require Logger
 

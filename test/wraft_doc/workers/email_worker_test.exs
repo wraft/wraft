@@ -2,7 +2,7 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
   @moduledoc """
   Tests for Oban worker for sending emails.
   """
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
   import ExUnit.CaptureLog
   require Logger
 
@@ -17,6 +17,7 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
   end
 
   describe "performs sending email" do
+    # FIXME
     test "email verification mailer job" do
       token =
         WraftDoc.create_phx_token("email_verify", %{
@@ -86,6 +87,7 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
       assert log =~ "Organisation invite mailer job end."
     end
 
+    # FIX_ME
     test "password reset mailer invite job" do
       auth_token = insert(:auth_token, token_type: "password_verify")
 
@@ -116,7 +118,6 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
       assert log =~ "Waiting list acceptance mailer job end."
     end
 
-    # FIXME
     test "waiting list join mailer job" do
       {result, log} =
         with_log(fn ->

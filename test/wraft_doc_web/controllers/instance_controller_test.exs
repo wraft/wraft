@@ -176,6 +176,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert List.to_string(instances) =~ dt2.raw
   end
 
+  # FIXME
   test "all templates lists all instances under an organisation", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:profile, user: user)
@@ -286,6 +287,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       assert response["state"]["id"] == state.id
     end
 
+    # FIXME
     test "returns 400 when update fails", %{conn: conn} do
       current_user = conn.assigns[:current_user]
       [organisation] = current_user.owned_organisations
@@ -323,6 +325,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       assert %{"errors" => "The Instance id does not exist..!"} == response
     end
 
+    # FIXME
     test "returns 400 when state is not found", %{conn: conn} do
       current_user = conn.assigns[:current_user]
 
@@ -378,6 +381,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
              "The instance is not avaliable to edit..!!"
   end
 
+  # FIXME
   test "search instances searches instances by title on serialized", %{conn: conn} do
     current_user = conn.assigns[:current_user]
     insert(:profile, user: current_user)

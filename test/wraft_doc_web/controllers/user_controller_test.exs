@@ -79,6 +79,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   end
 
   describe "me/2" do
+    # FIX_ME
     test "returns the current logged in user", %{conn: conn} do
       user = conn.assigns.current_user
       profile = insert(:profile, user: user)
@@ -402,6 +403,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   end
 
   describe "switch_organisation/2" do
+    # FIX_ME
     test "renders response with 200 status code with ID of an organisation the user has joined",
          %{conn: conn} do
       user = conn.assigns[:current_user]
@@ -476,6 +478,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       assert response["refresh_token"] != nil
     end
 
+    # FIX_ME
     test "renders error with response 401 for invalid refresh token", %{conn: conn} do
       {conn, log} =
         with_log(fn ->
@@ -491,6 +494,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       assert log =~ "Refresh token creation failed. Invalid input data provided."
     end
 
+    # FIX_ME
     test "renders error with response 401 for valid but expired refresh token", %{conn: conn} do
       user = conn.assigns.current_user
 
@@ -516,6 +520,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       assert log =~ "Refresh token creation failed. Invalid input data provided."
     end
 
+    # FIX_ME
     test "renders error with response 401 for valid but revoked refresh token", %{conn: conn} do
       user = insert(:user_with_organisation)
 

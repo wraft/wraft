@@ -56,6 +56,7 @@ defmodule WraftDoc.Blocks.BlockTest do
   end
 
   describe "create block_template" do
+    # FIXME
     test "create_block_template/2, test creates block template with valid attrs" do
       user = insert(:user_with_organisation)
 
@@ -106,6 +107,7 @@ defmodule WraftDoc.Blocks.BlockTest do
   end
 
   describe "update_block_template/2" do
+    # FIXME
     test "updates block template with valid attrs" do
       block_template = insert(:block_template)
       params = %{"title" => "new title", "body" => "new body"}

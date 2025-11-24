@@ -52,41 +52,51 @@ defmodule WraftDocWeb.Plug.ApiKeyAuth do
 
     case ApiKeys.verify_api_key(api_key_string, remote_ip) do
       {:ok, %{api_key: api_key, user: user, organisation: organisation}} ->
-        # Check rate limit
-        case ApiKeys.check_rate_limit(api_key) do
-          {:ok, _} ->
-            conn
-            |> assign(:current_user, user)
-            |> assign(:current_organisation, organisation)
-            |> assign(:api_key, api_key)
-            |> assign(:authenticated_via, :api_key)
+        handle_successful_verification(conn, api_key, user, organisation)
 
-          {:error, :rate_limit_exceeded} ->
-            Logger.warning("API key rate limit exceeded: #{api_key.id}")
-            send_error_response(conn, 429, "Rate limit exceeded")
-        end
+      {:error, reason} ->
+        handle_verification_error(conn, reason)
+    end
+  end
 
-      {:error, :invalid_api_key} ->
+  defp handle_successful_verification(conn, api_key, user, organisation) do
+    case ApiKeys.check_rate_limit(api_key) do
+      {:ok, _} ->
+        conn
+        |> assign(:current_user, user)
+        |> assign(:current_organisation, organisation)
+        |> assign(:api_key, api_key)
+        |> assign(:authenticated_via, :api_key)
+
+      {:error, :rate_limit_exceeded} ->
+        Logger.warning("API key rate limit exceeded: #{api_key.id}")
+        send_error_response(conn, 429, "Rate limit exceeded")
+    end
+  end
+
+  defp handle_verification_error(conn, reason) do
+    case reason do
+      :invalid_api_key ->
         Logger.warning("Invalid API key provided")
         send_error_response(conn, 401, "Invalid API key")
 
-      {:error, :api_key_expired} ->
+      :api_key_expired ->
         Logger.warning("Expired API key used")
         send_error_response(conn, 401, "API key has expired")
 
-      {:error, :api_key_inactive} ->
+      :api_key_inactive ->
         Logger.warning("Inactive API key used")
         send_error_response(conn, 401, "API key is inactive")
 
-      {:error, :ip_not_whitelisted} ->
+      :ip_not_whitelisted ->
         Logger.warning("API key used from non-whitelisted IP")
         send_error_response(conn, 403, "IP address not authorized for this API key")
 
-      {:error, :user_not_found} ->
+      :user_not_found ->
         Logger.warning("API key user not found")
         send_error_response(conn, 401, "User associated with API key not found")
 
-      {:error, reason} ->
+      _ ->
         Logger.warning("API key authentication failed: #{inspect(reason)}")
         send_error_response(conn, 401, "API key authentication failed")
     end

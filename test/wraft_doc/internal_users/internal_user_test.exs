@@ -1,7 +1,6 @@
 defmodule WraftDocs.InternalUsers.InternalUserTest do
   use WraftDoc.ModelCase
 
-  alias WraftDoc.InternalUsers
   alias WraftDoc.InternalUsers.InternalUser
   import WraftDoc.Factory
 

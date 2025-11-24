@@ -28,7 +28,7 @@ defmodule WraftDocWeb.Plug.CurrentAdminTest do
       conn = conn |> init_test_session(%{}) |> fetch_flash([]) |> CurrentAdmin.call([])
 
       assert redirected_to(conn) == Routes.session_path(conn, :new)
-      assert get_flash(conn, :info) == "Please login to continue."
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Please login to continue."
     end
 
     test "redirects to login page and sets flash message when session has invalid admin_id", %{
@@ -41,7 +41,7 @@ defmodule WraftDocWeb.Plug.CurrentAdminTest do
         |> CurrentAdmin.call([])
 
       assert redirected_to(conn) == Routes.session_path(conn, :new)
-      assert get_flash(conn, :info) == "Please login to continue."
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Please login to continue."
     end
   end
 end

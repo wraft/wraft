@@ -44,6 +44,7 @@ defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
   end
 
   describe "show_current_profile/2" do
+    # FIX_ME
     test "renders current profile ", %{conn: conn} do
       current_user = conn.assigns.current_user
 
