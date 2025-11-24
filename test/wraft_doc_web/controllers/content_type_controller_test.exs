@@ -77,7 +77,6 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
              ) == params.fields
     end
 
-    # FIXME
     test "does not create content types by invalid attrs", %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations

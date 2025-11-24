@@ -17,7 +17,6 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
   end
 
   describe "performs sending email" do
-    # FIXME
     test "email verification mailer job" do
       token =
         WraftDoc.create_phx_token("email_verify", %{
@@ -34,7 +33,6 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
       assert log =~ "Email verification mailer job end."
     end
 
-    # FIXME Emailer not working
     @tag :skip
     test "notification mailer job" do
       {result, log} =
@@ -87,7 +85,6 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
       assert log =~ "Organisation invite mailer job end."
     end
 
-    # FIX_ME
     test "password reset mailer invite job" do
       auth_token = insert(:auth_token, token_type: "password_verify")
 

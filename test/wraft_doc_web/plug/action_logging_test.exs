@@ -5,7 +5,6 @@ defmodule WraftDocWeb.Plug.AddActionLogTest do
   alias WraftDoc.Repo
   alias WraftDocWeb.Plug.AddActionLog
 
-  #FIX_ME
   test "adds new log when an action is made by an authorized user", %{conn: conn} do
     user = conn.assigns[:current_user]
 
@@ -30,6 +29,7 @@ defmodule WraftDocWeb.Plug.AddActionLogTest do
     assert last_action.actor == %{
              "email" => user.email,
              "name" => user.name,
+             "id" => user.id,
              "current_org_id" => user.current_org_id
            }
   end

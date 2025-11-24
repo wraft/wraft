@@ -265,47 +265,43 @@ defmodule WraftDoc.Factory do
   end
 
   # In your factory file, ensure the instance factory creates proper associations:
-def instance_factory(attrs) do
-  creator = Map.get(attrs, :creator) || build(:user_with_organisation)
-  creator_org = List.first(creator.owned_organisations)
+  def instance_factory(attrs) do
+    creator = Map.get(attrs, :creator) || build(:user_with_organisation)
+    creator_org = List.first(creator.owned_organisations)
 
-  content_type =
-    build(:content_type,
-      organisation: creator_org,
-      flow: build(:flow, organisation: creator_org)
-    )
+    content_type =
+      build(:content_type,
+        organisation: creator_org,
+        flow: build(:flow, organisation: creator_org)
+      )
 
-  instance =
-    %Instance{
-      instance_id: sequence(:instance_id, &"Prefix#{&1}"),
-      raw: "Content",
-      serialized: %{
-        "title" => "Title of the content",
-        "body" => "Body of the content"
-      },
-      editable: true,
-      state: build(:state, organisation: creator_org, flow: content_type.flow),
-      content_type: content_type,
-      creator: creator,
-      vendor: build(:vendor, organisation: creator_org),
-      allowed_users: [creator.id],
-      organisation: creator_org,
-      meta: nil,
-      type: 1
-    }
+    instance =
+      %Instance{
+        instance_id: sequence(:instance_id, &"Prefix#{&1}"),
+        raw: "Content",
+        serialized: %{
+          "title" => "Title of the content",
+          "body" => "Body of the content"
+        },
+        editable: true,
+        state: build(:state, organisation: creator_org, flow: content_type.flow),
+        content_type: content_type,
+        creator: creator,
+        vendor: build(:vendor, organisation: creator_org),
+        allowed_users: [creator.id],
+        organisation: creator_org,
+        meta: nil,
+        type: 1
+      }
 
-  merge_attributes(instance, attrs)
-end
-
+    merge_attributes(instance, attrs)
+  end
 
   def instance_version_factory do
     %Version{
       version_number: 1,
       raw: "Content",
       serialized: %{title: "Title of the content", body: "Body of the content"},
-      content: build(:instance),
-      # Add explicit type to avoid nil comparison
-      type: "save"
       content: build(:instance),
       # Add explicit type to avoid nil comparison
       type: "save"

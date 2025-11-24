@@ -169,7 +169,6 @@ defmodule WraftDoc.FeatureFlagsTest do
   end
 
   describe "setup_defaults/1" do
-    # FIXME
     test "sets up all features as disabled for new organisation" do
       organisation = insert(:organisation)
 
@@ -200,7 +199,6 @@ defmodule WraftDoc.FeatureFlagsTest do
   end
 
   describe "global feature flags" do
-    # FIXME
     test "enable_globally/1 enables feature for all organisations" do
       _org1 = insert(:organisation)
       _org2 = insert(:organisation)

@@ -22,7 +22,6 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
 )
 
   describe "show/1" do
-    # FIXME
     test "shows organisation's membership with valid attrs", %{conn: conn, membership: membership} do
       user = conn.assigns[:current_user]
       conn = get(conn, Routes.v1_membership_path(conn, :show, user.current_org_id))
@@ -33,7 +32,6 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       assert json_response(conn, 200)["plan"]["plan_amount"] == membership.plan.plan_amount
     end
 
-    # FIXME
     test "returns nil when given organisation id is different from user's organisation id", %{
       conn: conn
     } do
@@ -43,7 +41,6 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
   end
 
   describe "update/2" do
-    # FIXME
     test "updates membership on valid attributes", %{conn: conn, membership: membership} do
       plan = insert(:plan, plan_amount: "1000")
       attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}
@@ -64,7 +61,6 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       assert json_response(conn, 200)["plan"]["plan_amount"] == plan.plan_amount
     end
 
-    # FIXME
     test "does not update membership but creates new payment with failed razorpay id", %{
       conn: conn,
       membership: membership
@@ -88,7 +84,6 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       assert payment_count + 1 == Payment |> Repo.all() |> length
     end
 
-    # FIXME
     test "does not update membership and returns error with invalid razorpay ID", %{
       conn: conn,
       membership: membership
@@ -106,7 +101,6 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       assert @invalid_razorpay_error = json_response(conn, 400)["errors"]
     end
 
-    # FIXME
     test "does not update membership and returns wrong amount error when razorpay amount does not match any plan amount",
          %{conn: conn, membership: membership} do
       plan = insert(:plan, plan_amount: "2000")
@@ -128,7 +122,6 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       assert json_response(conn, 422)["errors"] == "No plan with paid amount..!!"
     end
 
-    # FIXME
     test "returns not found error when membership does not belongs to current user's organisation",
          %{
            conn: conn
@@ -144,7 +137,6 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       assert json_response(conn, 404) == "Not Found"
     end
 
-    # FIXME
     test "returns not found error when plan does not exist ", %{
       conn: conn,
       membership: membership
@@ -158,7 +150,6 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
-    # FIXME
     test "does not update membership with wrong parameters", %{conn: conn, membership: membership} do
       payment_count = Payment |> Repo.all() |> length
 

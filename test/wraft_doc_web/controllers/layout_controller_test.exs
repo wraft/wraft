@@ -193,7 +193,6 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   end
 
   describe "show/2" do
-    # FIXME
     test "show renders layout details by id", %{conn: conn} do
       user = conn.assigns.current_user
       layout = insert(:layout, creator: user, organisation: List.first(user.owned_organisations))
