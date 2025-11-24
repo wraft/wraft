@@ -1,150 +1,153 @@
 defmodule WraftDoc.Workflows.Adaptors.TemplateAdaptor do
   @moduledoc """
-  Template generation adaptor.
-
-  Generates mock contract documents from templates.
-
-  Configuration:
-  - template_name: String - name of the template to use (e.g., "Template 1", "Template 2")
-  - template_type: String (optional) - type of document (default: "contract")
-
-  Example:
-  config: %{"template_name" => "Template 1", "template_type" => "contract"}
-  input_data: %{"age" => 30, "name" => "John Doe"}
-  output: {:ok, %{template: "Template 1", content: "...", generated_at: ~U[...]}}
+  Template adaptor for WraftDoc workflows.
   """
 
   @behaviour WraftDoc.Workflows.Adaptors.Adaptor
 
+  alias WraftDoc.Documents
   require Logger
 
   @impl true
   def execute(config, input_data, _credentials) do
-    template_name = Map.get(config, "template_name", "Default Template")
-    template_type = Map.get(config, "template_type", "contract")
+    template_id = config["template_id"]
+    template = WraftDoc.DataTemplates.get_data_template(template_id)
 
-    # Extract user info from input data
-    name = Map.get(input_data, "name") || Map.get(input_data, :name) || "User"
-    age = Map.get(input_data, "age") || Map.get(input_data, :age)
+    input_tables = get_in(input_data, ["data", "tables"]) || %{}
 
-    # Generate mock contract content
-    content = generate_mock_content(template_name, template_type, name, age)
+    merged_serialized =
+      inject_smart_tables(template.serialized, input_tables)
 
-    Logger.info("[TemplateAdaptor] Generated #{template_type} from #{template_name} for #{name}")
+    params =
+      %{}
+      |> Documents.do_create_instance_params(%{template | serialized: merged_serialized})
+      |> Map.merge(%{"type" => 3, "doc_settings" => %{}})
 
-    {:ok,
-     %{
-       template: template_name,
-       template_type: template_type,
-       content: content,
-       generated_at: DateTime.utc_now(),
-       metadata: %{
-         name: name,
-         age: age,
-         word_count: String.length(content)
-       }
-     }}
+    current_user =
+      input_data["user_id"]
+      |> WraftDoc.Account.get_user_by_uuid()
+      |> Map.put(:current_org_id, input_data["org_id"])
+
+    Documents.create_instance(
+      current_user,
+      template.content_type,
+      params
+    )
+
+    {:ok, %{generated_at: DateTime.utc_now(), metadata: %{}}}
   end
 
-  @impl true
-  def validate_config(config) do
-    cond do
-      !Map.has_key?(config, "template_name") -> {:error, "template_name is required"}
-      !is_binary(config["template_name"]) -> {:error, "template_name must be a string"}
-      true -> :ok
-    end
+  # TODO: Move into token replacement engine
+  # ————————————————————————————————————————————————————————————
+  # SMART TABLE PROCESSING
+  # ————————————————————————————————————————————————————————————
+  def inject_smart_tables(serialized_map, smart_tables) do
+    doc = Jason.decode!(serialized_map["data"])
+
+    new_content =
+      Enum.map(doc["content"], fn
+        %{
+          "type" => "smartTableWrapper",
+          "attrs" => %{"tableName" => table_name},
+          "content" => content
+        } = node ->
+          incoming = smart_tables[table_name]
+
+          cond do
+            incoming == nil ->
+              node
+
+            is_map(incoming) and incoming["add_to_existing"] == true and is_list(content) and
+                content != [] ->
+              updated_node = append_rows_to_existing(node, incoming)
+              updated_node
+
+            is_list(content) and content != [] ->
+              node
+
+            true ->
+              table_node = build_prosemirror_table(incoming)
+              Map.put(node, "content", [table_node])
+          end
+
+        other ->
+          other
+      end)
+
+    %{serialized_map | "data" => Jason.encode!(%{doc | "content" => new_content})}
   end
 
-  defp generate_mock_content(template_name, template_type, name, age) do
-    """
-    ═══════════════════════════════════════════════════════════════
-    #{String.upcase(template_type)} AGREEMENT - #{template_name}
-    ═══════════════════════════════════════════════════════════════
+  def build_prosemirror_table(
+        %{
+          "headers" => headers,
+          "rows" => rows
+        } = data
+      ) do
+    footer = Map.get(data, "footer", nil)
 
-    Generated: #{DateTime.to_string(DateTime.utc_now())}
+    header_row =
+      %{
+        "type" => "tableRow",
+        "content" =>
+          Enum.map(headers, fn text ->
+            %{
+              "type" => "tableHeaderCell",
+              "attrs" => %{"colspan" => 1, "rowspan" => 1, "colwidth" => nil},
+              "content" => [
+                %{
+                  "type" => "paragraph",
+                  "content" => [%{"type" => "text", "text" => text}]
+                }
+              ]
+            }
+          end)
+      }
 
-    PARTIES:
-    This agreement is made between:
+    rows_pm = Enum.map(rows, &pm_row/1)
 
-    Party A: #{name}#{if age, do: " (Age: #{age})", else: ""}
-    Party B: ACME Corporation
+    footer_pm =
+      case footer do
+        nil -> []
+        [] -> []
+        footer_values -> [pm_row(footer_values)]
+      end
 
-    TERMS AND CONDITIONS:
-
-    #{generate_terms(template_name, age)}
-
-    SIGNATURES:
-
-    _____________________          _____________________
-    #{name}                         ACME Representative
-    Date: _______________          Date: _______________
-
-    ═══════════════════════════════════════════════════════════════
-    Generated by Wraft Workflow Engine - #{template_name}
-    Document ID: #{generate_doc_id()}
-    ═══════════════════════════════════════════════════════════════
-    """
+    %{
+      "type" => "table",
+      "content" => [header_row] ++ rows_pm ++ footer_pm
+    }
   end
 
-  defp generate_terms("Template 1", age) do
-    """
-    1. EMPLOYMENT TERMS (Senior Level - Age #{age || "N/A"})
-       - This is a senior-level employment contract
-       - Position: Senior Consultant
-       - Salary: $120,000 per annum
-       - Benefits: Full health coverage, retirement plan, stock options
-       - Vacation: 25 days per year
-
-    2. RESPONSIBILITIES
-       - Lead project teams and mentor junior staff
-       - Strategic planning and client relationship management
-       - Annual performance reviews and goal setting
-
-    3. TERM
-       - Initial term: 3 years with option to extend
-       - Notice period: 90 days
-    """
+  defp pm_cell(text) do
+    %{
+      "type" => "tableCell",
+      "attrs" => %{"colspan" => 1, "rowspan" => 1, "colwidth" => nil},
+      "content" => [
+        %{
+          "type" => "paragraph",
+          "content" => [%{"type" => "text", "text" => text}]
+        }
+      ]
+    }
   end
 
-  defp generate_terms("Template 2", age) do
-    """
-    1. EMPLOYMENT TERMS (Entry Level - Age #{age || "N/A"})
-       - This is an entry-level employment contract
-       - Position: Junior Consultant
-       - Salary: $65,000 per annum
-       - Benefits: Health coverage, 401(k) matching
-       - Vacation: 15 days per year
-
-    2. RESPONSIBILITIES
-       - Work under supervision of senior consultants
-       - Learn company processes and best practices
-       - Participate in training and development programs
-
-    3. TERM
-       - Initial term: 1 year with option to extend
-       - Notice period: 30 days
-    """
+  defp pm_row(cells) do
+    %{
+      "type" => "tableRow",
+      "content" => Enum.map(cells, &pm_cell/1)
+    }
   end
 
-  defp generate_terms(template_name, _age) do
-    """
-    1. GENERAL TERMS
-       - This document was generated using #{template_name}
-       - Standard terms and conditions apply
-       - Subject to applicable laws and regulations
+  defp append_rows_to_existing(
+         %{
+           "content" => [table_node]
+         } = wrapper_node,
+         %{"rows" => new_rows} = _incoming
+       ) do
+    table_content = get_in(table_node, ["content"]) || []
+    new_rows_pm = Enum.map(new_rows, &pm_row/1)
 
-    2. OBLIGATIONS
-       - Both parties agree to act in good faith
-       - Confidentiality must be maintained
-       - Disputes to be resolved through arbitration
-
-    3. TERM
-       - As mutually agreed upon
-       - Subject to renewal or termination clauses
-    """
-  end
-
-  defp generate_doc_id do
-    Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
+    updated_table_node = put_in(table_node, ["content"], table_content ++ new_rows_pm)
+    put_in(wrapper_node, ["content"], [updated_table_node])
   end
 end

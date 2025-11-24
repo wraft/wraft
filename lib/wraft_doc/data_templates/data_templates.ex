@@ -69,7 +69,21 @@ defmodule WraftDoc.DataTemplates do
   Get a data template from its uuid and organisation ID of user.
   """
   # TODO - imprvove tests
-  @spec get_data_template(User.t(), Ecto.UUID.t()) :: DataTemplat.t() | nil
+  @spec get_data_template(User.t() | nil, Ecto.UUID.t()) :: DataTemplat.t() | nil
+  def get_data_template(<<_::288>> = d_temp_id) do
+    query =
+      from(d in DataTemplate,
+        where: d.id == ^d_temp_id,
+        join: c in ContentType,
+        on: c.id == d.content_type_id
+      )
+
+    case Repo.one(query) do
+      %DataTemplate{} = data_template -> Repo.preload(data_template, :content_type)
+      _ -> {:error, :invalid_id, "DataTemplate"}
+    end
+  end
+
   def get_data_template(%User{current_org_id: org_id}, <<_::288>> = d_temp_id) do
     query =
       from(d in DataTemplate,

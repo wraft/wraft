@@ -1,13 +1,13 @@
 defmodule WraftDocWeb.Plug.EnsureAuthenticated do
   @moduledoc """
   Ensures that a request is authenticated via either API Key or JWT.
-  
+
   This plug checks if current_user is set in conn.assigns.
   If not, it returns a 401 Unauthorized response.
-  
+
   This works with both API Key and JWT authentication methods.
   """
-  
+
   import Plug.Conn
 
   def init(opts), do: opts
@@ -29,4 +29,3 @@ defmodule WraftDocWeb.Plug.EnsureAuthenticated do
     |> halt()
   end
 end
-

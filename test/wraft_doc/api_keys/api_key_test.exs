@@ -35,7 +35,7 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
       assert get_change(changeset, :key_hash) != nil
       assert get_change(changeset, :key_prefix) != nil
       assert get_change(changeset, :key) != nil
-      
+
       # Check key format
       key = get_change(changeset, :key)
       assert String.starts_with?(key, "wraft_")
@@ -240,4 +240,3 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
     end
   end
 end
-

@@ -1290,6 +1290,8 @@ defmodule WraftDoc.Documents do
         task
       )
 
+    # TODO : replace all unhandled tokens in content
+    content = replace_unhandled_tokens(content)
     File.write("#{base_content_dir}/content.md", content)
 
     generate_field_json(instance, layout, base_content_dir)
@@ -1301,6 +1303,10 @@ defmodule WraftDoc.Documents do
     "pandoc"
     |> System.cmd(pandoc_commands, stderr_to_stdout: true)
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file, opts)
+  end
+
+  defp replace_unhandled_tokens(content) when is_binary(content) do
+    Regex.replace(~r/\[SMART_TABLE_PLACEHOLDER:[^\]]+\]/, content, "")
   end
 
   defp generate_field_json(_, %Layout{frame: nil}, _), do: nil

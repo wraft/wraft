@@ -25,20 +25,20 @@ defmodule WraftDoc.ApiKeys.ApiKey do
     field(:name, :string)
     field(:key_hash, :string)
     field(:key_prefix, :string)
-    
+
     # Security settings
     field(:expires_at, :utc_datetime)
     field(:is_active, :boolean, default: true)
     field(:rate_limit, :integer, default: 1000)
     field(:ip_whitelist, {:array, :string}, default: [])
-    
+
     # Usage tracking
     field(:last_used_at, :utc_datetime)
     field(:usage_count, :integer, default: 0)
-    
+
     # Additional metadata
     field(:metadata, :map, default: %{})
-    
+
     # Virtual field to store the unhashed key (only available during creation)
     field(:key, :string, virtual: true)
 
@@ -101,10 +101,8 @@ defmodule WraftDoc.ApiKeys.ApiKey do
   @doc """
   Changeset for updating usage statistics.
   """
-  def usage_changeset(api_key, attrs \\ %{}) do
-    api_key
-    |> cast(attrs, [:last_used_at, :usage_count])
-  end
+  def usage_changeset(api_key, attrs \\ %{}),
+    do: cast(api_key, attrs, [:last_used_at, :usage_count])
 
   # Private functions
 
@@ -129,7 +127,7 @@ defmodule WraftDoc.ApiKeys.ApiKey do
       prefix = generate_prefix()
       random_part = generate_random_string(32)
       full_key = "wraft_#{prefix}_#{random_part}"
-      
+
       # Hash the key for storage
       key_hash = Bcrypt.hash_pwd_salt(full_key)
 
@@ -142,14 +140,13 @@ defmodule WraftDoc.ApiKeys.ApiKey do
     end
   end
 
-  defp generate_prefix do
+  defp generate_prefix,
     # Generate a 8-character prefix for easy identification
-    :crypto.strong_rand_bytes(4)
-    |> Base.encode16(case: :lower)
-  end
+    do: 4 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
 
   defp generate_random_string(length) do
-    :crypto.strong_rand_bytes(length)
+    length
+    |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
     |> binary_part(0, length)
   end
@@ -182,4 +179,3 @@ defmodule WraftDoc.ApiKeys.ApiKey do
     ip in whitelist
   end
 end
-

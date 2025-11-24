@@ -39,8 +39,7 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       assert length(response["api_keys"]) == 2
 
       api_key_names =
-        response["api_keys"]
-        |> Enum.map(fn key -> key["name"] end)
+        Enum.map(response["api_keys"], fn key -> key["name"] end)
 
       assert "Key 1" in api_key_names
       assert "Key 2" in api_key_names
@@ -100,7 +99,7 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       assert response["name"] == "Test API Key"
       assert response["rate_limit"] == 1000
       assert response["is_active"] == true
-      
+
       # The full key should be returned only on creation
       assert Map.has_key?(response, "key")
       assert String.starts_with?(response["key"], "wraft_")
@@ -285,8 +284,7 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
     test "returns 401 with no authentication", %{conn: _conn} do
       # Create a new connection without any auth
       api_conn =
-        Phoenix.ConnTest.build_conn()
-        |> Plug.Conn.put_req_header("accept", "application/json")
+        Plug.Conn.put_req_header(Phoenix.ConnTest.build_conn(), "accept", "application/json")
 
       # Try to access the index endpoint
       api_conn = get(api_conn, Routes.v1_api_key_path(api_conn, :index))
@@ -296,4 +294,3 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
     end
   end
 end
-

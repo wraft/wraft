@@ -18,23 +18,25 @@ defmodule WraftDocWeb.Api.V1.ApiKeyView do
   end
 
   def render("api_key.json", %{api_key: api_key}) do
-    %{
-      id: api_key.id,
-      name: api_key.name,
-      key_prefix: api_key.key_prefix,
-      expires_at: api_key.expires_at,
-      is_active: api_key.is_active,
-      rate_limit: api_key.rate_limit,
-      ip_whitelist: api_key.ip_whitelist,
-      last_used_at: api_key.last_used_at,
-      usage_count: api_key.usage_count,
-      metadata: api_key.metadata,
-      inserted_at: api_key.inserted_at,
-      updated_at: api_key.updated_at,
-      user: render_user(api_key),
-      created_by: render_created_by(api_key)
-    }
-    |> maybe_add_key(api_key)
+    maybe_add_key(
+      %{
+        id: api_key.id,
+        name: api_key.name,
+        key_prefix: api_key.key_prefix,
+        expires_at: api_key.expires_at,
+        is_active: api_key.is_active,
+        rate_limit: api_key.rate_limit,
+        ip_whitelist: api_key.ip_whitelist,
+        last_used_at: api_key.last_used_at,
+        usage_count: api_key.usage_count,
+        metadata: api_key.metadata,
+        inserted_at: api_key.inserted_at,
+        updated_at: api_key.updated_at,
+        user: render_user(api_key),
+        created_by: render_created_by(api_key)
+      },
+      api_key
+    )
   end
 
   def render("api_key_list.json", %{api_key: api_key}) do
@@ -53,7 +55,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyView do
   end
 
   # Private functions
-
   defp maybe_add_key(map, %ApiKey{key: key}) when is_binary(key) do
     # Only include the key if it's available (i.e., during creation)
     Map.put(map, :key, key)
@@ -85,4 +86,3 @@ defmodule WraftDocWeb.Api.V1.ApiKeyView do
     }
   end
 end
-

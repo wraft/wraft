@@ -13,7 +13,7 @@ defmodule WraftDoc.ApiKeysTest do
       user = insert(:user_with_organisation)
       api_key_1 = insert(:api_key, organisation_id: user.current_org_id)
       api_key_2 = insert(:api_key, organisation_id: user.current_org_id)
-      
+
       # API key from different organisation should not appear
       other_org = insert(:organisation)
       _other_api_key = insert(:api_key, organisation_id: other_org.id)
@@ -363,4 +363,3 @@ defmodule WraftDoc.ApiKeysTest do
     end
   end
 end
-

@@ -1,18 +1,18 @@
 defmodule WraftDocWeb.Plug.ApiKeyAuth do
   @moduledoc """
   Plug for API Key authentication.
-  
+
   This plug attempts to authenticate requests using an API key from the X-API-Key header.
   If a valid API key is found:
   - Sets conn.assigns.current_user to the user associated with the API key
   - Sets conn.assigns.current_organisation to the organisation
   - Sets conn.assigns.api_key to the API key struct (for audit purposes)
   - Sets conn.assigns.authenticated_via to :api_key
-  
+
   If no API key is provided or invalid, the plug does nothing and lets the
   request continue to the next authentication method (JWT).
   """
-  
+
   import Plug.Conn
   require Logger
 
@@ -51,46 +51,57 @@ defmodule WraftDocWeb.Plug.ApiKeyAuth do
     remote_ip = get_remote_ip(conn)
 
     case ApiKeys.verify_api_key(api_key_string, remote_ip) do
-      {:ok, %{api_key: api_key, user: user, organisation: organisation}} ->
-        # Check rate limit
-        case ApiKeys.check_rate_limit(api_key) do
-          {:ok, _} ->
-            conn
-            |> assign(:current_user, user)
-            |> assign(:current_organisation, organisation)
-            |> assign(:api_key, api_key)
-            |> assign(:authenticated_via, :api_key)
-
-          {:error, :rate_limit_exceeded} ->
-            Logger.warning("API key rate limit exceeded: #{api_key.id}")
-            send_error_response(conn, 429, "Rate limit exceeded")
-        end
-
-      {:error, :invalid_api_key} ->
-        Logger.warning("Invalid API key provided")
-        send_error_response(conn, 401, "Invalid API key")
-
-      {:error, :api_key_expired} ->
-        Logger.warning("Expired API key used")
-        send_error_response(conn, 401, "API key has expired")
-
-      {:error, :api_key_inactive} ->
-        Logger.warning("Inactive API key used")
-        send_error_response(conn, 401, "API key is inactive")
-
-      {:error, :ip_not_whitelisted} ->
-        Logger.warning("API key used from non-whitelisted IP")
-        send_error_response(conn, 403, "IP address not authorized for this API key")
-
-      {:error, :user_not_found} ->
-        Logger.warning("API key user not found")
-        send_error_response(conn, 401, "User associated with API key not found")
+      {:ok, auth_data} ->
+        handle_successful_verification(conn, auth_data)
 
       {:error, reason} ->
-        Logger.warning("API key authentication failed: #{inspect(reason)}")
-        send_error_response(conn, 401, "API key authentication failed")
+        handle_failed_verification(conn, reason)
     end
   end
+
+  defp handle_successful_verification(
+         conn,
+         %{api_key: api_key, user: user, organisation: organisation}
+       ) do
+    case ApiKeys.check_rate_limit(api_key) do
+      {:ok, _} ->
+        conn
+        |> assign(:current_user, user)
+        |> assign(:current_organisation, organisation)
+        |> assign(:api_key, api_key)
+        |> assign(:authenticated_via, :api_key)
+
+      {:error, :rate_limit_exceeded} ->
+        Logger.warning("API key rate limit exceeded: #{api_key.id}")
+        send_error_response(conn, 429, "Rate limit exceeded")
+    end
+  end
+
+  defp handle_failed_verification(conn, reason) do
+    {status, message, log_message} = error_details(reason)
+    Logger.warning(log_message)
+    send_error_response(conn, status, message)
+  end
+
+  defp error_details(:invalid_api_key),
+    do: {401, "Invalid API key", "Invalid API key provided"}
+
+  defp error_details(:api_key_expired),
+    do: {401, "API key has expired", "Expired API key used"}
+
+  defp error_details(:api_key_inactive),
+    do: {401, "API key is inactive", "Inactive API key used"}
+
+  defp error_details(:ip_not_whitelisted),
+    do:
+      {403, "IP address not authorized for this API key", "API key used from non-whitelisted IP"}
+
+  defp error_details(:user_not_found),
+    do: {401, "User associated with API key not found", "API key user not found"}
+
+  defp error_details(reason),
+    do:
+      {401, "API key authentication failed", "API key authentication failed: #{inspect(reason)}"}
 
   defp get_remote_ip(conn) do
     # Try to get the real IP from common headers (for proxy/load balancer support)
@@ -119,4 +130,3 @@ defmodule WraftDocWeb.Plug.ApiKeyAuth do
     |> halt()
   end
 end
-

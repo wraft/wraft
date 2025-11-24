@@ -3,7 +3,7 @@ defmodule WraftDoc.ApiKeys do
   The ApiKeys context - handles all API key management operations.
   """
   import Ecto.Query
-  
+
   alias WraftDoc.Account.{Role, User}
   alias WraftDoc.ApiKeys.ApiKey
   alias WraftDoc.Documents.InstanceApprovalSystem
@@ -42,7 +42,7 @@ defmodule WraftDoc.ApiKeys do
   def get_api_key_by_key("wraft_" <> rest = full_key) do
     # Extract prefix (first 8 characters after "wraft_")
     prefix = String.slice(rest, 0..7)
-    
+
     # Find all keys with this prefix and check each one
     ApiKey
     |> where([k], k.key_prefix == ^prefix)
@@ -224,7 +224,7 @@ defmodule WraftDoc.ApiKeys do
   @doc """
   Check if rate limit is exceeded for an API key.
   Returns {:ok, api_key} if within limit, {:error, :rate_limit_exceeded} otherwise.
-  
+
   This is a simple hourly rate limit check.
   For production, consider using a more sophisticated rate limiting solution.
   """
@@ -267,4 +267,3 @@ defmodule WraftDoc.ApiKeys do
     end
   end
 end
-
