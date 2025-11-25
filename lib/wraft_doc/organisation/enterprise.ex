@@ -608,7 +608,7 @@ defmodule WraftDoc.Enterprise do
   Get an organisation from its UUID.
   """
   @spec get_organisation(binary) :: Organisation.t() | nil
-  def get_organisation(id), do: Repo.get(Organisation, id)
+  def get_organisation(id), do: Organisation |> Repo.get(id) |> Repo.preload(:roles)
 
   @doc """
   Get an organisation with member count.

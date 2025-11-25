@@ -12,6 +12,10 @@ if System.get_env("PHX_SERVER") && System.get_env("RELEASE_NAME") do
   config :wraft_doc, WraftDocWeb.Endpoint, server: true
 end
 
+if config_env() == :test do
+  config :wraft_doc, WraftDoc.Repo, pool: Ecto.Adapters.SQL.Sandbox
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

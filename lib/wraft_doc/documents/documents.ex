@@ -142,38 +142,6 @@ defmodule WraftDoc.Documents do
     end
   end
 
-  # @spec create_instance(ContentType.t(), State.t(), map) ::
-  #         %Instance{content_type: ContentType.t(), state: State.t()}
-  #         | {:error, Ecto.Changeset.t()}
-  def create_instance(
-        %{id: c_id, prefix: prefix, type: type, organisation_id: organisation_id} = c_type,
-        _state,
-        params
-      ) do
-    instance_id = create_instance_id(c_id, prefix)
-
-    params =
-      Map.merge(params, %{
-        "instance_id" => instance_id,
-        "allowed_users" => [params["creator_id"]],
-        "organisation_id" => organisation_id
-      })
-
-    c_type
-    |> build_assoc(:instances, document_type: type)
-    |> Instance.changeset(params)
-    |> Repo.insert()
-    |> case do
-      {:ok, content} ->
-        Task.start_link(fn -> create_or_update_counter(c_type) end)
-        Task.start_link(fn -> create_instance_approval_systems(c_type, content) end)
-        Repo.preload(content, [:content_type, :state])
-
-      changeset = {:error, _} ->
-        changeset
-    end
-  end
-
   @doc """
   Create a new instance.
   """
@@ -215,7 +183,8 @@ defmodule WraftDoc.Documents do
           :content_type,
           :state,
           {:instance_approval_systems, :approver},
-          :vendor
+          :vendor,
+          creator: :profile
         ])
 
       {:error, _, changeset, _} ->
@@ -682,11 +651,11 @@ defmodule WraftDoc.Documents do
         where: i.organisation_id == ^org_id,
         order_by: [desc: i.id],
         preload: [
-          :content_type,
           :state,
           {:instance_approval_systems, :approver},
           :vendor,
-          creator: [:profile]
+          creator: [:profile],
+          content_type: [flow: [:states]]
         ]
       )
 

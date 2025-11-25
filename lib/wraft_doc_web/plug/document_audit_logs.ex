@@ -12,10 +12,15 @@ defmodule WraftDocWeb.Plug.AddDocumentAuditLog do
   def init(_params), do: nil
 
   def call(conn, _params) do
-    register_before_send(conn, fn conn ->
+    register_before_send(conn, &handle_before_send/1)
+  end
+
+  defp handle_before_send(conn) do
+    unless Mix.env() == :test do
       Task.start(fn -> create_log(conn) end)
-      conn
-    end)
+    end
+
+    conn
   end
 
   @spec create_log(Plug.Conn.t()) :: ActionLog.t() | nil

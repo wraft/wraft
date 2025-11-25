@@ -91,25 +91,6 @@ defmodule WraftDoc.StorageFixtures do
   end
 
   @doc """
-  Generate a access_log.
-  """
-  def access_log_fixture(attrs \\ %{}) do
-    {:ok, access_log} =
-      attrs
-      |> Enum.into(%{
-        action: "some action",
-        ip_address: "some ip_address",
-        metadata: %{},
-        session_id: "some session_id",
-        success: true,
-        user_agent: "some user_agent"
-      })
-      |> WraftDoc.Storages.create_access_log()
-
-    access_log
-  end
-
-  @doc """
   Generate a sync_job.
   """
   def sync_job_fixture(attrs \\ %{}) do
