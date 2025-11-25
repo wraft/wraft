@@ -139,12 +139,16 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       |> assign(:current_user, user)
       |> put_req_header("authorization", "Bearer " <> token)
 
-    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), @valid_attrs)
+    conn =
+      put(conn, Routes.v1_organisation_path(conn, :update, organisation), @valid_attrs)
 
-    refute json_response(conn, 200)["name"] == @valid_attrs["name"]
-    assert json_response(conn, 200)["name"] == "Personal"
-    assert json_response(conn, 200)["address"] == @valid_attrs["address"]
-    assert json_response(conn, 200)["url"] == @valid_attrs["url"]
+    # Store the response in a variable and reuse it
+    response = json_response(conn, 200)
+
+    refute response["name"] == @valid_attrs["name"]
+    assert response["name"] == "Personal"
+    assert response["address"] == @valid_attrs["address"]
+    assert response["url"] == @valid_attrs["url"]
   end
 
   test "renders organisation details on show", %{conn: conn} do

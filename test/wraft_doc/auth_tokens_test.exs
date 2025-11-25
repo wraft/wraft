@@ -33,7 +33,6 @@ defmodule WraftDoc.AuthTokensTest do
   end
 
   describe "create_password_token/1" do
-    # FIXME
     test "create token when the email of a valid user is given" do
       user = insert(:user)
       token = AuthTokens.create_password_token(%{"email" => user.email})
@@ -54,7 +53,6 @@ defmodule WraftDoc.AuthTokensTest do
   end
 
   describe "delete_auth_token!/1" do
-    # FIXME
     test "deletes the given auth token" do
       auth_token = insert(:auth_token)
       deleted_auth_token = AuthTokens.delete_auth_token!(auth_token)
@@ -124,7 +122,6 @@ defmodule WraftDoc.AuthTokensTest do
               }} = AuthTokens.create_token_and_send_email(email)
     end
 
-    # FIXME
     test "returns {:error, :invalid_email} with invalid email" do
       assert {:error, :invalid_email} =
                AuthTokens.create_token_and_send_email("invalid@email.com")

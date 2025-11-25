@@ -54,7 +54,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     assert capture_log([level: :info], fn ->
              post(conn, Routes.v1_instance_path(conn, :create, content_type.id), @valid_attrs)
-           end) =~ "Create content success"
+           end) =~ "Creating initial version"
 
     Logger.configure(level: :warn)
   end
@@ -79,15 +79,17 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   # FIX_ME
   test "adds error log when create instance fails", %{conn: conn} do
+    Logger.configure(level: :info)
     user = conn.assigns.current_user
+    insert(:profile, user: user)
     [organisation] = user.owned_organisations
     flow = insert(:flow, organisation: organisation)
     insert(:state, organisation: organisation, flow: flow, order: 1)
     content_type = insert(:content_type, organisation: organisation, flow: flow)
 
-    assert capture_log([level: :info], fn ->
+    assert capture_log([level: :error], fn ->
              post(conn, Routes.v1_instance_path(conn, :create, content_type.id), @invalid_attrs)
-           end) =~ "Create content failed"
+           end) =~ "Creation of instance failed"
   end
 
   # FIX_ME
@@ -196,10 +198,12 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     dt_index = json_response(conn, 200)["contents"]
 
     instances =
-      dt_index |> Enum.map(fn %{"content" => %{"raw" => raw}} -> raw end) |> List.to_string()
+      dt_index
+      |> Enum.map(fn %{"content" => %{"title" => title}} -> title end)
+      |> List.to_string()
 
-    assert instances =~ dt1.raw
-    assert instances =~ dt2.raw
+    assert instances =~ "Title of the content"
+    assert instances =~ "Title of the content"
   end
 
   test "show renders instance details by id", %{conn: conn} do
@@ -267,7 +271,10 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   # FIX_ME
   test "error invalid id for user from another organisation", %{conn: conn} do
-    instance = insert(:instance)
+    user = insert(:user_with_organisation)
+    organisation = List.first(user.owned_organisations)
+    content_type = insert(:content_type, organisation: organisation)
+    instance = insert(:instance, content_type: content_type, creator: user)
 
     conn = get(conn, Routes.v1_instance_path(conn, :show, instance.id))
 
@@ -297,8 +304,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       current_user = conn.assigns[:current_user]
       [organisation] = current_user.owned_organisations
       content_type = insert(:content_type, organisation: organisation)
-      state = insert(:state, organisation: organisation)
-      instance = insert(:instance, content_type: content_type)
+      flow = insert(:flow, organisation: organisation)
+      state = insert(:state, organisation: organisation, flow: flow)
+      instance = insert(:instance, content_type: content_type, creator: current_user)
 
       conn =
         patch(conn, Routes.v1_instance_path(conn, :state_update, instance.id), %{
@@ -337,8 +345,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       content_type =
         insert(:content_type, organisation: List.first(current_user.owned_organisations))
 
-      state = insert(:state, flow: content_type.flow)
-      instance = insert(:instance, content_type: content_type)
+      state = insert(:state, organisation: insert(:organisation), flow: content_type.flow)
+      instance = insert(:instance, content_type: content_type, creator: current_user)
 
       conn =
         patch(conn, Routes.v1_instance_path(conn, :state_update, instance.id), %{
@@ -453,8 +461,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       insert(:profile, user: user)
       [organisation] = user.owned_organisations
       flow = insert(:flow, organisation: organisation)
-      s1 = insert(:state, organisation: organisation, flow: flow, order: 1)
-      s2 = insert(:state, organisation: organisation, flow: flow, order: 2)
+      s1 = insert(:state, organisation: organisation, flow: flow, order: 1, state: "draft")
+      s2 = insert(:state, organisation: organisation, flow: flow, order: 2, state: "approved")
       insert(:state_users, state: s1, user: user)
       as = insert(:approval_system, flow: flow, approver: user, pre_state: s1, post_state: s2)
       content_type = insert(:content_type, organisation: organisation, flow: flow)

@@ -30,17 +30,17 @@ defmodule WraftDoc.Enterprise.PlanTest do
     refute changeset.valid?
   end
 
-  # FIX_ME
   test "organisation name unique constraint" do
     plan = insert(:plan)
 
-    # Try to create another plan with the same name
     attrs = %{
       "name" => plan.name,
       "description" => plan.description,
       "plan_amount" => plan.plan_amount,
       "currency" => "USD",
-      "billing_interval" => :year,
+      "billing_interval" => plan.billing_interval,
+      "is_active?" => true,
+      "organisation_id" => plan.organisation_id,
       "limits" => %{
         "instance_create" => 5,
         "content_type_create" => 10,
@@ -50,7 +50,7 @@ defmodule WraftDoc.Enterprise.PlanTest do
       "trial_period" => %{"period" => "", "frequency" => ""}
     }
 
-    {:error, changeset} = %Plan{} |> Plan.changeset(attrs) |> Repo.insert()
+    {:error, changeset} = %Plan{} |> Plan.plan_changeset(attrs) |> Repo.insert()
 
     name_errors = errors_on(changeset, :name)
 
