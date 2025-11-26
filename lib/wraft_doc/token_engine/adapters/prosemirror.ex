@@ -58,6 +58,10 @@ defmodule WraftDoc.TokenEngine.Adapters.Prosemirror do
     {:ok, "SIGNATURE_FIELD", attrs}
   end
 
+  defp identify_token(%{"type" => "holder", "attrs" => attrs}) do
+    {:ok, "holder", attrs}
+  end
+
   # Add more identifications here as needed or make this extensible via config
   defp identify_token(_node), do: :error
 end
