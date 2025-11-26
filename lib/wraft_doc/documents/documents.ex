@@ -1290,8 +1290,7 @@ defmodule WraftDoc.Documents do
         task
       )
 
-    # TODO : replace all unhandled tokens in content
-    content = replace_unhandled_tokens(content)
+    content = WraftDoc.TokenEngine.replace(content, WraftDoc.TokenEngine.Adapters.Markdown, %{})
     File.write("#{base_content_dir}/content.md", content)
 
     generate_field_json(instance, layout, base_content_dir)
@@ -1303,11 +1302,6 @@ defmodule WraftDoc.Documents do
     "pandoc"
     |> System.cmd(pandoc_commands, stderr_to_stdout: true)
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file, opts)
-  end
-
-  # TODO : Remove and try with token replacement engine.
-  defp replace_unhandled_tokens(content) when is_binary(content) do
-    Regex.replace(~r/\[SMART_TABLE_PLACEHOLDER:[^\]]+\]/, content, "")
   end
 
   defp generate_field_json(_, %Layout{frame: nil}, _), do: nil
@@ -1852,7 +1846,12 @@ defmodule WraftDoc.Documents do
         title_template: title_temp,
         serialized: %{"data" => serialized_data}
       }) do
-    updated_content = replace_content_holder(Jason.decode!(serialized_data), field_with_values)
+    updated_content =
+      WraftDoc.TokenEngine.replace(
+        Jason.decode!(serialized_data),
+        WraftDoc.TokenEngine.Adapters.Prosemirror,
+        field_with_values
+      )
 
     raw = ProsemirrorToMarkdown.convert(updated_content)
 
@@ -1866,25 +1865,6 @@ defmodule WraftDoc.Documents do
 
     %{"raw" => raw, "serialized" => serialized}
   end
-
-  # Private
-  defp replace_content_holder(
-         %{"type" => "holder", "attrs" => %{"name" => name} = attrs} = content,
-         data
-       ) do
-    case Map.get(data, name) do
-      nil -> content
-      named_value -> %{content | "attrs" => %{attrs | "named" => named_value}}
-    end
-  end
-
-  defp replace_content_holder(%{"type" => _type, "content" => content} = node, data)
-       when is_list(content) do
-    updated_content = Enum.map(content, fn item -> replace_content_holder(item, data) end)
-    %{node | "content" => updated_content}
-  end
-
-  defp replace_content_holder(other, _data), do: other
 
   defp replace_content_title(fields, title) do
     Enum.reduce(fields, title, fn {k, v}, acc ->

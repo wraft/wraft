@@ -6,9 +6,7 @@ defmodule WraftDoc.TokenEngine.Handlers.Signature do
   @behaviour WraftDoc.TokenEngine.TokenHandler
 
   @impl true
-  def validate(params) do
-    {:ok, params}
-  end
+  def validate(params), do: {:ok, params}
 
   @impl true
   def resolve(token, _context) do
@@ -20,9 +18,8 @@ defmodule WraftDoc.TokenEngine.Handlers.Signature do
   end
 
   @impl true
-  def render(data, :markdown, _options) do
-    {:ok, "[SIGNATURE_FIELD width=#{data.width} height=#{data.height}]"}
-  end
+  def render(data, :markdown, _options),
+    do: {:ok, "[SIGNATURE_FIELD width=#{data.width} height=#{data.height}]"}
 
   @impl true
   def render(data, :prosemirror, _options) do

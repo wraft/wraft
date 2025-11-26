@@ -9,15 +9,34 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
   def validate(params), do: {:ok, params}
 
   @impl true
-  def resolve(_token, _context),
-    do: {:ok, %{rows: [["Header 1", "Header 2"], ["Row 1 Col 1", "Row 1 Col 2"]]}}
+  @doc """
+    Context is expected to be the map of smart_tables, or a map containing "smart_tables" key
+    Based on template_adaptor.ex: incoming = smart_tables[table_name]
+
+    We'll assume context IS the smart_tables map for simplicity, or we check for a key.
+    Let's support both for flexibility.
+  """
+  def resolve(token, context) do
+    table_name = token.params["tableName"]
+    smart_tables = Map.get(context, "smart_tables", context)
+    data = Map.get(smart_tables, table_name)
+
+    {:ok, %{data: data, original_node: token.original_node}}
+  end
 
   @impl true
-  def render(data, :markdown, _options) do
-    rows = data.rows
+  def render(%{data: nil}, :markdown, _options) do
+    {:ok, ""}
+  end
+
+  def render(%{data: data}, :markdown, _options) do
+    rows = data["rows"] || []
+    headers = data["headers"] || []
+
+    all_rows = [headers | rows]
 
     table_str =
-      Enum.map_join(rows, "\n", fn row ->
+      Enum.map_join(all_rows, "\n", fn row ->
         "| " <> Enum.join(row, " | ") <> " |"
       end)
 
@@ -25,50 +44,95 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
   end
 
   @impl true
-  def render(data, :prosemirror, _options) do
-    # Simple ProseMirror table generation
-    rows = data.rows
+  def render(%{data: nil, original_node: node}, :prosemirror, _options) do
+    {:ok, node}
+  end
 
-    header_row = Enum.at(rows, 0)
-    body_rows = Enum.drop(rows, 1)
+  def render(%{data: data, original_node: node}, :prosemirror, _options) do
+    content = node["content"] || []
 
-    table_node = %{
-      "type" => "table",
-      "content" =>
-        [
-          # Simplified for brevity - normally would construct full table structure
-          %{
-            "type" => "tableRow",
-            "content" =>
-              Enum.map(header_row, fn cell ->
-                %{
-                  "type" => "tableHeader",
-                  "content" => [
-                    %{"type" => "paragraph", "content" => [%{"type" => "text", "text" => cell}]}
-                  ]
-                }
-              end)
-          }
-        ] ++
-          Enum.map(body_rows, fn row ->
-            %{
-              "type" => "tableRow",
-              "content" =>
-                Enum.map(row, fn cell ->
-                  %{
-                    "type" => "tableCell",
-                    "content" => [
-                      %{"type" => "paragraph", "content" => [%{"type" => "text", "text" => cell}]}
-                    ]
-                  }
-                end)
-            }
-          end)
-    }
+    result =
+      cond do
+        Map.get(data, "add_to_existing") == true and is_list(content) and content != [] ->
+          append_rows_to_existing(node, data)
 
-    {:ok, table_node}
+        is_list(content) and content != [] ->
+          node
+
+        true ->
+          table_node = build_prosemirror_table(data)
+          Map.put(node, "content", [table_node])
+      end
+
+    {:ok, result}
   end
 
   @impl true
   def render(_data, _format, _options), do: {:error, :unsupported_format}
+
+  defp build_prosemirror_table(%{"headers" => headers, "rows" => rows} = data) do
+    footer = Map.get(data, "footer", nil)
+
+    header_row = %{
+      "type" => "tableRow",
+      "content" =>
+        Enum.map(headers, fn text ->
+          %{
+            "type" => "tableHeaderCell",
+            "attrs" => %{"colspan" => 1, "rowspan" => 1, "colwidth" => nil},
+            "content" => [
+              %{
+                "type" => "paragraph",
+                "content" => [%{"type" => "text", "text" => text}]
+              }
+            ]
+          }
+        end)
+    }
+
+    rows_pm = Enum.map(rows, &pm_row/1)
+
+    footer_pm =
+      case footer do
+        nil -> []
+        [] -> []
+        footer_values -> [pm_row(footer_values)]
+      end
+
+    %{
+      "type" => "table",
+      "content" => [header_row] ++ rows_pm ++ footer_pm
+    }
+  end
+
+  defp pm_cell(text) do
+    %{
+      "type" => "tableCell",
+      "attrs" => %{"colspan" => 1, "rowspan" => 1, "colwidth" => nil},
+      "content" => [
+        %{
+          "type" => "paragraph",
+          "content" => [%{"type" => "text", "text" => text}]
+        }
+      ]
+    }
+  end
+
+  defp pm_row(cells) do
+    %{
+      "type" => "tableRow",
+      "content" => Enum.map(cells, &pm_cell/1)
+    }
+  end
+
+  defp append_rows_to_existing(
+         %{"content" => [table_node]} = wrapper_node,
+         %{"rows" => new_rows} = _incoming
+       ) do
+    table_content = get_in(table_node, ["content"]) || []
+    new_rows_pm = Enum.map(new_rows, &pm_row/1)
+
+    updated_table_node = put_in(table_node, ["content"], table_content ++ new_rows_pm)
+    put_in(wrapper_node, ["content"], [updated_table_node])
+  end
 end
