@@ -12,7 +12,7 @@ defmodule WraftDoc.TokenEngine do
   ## Arguments
 
   * `input` - The document content (String for Markdown, Map for ProseMirror).
-  * `adapter` - The adapter module to use (e.g., `WraftDoc.TokenEngine.Adapters.Markdown`).
+  * `adapter` - The adapter module to use (e.g., `:markdown`).
   * `context` - A map of context data to be passed to resolvers.
   * `options` - Keyword list of options, including `render_options`.
 
@@ -25,7 +25,15 @@ defmodule WraftDoc.TokenEngine do
       resolve_and_render(token, context, options)
     end
 
-    adapter.process(input, context, replacement_fn)
+    get_adapter(adapter).process(input, context, replacement_fn)
+  end
+
+  defp get_adapter(adapter) do
+    case adapter do
+      :markdown -> WraftDoc.TokenEngine.Adapters.Markdown
+      :prosemirror -> WraftDoc.TokenEngine.Adapters.Prosemirror
+      _ -> raise ArgumentError, "Unsupported adapter: #{adapter}"
+    end
   end
 
   defp resolve_and_render(%Token{type: type} = token, context, options) do

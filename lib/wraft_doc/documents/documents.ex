@@ -1290,8 +1290,6 @@ defmodule WraftDoc.Documents do
         task
       )
 
-    content = WraftDoc.TokenEngine.replace(content, WraftDoc.TokenEngine.Adapters.Markdown, %{})
-
     File.write("#{base_content_dir}/content.md", content)
 
     generate_field_json(instance, layout, base_content_dir)
@@ -1850,7 +1848,7 @@ defmodule WraftDoc.Documents do
     updated_content =
       WraftDoc.TokenEngine.replace(
         Jason.decode!(serialized_data),
-        WraftDoc.TokenEngine.Adapters.Prosemirror,
+        :prosemirror,
         field_with_values
       )
 

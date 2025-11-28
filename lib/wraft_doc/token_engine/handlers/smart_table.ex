@@ -18,8 +18,7 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
   """
   def resolve(token, context) do
     table_name = token.params["tableName"]
-    smart_tables = Map.get(context, "tables", context)
-    data = Map.get(smart_tables, table_name)
+    data = Map.get(context, table_name)
 
     {:ok, %{data: data, original_node: token.original_node}}
   end
@@ -49,22 +48,9 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
   end
 
   def render(%{data: data, original_node: node}, :prosemirror, _options) do
-    content = node["content"] || []
+    table_node = build_prosemirror_table(data)
 
-    result =
-      cond do
-        Map.get(data, "add_to_existing") == true and is_list(content) and content != [] ->
-          append_rows_to_existing(node, data)
-
-        is_list(content) and content != [] ->
-          node
-
-        true ->
-          table_node = build_prosemirror_table(data)
-          Map.put(node, "content", [table_node])
-      end
-
-    {:ok, result}
+    {:ok, Map.put(node, "content", [table_node])}
   end
 
   @impl true
@@ -123,16 +109,5 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
       "type" => "tableRow",
       "content" => Enum.map(cells, &pm_cell/1)
     }
-  end
-
-  defp append_rows_to_existing(
-         %{"content" => [table_node]} = wrapper_node,
-         %{"rows" => new_rows} = _incoming
-       ) do
-    table_content = get_in(table_node, ["content"]) || []
-    new_rows_pm = Enum.map(new_rows, &pm_row/1)
-
-    updated_table_node = put_in(table_node, ["content"], table_content ++ new_rows_pm)
-    put_in(wrapper_node, ["content"], [updated_table_node])
   end
 end
