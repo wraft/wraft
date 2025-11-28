@@ -68,24 +68,10 @@ defmodule WraftDoc.PipelineRunner do
                             data_template: d_temp,
                             form_mapping: form_mapping
                           } ->
-        trigger_type = data["trigger_type"]
-
         transformed_data =
-          if trigger_type == "webhook" do
-            # form_mapping.mapping
-            # |> Enum.map(fn %{source: src, destination: dest} ->
-            #   {src["name"], dest["name"]}
-            # end)
-            # |> Enum.into(%{})
-            # |> Enum.map(fn {_label, data_key} ->
-            #   {data_key, data[data_key]}
-            # end)
-            # # remove missing values
-            # |> Enum.filter(fn {_k, v} -> not is_nil(v) end)
-            # |> Enum.into(%{})
-            data
-          else
-            Forms.transform_data_by_mapping(form_mapping, data)
+          case data["trigger_type"] do
+            "webhook" -> data
+            _ -> Forms.transform_data_by_mapping(form_mapping, data)
           end
 
         params =

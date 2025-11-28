@@ -396,9 +396,18 @@ defmodule WraftDoc.Forms do
         Map.put(acc, field_id, value)
       end)
 
+    data_map_with_machine_names =
+      fields
+      |> Enum.filter(fn form_field ->
+        form_field.machine_name != nil && Map.has_key?(data_map, form_field.field_id)
+      end)
+      |> Map.new(fn form_field ->
+        {form_field.machine_name, Map.get(data_map, form_field.field_id)}
+      end)
+
     if check_data_mapping(fields, data) do
       case validate_form_entry(fields, data_map) do
-        [] -> insert_form_entry(current_user, form, data_map)
+        [] -> insert_form_entry(current_user, form, data_map_with_machine_names)
         error_list -> {:error, error_list}
       end
     else
@@ -568,58 +577,25 @@ defmodule WraftDoc.Forms do
       ) do
     mappings
     |> transform_mappings
-    |> transform_data(data, form_id)
-    |> Enum.into(%{})
+    |> transform_data(data)
   end
 
   def transform_data_by_mapping(nil, _data), do: {:error, "No mappings found"}
 
-  defp transform_data(mappings, data, form_id) do
-    # Convert form data with field_id => value to machine_name (or name) => value
-    # Look up form_fields to get machine_name
-    form_data =
-      data
-      |> Enum.map(fn {field_id, value} ->
-        # Get form_field to access machine_name
-        form_field =
-          Repo.one(
-            from(ff in FormField,
-              where: ff.form_id == ^form_id and ff.field_id == ^field_id,
-              preload: [:field]
-            )
-          )
-
-        field_identifier =
-          case form_field do
-            %{machine_name: machine_name} when not is_nil(machine_name) ->
-              machine_name
-
-            %{field: %{name: name}} ->
-              name
-
-            _ ->
-              # Fallback: get field name directly
-              field = Repo.get(Field, field_id)
-              (field && field.name) || "field_#{field_id}"
-          end
-
-        {field_identifier, value}
-      end)
-      |> Map.new()
-
-    Enum.flat_map(mappings, fn {content_type_field_name, form_field_name} ->
-      case Map.get(form_data, form_field_name) do
-        nil -> []
-        value -> [{content_type_field_name, value}]
-      end
-    end)
-  end
-
   defp transform_mappings(mappings) do
     Enum.reduce(mappings, %{}, fn mapping, acc ->
       destination_name = mapping.destination["name"]
-      source_name = mapping.source["name"]
+      source_name = mapping.source["machine_name"]
       Map.put(acc, destination_name, source_name)
+    end)
+  end
+
+  defp transform_data(mappings, data) do
+    Enum.reduce(mappings, %{}, fn {_result_key, data_key}, acc ->
+      case Map.get(data, data_key) do
+        nil -> acc
+        value -> Map.put(acc, data_key, value)
+      end
     end)
   end
 
