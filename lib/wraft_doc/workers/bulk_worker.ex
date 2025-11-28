@@ -16,6 +16,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   alias WraftDoc.Notifications.Delivery
   alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDoc.Repo
+  alias WraftDoc.Webhooks.EventTrigger
 
   @impl Oban.Worker
   def perform(%Job{
@@ -107,12 +108,20 @@ defmodule WraftDoc.Workers.BulkWorker do
        ) do
     state = TriggerHistory.states()[:failed]
 
+    error_data = %{
+      info: "Form Mapping Not Complete",
+      message: "Please complete the form mapping and try again.",
+      stage: stage
+    }
+
     trigger =
-      update_trigger_history_state_and_error(trigger, state, %{
-        info: "Form Mapping Not Complete",
-        message: "Please complete the form mapping and try again.",
-        stage: stage
-      })
+      update_trigger_history_state_and_error(trigger, state, error_data)
+
+    # Trigger webhook for pipeline failure
+    Task.start(fn ->
+      trigger = Repo.preload(trigger, :pipeline)
+      EventTrigger.trigger_pipeline_failed(trigger, error_data)
+    end)
 
     Logger.error("Form mapping not complete. Pipeline execution failed.")
     trigger
@@ -124,13 +133,21 @@ defmodule WraftDoc.Workers.BulkWorker do
        ) do
     state = TriggerHistory.states()[:failed]
 
+    error_data = %{
+      info: "Pipeline Not Found",
+      message:
+        "The pipeline you're trying to run does not exist. Please double-check the pipeline name and try again.",
+      stage: stage
+    }
+
     trigger =
-      update_trigger_history_state_and_error(trigger, state, %{
-        info: "Pipeline Not Found",
-        message:
-          "The pipeline you're trying to run does not exist. Please double-check the pipeline name and try again.",
-        stage: stage
-      })
+      update_trigger_history_state_and_error(trigger, state, error_data)
+
+    # Trigger webhook for pipeline failure
+    Task.start(fn ->
+      trigger = Repo.preload(trigger, :pipeline)
+      EventTrigger.trigger_pipeline_failed(trigger, error_data)
+    end)
 
     Logger.error("Pipeline not found. Pipeline execution failed.")
     trigger
@@ -142,13 +159,21 @@ defmodule WraftDoc.Workers.BulkWorker do
        ) do
     state = TriggerHistory.states()[:failed]
 
+    error_data = %{
+      info: "Document Generation Failed",
+      message:
+        "There was an error creating the document instance. Please check the input data and try again.",
+      stage: stage
+    }
+
     trigger =
-      update_trigger_history_state_and_error(trigger, state, %{
-        info: "Document Generation Failed",
-        message:
-          "There was an error creating the document instance. Please check the input data and try again.",
-        stage: stage
-      })
+      update_trigger_history_state_and_error(trigger, state, error_data)
+
+    # Trigger webhook for pipeline failure
+    Task.start(fn ->
+      trigger = Repo.preload(trigger, :pipeline)
+      EventTrigger.trigger_pipeline_failed(trigger, error_data)
+    end)
 
     Logger.error("Instance creation failed. Pipeline execution failed.")
     trigger
@@ -161,12 +186,20 @@ defmodule WraftDoc.Workers.BulkWorker do
        ) do
     state = TriggerHistory.states()[:failed]
 
+    error_data = %{
+      info: "Download Error",
+      message: message,
+      stage: stage
+    }
+
     trigger =
-      update_trigger_history_state_and_error(trigger, state, %{
-        info: "Download Error",
-        message: message,
-        stage: stage
-      })
+      update_trigger_history_state_and_error(trigger, state, error_data)
+
+    # Trigger webhook for pipeline failure
+    Task.start(fn ->
+      trigger = Repo.preload(trigger, :pipeline)
+      EventTrigger.trigger_pipeline_failed(trigger, error_data)
+    end)
 
     Logger.error("Instance creation failed. Pipeline execution failed.")
     trigger
@@ -179,23 +212,45 @@ defmodule WraftDoc.Workers.BulkWorker do
        ) do
     state = TriggerHistory.states()[:failed]
 
+    error_data = %{
+      info: "Invalid JSON Error",
+      message: message,
+      stage: stage
+    }
+
     trigger =
-      update_trigger_history_state_and_error(trigger, state, %{
-        info: "Invalid JSON Error",
-        message: message,
-        stage: stage
-      })
+      update_trigger_history_state_and_error(trigger, state, error_data)
+
+    # Trigger webhook for pipeline failure
+    Task.start(fn ->
+      trigger = Repo.preload(trigger, :pipeline)
+      EventTrigger.trigger_pipeline_failed(trigger, error_data)
+    end)
 
     Logger.error("Invalid JSON error. Pipeline execution failed.")
     trigger
   end
 
   defp handle_exceptions(
-         {:ok, %{trigger: trigger, failed_builds: [], zip_file: zip_file}},
+         {:ok, %{trigger: trigger, failed_builds: [], zip_file: zip_file} = result},
          current_user
        ) do
     state = TriggerHistory.states()[:success]
     trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
+
+    # Prepare pipeline result data for webhook
+    instances = Map.get(result, :instances, [])
+
+    pipeline_result = %{
+      zip_file: zip_file,
+      instances_count: length(instances)
+    }
+
+    # Trigger webhook for pipeline completion
+    Task.start(fn ->
+      trigger = Repo.preload(trigger, :pipeline)
+      EventTrigger.trigger_pipeline_completed(trigger, pipeline_result)
+    end)
 
     Task.start(fn ->
       trigger.creator_id
@@ -217,18 +272,29 @@ defmodule WraftDoc.Workers.BulkWorker do
   end
 
   defp handle_exceptions(
-         {:ok, %{trigger: trigger, failed_builds: failed_builds, zip_file: zip_file}},
+         {:ok, %{trigger: trigger, failed_builds: failed_builds, zip_file: zip_file} = result},
          current_user
        ) do
     state = TriggerHistory.states()[:partially_completed]
 
+    instances = Map.get(result, :instances, [])
+
+    pipeline_result = %{
+      info: "Builds Failed",
+      message: "Some builds failed. Please check the logs for more information.",
+      failed_builds: failed_builds,
+      zip_file: zip_file,
+      instances_count: length(instances)
+    }
+
     trigger =
-      update_trigger_history_state_and_error(trigger, state, %{
-        info: "Builds Failed",
-        message: "Some builds failed. Please check the logs for more information.",
-        failed_builds: failed_builds,
-        zip_file: zip_file
-      })
+      update_trigger_history_state_and_error(trigger, state, pipeline_result)
+
+    # Trigger webhook for partial completion
+    Task.start(fn ->
+      trigger = Repo.preload(trigger, :pipeline)
+      EventTrigger.trigger_pipeline_partially_completed(trigger, pipeline_result)
+    end)
 
     Task.start(fn ->
       trigger.creator_id

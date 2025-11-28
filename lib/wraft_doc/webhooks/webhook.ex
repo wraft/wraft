@@ -15,6 +15,9 @@ defmodule WraftDoc.Webhooks.Webhook do
     "document.comment_added",
     "document.deleted",
     "document.reminder_sent",
+    "pipeline.completed",
+    "pipeline.failed",
+    "pipeline.partially_completed",
     "test"
   ]
 
