@@ -249,6 +249,22 @@ defmodule WraftDoc.Workers.BulkWorker do
     trigger
   end
 
+  defp handle_exceptions(
+         {:error, %PipelineError{error: e, input: trigger, stage: stage}},
+         _current_user
+       ) do
+    state = TriggerHistory.states()[:failed]
+    msg = Exception.message(e)
+
+    Logger.error("Unexpected pipeline error at stage #{stage}: #{msg}")
+
+    update_trigger_history_state_and_error(trigger, state, %{
+      info: "Unexpected Pipeline Error",
+      message: msg,
+      stage: stage
+    })
+  end
+
   # Update state and error of a trigger history
   @spec update_trigger_history_state_and_error(TriggerHistory.t(), integer, map) ::
           TriggerHistory.t()

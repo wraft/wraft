@@ -130,6 +130,24 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     end
   end
 
+  defp convert_node(
+         %{
+           "type" => "smartTableWrapper",
+           "content" => [],
+           "attrs" => %{"tableName" => table_name}
+         } = _node,
+         _opts
+       ) do
+    "[SMART_TABLE_PLACEHOLDER:#{table_name}]"
+  end
+
+  defp convert_node(
+         %{"type" => "smartTableWrapper", "attrs" => %{"tableName" => table_name}},
+         _opts
+       ) do
+    "[SMART_TABLE_PLACEHOLDER:#{table_name}]"
+  end
+
   defp convert_node(%{"type" => "table", "content" => rows} = _table, opts) when is_list(rows) do
     table_data = process_table_structure(rows)
     col_widths = calculate_column_widths(table_data)

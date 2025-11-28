@@ -1868,8 +1868,12 @@ defmodule WraftDoc.Documents do
   end
 
   defp replace_content_title(fields, title) do
-    Enum.reduce(fields, title, fn {k, v}, acc ->
-      WraftDoc.DocConversion.replace_content(k, v, acc)
+    Enum.reduce(fields, title, fn
+      {k, v}, acc when is_binary(k) and is_binary(v) ->
+        WraftDoc.DocConversion.replace_content(k, v, acc)
+
+      _, acc ->
+        acc
     end)
   end
 

@@ -201,6 +201,7 @@ defmodule WraftDoc.Forms do
     end
   end
 
+  # TODO: handle duplicate machine name as incremented.
   defp create_form_field(form, field_type, params) do
     Multi.new()
     |> Multi.run(:field, fn _, _ -> Fields.create_field(field_type, params) end)
@@ -209,6 +210,7 @@ defmodule WraftDoc.Forms do
 
       FormField.changeset(form_field, %{
         order: params["order"],
+        machine_name: format_to_machine_name(params["name"]),
         form_id: form.id,
         field_id: field.id,
         validations: params["validations"],
@@ -224,6 +226,12 @@ defmodule WraftDoc.Forms do
         Logger.error("Form field creation failed in step #{inspect(step)}", error: error)
         :error
     end
+  end
+
+  defp format_to_machine_name(name) do
+    name
+    |> String.downcase()
+    |> String.replace(~r/\s+/, "_")
   end
 
   defp update_form_field(form, field, params) do

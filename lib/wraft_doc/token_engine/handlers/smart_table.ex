@@ -18,7 +18,7 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
   """
   def resolve(token, context) do
     table_name = token.params["tableName"]
-    smart_tables = Map.get(context, "smart_tables", context)
+    smart_tables = Map.get(context, "tables", context)
     data = Map.get(smart_tables, table_name)
 
     {:ok, %{data: data, original_node: token.original_node}}

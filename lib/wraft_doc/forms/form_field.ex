@@ -39,6 +39,10 @@ defmodule WraftDoc.Forms.FormField do
       message: "Order already exists.!",
       name: :form_field_order_field_id_index
     )
+    |> unique_constraint([:form_id, :machine_name],
+      name: :form_machine_name_unique_per_form,
+      message: "Machine name already exists in this form"
+    )
     |> foreign_key_constraint(:form_id, message: "Please enter an existing form")
     |> foreign_key_constraint(:field_id, message: "Please enter a valid field")
   end
