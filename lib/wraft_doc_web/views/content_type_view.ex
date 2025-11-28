@@ -148,11 +148,19 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
   end
 
   def render("field.json", %{field: field}) do
+    {order, validations, machine_name} = extract_content_type_field_attributes(field)
+    required = has_required_validation?(validations)
+    formatted_validations = format_validations(validations)
+
     %{
       id: field.id,
       name: field.name,
       meta: field.meta,
       description: field.description,
+      order: order,
+      required: required,
+      machine_name: machine_name,
+      validations: formatted_validations,
       field_type: render_one(field.field_type, FieldTypeView, "field_type.json", as: :field_type)
     }
   end
@@ -161,5 +169,36 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
     %{
       info: "Documents will be generated soon."
     }
+  end
+
+  defp extract_content_type_field_attributes(field) do
+    case Map.get(field, :content_type_fields) do
+      [%{order: order} = content_type_field | _] when is_integer(order) ->
+        validations = Map.get(content_type_field, :validations, []) || []
+        machine_name = Map.get(content_type_field, :machine_name)
+        {order, validations, machine_name}
+
+      [content_type_field | _] when is_map(content_type_field) ->
+        validations = Map.get(content_type_field, :validations, []) || []
+        machine_name = Map.get(content_type_field, :machine_name)
+        {0, validations, machine_name}
+
+      _ ->
+        {0, [], nil}
+    end
+  end
+
+  defp has_required_validation?(validations) do
+    Enum.any?(validations, fn v ->
+      case v do
+        %{validation: %{rule: "required"}} -> true
+        %{validation: %{"rule" => "required"}} -> true
+        _ -> false
+      end
+    end)
+  end
+
+  defp format_validations(validations) do
+    Enum.map(validations, &%{validation: &1.validation, error_message: &1.error_message})
   end
 end

@@ -115,12 +115,31 @@ defmodule WraftDoc.Search.TypesenseServer do
 
   @impl true
   def handle_cast({:create_document, document}, state) do
-    case Typesense.create_document(document) do
-      {:ok, _result} ->
-        Logger.debug("Document created successfully")
+    try do
+      case Typesense.create_document(document) do
+        {:ok, _result} ->
+          Logger.debug("Document created successfully")
 
-      {:error, reason} ->
-        Logger.warning("Failed to create document: #{inspect(reason)}")
+        {:error, reason} ->
+          Logger.warning("Failed to create document: #{inspect(reason)}")
+      end
+    rescue
+      error ->
+        case error do
+          %Req.TransportError{reason: :econnrefused} ->
+            Logger.warning(
+              "Typesense server unavailable (connection refused) - document creation skipped"
+            )
+
+          _ ->
+            Logger.warning("Typesense create failed with exception: #{inspect(error)}")
+        end
+    catch
+      :exit, reason ->
+        Logger.warning("Typesense create exited: #{inspect(reason)}")
+
+      type, value ->
+        Logger.warning("Typesense create caught #{type}: #{inspect(value)}")
     end
 
     {:noreply, state}
@@ -128,12 +147,31 @@ defmodule WraftDoc.Search.TypesenseServer do
 
   @impl true
   def handle_cast({:update_document, document}, state) do
-    case Typesense.update_document(document) do
-      {:ok, _result} ->
-        Logger.debug("Document updated successfully")
+    try do
+      case Typesense.update_document(document) do
+        {:ok, _result} ->
+          Logger.debug("Document updated successfully")
 
-      {:error, reason} ->
-        Logger.warning("Failed to update document: #{inspect(reason)}")
+        {:error, reason} ->
+          Logger.warning("Failed to update document: #{inspect(reason)}")
+      end
+    rescue
+      error ->
+        case error do
+          %Req.TransportError{reason: :econnrefused} ->
+            Logger.warning(
+              "Typesense server unavailable (connection refused) - document update skipped"
+            )
+
+          _ ->
+            Logger.warning("Typesense update failed with exception: #{inspect(error)}")
+        end
+    catch
+      :exit, reason ->
+        Logger.warning("Typesense update exited: #{inspect(reason)}")
+
+      type, value ->
+        Logger.warning("Typesense update caught #{type}: #{inspect(value)}")
     end
 
     {:noreply, state}
@@ -141,12 +179,31 @@ defmodule WraftDoc.Search.TypesenseServer do
 
   @impl true
   def handle_cast({:delete_document, id, collection_name}, state) do
-    case Typesense.delete_document(id, collection_name) do
-      {:ok, _result} ->
-        Logger.debug("Document deleted successfully")
+    try do
+      case Typesense.delete_document(id, collection_name) do
+        {:ok, _result} ->
+          Logger.debug("Document deleted successfully")
 
-      {:error, reason} ->
-        Logger.warning("Failed to delete document #{id}: #{inspect(reason)}")
+        {:error, reason} ->
+          Logger.warning("Failed to delete document #{id}: #{inspect(reason)}")
+      end
+    rescue
+      error ->
+        case error do
+          %Req.TransportError{reason: :econnrefused} ->
+            Logger.warning(
+              "Typesense server unavailable (connection refused) - document deletion skipped"
+            )
+
+          _ ->
+            Logger.warning("Typesense delete failed with exception: #{inspect(error)}")
+        end
+    catch
+      :exit, reason ->
+        Logger.warning("Typesense delete exited: #{inspect(reason)}")
+
+      type, value ->
+        Logger.warning("Typesense delete caught #{type}: #{inspect(value)}")
     end
 
     {:noreply, state}

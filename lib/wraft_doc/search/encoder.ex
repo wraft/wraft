@@ -45,22 +45,33 @@ end
 
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.ContentTypes.ContentType do
   def to_document(%WraftDoc.ContentTypes.ContentType{} = content_type) do
+    content_type_id = to_string(content_type.id)
+
     %{
-      content_type_id: to_string(content_type.id),
+      id: content_type_id,
+      content_type_id: content_type_id,
       collection_name: "content_type",
-      name: content_type.name,
-      description: content_type.description,
-      color: content_type.color,
-      prefix: content_type.prefix,
-      layout_id: to_string(content_type.layout_id),
-      flow_id: to_string(content_type.flow_id),
-      theme_id: to_string(content_type.theme_id),
-      organisation_id: to_string(content_type.organisation_id) || "",
-      creator_id: to_string(content_type.creator_id),
-      inserted_at:
-        content_type.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
-      updated_at: content_type.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+      name: content_type.name || "",
+      description: content_type.description || "",
+      color: content_type.color || "",
+      prefix: content_type.prefix || "",
+      layout_id: to_string_or_empty(content_type.layout_id),
+      flow_id: to_string_or_empty(content_type.flow_id),
+      theme_id: to_string_or_empty(content_type.theme_id),
+      organisation_id: to_string_or_empty(content_type.organisation_id),
+      creator_id: to_string_or_empty(content_type.creator_id),
+      inserted_at: datetime_to_unix(content_type.inserted_at),
+      updated_at: datetime_to_unix(content_type.updated_at)
     }
+  end
+
+  defp to_string_or_empty(nil), do: ""
+  defp to_string_or_empty(value), do: to_string(value)
+
+  defp datetime_to_unix(datetime) do
+    datetime
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.to_unix()
   end
 end
 

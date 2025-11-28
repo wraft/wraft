@@ -205,11 +205,14 @@ defmodule WraftDoc.Forms do
     Multi.new()
     |> Multi.run(:field, fn _, _ -> Fields.create_field(field_type, params) end)
     |> Multi.insert(:form_field, fn %{field: field} ->
-      FormField.changeset(%FormField{}, %{
+      form_field = %FormField{field: field}
+
+      FormField.changeset(form_field, %{
         order: params["order"],
         form_id: form.id,
         field_id: field.id,
-        validations: params["validations"]
+        validations: params["validations"],
+        machine_name: params["machine_name"]
       })
     end)
     |> Repo.transaction()
@@ -226,26 +229,45 @@ defmodule WraftDoc.Forms do
   defp update_form_field(form, field, params) do
     case get_form_field(form, field) do
       %FormField{} = form_field ->
-        Multi.new()
-        |> Multi.run(:field, fn _, _ -> Fields.update_field(field, params) end)
-        |> Multi.update(:form_field, fn _ ->
-          FormField.update_changeset(form_field, %{
-            validations: params["validations"],
-            order: params["order"]
-          })
-        end)
-        |> Repo.transaction()
-        |> case do
-          {:ok, _} ->
-            :ok
-
-          {:error, step, error, _} ->
-            Logger.error("Form field update failed in step #{inspect(step)}", error: error)
-            :error
-        end
+        update_existing_form_field(form_field, field, params)
 
       error ->
         error
+    end
+  end
+
+  defp update_existing_form_field(form_field, field, params) do
+    form_field = Repo.preload(form_field, :field)
+
+    Multi.new()
+    |> Multi.run(:field, fn _, _ -> Fields.update_field(field, params) end)
+    |> Multi.update(:form_field, fn %{field: updated_field} ->
+      field_for_machine_name = extract_field_for_machine_name(updated_field, form_field, field)
+
+      form_field_with_field = %{form_field | field: field_for_machine_name}
+
+      FormField.update_changeset(form_field_with_field, %{
+        validations: params["validations"],
+        order: params["order"],
+        machine_name: params["machine_name"]
+      })
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} ->
+        :ok
+
+      {:error, step, error, _} ->
+        Logger.error("Form field update failed in step #{inspect(step)}", error: error)
+        :error
+    end
+  end
+
+  defp extract_field_for_machine_name(updated_field, form_field, field) do
+    case updated_field do
+      {:ok, f} -> f
+      {:error, _} -> form_field.field || field
+      f -> f
     end
   end
 
@@ -532,22 +554,48 @@ defmodule WraftDoc.Forms do
     Transform form entry data fields by form mapping
   """
   @spec transform_data_by_mapping(FormMapping.t(), map()) :: map() | {:error, String.t()}
-  def transform_data_by_mapping(%FormMapping{mapping: mappings} = _form_mapping, data) do
+  def transform_data_by_mapping(
+        %FormMapping{mapping: mappings, form_id: form_id} = _form_mapping,
+        data
+      ) do
     mappings
     |> transform_mappings
-    |> transform_data(data)
+    |> transform_data(data, form_id)
     |> Enum.into(%{})
   end
 
   def transform_data_by_mapping(nil, _data), do: {:error, "No mappings found"}
 
-  defp transform_data(mappings, data) do
-    # Convert form data with field_id => value to field_name => value
+  defp transform_data(mappings, data, form_id) do
+    # Convert form data with field_id => value to machine_name (or name) => value
+    # Look up form_fields to get machine_name
     form_data =
       data
       |> Enum.map(fn {field_id, value} ->
-        %{name: field_name} = Repo.get(Field, field_id)
-        {field_name, value}
+        # Get form_field to access machine_name
+        form_field =
+          Repo.one(
+            from(ff in FormField,
+              where: ff.form_id == ^form_id and ff.field_id == ^field_id,
+              preload: [:field]
+            )
+          )
+
+        field_identifier =
+          case form_field do
+            %{machine_name: machine_name} when not is_nil(machine_name) ->
+              machine_name
+
+            %{field: %{name: name}} ->
+              name
+
+            _ ->
+              # Fallback: get field name directly
+              field = Repo.get(Field, field_id)
+              (field && field.name) || "field_#{field_id}"
+          end
+
+        {field_identifier, value}
       end)
       |> Map.new()
 
