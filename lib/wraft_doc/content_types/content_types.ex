@@ -121,12 +121,14 @@ defmodule WraftDoc.ContentTypes do
     validations = build_validations_from_params(params)
     order = Map.get(params, "order", 0)
     machine_name = Map.get(params, "machine_name")
+    meta = Map.get(params, "meta", %{})
 
     ctf
     |> ContentTypeField.update_changeset(%{
       "order" => order,
       "validations" => validations,
-      "machine_name" => machine_name
+      "machine_name" => machine_name,
+      "meta" => meta
     })
     |> Repo.update()
     |> case do
@@ -143,6 +145,7 @@ defmodule WraftDoc.ContentTypes do
   defp create_new_content_type_field(field_type, content_type, params) do
     validations = build_validations_from_params(params)
     machine_name = Map.get(params, "machine_name")
+    meta = Map.get(params, "meta", %{})
 
     Multi.new()
     |> Multi.run(:field, fn _, _ -> Fields.create_field(field_type, params) end)
@@ -152,7 +155,8 @@ defmodule WraftDoc.ContentTypes do
         field_id: field.id,
         order: Map.get(params, "order", 0),
         validations: validations,
-        machine_name: machine_name
+        machine_name: machine_name,
+        meta: meta
       })
     end)
     |> Repo.transaction()

@@ -8,11 +8,12 @@ defmodule WraftDoc.ContentTypes.ContentTypeField do
   import Ecto.Query
   alias WraftDoc.Repo
 
-  @fields [:content_type_id, :field_id, :order, :machine_name]
+  @fields [:content_type_id, :field_id, :order, :machine_name, :meta]
 
   schema "content_type_field" do
     field(:order, :integer, default: 0)
     field(:machine_name, :string)
+    field(:meta, :map, default: %{})
     embeds_many(:validations, Validation, on_replace: :delete)
     belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
     belongs_to(:field, WraftDoc.Fields.Field)

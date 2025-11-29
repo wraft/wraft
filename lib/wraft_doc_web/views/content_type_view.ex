@@ -148,14 +148,19 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
   end
 
   def render("field.json", %{field: field}) do
-    {order, validations, machine_name} = extract_content_type_field_attributes(field)
+    {order, validations, machine_name, content_type_field_meta} =
+      extract_content_type_field_attributes(field)
+
     required = has_required_validation?(validations)
     formatted_validations = format_validations(validations)
+
+    # Merge field.meta with content_type_field.meta, with content_type_field.meta taking precedence
+    merged_meta = Map.merge(field.meta || %{}, content_type_field_meta || %{})
 
     %{
       id: field.id,
       name: field.name,
-      meta: field.meta,
+      meta: merged_meta,
       description: field.description,
       order: order,
       required: required,
@@ -176,15 +181,17 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
       [%{order: order} = content_type_field | _] when is_integer(order) ->
         validations = Map.get(content_type_field, :validations, []) || []
         machine_name = Map.get(content_type_field, :machine_name)
-        {order, validations, machine_name}
+        meta = Map.get(content_type_field, :meta, %{})
+        {order, validations, machine_name, meta}
 
       [content_type_field | _] when is_map(content_type_field) ->
         validations = Map.get(content_type_field, :validations, []) || []
         machine_name = Map.get(content_type_field, :machine_name)
-        {0, validations, machine_name}
+        meta = Map.get(content_type_field, :meta, %{})
+        {0, validations, machine_name, meta}
 
       _ ->
-        {0, [], nil}
+        {0, [], nil, %{}}
     end
   end
 
