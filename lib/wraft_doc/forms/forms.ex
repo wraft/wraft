@@ -201,7 +201,6 @@ defmodule WraftDoc.Forms do
     end
   end
 
-  # TODO: handle duplicate machine name as incremented.
   defp create_form_field(form, field_type, params) do
     Multi.new()
     |> Multi.run(:field, fn _, _ -> Fields.create_field(field_type, params) end)
@@ -210,7 +209,6 @@ defmodule WraftDoc.Forms do
 
       FormField.changeset(form_field, %{
         order: params["order"],
-        machine_name: format_to_machine_name(params["name"]),
         form_id: form.id,
         field_id: field.id,
         validations: params["validations"],
@@ -226,12 +224,6 @@ defmodule WraftDoc.Forms do
         Logger.error("Form field creation failed in step #{inspect(step)}", error: error)
         :error
     end
-  end
-
-  defp format_to_machine_name(name) do
-    name
-    |> String.downcase()
-    |> String.replace(~r/\s+/, "_")
   end
 
   defp update_form_field(form, field, params) do
@@ -388,26 +380,18 @@ defmodule WraftDoc.Forms do
           {:ok, FormEntry.t()} | {:error, list(map)} | {:error, Ecto.Changeset.t()}
   def create_form_entry(
         current_user,
-        %Form{form_fields: fields} = form,
+        %Form{id: form_id, form_fields: fields} = form,
         %{"data" => data} = _params
       ) do
     data_map =
       Enum.reduce(data, %{}, fn %{"field_id" => field_id, "value" => value}, acc ->
-        Map.put(acc, field_id, value)
-      end)
-
-    data_map_with_machine_names =
-      fields
-      |> Enum.filter(fn form_field ->
-        form_field.machine_name != nil && Map.has_key?(data_map, form_field.field_id)
-      end)
-      |> Map.new(fn form_field ->
-        {form_field.machine_name, Map.get(data_map, form_field.field_id)}
+        machine_name_key = get_form_field_machine_name(form_id, field_id)
+        Map.put(acc, machine_name_key, value)
       end)
 
     if check_data_mapping(fields, data) do
       case validate_form_entry(fields, data_map) do
-        [] -> insert_form_entry(current_user, form, data_map_with_machine_names)
+        [] -> insert_form_entry(current_user, form, data_map)
         error_list -> {:error, error_list}
       end
     else
@@ -572,7 +556,7 @@ defmodule WraftDoc.Forms do
   """
   @spec transform_data_by_mapping(FormMapping.t(), map()) :: map() | {:error, String.t()}
   def transform_data_by_mapping(
-        %FormMapping{mapping: mappings, form_id: form_id} = _form_mapping,
+        %FormMapping{mapping: mappings} = _form_mapping,
         data
       ) do
     mappings
@@ -582,21 +566,47 @@ defmodule WraftDoc.Forms do
 
   def transform_data_by_mapping(nil, _data), do: {:error, "No mappings found"}
 
+  defp transform_data(mappings, data) do
+    Enum.reduce(mappings, %{}, fn {_dest, src}, acc ->
+      src = src |> to_string() |> String.trim() |> String.downcase()
+
+      match_key =
+        Enum.find(Map.keys(data), fn key ->
+          key |> to_string() |> String.trim() |> String.downcase() == src
+        end)
+
+      case match_key do
+        nil ->
+          acc
+
+        real_key ->
+          Map.put(acc, real_key, Map.get(data, real_key))
+      end
+    end)
+  end
+
   defp transform_mappings(mappings) do
     Enum.reduce(mappings, %{}, fn mapping, acc ->
       destination_name = mapping.destination["name"]
-      source_name = mapping.source["machine_name"]
+      source_name = mapping.source["name"]
       Map.put(acc, destination_name, source_name)
     end)
   end
 
-  defp transform_data(mappings, data) do
-    Enum.reduce(mappings, %{}, fn {_result_key, data_key}, acc ->
-      case Map.get(data, data_key) do
-        nil -> acc
-        value -> Map.put(acc, data_key, value)
-      end
-    end)
+  def get_form_field_machine_name(form_id, field_id) do
+    query =
+      from(ff in FormField,
+        where: ff.form_id == ^form_id and ff.field_id == ^field_id,
+        preload: [:field]
+      )
+
+    case Repo.one(query) do
+      %{machine_name: machine_name} when not is_nil(machine_name) ->
+        machine_name
+
+      %{field: %{name: name}} when not is_nil(name) ->
+        name
+    end
   end
 
   @doc """
