@@ -425,7 +425,9 @@ defmodule WraftDoc.Forms do
 
   defp validate_single_field(validation, field, data_map) do
     validator_module = Module.concat(Validator, Macro.camelize(validation.validation["rule"]))
-    field_value = Map.get(data_map, field.field_id)
+
+    field_value =
+      Map.get(data_map, field.machine_name)
 
     case validator_module.validate(validation, field_value) do
       {:error, error} ->
@@ -568,11 +570,9 @@ defmodule WraftDoc.Forms do
 
   defp transform_data(mappings, data) do
     Enum.reduce(mappings, %{}, fn {_dest, src}, acc ->
-      src = src |> to_string() |> String.trim() |> String.downcase()
-
       match_key =
         Enum.find(Map.keys(data), fn key ->
-          key |> to_string() |> String.trim() |> String.downcase() == src
+          sanitize_key(key) == sanitize_key(src)
         end)
 
       case match_key do
@@ -631,5 +631,14 @@ defmodule WraftDoc.Forms do
         %{order: Map.get(fields, field_id)}
       )
     end)
+  end
+
+  defp sanitize_key(key) do
+    key
+    |> to_string()
+    |> String.trim()
+    |> String.replace(~r/-+/, "")
+    |> String.replace(~r/\s+/, "_")
+    |> String.replace(~r/_+/, "_")
   end
 end

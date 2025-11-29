@@ -42,12 +42,15 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
     {:ok, "\n" <> table_str <> "\n"}
   end
 
-  @impl true
+  def render(%{data: "", original_node: node}, :prosemirror, _options) do
+    {:ok, node}
+  end
+
   def render(%{data: nil, original_node: node}, :prosemirror, _options) do
     {:ok, node}
   end
 
-  def render(%{data: data, original_node: node}, :prosemirror, _options) do
+  def render(%{data: data, original_node: node}, :prosemirror, _options) when is_map(data) do
     table_node = build_prosemirror_table(data)
 
     {:ok, Map.put(node, "content", [table_node])}
