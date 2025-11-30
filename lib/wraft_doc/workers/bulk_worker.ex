@@ -78,10 +78,13 @@ defmodule WraftDoc.Workers.BulkWorker do
     start_time = Timex.now()
     state = TriggerHistory.states()[:executing]
 
-    trigger
-    |> convert_map_to_trigger_struct()
-    |> trigger_start_update(%{state: state, start_time: start_time})
-    |> WraftDoc.PipelineRunner.call()
+    result =
+      trigger
+      |> convert_map_to_trigger_struct()
+      |> trigger_start_update(%{state: state, start_time: start_time})
+      |> WraftDoc.PipelineRunner.call()
+
+    result
     |> handle_exceptions(current_user)
     |> trigger_end_update()
 
@@ -221,7 +224,6 @@ defmodule WraftDoc.Workers.BulkWorker do
     trigger =
       update_trigger_history_state_and_error(trigger, state, error_data)
 
-    # Trigger webhook for pipeline failure
     Task.start(fn ->
       trigger = Repo.preload(trigger, :pipeline)
       EventTrigger.trigger_pipeline_failed(trigger, error_data)
@@ -238,15 +240,13 @@ defmodule WraftDoc.Workers.BulkWorker do
     state = TriggerHistory.states()[:success]
     trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
 
-    # Prepare pipeline result data for webhook
     instances = Map.get(result, :instances, [])
 
     pipeline_result = %{
-      zip_file: zip_file,
-      instances_count: length(instances)
+      documents_count: length(instances),
+      documents: instances
     }
 
-    # Trigger webhook for pipeline completion
     Task.start(fn ->
       trigger = Repo.preload(trigger, :pipeline)
       EventTrigger.trigger_pipeline_completed(trigger, pipeline_result)
@@ -272,28 +272,49 @@ defmodule WraftDoc.Workers.BulkWorker do
   end
 
   defp handle_exceptions(
-         {:ok, %{trigger: trigger, failed_builds: failed_builds, zip_file: zip_file} = result},
+         {:ok, %{trigger: trigger, failed_builds: failed_builds} = result},
          current_user
-       ) do
+       )
+       when is_list(failed_builds) and length(failed_builds) > 0 do
     state = TriggerHistory.states()[:partially_completed]
 
-    instances = Map.get(result, :instances, [])
+    all_instances = Map.get(result, :instances, [])
+    zip_file = Map.get(result, :zip_file)
+
+    failed_instance_ids =
+      failed_builds
+      |> Enum.map(&Map.get(&1, :doc_failed_instance_id))
+      |> Enum.reject(&is_nil/1)
+      |> MapSet.new()
+
+    successful_instances =
+      Enum.filter(all_instances, fn
+        %{failed: true} -> false
+        x when is_struct(x) -> not MapSet.member?(failed_instance_ids, x.id)
+        _ -> false
+      end)
+
+    error_data_for_db = %{
+      info: "Builds Failed",
+      message: "Some builds failed. Please check the logs for more information.",
+      failed_builds_count: length(failed_builds),
+      documents_count: length(successful_instances),
+      zip_file: zip_file
+    }
 
     pipeline_result = %{
       info: "Builds Failed",
       message: "Some builds failed. Please check the logs for more information.",
       failed_builds: failed_builds,
-      zip_file: zip_file,
-      instances_count: length(instances)
+      documents_count: length(successful_instances),
+      documents: successful_instances
     }
 
-    trigger =
-      update_trigger_history_state_and_error(trigger, state, pipeline_result)
+    trigger = update_trigger_history_state_and_error(trigger, state, error_data_for_db)
 
-    # Trigger webhook for partial completion
     Task.start(fn ->
-      trigger = Repo.preload(trigger, :pipeline)
-      EventTrigger.trigger_pipeline_partially_completed(trigger, pipeline_result)
+      trigger_with_pipeline = Repo.preload(trigger, :pipeline)
+      EventTrigger.trigger_pipeline_partially_completed(trigger_with_pipeline, pipeline_result)
     end)
 
     Task.start(fn ->

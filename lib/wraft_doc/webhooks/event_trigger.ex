@@ -329,17 +329,21 @@ defmodule WraftDoc.Webhooks.EventTrigger do
     pipeline_info =
       case status do
         "completed" ->
+          instances = Map.get(result_data, :documents, [])
+
           Map.merge(pipeline_info, %{
-            zip_file: Map.get(result_data, :zip_file),
-            instances_count: Map.get(result_data, :instances_count),
+            documents_count: Map.get(result_data, :documents_count),
+            documents: build_instances_payload(instances),
             success: true
           })
 
         "partially_completed" ->
+          instances = Map.get(result_data, :documents, [])
+
           Map.merge(pipeline_info, %{
-            zip_file: Map.get(result_data, :zip_file),
             failed_builds: ensure_json_serializable(Map.get(result_data, :failed_builds, [])),
-            instances_count: Map.get(result_data, :instances_count),
+            documents_count: Map.get(result_data, :documents_count),
+            documents: build_instances_payload(instances),
             success: false
           })
 
@@ -382,4 +386,29 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   defp format_datetime(%NaiveDateTime{} = dt), do: NaiveDateTime.to_iso8601(dt)
   defp format_datetime(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
   defp format_datetime(dt), do: dt
+
+  # Build instances payload for pipeline webhooks
+  defp build_instances_payload(instances) when is_list(instances) do
+    instances
+    |> Enum.map(&build_instance_summary/1)
+    |> ensure_json_serializable()
+  end
+
+  defp build_instances_payload(_), do: []
+
+  # Build a summary of an instance for webhook payload
+  defp build_instance_summary(%Instance{} = instance) do
+    %{
+      id: instance.id,
+      instance_id: instance.instance_id,
+      title: get_in(instance.serialized, ["title"]) || "Untitled Document",
+      content_type: get_content_type_info(instance),
+      state: get_state_info(instance),
+      organisation_id: instance.organisation_id,
+      created_at: format_datetime(instance.inserted_at),
+      updated_at: format_datetime(instance.updated_at)
+    }
+  end
+
+  defp build_instance_summary(_), do: %{}
 end
