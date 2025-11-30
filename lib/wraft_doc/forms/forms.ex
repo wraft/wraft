@@ -380,13 +380,12 @@ defmodule WraftDoc.Forms do
           {:ok, FormEntry.t()} | {:error, list(map)} | {:error, Ecto.Changeset.t()}
   def create_form_entry(
         current_user,
-        %Form{id: form_id, form_fields: fields} = form,
+        %Form{form_fields: fields} = form,
         %{"data" => data} = _params
       ) do
     data_map =
       Enum.reduce(data, %{}, fn %{"field_id" => field_id, "value" => value}, acc ->
-        machine_name_key = get_form_field_machine_name(form_id, field_id)
-        Map.put(acc, machine_name_key, value)
+        Map.put(acc, field_id, value)
       end)
 
     if check_data_mapping(fields, data) do
@@ -558,29 +557,52 @@ defmodule WraftDoc.Forms do
   """
   @spec transform_data_by_mapping(FormMapping.t(), map()) :: map() | {:error, String.t()}
   def transform_data_by_mapping(
-        %FormMapping{mapping: mappings} = _form_mapping,
+        %FormMapping{mapping: mappings, form_id: form_id} = _form_mapping,
         data
       ) do
     mappings
     |> transform_mappings
-    |> transform_data(data)
+    |> transform_data(data, form_id)
+    |> Enum.into(%{})
   end
 
   def transform_data_by_mapping(nil, _data), do: {:error, "No mappings found"}
 
-  defp transform_data(mappings, data) do
-    Enum.reduce(mappings, %{}, fn {_dest, src}, acc ->
-      match_key =
-        Enum.find(Map.keys(data), fn key ->
-          sanitize_key(key) == sanitize_key(src)
-        end)
+  defp transform_data(mappings, data, form_id) do
+    # Convert form data with field_id => value to machine_name (or name) => value
+    # Look up form_fields to get machine_name
+    form_data =
+      data
+      |> Enum.map(fn {field_id, value} ->
+        form_field =
+          Repo.one(
+            from(ff in FormField,
+              where: ff.form_id == ^form_id and ff.field_id == ^field_id,
+              preload: [:field]
+            )
+          )
 
-      case match_key do
-        nil ->
-          acc
+        field_identifier =
+          case form_field do
+            %{machine_name: machine_name} when not is_nil(machine_name) ->
+              machine_name
 
-        real_key ->
-          Map.put(acc, real_key, Map.get(data, real_key))
+            %{field: %{name: name}} ->
+              name
+
+            _ ->
+              field = Repo.get(Field, field_id)
+              (field && field.name) || "field_#{field_id}"
+          end
+
+        {field_identifier, value}
+      end)
+      |> Map.new()
+
+    Enum.flat_map(mappings, fn {content_type_field_name, form_field_name} ->
+      case Map.get(form_data, form_field_name) do
+        nil -> []
+        value -> [{content_type_field_name, value}]
       end
     end)
   end
@@ -591,22 +613,6 @@ defmodule WraftDoc.Forms do
       source_name = mapping.source["name"]
       Map.put(acc, destination_name, source_name)
     end)
-  end
-
-  def get_form_field_machine_name(form_id, field_id) do
-    query =
-      from(ff in FormField,
-        where: ff.form_id == ^form_id and ff.field_id == ^field_id,
-        preload: [:field]
-      )
-
-    case Repo.one(query) do
-      %{machine_name: machine_name} when not is_nil(machine_name) ->
-        machine_name
-
-      %{field: %{name: name}} when not is_nil(name) ->
-        name
-    end
   end
 
   @doc """
@@ -631,14 +637,5 @@ defmodule WraftDoc.Forms do
         %{order: Map.get(fields, field_id)}
       )
     end)
-  end
-
-  defp sanitize_key(key) do
-    key
-    |> to_string()
-    |> String.trim()
-    |> String.replace(~r/-+/, "")
-    |> String.replace(~r/\s+/, "_")
-    |> String.replace(~r/_+/, "_")
   end
 end

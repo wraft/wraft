@@ -20,6 +20,8 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
     table_name = token.params["tableName"]
     data = Map.get(context, table_name)
 
+    data = validate_table_map(data)
+
     {:ok, %{data: data, original_node: token.original_node}}
   end
 
@@ -62,55 +64,70 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
   defp build_prosemirror_table(%{"headers" => headers, "rows" => rows} = data) do
     footer = Map.get(data, "footer", nil)
 
-    header_row = %{
-      "type" => "tableRow",
-      "content" =>
-        Enum.map(headers, fn text ->
-          %{
-            "type" => "tableHeaderCell",
-            "attrs" => %{"colspan" => 1, "rowspan" => 1, "colwidth" => nil},
-            "content" => [
-              %{
-                "type" => "paragraph",
-                "content" => [%{"type" => "text", "text" => text}]
-              }
-            ]
-          }
-        end)
-    }
+    header_row = [
+      %{
+        "type" => "tableRow",
+        "content" => Enum.map(headers, &pm_smart_header_cell/1)
+      }
+    ]
 
-    rows_pm = Enum.map(rows, &pm_row/1)
+    rows_pm = Enum.map(rows, &pm_smart_row/1)
 
     footer_pm =
       case footer do
         nil -> []
         [] -> []
-        footer_values -> [pm_row(footer_values)]
+        values -> [pm_smart_row(values)]
       end
 
     %{
       "type" => "table",
-      "content" => [header_row] ++ rows_pm ++ footer_pm
+      "content" => header_row ++ rows_pm ++ footer_pm
     }
   end
 
-  defp pm_cell(text) do
+  defp pm_smart_header_cell(text) do
     %{
       "type" => "tableCell",
-      "attrs" => %{"colspan" => 1, "rowspan" => 1, "colwidth" => nil},
+      "attrs" => %{"alignment" => nil, "colspan" => 1, "colwidth" => nil, "rowspan" => 1},
       "content" => [
         %{
           "type" => "paragraph",
-          "content" => [%{"type" => "text", "text" => text}]
+          "content" => [
+            %{
+              "type" => "text",
+              "marks" => [%{"type" => "bold"}],
+              "text" => text
+            }
+          ]
         }
       ]
     }
   end
 
-  defp pm_row(cells) do
+  defp pm_smart_row(cells) do
     %{
       "type" => "tableRow",
-      "content" => Enum.map(cells, &pm_cell/1)
+      "content" =>
+        Enum.map(cells, fn cell_text ->
+          %{
+            "type" => "tableCell",
+            "attrs" => %{"alignment" => nil, "colspan" => 1, "colwidth" => nil, "rowspan" => 1},
+            "content" => [
+              %{
+                "type" => "paragraph",
+                "content" => [%{"type" => "text", "text" => to_string(cell_text)}]
+              }
+            ]
+          }
+        end)
     }
   end
+
+  defp validate_table_map(%{"type" => "table", "rows" => _rows} = data)
+       when is_map(data) do
+    data
+  end
+
+  defp validate_table_map(_), do: nil
 end
