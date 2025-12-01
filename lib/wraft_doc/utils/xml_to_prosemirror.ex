@@ -359,6 +359,14 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
     }
   end
 
+  defp handle_element_by_type("smartTableWrapper", attrs, content, opts) do
+    %{
+      "type" => "smartTableWrapper",
+      "attrs" => convert_smart_table_wrapper_attrs(attrs),
+      "content" => convert_content_list(content, opts)
+    }
+  end
+
   defp handle_element_by_type("tr", _attrs, content, opts) do
     %{
       "type" => "tableRow",
@@ -703,6 +711,11 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
       "resizable" => true,
       "class" => Map.get(converted, "class", "")
     }
+  end
+
+  defp convert_smart_table_wrapper_attrs(attrs) do
+    converted = convert_element_attrs(attrs)
+    %{"tableName" => Map.get(converted, "tableName", "")}
   end
 
   defp convert_table_cell_attrs(attrs) do
