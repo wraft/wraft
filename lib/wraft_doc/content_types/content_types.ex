@@ -40,7 +40,7 @@ defmodule WraftDoc.ContentTypes do
           [layout: [:asset, frame: [:asset]]],
           :flow,
           {:theme, :assets},
-          {:fields, :field_type},
+          {:fields, [:field_type, :content_type_fields]},
           creator: [:profile]
         ])
 
@@ -69,7 +69,7 @@ defmodule WraftDoc.ContentTypes do
     |> Fields.get_field_type()
     |> case do
       %FieldType{} = field_type ->
-        create_content_type_field(field_type, content_type, params)
+        create_or_update_content_type_field(field_type, content_type, params)
 
       _ ->
         nil
@@ -78,15 +78,85 @@ defmodule WraftDoc.ContentTypes do
 
   defp create_field_for_content_type(_content_type, _field), do: nil
 
-  defp create_content_type_field(field_type, content_type, params) do
+  defp create_or_update_content_type_field(field_type, content_type, params) do
     params = Map.merge(params, %{"organisation_id" => content_type.organisation_id})
+    field_id = resolve_field_id(params, content_type.organisation_id)
+    existing_content_type_field = find_existing_content_type_field(content_type.id, field_id)
+
+    case existing_content_type_field do
+      %ContentTypeField{} = ctf ->
+        update_existing_content_type_field(ctf, params)
+
+      _ ->
+        create_new_content_type_field(field_type, content_type, params)
+    end
+  end
+
+  defp resolve_field_id(params, organisation_id) do
+    case Map.get(params, "field_id") do
+      nil ->
+        field_name = Map.get(params, "name")
+        get_field_id_by_name(field_name, organisation_id)
+
+      id ->
+        id
+    end
+  end
+
+  defp find_existing_content_type_field(content_type_id, field_id) do
+    if field_id do
+      get_content_type_field(%{
+        "content_type_id" => content_type_id,
+        "field_id" => field_id
+      })
+    else
+      nil
+    end
+  end
+
+  defp update_existing_content_type_field(ctf, params) do
+    # Preload field association for machine_name generation
+    ctf = Repo.preload(ctf, :field)
+
+    validations = build_validations_from_params(params)
+    order = Map.get(params, "order", 0)
+    machine_name = Map.get(params, "machine_name")
+    meta = Map.get(params, "meta", %{})
+
+    ctf
+    |> ContentTypeField.update_changeset(%{
+      "order" => order,
+      "validations" => validations,
+      "machine_name" => machine_name,
+      "meta" => meta
+    })
+    |> Repo.update()
+    |> case do
+      {:ok, updated_ctf} ->
+        Logger.debug("Updated ContentTypeField order: #{inspect(updated_ctf.order)}")
+        :ok
+
+      {:error, changeset} = error ->
+        Logger.error("Failed to update ContentTypeField", error: inspect(changeset.errors))
+        error
+    end
+  end
+
+  defp create_new_content_type_field(field_type, content_type, params) do
+    validations = build_validations_from_params(params)
+    machine_name = Map.get(params, "machine_name")
+    meta = Map.get(params, "meta", %{})
 
     Multi.new()
     |> Multi.run(:field, fn _, _ -> Fields.create_field(field_type, params) end)
     |> Multi.insert(:content_type_field, fn %{field: field} ->
       ContentTypeField.changeset(%ContentTypeField{}, %{
         content_type_id: content_type.id,
-        field_id: field.id
+        field_id: field.id,
+        order: Map.get(params, "order", 0),
+        validations: validations,
+        machine_name: machine_name,
+        meta: meta
       })
     end)
     |> Repo.transaction()
@@ -95,10 +165,77 @@ defmodule WraftDoc.ContentTypes do
         :ok
 
       {:error, step, error, _} ->
-        Logger.error("Content type field creation failed in step #{inspect(step)}", error: error)
+        Logger.error("Content type field creation failed in step #{inspect(step)}",
+          error: error
+        )
+
         :error
     end
   end
+
+  defp build_validations_from_params(params) do
+    validations = Map.get(params, "validations") || []
+    required = Map.get(params, "required", false)
+    has_required_validation = has_required_validation?(validations)
+
+    cond do
+      required && !has_required_validation ->
+        add_required_validation(validations)
+
+      !required && has_required_validation ->
+        remove_required_validation(validations)
+
+      true ->
+        validations
+    end
+  end
+
+  defp has_required_validation?(validations) do
+    Enum.any?(validations, &required_validation?/1)
+  end
+
+  defp required_validation?(v) do
+    case v do
+      %{"validation" => %{"rule" => "required"}} -> true
+      %{validation: %{rule: "required"}} -> true
+      %{"rule" => "required"} -> true
+      _ -> false
+    end
+  end
+
+  defp add_required_validation(validations) do
+    required_validation = %{
+      "validation" => %{
+        "rule" => "required",
+        "value" => true
+      },
+      "error_message" => "can't be blank"
+    }
+
+    [required_validation | validations]
+  end
+
+  defp remove_required_validation(validations) do
+    Enum.reject(validations, &required_validation?/1)
+  end
+
+  defp get_field_id_by_name(name, org_id) when is_binary(name) do
+    alias WraftDoc.Fields.Field
+
+    query =
+      from(f in Field,
+        where: f.name == ^name and f.organisation_id == ^org_id,
+        limit: 1,
+        select: f.id
+      )
+
+    case Repo.one(query) do
+      id when is_binary(id) -> id
+      _ -> nil
+    end
+  end
+
+  defp get_field_id_by_name(_, _), do: nil
 
   @doc """
   List all content types.
@@ -114,7 +251,7 @@ defmodule WraftDoc.ContentTypes do
       [layout: [:asset, frame: [:asset]]],
       :flow,
       {:theme, :assets},
-      {:fields, :field_type},
+      {:fields, [:field_type, :content_type_fields]},
       creator: [:profile]
     ])
     |> Repo.paginate(params)
@@ -153,7 +290,7 @@ defmodule WraftDoc.ContentTypes do
         {:layout, [frame: [:asset]]},
         :creator,
         {:theme, :assets},
-        [{:fields, :field_type}, {:flow, :states}]
+        [{:fields, [:field_type, :content_type_fields]}, {:flow, :states}]
       ])
     end
   end
@@ -172,7 +309,7 @@ defmodule WraftDoc.ContentTypes do
           [layout: [:asset, frame: [:asset]]],
           :creator,
           {:theme, :assets},
-          [{:flow, :states}, {:fields, :field_type}]
+          [{:flow, :states}, {:fields, [:field_type, :content_type_fields]}]
         ])
 
       _ ->
@@ -196,7 +333,7 @@ defmodule WraftDoc.ContentTypes do
     |> Repo.preload([
       [layout: [:asset, frame: [:asset]]],
       :creator,
-      [{:flow, :states}, {:fields, :field_type}]
+      [{:flow, :states}, {:fields, [:field_type, :content_type_fields]}]
     ])
   end
 

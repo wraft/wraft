@@ -19,12 +19,20 @@ defmodule WraftDocWeb.Api.V1.FormView do
     }
   end
 
-  def render("field.json", %{form_field: %{field: field, validations: validations, order: order}})
+  def render("field.json", %{
+        form_field: %{
+          field: field,
+          validations: validations,
+          order: order,
+          machine_name: machine_name
+        }
+      })
       when is_map(field) do
     %{
       id: field.id,
       order: order,
       name: field.name,
+      machine_name: machine_name,
       meta: field.meta,
       validations:
         Enum.map(validations, &%{validation: &1.validation, error_message: &1.error_message}),

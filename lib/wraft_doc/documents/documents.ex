@@ -1845,7 +1845,12 @@ defmodule WraftDoc.Documents do
         title_template: title_temp,
         serialized: %{"data" => serialized_data}
       }) do
-    updated_content = replace_content_holder(Jason.decode!(serialized_data), field_with_values)
+    updated_content =
+      WraftDoc.TokenEngine.replace(
+        Jason.decode!(serialized_data),
+        :prosemirror,
+        field_with_values
+      )
 
     raw = ProsemirrorToMarkdown.convert(updated_content)
 
@@ -1860,28 +1865,13 @@ defmodule WraftDoc.Documents do
     %{"raw" => raw, "serialized" => serialized}
   end
 
-  # Private
-  defp replace_content_holder(
-         %{"type" => "holder", "attrs" => %{"name" => name} = attrs} = content,
-         data
-       ) do
-    case Map.get(data, name) do
-      nil -> content
-      named_value -> %{content | "attrs" => %{attrs | "named" => named_value}}
-    end
-  end
-
-  defp replace_content_holder(%{"type" => _type, "content" => content} = node, data)
-       when is_list(content) do
-    updated_content = Enum.map(content, fn item -> replace_content_holder(item, data) end)
-    %{node | "content" => updated_content}
-  end
-
-  defp replace_content_holder(other, _data), do: other
-
   defp replace_content_title(fields, title) do
-    Enum.reduce(fields, title, fn {k, v}, acc ->
-      WraftDoc.DocConversion.replace_content(k, v, acc)
+    Enum.reduce(fields, title, fn
+      {k, v}, acc when is_binary(k) and is_binary(v) ->
+        WraftDoc.DocConversion.replace_content(k, v, acc)
+
+      _, acc ->
+        acc
     end)
   end
 
