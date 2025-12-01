@@ -5,6 +5,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   require Logger
 
   alias WraftDoc.Documents.Instance
+  alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDoc.Webhooks
 
   @doc """
@@ -141,6 +142,78 @@ defmodule WraftDoc.Webhooks.EventTrigger do
     :ok
   end
 
+  @doc """
+  Trigger pipeline.completed event when a pipeline execution completes successfully.
+  """
+  @spec trigger_pipeline_completed(TriggerHistory.t(), map()) :: :ok
+  def trigger_pipeline_completed(
+        %TriggerHistory{pipeline: %{organisation_id: org_id}} = trigger_history,
+        pipeline_result
+      ) do
+    payload = build_pipeline_payload(trigger_history, pipeline_result, "completed")
+    Webhooks.trigger_webhooks("pipeline.completed", org_id, payload)
+
+    Logger.info(
+      "Triggered pipeline.completed webhook for pipeline id #{trigger_history.pipeline_id}"
+    )
+  end
+
+  def trigger_pipeline_completed(%TriggerHistory{} = trigger_history, _pipeline_result) do
+    Logger.warning(
+      "Cannot trigger pipeline.completed webhook: pipeline not preloaded for trigger_history #{trigger_history.id}"
+    )
+
+    :ok
+  end
+
+  @doc """
+  Trigger pipeline.failed event when a pipeline execution fails.
+  """
+  @spec trigger_pipeline_failed(TriggerHistory.t(), map()) :: :ok
+  def trigger_pipeline_failed(
+        %TriggerHistory{pipeline: %{organisation_id: org_id}} = trigger_history,
+        error_data
+      ) do
+    payload = build_pipeline_payload(trigger_history, error_data, "failed")
+    Webhooks.trigger_webhooks("pipeline.failed", org_id, payload)
+
+    Logger.info(
+      "Triggered pipeline.failed webhook for pipeline id #{trigger_history.pipeline_id}"
+    )
+  end
+
+  def trigger_pipeline_failed(%TriggerHistory{} = trigger_history, _error_data) do
+    Logger.warning(
+      "Cannot trigger pipeline.failed webhook: pipeline not preloaded for trigger_history #{trigger_history.id}"
+    )
+
+    :ok
+  end
+
+  @doc """
+  Trigger pipeline.partially_completed event when a pipeline execution partially completes.
+  """
+  @spec trigger_pipeline_partially_completed(TriggerHistory.t(), map()) :: :ok
+  def trigger_pipeline_partially_completed(
+        %TriggerHistory{pipeline: %{organisation_id: org_id}} = trigger_history,
+        pipeline_result
+      ) do
+    payload = build_pipeline_payload(trigger_history, pipeline_result, "partially_completed")
+    Webhooks.trigger_webhooks("pipeline.partially_completed", org_id, payload)
+
+    Logger.info(
+      "Triggered pipeline.partially_completed webhook for pipeline id #{trigger_history.pipeline_id}"
+    )
+  end
+
+  def trigger_pipeline_partially_completed(%TriggerHistory{} = trigger_history, _pipeline_result) do
+    Logger.warning(
+      "Cannot trigger pipeline.partially_completed webhook: pipeline not preloaded for trigger_history #{trigger_history.id}"
+    )
+
+    :ok
+  end
+
   # Private helper function to build consistent document payload
   defp build_document_payload(%Instance{} = instance, action) do
     %{
@@ -235,4 +308,107 @@ defmodule WraftDoc.Webhooks.EventTrigger do
 
     put_in(base_payload, [:document, :reminder], reminder_info)
   end
+
+  # Build payload for pipeline events with JSON support
+  defp build_pipeline_payload(%TriggerHistory{} = trigger_history, result_data, status) do
+    # Ensure all data is JSON-serializable
+    pipeline_info = %{
+      pipeline_id: trigger_history.pipeline_id,
+      trigger_history_id: trigger_history.id,
+      status: status,
+      input_data: ensure_json_serializable(trigger_history.data),
+      state: TriggerHistory.get_state(trigger_history),
+      start_time: format_datetime(trigger_history.start_time),
+      end_time: format_datetime(trigger_history.end_time),
+      duration_ms: trigger_history.duration,
+      created_at: format_datetime(trigger_history.inserted_at),
+      updated_at: format_datetime(trigger_history.updated_at)
+    }
+
+    # Add pipeline-specific result data
+    pipeline_info =
+      case status do
+        "completed" ->
+          instances = Map.get(result_data, :documents, [])
+
+          Map.merge(pipeline_info, %{
+            documents_count: Map.get(result_data, :documents_count),
+            documents: build_instances_payload(instances),
+            success: true
+          })
+
+        "partially_completed" ->
+          instances = Map.get(result_data, :documents, [])
+
+          Map.merge(pipeline_info, %{
+            failed_builds: ensure_json_serializable(Map.get(result_data, :failed_builds, [])),
+            documents_count: Map.get(result_data, :documents_count),
+            documents: build_instances_payload(instances),
+            success: false
+          })
+
+        "failed" ->
+          Map.merge(pipeline_info, %{
+            error: ensure_json_serializable(Map.get(result_data, :error, %{})),
+            error_message: Map.get(result_data, :message, "Pipeline execution failed"),
+            success: false
+          })
+
+        _ ->
+          pipeline_info
+      end
+
+    %{pipeline: pipeline_info}
+  end
+
+  # Helper to ensure data is JSON-serializable (convert atoms, dates, etc.)
+  defp ensure_json_serializable(data) when is_map(data) do
+    data
+    |> Enum.map(fn
+      {k, v} when is_atom(k) -> {Atom.to_string(k), ensure_json_serializable(v)}
+      {k, v} -> {k, ensure_json_serializable(v)}
+    end)
+    |> Enum.into(%{})
+  end
+
+  defp ensure_json_serializable(data) when is_list(data) do
+    Enum.map(data, &ensure_json_serializable/1)
+  end
+
+  defp ensure_json_serializable(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
+  defp ensure_json_serializable(%NaiveDateTime{} = dt), do: NaiveDateTime.to_iso8601(dt)
+  defp ensure_json_serializable(%Date{} = d), do: Date.to_iso8601(d)
+  defp ensure_json_serializable(data) when is_atom(data), do: Atom.to_string(data)
+  defp ensure_json_serializable(data), do: data
+
+  # Format datetime for JSON
+  defp format_datetime(nil), do: nil
+  defp format_datetime(%NaiveDateTime{} = dt), do: NaiveDateTime.to_iso8601(dt)
+  defp format_datetime(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
+  defp format_datetime(dt), do: dt
+
+  # Build instances payload for pipeline webhooks
+  defp build_instances_payload(instances) when is_list(instances) do
+    instances
+    |> Enum.map(&build_instance_summary/1)
+    |> ensure_json_serializable()
+  end
+
+  defp build_instances_payload(_), do: []
+
+  # Build a summary of an instance for webhook payload
+  defp build_instance_summary(%Instance{} = instance) do
+    %{
+      id: instance.id,
+      instance_id: instance.instance_id,
+      title: get_in(instance.serialized, ["title"]) || "Untitled Document",
+      content_type: get_content_type_info(instance),
+      state: get_state_info(instance),
+      organisation_id: instance.organisation_id,
+      created_at: format_datetime(instance.inserted_at),
+      updated_at: format_datetime(instance.updated_at)
+    }
+  end
+
+  defp build_instance_summary(_), do: %{}
 end
