@@ -204,7 +204,7 @@ defmodule WraftDoc.PipelineRunnerTest do
 
       response = PipelineRunner.build_failed?(%{builds: builds})
       error_codes = Enum.map(response.failed_builds, fn x -> x.error_code end)
-      failed_instance_ids = Enum.map(response.failed_builds, fn x -> x.doc_failed_instance_id end)
+      failed_instance_ids = Enum.map(response.failed_builds, fn x -> x.doc_failed_document_id end)
 
       refute 0 in error_codes
       refute nil in response.failed_builds

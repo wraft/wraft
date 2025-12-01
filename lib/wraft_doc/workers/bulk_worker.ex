@@ -283,7 +283,7 @@ defmodule WraftDoc.Workers.BulkWorker do
 
     failed_instance_ids =
       failed_builds
-      |> Enum.map(&Map.get(&1, :doc_failed_instance_id))
+      |> Enum.map(&Map.get(&1, :doc_failed_document_id))
       |> Enum.reject(&is_nil/1)
       |> MapSet.new()
 

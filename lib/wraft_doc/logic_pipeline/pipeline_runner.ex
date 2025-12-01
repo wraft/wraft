@@ -176,7 +176,7 @@ defmodule WraftDoc.PipelineRunner do
       |> Enum.map(fn
         {%{failed: true, error: error_message, content_type_id: c_type_id}, index} ->
           %{
-            doc_failed_instance_id: nil,
+            doc_failed_document_id: nil,
             error_code: 1,
             error_message: "Instance creation failed: #{error_message}",
             stage_index: index,
@@ -185,7 +185,7 @@ defmodule WraftDoc.PipelineRunner do
 
         {other, index} ->
           %{
-            doc_failed_instance_id: nil,
+            doc_failed_document_id: nil,
             error_code: 1,
             error_message: "Instance creation failed: #{inspect(other, limit: 1)}",
             stage_index: index
@@ -228,7 +228,7 @@ defmodule WraftDoc.PipelineRunner do
       |> Enum.map(fn
         {%{failed: true, error: error_message, content_type_id: c_type_id}, index} ->
           %{
-            doc_failed_instance_id: nil,
+            doc_failed_document_id: nil,
             error_code: 1,
             error_message: "Instance creation failed: #{error_message}",
             stage_index: index,
@@ -237,7 +237,7 @@ defmodule WraftDoc.PipelineRunner do
 
         {other, index} ->
           %{
-            doc_failed_instance_id: nil,
+            doc_failed_document_id: nil,
             error_code: 1,
             error_message: "Instance creation failed: #{inspect(other, limit: 1)}",
             stage_index: index
@@ -263,7 +263,7 @@ defmodule WraftDoc.PipelineRunner do
 
         %{instance: instance, response: {error_message, error_code}} ->
           %{
-            doc_failed_instance_id: instance.id,
+            doc_failed_document_id: instance.id,
             error_code: error_code,
             error_message: error_message
           }
@@ -284,7 +284,7 @@ defmodule WraftDoc.PipelineRunner do
   def zip_builds(%{instances: instances, failed_builds: failed_builds} = input) do
     failed_instance_ids =
       failed_builds
-      |> Enum.map(&Map.get(&1, :doc_failed_instance_id))
+      |> Enum.map(&Map.get(&1, :doc_failed_document_id))
       |> Enum.reject(&is_nil/1)
       |> MapSet.new()
 
