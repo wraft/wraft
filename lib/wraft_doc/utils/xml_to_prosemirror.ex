@@ -715,7 +715,7 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
 
   defp convert_smart_table_wrapper_attrs(attrs) do
     converted = convert_element_attrs(attrs)
-    %{"tableName" => Map.get(converted, "tableName", "")}
+    %{"tableName" => Map.get(converted, "tableName", ""), "isSmartTable" => true}
   end
 
   defp convert_table_cell_attrs(attrs) do

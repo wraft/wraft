@@ -538,6 +538,26 @@ defmodule WraftDoc.ContentTypes do
     end
   end
 
+  @doc """
+  get the machine name of the content type field
+  """
+  @spec get_content_type_field_machine_name(Ecto.UUID.t()) :: String.t()
+  def get_content_type_field_machine_name(field_id) do
+    ContentTypeField
+    |> Repo.get_by(field_id: field_id)
+    |> case do
+      %ContentTypeField{machine_name: machine_name} when not is_nil(machine_name) ->
+        machine_name
+
+      %ContentTypeField{field: %{name: name}} ->
+        name
+
+      _ ->
+        field = Repo.get(Field, field_id)
+        (field && field.name) || "field_#{field_id}"
+    end
+  end
+
   # def create_content_type_role(content_id, params) do
   #   content_type = get_content_type(content_id)
 

@@ -6,6 +6,7 @@ defmodule WraftDoc.Forms do
 
   alias Ecto.Multi
   alias WraftDoc.Account.User
+  alias WraftDoc.ContentTypes
   alias WraftDoc.Fields
   alias WraftDoc.Fields.Field
   alias WraftDoc.Fields.FieldType
@@ -609,7 +610,9 @@ defmodule WraftDoc.Forms do
 
   defp transform_mappings(mappings) do
     Enum.reduce(mappings, %{}, fn mapping, acc ->
-      destination_name = mapping.destination["name"]
+      destination_name =
+        ContentTypes.get_content_type_field_machine_name(mapping.destination["id"])
+
       source_name = mapping.source["name"]
       Map.put(acc, destination_name, source_name)
     end)
