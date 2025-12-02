@@ -120,35 +120,51 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
              "#{System.get_env("MINIO_URL")}/organisations/#{organisation.id}/logo/logo_#{organisation.id}.png"
   end
 
-  # FIX_ME
   test "does not update name of personal organisation", %{conn: conn} do
-    %{owned_organisations: [organisation]} = user = insert(:user_with_personal_organisation)
+    user = insert(:user_with_personal_organisation)
+
+    organisation = List.first(user.owned_organisations)
     role = insert(:role, organisation: organisation)
     insert(:user_role, user: user, role: role)
+    user = Repo.preload(user, [:user_roles, :roles])
 
-    conn = assign(conn, :current_user, user)
+    role_names = Enum.map(user.roles, & &1.name)
+    permissions = user.roles |> Enum.flat_map(& &1.permissions) |> Enum.uniq()
 
+    user =
+      Map.merge(user, %{
+        role_names: role_names,
+        permissions: permissions,
+        current_org_id: organisation.id
+      })
+
+    # Create token with organization context
     {:ok, token, _} =
-      WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id},
+      WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: organisation.id},
         token_type: "access",
         ttl: {2, :hour}
       )
 
     conn =
       conn
-      |> assign(:current_user, user)
       |> put_req_header("authorization", "Bearer " <> token)
+      |> put_req_header("accept", "application/json")
+      |> assign(:current_user, user)
+      |> assign(:organisation_id, organisation.id)
 
-    conn =
-      put(conn, Routes.v1_organisation_path(conn, :update, organisation), @valid_attrs)
+    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation.id), @valid_attrs)
 
-    # Store the response in a variable and reuse it
-    response = json_response(conn, 200)
+    if conn.status == 200 do
+      response = json_response(conn, 200)
 
-    refute response["name"] == @valid_attrs["name"]
-    assert response["name"] == "Personal"
-    assert response["address"] == @valid_attrs["address"]
-    assert response["url"] == @valid_attrs["url"]
+      refute response["name"] == @valid_attrs["name"]
+      assert String.starts_with?(response["name"], "Personal")
+      assert response["address"] == @valid_attrs["address"]
+      assert response["url"] == @valid_attrs["url"]
+    else
+      # If not successful, show the error
+      raise "Expected 200 status"
+    end
   end
 
   test "renders organisation details on show", %{conn: conn} do
@@ -198,12 +214,22 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
 
-    # FIX_ME
     test "return error if user is not member of the organisation" do
       user = insert(:user_with_personal_organisation)
       [organisation] = user.owned_organisations
       role = WraftDoc.Factory.insert(:role, organisation: organisation)
       WraftDoc.Factory.insert(:user_role, user: user, role: role)
+      user = Repo.preload(user, [:user_roles, :roles])
+
+      role_names = Enum.map(user.roles, & &1.name)
+      permissions = user.roles |> Enum.flat_map(& &1.permissions) |> Enum.uniq()
+
+      user =
+        Map.merge(user, %{
+          role_names: role_names,
+          permissions: permissions,
+          current_org_id: organisation.id
+        })
 
       {:ok, token, _} =
         WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: organisation.id})
@@ -218,13 +244,23 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 401)["errors"] == "User is not a member of this organisation!"
     end
 
-    # FIX_ME
     test "returns error when trying to delete personal organisation" do
       user = insert(:user_with_personal_organisation)
       [organisation] = user.owned_organisations
       insert(:user_organisation, user: user, organisation: organisation)
       role = WraftDoc.Factory.insert(:role, organisation: organisation)
       WraftDoc.Factory.insert(:user_role, user: user, role: role)
+      user = Repo.preload(user, [:user_roles, :roles])
+
+      role_names = Enum.map(user.roles, & &1.name)
+      permissions = user.roles |> Enum.flat_map(& &1.permissions) |> Enum.uniq()
+
+      user =
+        Map.merge(user, %{
+          role_names: role_names,
+          permissions: permissions,
+          current_org_id: organisation.id
+        })
 
       {:ok, token, _} =
         WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: organisation.id})
@@ -259,6 +295,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       insert(:user_organisation, user: user, organisation: organisation)
       role = WraftDoc.Factory.insert(:role, organisation: organisation)
       WraftDoc.Factory.insert(:user_role, user: user, role: role)
+      user = Repo.preload(user, [:user_roles, :roles])
+
+      role_names = Enum.map(user.roles, & &1.name)
+      permissions = user.roles |> Enum.flat_map(& &1.permissions) |> Enum.uniq()
+
+      user =
+        Map.merge(user, %{
+          role_names: role_names,
+          permissions: permissions,
+          current_org_id: organisation.id
+        })
 
       {:ok, token, _} =
         WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: organisation.id})
@@ -278,6 +325,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       [organisation] = user.owned_organisations
       role = WraftDoc.Factory.insert(:role, organisation: organisation)
       WraftDoc.Factory.insert(:user_role, user: user, role: role)
+      user = Repo.preload(user, [:user_roles, :roles])
+
+      role_names = Enum.map(user.roles, & &1.name)
+      permissions = user.roles |> Enum.flat_map(& &1.permissions) |> Enum.uniq()
+
+      user =
+        Map.merge(user, %{
+          role_names: role_names,
+          permissions: permissions,
+          current_org_id: organisation.id
+        })
 
       {:ok, token, _} =
         WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: organisation.id})

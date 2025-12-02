@@ -1506,7 +1506,7 @@ defmodule WraftDoc.DocumentTest do
       %{id: d_temp_id} = insert(:data_template)
       mapping = %{test: "map"}
       file = Plug.Upload.random_file!("test")
-      tmp_file_source = "temp/bulk_build_source/" <> file
+      tmp_file_source = "temp/bulk_build_source/" <> Path.basename(file)
 
       count_before =
         Oban.Job

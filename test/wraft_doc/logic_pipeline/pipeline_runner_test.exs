@@ -109,10 +109,12 @@ defmodule WraftDoc.PipelineRunnerTest do
           stages: [{:content_type, :fields}, :data_template, :state, :form_mapping]
         )
 
+      user = insert(:user)
+
       trigger =
         insert(:trigger_history,
           pipeline: pipeline,
-          creator: nil,
+          creator: user,
           data: %{
             "#{content_type_field_1.field.id}" => "John Doe",
             "#{content_type_field_2.field.id}" => "John Doe Jr."
@@ -131,7 +133,7 @@ defmodule WraftDoc.PipelineRunnerTest do
       assert response.trigger == trigger
       assert instances =~ content_type1.name
       assert instances =~ content_type2.name
-      assert instance.creator_id == nil
+      assert instance.creator_id == user.id
     end
   end
 

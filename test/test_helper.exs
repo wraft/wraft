@@ -1,6 +1,9 @@
 ExUnit.start(formatters: [ExUnit.CLIFormatter, Bureaucrat.Formatter])
 
-# Set SQL sandbox mode before starting the application
+# Start only your main application
+{:ok, _} = Application.ensure_all_started(:wraft_doc)
+
+# Set SQL sandbox mode after starting the application
 case Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, :manual) do
   :ok ->
     :ok
@@ -9,14 +12,7 @@ case Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, :manual) do
     IO.warn("SQL Sandbox not available: #{inspect(reason)}")
 end
 
-# Start only your main application
-{:ok, _} = Application.ensure_all_started(:wraft_doc)
-
-# Mock definitions
-if Code.ensure_loaded?(Mox) do
-  Mox.defmock(ExAwsMock, for: ExAws.Behaviour)
-  Mox.defmock(WraftDoc.Client.RazorpayMock, for: WraftDoc.Client.Razorpay.Behaviour)
-end
+# Mock definitions are in test/support/mocks.ex
 
 # Bureaucrat setup
 Bureaucrat.start(

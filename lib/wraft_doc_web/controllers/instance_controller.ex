@@ -1304,7 +1304,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
       conn
       |> Plug.Conn.assign(:audit_log_message, audit_message)
-      |> render("approve_or_reject.json", %{instance: instance})
+      |> render("approve_or_reject.json", %{instance: approved_instance})
     end
   end
 
