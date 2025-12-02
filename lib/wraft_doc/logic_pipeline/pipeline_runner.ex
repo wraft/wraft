@@ -20,6 +20,7 @@ defmodule WraftDoc.PipelineRunner do
   check(:form_mapping_exists?, error_message: :form_mapping_not_complete)
   step(:create_instances)
   check(:instances_created?, error_message: :instance_failed)
+  step(:approve_instances)
   step(:build)
   step(:build_failed?)
   step(:zip_builds)
@@ -136,6 +137,26 @@ defmodule WraftDoc.PipelineRunner do
       end)
 
     successful_count > 0
+  end
+
+  @doc """
+  Approve all instances.
+  """
+  @spec approve_instances(map()) :: map()
+  def approve_instances(%{instances: instances, user: user} = input) do
+    approved_instances =
+      Enum.map(instances, fn instance ->
+        try do
+          Documents.approve_instance(user, instance)
+          instance
+        rescue
+          e ->
+            error_message = Exception.message(e)
+            %{instance: instance, error: error_message}
+        end
+      end)
+
+    Map.put(input, :approved_instances, approved_instances)
   end
 
   @doc """
