@@ -142,6 +142,35 @@ defmodule WraftDoc.Documents do
     end
   end
 
+  def create_instance(
+        %{id: c_id, prefix: prefix, type: type, organisation_id: organisation_id} = c_type,
+        _state,
+        params
+      ) do
+    instance_id = create_instance_id(c_id, prefix)
+
+    params =
+      Map.merge(params, %{
+        "instance_id" => instance_id,
+        "allowed_users" => [params["creator_id"]],
+        "organisation_id" => organisation_id
+      })
+
+    c_type
+    |> build_assoc(:instances, document_type: type)
+    |> Instance.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, content} ->
+        Task.start_link(fn -> create_or_update_counter(c_type) end)
+        Task.start_link(fn -> create_instance_approval_systems(c_type, content) end)
+        Repo.preload(content, [:content_type, :state])
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
   @doc """
   Create a new instance.
   """
@@ -1727,7 +1756,7 @@ defmodule WraftDoc.Documents do
         }
       ) do
     File.mkdir_p("temp/bulk_build_source/")
-    dest_path = "temp/bulk_build_source/#{filename}"
+    dest_path = Path.join("temp/bulk_build_source/", Path.basename(filename))
     System.cmd("cp", [path, dest_path])
 
     create_bulk_job(%{

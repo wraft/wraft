@@ -61,8 +61,9 @@ defmodule WraftDoc.Factory do
 
   def user_factory do
     %User{
-      name: "wrafts user",
-      email: "#{Base.encode16(:crypto.strong_rand_bytes(10), case: :lower)}@wmail.com",
+      name: sequence(:user_name, &"wrafts user #{&1}"),
+      email:
+        "#{Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)}#{System.system_time(:millisecond)}#{:erlang.phash2(self())}#{Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)}@wmail.com",
       email_verify: true,
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
@@ -73,11 +74,14 @@ defmodule WraftDoc.Factory do
   end
 
   def user_with_personal_organisation_factory do
-    unique_email = "#{Base.encode16(:crypto.strong_rand_bytes(10), case: :lower)}@wmail.com"
-    organisation = insert(:organisation, name: "Personal", email: unique_email)
+    unique_email =
+      "#{Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)}#{System.system_time(:millisecond)}#{:erlang.phash2(self())}#{Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)}@wmail.com"
+
+    organisation =
+      insert(:organisation, name: "Personal", email: unique_email, creator_id: nil, owner_id: nil)
 
     %User{
-      name: "wrafts user",
+      name: sequence(:personal_user, &"wrafts user #{&1}"),
       email: unique_email,
       email_verify: true,
       password: "encrypt",
@@ -107,14 +111,14 @@ defmodule WraftDoc.Factory do
 
   def organisation_factory do
     %Organisation{
-      name: sequence(:name, &"organisation-#{&1}"),
-      legal_name: sequence(:legal_name, &"Legal name-#{&1}"),
-      address: sequence(:address, &"#{&1} th cross #{&1} th building"),
-      gstin: sequence(:gstin, &"32AASDGGDGDDGDG#{&1}"),
-      phone: sequence(:phone, &"985222332#{&1}"),
-      # Add unique integer
-      email: "#{Base.encode16(:crypto.strong_rand_bytes(10), case: :lower)}@gmail.com",
-      url: sequence(:url, &"acborg#{&1}@profile.com")
+      name: sequence(:org_name, &"organisation-#{&1}"),
+      legal_name: sequence(:org_legal_name, &"Legal name-#{&1}"),
+      address: sequence(:org_address, &"#{&1} th cross #{&1} th building"),
+      gstin: sequence(:org_gstin, &"32AASDGGDGDDGDG#{&1}"),
+      phone: sequence(:org_phone, &"985222332#{&1}"),
+      email:
+        "#{Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)}#{System.system_time(:millisecond)}#{:erlang.phash2(self())}#{Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)}@gmail.com",
+      url: sequence(:org_url, &"acborg#{&1}@profile.com")
     }
   end
 

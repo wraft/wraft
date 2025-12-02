@@ -8,26 +8,27 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
   alias WraftDoc.Repo
   import WraftDoc.Factory
 
+  @valid_attrs %{name: "Test Role", description: "Test description"}
+  @invalid_attrs %{name: "", description: "Test"}
+
   describe "create/2" do
-    # TODO - Test update success case
-    # test "create role with valid attrs", %{conn: conn} do
-    #   count_before = Role |> Repo.all() |> length()
-    #   conn = post(conn, Routes.v1_role_path(conn, :create, @valid_attrs))
-    #   count_after = Role |> Repo.all() |> length()
-    #   assert json_response(conn, 200)["name"] == @valid_attrs.name
-    #   assert count_before + 1 == count_after
-    # end
+    test "create role with valid attrs", %{conn: conn} do
+      count_before = Role |> Repo.all() |> length()
+      conn = post(conn, Routes.v1_role_path(conn, :create, @valid_attrs))
+      count_after = Role |> Repo.all() |> length()
+      assert json_response(conn, 200)["name"] == @valid_attrs.name
+      assert count_before + 1 == count_after
+    end
 
-    # TODO - Test update invalid case
-    # test "does not create role with invalid attrs", %{conn: conn} do
-    #   count_before = Role |> Repo.all() |> length()
+    test "does not create role with invalid attrs", %{conn: conn} do
+      count_before = Role |> Repo.all() |> length()
 
-    #   conn = post(conn, Routes.v1_role_path(conn, :create, @invalid_attrs))
-    #   count_after = Role |> Repo.all() |> length()
+      conn = post(conn, Routes.v1_role_path(conn, :create, @invalid_attrs))
+      count_after = Role |> Repo.all() |> length()
 
-    #   assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
-    #   assert count_before == count_after
-    # end
+      assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
+      assert count_before == count_after
+    end
   end
 
   test "show all the role with the content type", %{conn: conn} do
@@ -93,18 +94,64 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
     end
   end
 
+  # FIX_ME
   describe "update/2" do
-    # TODO - Test success response
-    # TODO - Test failure response
-    # TODO -> Role does not belong to the user's organisation
+    test "update role with valid attrs", %{conn: conn} do
+      user = conn.assigns.current_user
+
+      role =
+        insert(:role, name: "update_valid", organisation: List.first(user.owned_organisations))
+
+      conn = put(conn, Routes.v1_role_path(conn, :update, role.id, @valid_attrs))
+      assert json_response(conn, 200)["name"] == @valid_attrs.name
+    end
+
+    # FIX_ME
+    test "does not update role with invalid attrs", %{conn: conn} do
+      user = conn.assigns.current_user
+
+      role =
+        insert(:role, name: "update_invalid", organisation: List.first(user.owned_organisations))
+
+      conn = put(conn, Routes.v1_role_path(conn, :update, role.id, @invalid_attrs))
+      assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
+    end
+
+    test "returns error when role does not belong to user's organisation", %{conn: conn} do
+      role = insert(:role)
+      conn = put(conn, Routes.v1_role_path(conn, :update, role.id, @valid_attrs))
+      assert json_response(conn, 404) == "Not Found"
+    end
   end
 
+  # FIX_ME
   describe "assign_role/2" do
-    # TODO - Test the success response
-    # TODO - Test the failure response
-    # 1 When the user doesn't belong to current user's current organisation
-    # 2 Role doesn't belong to current user's current organisation
-    # 3 Changeset errors when inserting a user_role
+    test "assigns role to user successfully", %{conn: conn} do
+      organisation = List.first(conn.assigns.current_user.owned_organisations)
+      role = insert(:role, name: "assign_role", organisation: organisation)
+      user = insert(:user)
+      insert(:user_organisation, user: user, organisation: organisation)
+      conn = post(conn, Routes.v1_role_path(conn, :assign_role, user.id, role.id))
+
+      assert json_response(conn, 200)["info"] ==
+               "Assigned the given role to the user successfully.!"
+    end
+
+    test "returns error when user does not belong to current user's organisation", %{conn: conn} do
+      role = insert(:role)
+      user = insert(:user)
+      conn = post(conn, Routes.v1_role_path(conn, :assign_role, user.id, role.id))
+      assert json_response(conn, 404) == "Not Found"
+    end
+
+    test "returns error when role does not belong to current user's organisation", %{conn: conn} do
+      organisation = List.first(conn.assigns.current_user.owned_organisations)
+      role = insert(:role)
+      user = insert(:user)
+      insert(:user_organisation, user: user, organisation: organisation)
+      conn = post(conn, Routes.v1_role_path(conn, :assign_role, user.id, role.id))
+      assert json_response(conn, 404) == "Not Found"
+    end
   end
 
   describe "unassign_role/2" do
