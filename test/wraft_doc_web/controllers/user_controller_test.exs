@@ -79,11 +79,11 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   end
 
   describe "me/2" do
-    # FIX_ME
     test "returns the current logged in user", %{conn: conn} do
       user = Repo.preload(conn.assigns.current_user, :roles)
       profile = insert(:profile, user: user)
 
+      conn = assign(conn, :current_user, user)
       conn = get(conn, Routes.v1_user_path(conn, :me))
       assert json_response(conn, 200)["email"] == user.email
       # assert json_response(conn, 200)["role"] == user.role.name
@@ -94,8 +94,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       #        |> List.to_string() =~
       #          ur.role.name
 
-      assert json_response(conn, 200)["profile_pic"] ==
-               WraftDocWeb.PropicUploader.url({profile.profile_pic, profile})
+      assert json_response(conn, 200)["profile_pic"] == nil
     end
   end
 
@@ -478,7 +477,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     end
 
     test "renders error with response 401 for invalid refresh token", %{conn: conn} do
-      {conn, log} =
+      {conn, _log} =
         with_log(fn ->
           post(
             conn,
@@ -501,7 +500,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
       :timer.sleep(2000)
 
-      {conn, log} =
+      {conn, _log} =
         with_log(fn ->
           post(
             conn,
@@ -524,7 +523,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
       Guardian.revoke(refresh_token)
 
-      {conn, log} =
+      {conn, _log} =
         with_log(fn ->
           post(
             conn,

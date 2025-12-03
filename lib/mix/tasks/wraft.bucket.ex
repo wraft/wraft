@@ -16,16 +16,7 @@ defmodule Mix.Tasks.Wraft.Bucket do
 
   @requirements ["app.start"]
   def run(_) do
-    # Skip bucket operations in test environment
-    if Mix.env() == :test do
-      Logger.info("Skipping bucket operations in test environment")
-    else
-      bucket = System.get_env("MINIO_BUCKET", "wraft")
-      ensure_bucket_exists(bucket)
-    end
-  end
-
-  defp ensure_bucket_exists(bucket) do
+    bucket = System.get_env("MINIO_BUCKET", "wraft")
     Logger.info("Checking if bucket '#{bucket}' exists...")
 
     case Utils.bucket_exists?(bucket) do
@@ -33,20 +24,16 @@ defmodule Mix.Tasks.Wraft.Bucket do
         Logger.info("Bucket '#{bucket}' already exists.")
 
       false ->
-        create_bucket(bucket)
-    end
-  end
+        Logger.info("Creating bucket '#{bucket}'...")
 
-  defp create_bucket(bucket) do
-    Logger.info("Creating bucket '#{bucket}'...")
+        case Utils.create_bucket(bucket) do
+          {:ok, _} ->
+            Logger.info("Bucket '#{bucket}' created successfully.")
 
-    case Utils.create_bucket(bucket) do
-      {:ok, _} ->
-        Logger.info("Bucket '#{bucket}' created successfully.")
-
-      {:error, error} ->
-        Logger.error("Failed to create bucket '#{bucket}': #{inspect(error)}")
-        raise "Failed to create bucket '#{bucket}'"
+          {:error, error} ->
+            Logger.error("Failed to create bucket '#{bucket}': #{inspect(error)}")
+            raise "Failed to create bucket '#{bucket}'"
+        end
     end
   end
 end

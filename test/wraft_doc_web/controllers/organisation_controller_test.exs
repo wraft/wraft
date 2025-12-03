@@ -669,7 +669,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
       response = json_response(conn, 200)
 
-      # Check only the fields we care about
       assert response["email"] == "test@test.com"
       assert response["organisation"]["id"] == organisation.id
       assert response["organisation"]["name"] == organisation.name

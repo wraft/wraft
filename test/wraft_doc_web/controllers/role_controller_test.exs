@@ -94,7 +94,6 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
     end
   end
 
-  # FIX_ME
   describe "update/2" do
     test "update role with valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
@@ -106,7 +105,6 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
       assert json_response(conn, 200)["name"] == @valid_attrs.name
     end
 
-    # FIX_ME
     test "does not update role with invalid attrs", %{conn: conn} do
       user = conn.assigns.current_user
 
@@ -124,7 +122,6 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
     end
   end
 
-  # FIX_ME
   describe "assign_role/2" do
     test "assigns role to user successfully", %{conn: conn} do
       organisation = List.first(conn.assigns.current_user.owned_organisations)

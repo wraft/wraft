@@ -12,7 +12,6 @@ defmodule WraftDoc.FeatureFlagsTest do
       organisation = insert(:organisation)
 
       refute FeatureFlags.enabled?(:ai_features, organisation)
-      # Use existing feature
       refute FeatureFlags.enabled?(:repository, organisation)
     end
 
@@ -25,11 +24,9 @@ defmodule WraftDoc.FeatureFlagsTest do
     test "returns true for enabled features" do
       organisation = insert(:organisation)
 
-      # FIX: Handle the tuple return value
       {:ok, true} = FeatureFlags.enable(:ai_features, organisation)
 
       assert FeatureFlags.enabled?(:ai_features, organisation)
-      # Use existing feature
       refute FeatureFlags.enabled?(:repository, organisation)
     end
   end
@@ -53,11 +50,9 @@ defmodule WraftDoc.FeatureFlagsTest do
     test "disables an enabled feature for an organisation" do
       organisation = insert(:organisation)
 
-      # FIX: Handle the tuple return value
       {:ok, true} = FeatureFlags.enable(:ai_features, organisation)
       assert FeatureFlags.enabled?(:ai_features, organisation)
 
-      # FIX: Handle the tuple return value for disable too
       {:ok, false} = FeatureFlags.disable(:ai_features, organisation)
       refute FeatureFlags.enabled?(:ai_features, organisation)
     end
@@ -75,10 +70,8 @@ defmodule WraftDoc.FeatureFlagsTest do
 
       assert is_list(features)
       assert :ai_features in features
-      # Use features that actually exist
       assert :repository in features
       assert :document_extraction in features
-      # Remove :google_drive_integration if it doesn't exist in your implementation
     end
   end
 
@@ -92,9 +85,7 @@ defmodule WraftDoc.FeatureFlagsTest do
     test "returns list of enabled features" do
       organisation = insert(:organisation)
 
-      # FIX: Handle tuple return values
       {:ok, true} = FeatureFlags.enable(:ai_features, organisation)
-      # Use existing feature
       {:ok, true} = FeatureFlags.enable(:repository, organisation)
 
       enabled = FeatureFlags.enabled_features(organisation)
@@ -119,7 +110,6 @@ defmodule WraftDoc.FeatureFlagsTest do
     test "returns only disabled features when some are enabled" do
       organisation = insert(:organisation)
 
-      # FIX: Handle tuple return value
       {:ok, true} = FeatureFlags.enable(:ai_features, organisation)
 
       disabled = FeatureFlags.disabled_features(organisation)
@@ -133,10 +123,8 @@ defmodule WraftDoc.FeatureFlagsTest do
   describe "bulk_enable/2" do
     test "enables multiple features at once" do
       organisation = insert(:organisation)
-      # FIX: Use features that actually exist
       features = [:ai_features, :repository]
 
-      # FIX: Handle tuple return value if bulk_enable returns one
       result = FeatureFlags.bulk_enable(features, organisation)
       assert :ok == result or match?({:ok, _}, result)
 
@@ -149,17 +137,14 @@ defmodule WraftDoc.FeatureFlagsTest do
   describe "bulk_disable/2" do
     test "disables multiple features at once" do
       organisation = insert(:organisation)
-      # FIX: Use features that actually exist
       features = [:ai_features, :repository]
 
-      # First enable them
       result = FeatureFlags.bulk_enable(features, organisation)
       assert :ok == result or match?({:ok, _}, result)
 
       assert FeatureFlags.enabled?(:ai_features, organisation)
       assert FeatureFlags.enabled?(:repository, organisation)
 
-      # Then disable them
       result = FeatureFlags.bulk_disable(features, organisation)
       assert :ok == result or match?({:ok, _}, result)
 
@@ -186,14 +171,12 @@ defmodule WraftDoc.FeatureFlagsTest do
     test "returns map of all features with their status" do
       organisation = insert(:organisation)
 
-      # FIX: Handle tuple return value
       {:ok, true} = FeatureFlags.enable(:ai_features, organisation)
 
       features_map = FeatureFlags.get_organization_features(organisation)
 
       assert is_map(features_map)
       assert features_map[:ai_features] == true
-      # Use existing feature
       assert features_map[:repository] == false
     end
   end
@@ -203,7 +186,6 @@ defmodule WraftDoc.FeatureFlagsTest do
       _org1 = insert(:organisation)
       _org2 = insert(:organisation)
 
-      # FIX: Handle tuple return value
       {:ok, true} = FeatureFlags.enable_globally(:ai_features)
 
       assert FeatureFlags.enabled_globally?(:ai_features)
@@ -212,11 +194,9 @@ defmodule WraftDoc.FeatureFlagsTest do
     test "enabled_globally?/1 checks global feature status" do
       refute FeatureFlags.enabled_globally?(:ai_features)
 
-      # FIX: Handle tuple return value
       {:ok, true} = FeatureFlags.enable_globally(:ai_features)
       assert FeatureFlags.enabled_globally?(:ai_features)
 
-      # FIX: Handle tuple return value
       {:ok, false} = FeatureFlags.disable_globally(:ai_features)
       refute FeatureFlags.enabled_globally?(:ai_features)
     end
@@ -227,7 +207,6 @@ defmodule WraftDoc.FeatureFlagsTest do
       org1 = insert(:organisation)
       org2 = insert(:organisation)
 
-      # FIX: Handle tuple return value
       {:ok, true} = FeatureFlags.enable(:ai_features, org1)
 
       assert FeatureFlags.enabled?(:ai_features, org1)

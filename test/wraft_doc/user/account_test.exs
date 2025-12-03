@@ -770,13 +770,18 @@ defmodule WraftDoc.AccountTest do
     end
   end
 
+  # FIX_M#
   describe "send_password_reset_mail/1" do
     test "creates email background job for valid token" do
       auth_token = insert(:auth_token, token_type: "password_verify")
 
       {:ok, job} = Account.send_password_reset_mail(auth_token)
 
-      assert job.args == %{email: auth_token.user.email, name: "wrafts user", token: "token"}
+      assert job.args == %{
+               email: auth_token.user.email,
+               name: auth_token.user.name,
+               token: auth_token.value
+             }
 
       assert_enqueued(
         worker: EmailWorker,

@@ -48,7 +48,6 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
   end
 
   describe "GET /permissions" do
-    # FIX_ME
     test "returns all the permissions grouped by resource", %{conn: conn} do
       conn = get(conn, Routes.v1_permission_path(conn, :index))
       json = json_response(conn, 200)
@@ -65,17 +64,14 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
           end
         )
 
-      # Check that all expected resources are present (ignore extra ones)
       Enum.each(@expected_resources, fn expected_resource ->
         assert expected_resource in resources,
                "Expected resource #{expected_resource} not found in: #{inspect(Enum.sort(resources))}"
       end)
 
-      # Get expected permissions from CSV
       expected_permissions = all_permissions()
       actual_permissions = Enum.sort(permissions)
 
-      # Check that all API permissions are in the CSV (skip test permissions)
       Enum.each(actual_permissions, fn actual_perm ->
         unless String.contains?(actual_perm.name, "test") do
           assert actual_perm in expected_permissions,
@@ -90,7 +86,6 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
       conn = get(conn, Routes.v1_permission_path(conn, :resource_index))
       resources = json_response(conn, 200)
 
-      # Check that all expected resources are present (ignore extra ones like "Test Permission")
       Enum.each(@expected_resources, fn expected_resource ->
         assert expected_resource in resources,
                "Expected resource #{expected_resource} not found in: #{inspect(Enum.sort(resources))}"
@@ -98,7 +93,6 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
     end
   end
 
-  # Private
   defp all_permissions do
     "priv/repo/data/rbac/permissions.csv"
     |> File.stream!()

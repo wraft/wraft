@@ -1456,7 +1456,6 @@ defmodule WraftDoc.DocumentTest do
 
     @tag :skip
     test "returns error changeset on invalid attrs" do
-      # Use the factory instead of manual user creation to handle constraints properly
       user = insert(:user)
 
       instance = insert(:instance, creator: user)
@@ -1604,13 +1603,11 @@ defmodule WraftDoc.DocumentTest do
     test "Same as add_build_history/3, but creator will not be stored." do
       user = insert(:user)
 
-      # FIX: Use creator_id instead of user_id
       build_history = build(:build_history, creator_id: user.id)
 
       params =
         build_history
         |> Map.from_struct()
-        # Remove fields that can't be set
         |> Map.drop([:id, :inserted_at, :updated_at])
 
       instance = insert(:instance, creator: user)
@@ -1633,14 +1630,12 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "generate_chart/1" do
-    # it has to test with real data
     test "Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create" do
       block =
         :block
         |> insert()
         |> Map.from_struct()
 
-      # bb = %{"dataset" => "dataset", "api_route" => "api_route", "endpoint" => "blocks_api"}
       generate_chart = Documents.generate_chart(block)
       assert is_map(generate_chart)
     end
@@ -1648,7 +1643,6 @@ defmodule WraftDoc.DocumentTest do
 
   describe "generate_tex_chart/1" do
     test "Generate tex code for the chart" do
-      # data = %{"dataset" => %{}, "btype" => "gantt"}
       data2 = %{"dataset" => @update_valid_attrs["dataset"]}
 
       dd = Documents.generate_tex_chart(data2)
