@@ -24,7 +24,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
   }
 
   describe "index/2" do
-    # FIX_ME
     test "lists all API keys for user's organisation", %{conn: conn} do
       user = conn.assigns.current_user
       _api_key_1 = insert(:api_key, organisation_id: user.current_org_id, name: "Key 1")
@@ -56,7 +55,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
   end
 
   describe "show/2" do
-    # FIX_ME
     test "shows an API key from user's organisation", %{conn: conn} do
       user = conn.assigns.current_user
       api_key = insert(:api_key, organisation_id: user.current_org_id, name: "Test Key")
@@ -70,7 +68,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       refute Map.has_key?(response, "key")
     end
 
-    # FIX_ME
     test "returns 404 for API key from different organisation", %{conn: conn} do
       other_org = insert(:organisation)
       api_key = insert(:api_key, organisation_id: other_org.id)
@@ -134,7 +131,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       assert json_response(conn, 422)["errors"] != nil
     end
 
-    # FIX_ME
     test "returns error for duplicate name in organisation", %{conn: conn} do
       user = conn.assigns.current_user
       insert(:api_key, organisation_id: user.current_org_id, name: "Duplicate")
@@ -146,7 +142,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
   end
 
   describe "update/2" do
-    # FIX_ME
     test "updates API key with valid attributes", %{conn: conn} do
       user = conn.assigns.current_user
       api_key = insert(:api_key, organisation_id: user.current_org_id, name: "Old Name")
@@ -158,7 +153,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       assert response["rate_limit"] == 2000
     end
 
-    # FIX_ME
     test "does not return the key on update", %{conn: conn} do
       user = conn.assigns.current_user
       api_key = insert(:api_key, organisation_id: user.current_org_id)
@@ -169,7 +163,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       refute Map.has_key?(response, "key")
     end
 
-    # FIX_ME
     test "returns error with invalid attributes", %{conn: conn} do
       user = conn.assigns.current_user
       api_key = insert(:api_key, organisation_id: user.current_org_id)
@@ -180,7 +173,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       assert json_response(conn, 422)["errors"] != nil
     end
 
-    # FIX_ME
     test "returns 404 for API key from different organisation", %{conn: conn} do
       other_org = insert(:organisation)
       api_key = insert(:api_key, organisation_id: other_org.id)
@@ -192,7 +184,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
   end
 
   describe "delete/2" do
-    # FIX_ME
     test "deletes an API key", %{conn: conn} do
       user = conn.assigns.current_user
       api_key = insert(:api_key, organisation_id: user.current_org_id)
@@ -206,7 +197,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       assert Repo.get(ApiKey, api_key.id) == nil
     end
 
-    # FIX_ME
     test "returns 404 for API key from different organisation", %{conn: conn} do
       other_org = insert(:organisation)
       api_key = insert(:api_key, organisation_id: other_org.id)
@@ -218,7 +208,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
   end
 
   describe "toggle_status/2" do
-    # FIX_ME
     test "toggles API key from active to inactive", %{conn: conn} do
       user = conn.assigns.current_user
       api_key = insert(:api_key, organisation_id: user.current_org_id, is_active: true)
@@ -229,7 +218,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       assert response["is_active"] == false
     end
 
-    # FIX_ME
     test "toggles API key from inactive to active", %{conn: conn} do
       user = conn.assigns.current_user
       api_key = insert(:api_key, organisation_id: user.current_org_id, is_active: false)
@@ -240,7 +228,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       assert response["is_active"] == true
     end
 
-    # FIX_ME
     test "returns 404 for API key from different organisation", %{conn: conn} do
       other_org = insert(:organisation)
       api_key = insert(:api_key, organisation_id: other_org.id)
@@ -293,7 +280,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       assert json_response(api_conn, 401)
     end
 
-    # FIX_ME
     test "returns 401 with no authentication", %{conn: _conn} do
       # Create a new connection without any auth
       api_conn =

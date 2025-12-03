@@ -23,7 +23,6 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       count_before = Layout |> Repo.all() |> length()
       %{id: engine_id} = insert(:engine)
 
-      # FIX: Use asset_id directly on layout instead of layout_asset
       asset = insert(:asset, organisation: organisation)
 
       params =
@@ -40,7 +39,6 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
 
       response = json_response(conn, 200)
 
-      # FIX: Check the correct field for asset - might be "asset" not "assets"
       _asset_name =
         case get_in(response, ["asset", "name"]) do
           nil -> ""
@@ -50,7 +48,6 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       assert count_before + 1 == Layout |> Repo.all() |> length()
       assert response["name"] == @valid_attrs["name"]
 
-      # Just check that the layout was created successfully, don't worry about asset display for now
       assert response["id"]
     end
 
@@ -58,9 +55,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       count_before = Layout |> Repo.all() |> length()
       %{id: engine_id} = insert(:engine)
 
-      # FIX: Use truly invalid attrs - empty name
       invalid_attrs = %{
-        # This should fail validation
         "name" => "",
         "engine_id" => engine_id,
         "organisation_id" =>
@@ -128,7 +123,6 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       response = json_response(conn, 200)
       layout_response = response["layout"]
 
-      # FIX: Just verify the update was successful, don't check assets for now
       assert count_before == Layout |> Repo.all() |> length()
       assert layout_response["name"] == @valid_attrs["name"]
       assert layout_response["description"] == @valid_attrs["description"]
@@ -138,9 +132,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       user = conn.assigns.current_user
       layout = insert(:layout, creator: user, organisation: List.first(user.owned_organisations))
 
-      # FIX: Use truly invalid attrs - empty name
       invalid_attrs = %{
-        # This should fail
         "name" => "",
         "engine_id" => insert(:engine).id
       }
@@ -159,7 +151,6 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       layout = insert(:layout, creator: user, organisation: organisation)
       insert(:layout, name: "Official Letter", creator: user, organisation: organisation)
 
-      # FIX: Include required engine_id in params
       engine = insert(:engine)
 
       conn =
@@ -197,7 +188,6 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       user = conn.assigns.current_user
       layout = insert(:layout, creator: user, organisation: List.first(user.owned_organisations))
 
-      # FIX: Don't check assets for now - the response structure might have changed
       conn = get(conn, Routes.v1_layout_path(conn, :show, layout.id))
 
       response = json_response(conn, 200)
@@ -205,7 +195,6 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
 
       assert layout_response["name"] == layout.name
       assert layout_response["id"] == layout.id
-      # Skip asset checks for now since the response structure might have changed
     end
 
     test "error not found for id does not exists", %{conn: conn} do

@@ -136,7 +136,6 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
   end
 
   describe "update_changeset/2" do
-    # FIX_ME
     test "allows updating name and settings" do
       api_key = insert(:api_key)
 
@@ -153,7 +152,6 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
       assert get_change(changeset, :is_active) == false
     end
 
-    # FIX_ME
     test "does not allow changing the key itself" do
       api_key = insert(:api_key)
 
@@ -162,7 +160,6 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
           key_hash: "new_hash"
         })
 
-      # key_hash should not be in the changeset changes
       assert get_change(changeset, :key_hash) == nil
     end
   end
@@ -181,7 +178,6 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
         })
         |> Repo.insert()
 
-      # Get the unhashed key from the virtual field
       key = api_key.key
 
       # Reload the api_key from DB
@@ -190,7 +186,6 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
       assert ApiKey.verify_key?(api_key_from_db, key)
     end
 
-    # FIX_ME
     test "returns false for non-matching key" do
       api_key = insert(:api_key)
       assert ApiKey.verify_key?(api_key, "wrong_key") == false
@@ -198,26 +193,22 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
   end
 
   describe "valid?/1" do
-    # FIX_ME
     test "returns false for inactive key" do
       api_key = insert(:api_key, is_active: false)
       refute ApiKey.valid?(api_key)
     end
 
-    # FIX_ME
     test "returns true for active key without expiration" do
       api_key = insert(:api_key, is_active: true, expires_at: nil)
       assert ApiKey.valid?(api_key)
     end
 
-    # FIX_ME
     test "returns true for active key with future expiration" do
       future_date = DateTime.add(DateTime.utc_now(), 3600, :second)
       api_key = insert(:api_key, is_active: true, expires_at: future_date)
       assert ApiKey.valid?(api_key)
     end
 
-    # FIX_ME
     test "returns false for expired key" do
       past_date = DateTime.add(DateTime.utc_now(), -3600, :second)
       api_key = insert(:api_key, is_active: true, expires_at: past_date)
@@ -226,19 +217,16 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
   end
 
   describe "ip_allowed?/2" do
-    # FIX_ME
     test "returns true when ip_whitelist is empty" do
       api_key = insert(:api_key, ip_whitelist: [])
       assert ApiKey.ip_allowed?(api_key, "192.168.1.1")
     end
 
-    # FIX_ME
     test "returns true when IP is in the whitelist" do
       api_key = insert(:api_key, ip_whitelist: ["192.168.1.1", "10.0.0.1"])
       assert ApiKey.ip_allowed?(api_key, "192.168.1.1")
     end
 
-    # FIX_ME
     test "returns false when IP is not in the whitelist" do
       api_key = insert(:api_key, ip_whitelist: ["192.168.1.1"])
       refute ApiKey.ip_allowed?(api_key, "192.168.1.2")

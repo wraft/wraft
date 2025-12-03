@@ -49,9 +49,9 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheckTest do
 
     returned_conn = ValidMembershipCheck.call(conn, %{})
 
-    assert returned_conn.status == nil
+    assert returned_conn.status == 400
 
-    # assert json_response(returned_conn, 400)["errors"] ==
-    #          "You do not have a valid membership. Upgrade your membership to continue.!"
+    assert json_response(returned_conn, 400)["errors"] ==
+             "You do not have a valid membership. Upgrade your membership to continue.!"
   end
 end

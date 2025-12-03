@@ -1535,6 +1535,7 @@ defmodule WraftDoc.EnterpriseTest do
     end
   end
 
+  # FIX_ME
   describe "join_org_by_invite/2" do
     test "user can join organisation by invite" do
       user = insert(:user)
