@@ -123,4 +123,19 @@ defmodule WraftDoc.Pipelines.TriggerHistories do
   end
 
   def create_pipeline_job(_, _), do: nil
+
+  @doc """
+  Get a trigger history by id.
+  """
+  @spec get_trigger_history(User.t(), Ecto.UUID.t()) :: TriggerHistory.t() | nil
+  def get_trigger_history(%User{current_org_id: org_id}, <<_::288>> = id) do
+    TriggerHistory
+    |> join(:inner, [t], p in Pipeline, on: t.pipeline_id == p.id)
+    |> where([t, p], p.organisation_id == ^org_id)
+    |> where([t], t.id == ^id)
+    |> preload([:creator])
+    |> Repo.one()
+  end
+
+  def get_trigger_history(_, _), do: nil
 end

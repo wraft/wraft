@@ -117,13 +117,22 @@ defmodule WraftDoc.Workers.BulkWorker do
       stage: stage
     }
 
-    trigger =
-      update_trigger_history_state_and_error(trigger, state, error_data)
-
     # Trigger webhook for pipeline failure
     Task.start(fn ->
       trigger = Repo.preload(trigger, :pipeline)
-      EventTrigger.trigger_pipeline_failed(trigger, error_data)
+
+      payload =
+        trigger
+        |> EventTrigger.trigger_pipeline_failed(error_data)
+        |> case do
+          payload when is_map(payload) ->
+            payload
+
+          _ ->
+            %{}
+        end
+
+      update_trigger_history_state_and_error(trigger, state, error_data, payload)
     end)
 
     Logger.error("Form mapping not complete. Pipeline execution failed.")
@@ -143,13 +152,22 @@ defmodule WraftDoc.Workers.BulkWorker do
       stage: stage
     }
 
-    trigger =
-      update_trigger_history_state_and_error(trigger, state, error_data)
-
     # Trigger webhook for pipeline failure
     Task.start(fn ->
       trigger = Repo.preload(trigger, :pipeline)
-      EventTrigger.trigger_pipeline_failed(trigger, error_data)
+
+      payload =
+        trigger
+        |> EventTrigger.trigger_pipeline_failed(error_data)
+        |> case do
+          payload when is_map(payload) ->
+            payload
+
+          _ ->
+            %{}
+        end
+
+      update_trigger_history_state_and_error(trigger, state, error_data, payload)
     end)
 
     Logger.error("Pipeline not found. Pipeline execution failed.")
@@ -169,13 +187,21 @@ defmodule WraftDoc.Workers.BulkWorker do
       stage: stage
     }
 
-    trigger =
-      update_trigger_history_state_and_error(trigger, state, error_data)
-
     # Trigger webhook for pipeline failure
     Task.start(fn ->
-      trigger = Repo.preload(trigger, :pipeline)
-      EventTrigger.trigger_pipeline_failed(trigger, error_data)
+      payload =
+        trigger
+        |> Repo.preload(:pipeline)
+        |> EventTrigger.trigger_pipeline_failed(error_data)
+        |> case do
+          payload when is_map(payload) ->
+            payload
+
+          _ ->
+            %{}
+        end
+
+      update_trigger_history_state_and_error(trigger, state, error_data, payload)
     end)
 
     Logger.error("Instance creation failed. Pipeline execution failed.")
@@ -195,13 +221,22 @@ defmodule WraftDoc.Workers.BulkWorker do
       stage: stage
     }
 
-    trigger =
-      update_trigger_history_state_and_error(trigger, state, error_data)
-
     # Trigger webhook for pipeline failure
     Task.start(fn ->
       trigger = Repo.preload(trigger, :pipeline)
-      EventTrigger.trigger_pipeline_failed(trigger, error_data)
+
+      payload =
+        trigger
+        |> EventTrigger.trigger_pipeline_failed(error_data)
+        |> case do
+          payload when is_map(payload) ->
+            payload
+
+          _ ->
+            %{}
+        end
+
+      update_trigger_history_state_and_error(trigger, state, error_data, payload)
     end)
 
     Logger.error("Instance creation failed. Pipeline execution failed.")
@@ -221,12 +256,21 @@ defmodule WraftDoc.Workers.BulkWorker do
       stage: stage
     }
 
-    trigger =
-      update_trigger_history_state_and_error(trigger, state, error_data)
-
     Task.start(fn ->
       trigger = Repo.preload(trigger, :pipeline)
-      EventTrigger.trigger_pipeline_failed(trigger, error_data)
+
+      payload =
+        trigger
+        |> EventTrigger.trigger_pipeline_failed(error_data)
+        |> case do
+          payload when is_map(payload) ->
+            payload
+
+          _ ->
+            %{}
+        end
+
+      update_trigger_history_state_and_error(trigger, state, error_data, payload)
     end)
 
     Logger.error("Invalid JSON error. Pipeline execution failed.")
@@ -238,7 +282,6 @@ defmodule WraftDoc.Workers.BulkWorker do
          current_user
        ) do
     state = TriggerHistory.states()[:success]
-    trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
 
     instances = Map.get(result, :instances, [])
 
@@ -249,7 +292,20 @@ defmodule WraftDoc.Workers.BulkWorker do
 
     Task.start(fn ->
       trigger = Repo.preload(trigger, :pipeline)
-      EventTrigger.trigger_pipeline_completed(trigger, pipeline_result)
+
+      payload =
+        trigger
+        |> EventTrigger.trigger_pipeline_completed(pipeline_result)
+        |> case do
+          payload when is_map(payload) -> payload
+          _ -> %{}
+        end
+
+      update_trigger_history(trigger, %{
+        state: state,
+        response: payload,
+        zip_file: zip_file
+      })
     end)
 
     Task.start(fn ->
@@ -310,11 +366,18 @@ defmodule WraftDoc.Workers.BulkWorker do
       documents: successful_instances
     }
 
-    trigger = update_trigger_history_state_and_error(trigger, state, error_data_for_db)
-
     Task.start(fn ->
       trigger_with_pipeline = Repo.preload(trigger, :pipeline)
-      EventTrigger.trigger_pipeline_partially_completed(trigger_with_pipeline, pipeline_result)
+
+      payload =
+        trigger_with_pipeline
+        |> EventTrigger.trigger_pipeline_partially_completed(pipeline_result)
+        |> case do
+          payload when is_map(payload) -> payload
+          _ -> %{}
+        end
+
+      update_trigger_history_state_and_error(trigger, state, error_data_for_db, payload)
     end)
 
     Task.start(fn ->
@@ -353,12 +416,12 @@ defmodule WraftDoc.Workers.BulkWorker do
   end
 
   # Update state and error of a trigger history
-  @spec update_trigger_history_state_and_error(TriggerHistory.t(), integer, map) ::
+  @spec update_trigger_history_state_and_error(TriggerHistory.t(), integer(), map(), map()) ::
           TriggerHistory.t()
-  defp update_trigger_history_state_and_error(trigger, state, error) do
+  defp update_trigger_history_state_and_error(trigger, state, error, response \\ %{}) do
     failure_time = DateTime.to_iso8601(Timex.now())
     error = Map.put(error, :failure_time, failure_time)
-    update_trigger_history(trigger, %{state: state, error: error})
+    update_trigger_history(trigger, %{state: state, error: error, response: response})
   end
 
   # Update trigger history on start

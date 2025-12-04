@@ -10,7 +10,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
 
   plug WraftDocWeb.Plug.Authorized,
     create: "pipeline:manage",
-    index: "pipeline:show"
+    index: "pipeline:show",
+    show: "pipeline:show"
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -27,11 +28,15 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
           description("Response for pipeline trigger and bulk jobs.")
 
           properties do
-            info(:string, "Response message", required: true)
+            info(:string, "Response message")
+            pipeline_id(:string, "Pipeline ID")
+            trigger_id(:string, "Trigger ID")
           end
 
           example(%{
-            info: "Trigger accepted."
+            info: "Trigger accepted.",
+            pipeline_id: "1232148nb3478",
+            trigger_id: "147832148nb3478"
           })
         end,
       TriggerData:
@@ -53,7 +58,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
           properties do
             id(:string, "ID of the trigger history", required: true)
             data(:map, "Input data of the the trigger history", required: true)
-            error(:map, "Error data of the the trigger history", required: true)
+            response(:map, "Response data of the the trigger history")
             state(:state, "State of the trigger history", required: true)
             start_time(:start_time, "Start time of the trigger history", required: true)
             end_time(:end_time, "End time of the trigger history", required: true)
@@ -67,8 +72,19 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
           example(%{
             id: "jhdiuh23y498sjdbda",
             data: %{name: "John Doe"},
-            error: %{},
             state: "success",
+            response: %{
+              documents: [%{id: "123", instance_id: "CTR001", title: "Document Title"}],
+              documents_count: 1,
+              status: "completed",
+              state: "executing",
+              pipeline_id: "a9cc343b-857e-4e8a-8262-fc7badaebdfs",
+              trigger_history_id: "jhdiuh23y498sjdbda",
+              input_data: %{
+                "0eef6b6b-c201-4e82-9464-d66d1659f822" => "23-03-2025",
+                "0eef6b6b-c201-4e82-9464-d66d1659f823" => "John Doe"
+              }
+            },
             start_time: "2020-01-21 14:00:00",
             end_time: "2020-01-21 14:12:00",
             duration: 720,
@@ -155,11 +171,11 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   def create(conn, %{"pipeline_id" => p_uuid, "data" => data}) do
     current_user = conn.assigns[:current_user]
 
-    with %Pipeline{} = pipeline <- Pipelines.get_pipeline(current_user, p_uuid),
-         {:ok, %TriggerHistory{} = trigger_history} <-
+    with %Pipeline{id: pipeline_id} = pipeline <- Pipelines.get_pipeline(current_user, p_uuid),
+         {:ok, %TriggerHistory{id: trigger_id} = trigger_history} <-
            TriggerHistories.create_trigger_history(current_user, pipeline, data),
          {:ok, %Oban.Job{}} <- TriggerHistories.create_pipeline_job(current_user, trigger_history) do
-      render(conn, "create.json")
+      render(conn, "create.json", trigger_id: trigger_id, pipeline_id: pipeline_id)
     end
   end
 
@@ -251,6 +267,33 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
         total_pages: total_pages,
         total_entries: total_entries
       )
+    end
+  end
+
+  @doc """
+  Show a trigger history.
+  """
+  swagger_path :show do
+    get("/triggers/{id}")
+    summary("Show trigger history")
+    description("API to get a trigger history by ID")
+
+    parameters do
+      id(:path, :string, "Trigger History ID", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:TriggerHistory))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def show(conn, %{"id" => id}) do
+    current_user = conn.assigns[:current_user]
+
+    with %TriggerHistory{} = trigger_history <-
+           TriggerHistories.get_trigger_history(current_user, id) do
+      render(conn, "show.json", trigger_history: trigger_history)
     end
   end
 end

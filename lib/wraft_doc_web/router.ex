@@ -533,6 +533,7 @@ defmodule WraftDocWeb.Router do
       end
 
       get("/triggers", TriggerHistoryController, :index)
+      get("/triggers/:id", TriggerHistoryController, :show)
 
       # Update and Delete pipe stage
       resources("/stages", PipeStageController, only: [:update, :delete])

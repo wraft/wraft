@@ -145,7 +145,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   @doc """
   Trigger pipeline.completed event when a pipeline execution completes successfully.
   """
-  @spec trigger_pipeline_completed(TriggerHistory.t(), map()) :: :ok
+  @spec trigger_pipeline_completed(TriggerHistory.t(), map()) :: map() | :ok
   def trigger_pipeline_completed(
         %TriggerHistory{pipeline: %{organisation_id: org_id}} = trigger_history,
         pipeline_result
@@ -156,6 +156,8 @@ defmodule WraftDoc.Webhooks.EventTrigger do
     Logger.info(
       "Triggered pipeline.completed webhook for pipeline id #{trigger_history.pipeline_id}"
     )
+
+    payload.pipeline
   end
 
   def trigger_pipeline_completed(%TriggerHistory{} = trigger_history, _pipeline_result) do
@@ -169,7 +171,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   @doc """
   Trigger pipeline.failed event when a pipeline execution fails.
   """
-  @spec trigger_pipeline_failed(TriggerHistory.t(), map()) :: :ok
+  @spec trigger_pipeline_failed(TriggerHistory.t(), map()) :: map() | :ok
   def trigger_pipeline_failed(
         %TriggerHistory{pipeline: %{organisation_id: org_id}} = trigger_history,
         error_data
@@ -180,6 +182,8 @@ defmodule WraftDoc.Webhooks.EventTrigger do
     Logger.info(
       "Triggered pipeline.failed webhook for pipeline id #{trigger_history.pipeline_id}"
     )
+
+    payload.pipeline
   end
 
   def trigger_pipeline_failed(%TriggerHistory{} = trigger_history, _error_data) do
@@ -193,7 +197,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   @doc """
   Trigger pipeline.partially_completed event when a pipeline execution partially completes.
   """
-  @spec trigger_pipeline_partially_completed(TriggerHistory.t(), map()) :: :ok
+  @spec trigger_pipeline_partially_completed(TriggerHistory.t(), map()) :: map() | :ok
   def trigger_pipeline_partially_completed(
         %TriggerHistory{pipeline: %{organisation_id: org_id}} = trigger_history,
         pipeline_result
@@ -204,6 +208,8 @@ defmodule WraftDoc.Webhooks.EventTrigger do
     Logger.info(
       "Triggered pipeline.partially_completed webhook for pipeline id #{trigger_history.pipeline_id}"
     )
+
+    payload.pipeline
   end
 
   def trigger_pipeline_partially_completed(%TriggerHistory{} = trigger_history, _pipeline_result) do
