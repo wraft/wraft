@@ -3,6 +3,15 @@ defmodule WraftDocWeb.Api.V1.FormEntryView do
 
   alias __MODULE__
 
+  def render("form_entry.json", %{form_entry: form_entry, trigger_response: trigger_response}) do
+    "form_entry.json"
+    |> render(%{form_entry: form_entry})
+    |> Map.merge(%{
+      trigger_id: trigger_response.trigger_id,
+      pipeline_id: trigger_response.pipeline_id
+    })
+  end
+
   def render("form_entry.json", %{form_entry: form_entry}) do
     %{
       id: form_entry.id,

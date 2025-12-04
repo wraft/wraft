@@ -543,8 +543,8 @@ defmodule WraftDoc.Forms do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, _} ->
-        :ok
+      {:ok, %{trigger_history: trigger_history}} ->
+        {:ok, %{pipeline_id: pipeline_id, trigger_id: trigger_history.id}}
 
       {:error, step, error, _} ->
         Logger.error("Pipeline failed in step #{inspect(step)}", error: error)

@@ -145,7 +145,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   @doc """
   Trigger pipeline.completed event when a pipeline execution completes successfully.
   """
-  @spec trigger_pipeline_completed(TriggerHistory.t(), map()) :: :ok
+  @spec trigger_pipeline_completed(TriggerHistory.t(), map()) :: map() | :ok
   def trigger_pipeline_completed(
         %TriggerHistory{pipeline: %{organisation_id: org_id}} = trigger_history,
         pipeline_result
@@ -171,7 +171,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   @doc """
   Trigger pipeline.failed event when a pipeline execution fails.
   """
-  @spec trigger_pipeline_failed(TriggerHistory.t(), map()) :: :ok
+  @spec trigger_pipeline_failed(TriggerHistory.t(), map()) :: map() | :ok
   def trigger_pipeline_failed(
         %TriggerHistory{pipeline: %{organisation_id: org_id}} = trigger_history,
         error_data
@@ -197,7 +197,7 @@ defmodule WraftDoc.Webhooks.EventTrigger do
   @doc """
   Trigger pipeline.partially_completed event when a pipeline execution partially completes.
   """
-  @spec trigger_pipeline_partially_completed(TriggerHistory.t(), map()) :: :ok
+  @spec trigger_pipeline_partially_completed(TriggerHistory.t(), map()) :: map() | :ok
   def trigger_pipeline_partially_completed(
         %TriggerHistory{pipeline: %{organisation_id: org_id}} = trigger_history,
         pipeline_result

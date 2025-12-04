@@ -49,7 +49,6 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryView do
       id: trigger.id,
       data: trigger.data,
       response: trigger.response,
-      error: trigger.error,
       state: TriggerHistory.get_state(trigger),
       start_time: trigger.start_time,
       end_time: trigger.end_time,

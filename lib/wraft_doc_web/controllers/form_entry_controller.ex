@@ -194,8 +194,11 @@ defmodule WraftDocWeb.Api.V1.FormEntryController do
          %FormPipeline{} <- Forms.get_form_pipeline(form, pipeline_id),
          {:ok, %FormEntry{data: data} = form_entry} <-
            Forms.create_form_entry(current_user, form, params),
-         :ok <- Forms.trigger_pipeline(current_user, pipeline_id, data, 0) do
-      render(conn, "form_entry.json", %{form_entry: form_entry})
+         {:ok, trigger_response} <- Forms.trigger_pipeline(current_user, pipeline_id, data, 0) do
+      render(conn, "form_entry.json", %{
+        form_entry: form_entry,
+        trigger_response: trigger_response
+      })
     end
   end
 

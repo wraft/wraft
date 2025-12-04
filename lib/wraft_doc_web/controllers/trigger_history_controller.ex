@@ -28,11 +28,15 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
           description("Response for pipeline trigger and bulk jobs.")
 
           properties do
-            info(:string, "Response message", required: true)
+            info(:string, "Response message")
+            pipeline_id(:string, "Pipeline ID")
+            trigger_id(:string, "Trigger ID")
           end
 
           example(%{
-            info: "Trigger accepted."
+            info: "Trigger accepted.",
+            pipeline_id: "1232148nb3478",
+            trigger_id: "147832148nb3478"
           })
         end,
       TriggerData:
@@ -55,6 +59,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
             id(:string, "ID of the trigger history", required: true)
             data(:map, "Input data of the the trigger history", required: true)
             error(:map, "Error data of the the trigger history", required: true)
+            response(:map, "Response data of the the trigger history")
             state(:state, "State of the trigger history", required: true)
             start_time(:start_time, "Start time of the trigger history", required: true)
             end_time(:end_time, "End time of the trigger history", required: true)
@@ -272,7 +277,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
-  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
