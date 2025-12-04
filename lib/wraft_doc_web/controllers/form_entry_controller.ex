@@ -73,6 +73,8 @@ defmodule WraftDocWeb.Api.V1.FormEntryController do
           properties do
             form_id(:string, "Form ID")
             id(:string, "Form Entry ID")
+            trigger_id(:string, "Trigger ID")
+            pipeline_id(:string, "Pipeline ID")
             inserted_at(:string, "When was the form entry inserted", format: "ISO-8601")
             status(:string, "Status of the form entry")
             updated_at(:string, "When was the form entry last updated", format: "ISO-8601")
@@ -87,6 +89,8 @@ defmodule WraftDocWeb.Api.V1.FormEntryController do
             },
             form_id: "aa18afe1-3383-4653-bc0e-505ec3bbfc19",
             id: "f507ca98-9848-49af-89f8-a21f12202ec0",
+            pipeline_id: "12345678-9abc-def0-1234-56789abcdef0",
+            trigger_id: "af2cf1c6-f342-4042-8425-6346e9fd6c44",
             inserted_at: "2024-04-17T07:10:17",
             status: "draft",
             updated_at: "2024-04-17T07:10:17",

@@ -58,7 +58,6 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
           properties do
             id(:string, "ID of the trigger history", required: true)
             data(:map, "Input data of the the trigger history", required: true)
-            error(:map, "Error data of the the trigger history", required: true)
             response(:map, "Response data of the the trigger history")
             state(:state, "State of the trigger history", required: true)
             start_time(:start_time, "Start time of the trigger history", required: true)
@@ -73,8 +72,19 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
           example(%{
             id: "jhdiuh23y498sjdbda",
             data: %{name: "John Doe"},
-            error: %{},
             state: "success",
+            response: %{
+              documents: [%{id: "123", instance_id: "CTR001", title: "Document Title"}],
+              documents_count: 1,
+              status: "completed",
+              state: "executing",
+              pipeline_id: "a9cc343b-857e-4e8a-8262-fc7badaebdfs",
+              trigger_history_id: "jhdiuh23y498sjdbda",
+              input_data: %{
+                "0eef6b6b-c201-4e82-9464-d66d1659f822" => "23-03-2025",
+                "0eef6b6b-c201-4e82-9464-d66d1659f823" => "John Doe"
+              }
+            },
             start_time: "2020-01-21 14:00:00",
             end_time: "2020-01-21 14:12:00",
             duration: 720,
