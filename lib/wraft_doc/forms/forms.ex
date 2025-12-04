@@ -555,7 +555,7 @@ defmodule WraftDoc.Forms do
   @doc """
     Transform form entry data fields by form mapping
   """
-  @spec transform_data_by_mapping(FormMapping.t(), map()) :: map() | {:error, String.t()}
+  @spec transform_data_by_mapping(FormMapping.t(), map()) :: map()
   def transform_data_by_mapping(
         %FormMapping{mapping: mappings, form_id: form_id} = _form_mapping,
         data
@@ -612,6 +612,26 @@ defmodule WraftDoc.Forms do
       destination_name = mapping.destination["name"]
       source_name = mapping.source["name"]
       Map.put(acc, destination_name, source_name)
+    end)
+  end
+
+  @spec transform_trigger_data_by_mapping(FormMapping.t(), map()) :: map() | {:error, String.t()}
+  def transform_trigger_data_by_mapping(
+        %FormMapping{mapping: mappings} = _form_mapping,
+        data
+      ) do
+    mappings
+    |> transform_mappings
+    |> transform_trigger_data(data)
+    |> Enum.into(%{})
+  end
+
+  defp transform_trigger_data(mappings, data) do
+    Enum.flat_map(mappings, fn {content_type_field_name, form_field_name} ->
+      case Map.get(data, form_field_name) do
+        nil -> []
+        value -> [{content_type_field_name, value}]
+      end
     end)
   end
 
