@@ -156,6 +156,8 @@ defmodule WraftDoc.Webhooks.EventTrigger do
     Logger.info(
       "Triggered pipeline.completed webhook for pipeline id #{trigger_history.pipeline_id}"
     )
+
+    payload
   end
 
   def trigger_pipeline_completed(%TriggerHistory{} = trigger_history, _pipeline_result) do
@@ -180,6 +182,8 @@ defmodule WraftDoc.Webhooks.EventTrigger do
     Logger.info(
       "Triggered pipeline.failed webhook for pipeline id #{trigger_history.pipeline_id}"
     )
+
+    payload
   end
 
   def trigger_pipeline_failed(%TriggerHistory{} = trigger_history, _error_data) do
@@ -204,6 +208,8 @@ defmodule WraftDoc.Webhooks.EventTrigger do
     Logger.info(
       "Triggered pipeline.partially_completed webhook for pipeline id #{trigger_history.pipeline_id}"
     )
+
+    payload
   end
 
   def trigger_pipeline_partially_completed(%TriggerHistory{} = trigger_history, _pipeline_result) do

@@ -10,7 +10,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
 
   plug WraftDocWeb.Plug.Authorized,
     create: "pipeline:manage",
-    index: "pipeline:show"
+    index: "pipeline:show",
+    show: "pipeline:show"
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -155,11 +156,11 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   def create(conn, %{"pipeline_id" => p_uuid, "data" => data}) do
     current_user = conn.assigns[:current_user]
 
-    with %Pipeline{} = pipeline <- Pipelines.get_pipeline(current_user, p_uuid),
-         {:ok, %TriggerHistory{} = trigger_history} <-
+    with %Pipeline{id: pipeline_id} = pipeline <- Pipelines.get_pipeline(current_user, p_uuid),
+         {:ok, %TriggerHistory{id: trigger_id} = trigger_history} <-
            TriggerHistories.create_trigger_history(current_user, pipeline, data),
          {:ok, %Oban.Job{}} <- TriggerHistories.create_pipeline_job(current_user, trigger_history) do
-      render(conn, "create.json")
+      render(conn, "create.json", trigger_id: trigger_id, pipeline_id: pipeline_id)
     end
   end
 
@@ -251,6 +252,33 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
         total_pages: total_pages,
         total_entries: total_entries
       )
+    end
+  end
+
+  @doc """
+  Show a trigger history.
+  """
+  swagger_path :show do
+    get("/triggers/{id}")
+    summary("Show trigger history")
+    description("API to get a trigger history by ID")
+
+    parameters do
+      id(:path, :string, "Trigger History ID", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:TriggerHistory))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show(conn, %{"id" => id}) do
+    current_user = conn.assigns[:current_user]
+
+    with %TriggerHistory{} = trigger_history <-
+           TriggerHistories.get_trigger_history(current_user, id) do
+      render(conn, "show.json", trigger_history: trigger_history)
     end
   end
 end

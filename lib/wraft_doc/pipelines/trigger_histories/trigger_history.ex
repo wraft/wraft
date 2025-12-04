@@ -11,6 +11,7 @@ defmodule WraftDoc.Pipelines.TriggerHistories.TriggerHistory do
            only: [
              :id,
              :data,
+             :response,
              :error,
              :state,
              :pipeline_id,
@@ -24,6 +25,7 @@ defmodule WraftDoc.Pipelines.TriggerHistories.TriggerHistory do
 
   schema "trigger_history" do
     field(:data, :map)
+    field(:response, :map)
     field(:error, :map, default: %{})
     field(:state, :integer)
     field(:start_time, :naive_datetime)
@@ -73,8 +75,8 @@ defmodule WraftDoc.Pipelines.TriggerHistories.TriggerHistory do
 
   def update_changeset(%TriggerHistory{} = trigger, attrs \\ %{}) do
     trigger
-    |> cast(attrs, [:error, :state, :start_time, :zip_file])
-    |> validate_required([:state, :error])
+    |> cast(attrs, [:response, :error, :state, :start_time, :zip_file])
+    |> validate_required([:state])
   end
 
   def trigger_end_changeset(%TriggerHistory{} = trigger, attrs \\ %{}) do

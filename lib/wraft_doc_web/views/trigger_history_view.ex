@@ -5,10 +5,12 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryView do
   alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDocWeb.Api.V1.UserView
 
-  def render("create.json", %{}) do
+  def render("create.json", %{trigger_id: trigger_id, pipeline_id: pipeline_id}) do
     %{
       info:
-        "Trigger accepted. All the required documents in the pipeline will be created soon and will be available for you to download.!"
+        "Trigger accepted. All the required documents in the pipeline will be created soon and will be available for you to download.!",
+      trigger_id: trigger_id,
+      pipeline_id: pipeline_id
     }
   end
 
@@ -39,6 +41,23 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryView do
       page_number: page_number,
       total_pages: total_pages,
       total_entries: total_entries
+    }
+  end
+
+  def render("show.json", %{trigger_history: trigger}) do
+    %{
+      id: trigger.id,
+      data: trigger.data,
+      response: trigger.response,
+      error: trigger.error,
+      state: TriggerHistory.get_state(trigger),
+      start_time: trigger.start_time,
+      end_time: trigger.end_time,
+      duration: trigger.duration,
+      zip_file: generate_url(trigger),
+      updated_at: trigger.updated_at,
+      inserted_at: trigger.inserted_at,
+      creator: render_one(trigger.creator, UserView, "user.json", as: :user)
     }
   end
 
