@@ -428,28 +428,28 @@ defmodule WraftDocWeb.Router do
       # put("/collection_fields/:id", CollectionFormFieldController, :update)
       # delete("/collection_fields/:id", CollectionFormFieldController, :delete)
 
-      #  if !Enterprise.self_hosted?() do
-      # Billing
-      scope "/billing/subscription" do
-        get("/", BillingController, :get_subscription)
-        get("/active", BillingController, :get_active_subscription)
-        post("/:plan_id/change/preview", BillingController, :change_plan_preview)
-        post("/:plan_id/change", BillingController, :change_plan)
-        patch("/activate_trial", BillingController, :activate_trial_subscription)
-        get("/:transaction_id/invoice", BillingController, :get_invoice)
-        get("/:organisation_id/transactions", BillingController, :get_transactions)
-        get("/:organisation_id/history", BillingController, :subscription_history_index)
-        delete("/cancel", BillingController, :cancel_subscription)
+      if !Enterprise.self_hosted?() do
+        # Billing
+        scope "/billing/subscription" do
+          get("/", BillingController, :get_subscription)
+          get("/active", BillingController, :get_active_subscription)
+          post("/:plan_id/change/preview", BillingController, :change_plan_preview)
+          post("/:plan_id/change", BillingController, :change_plan)
+          patch("/activate_trial", BillingController, :activate_trial_subscription)
+          get("/:transaction_id/invoice", BillingController, :get_invoice)
+          get("/:organisation_id/transactions", BillingController, :get_transactions)
+          get("/:organisation_id/history", BillingController, :subscription_history_index)
+          delete("/cancel", BillingController, :cancel_subscription)
+        end
+
+        # Update membership plan
+        put("/memberships/:id", MembershipController, :update)
+        # Get memberhsip
+        get("/organisations/:id/memberships", MembershipController, :show)
+
+        # Payments
+        resources("/payments", PaymentController, only: [:index, :show])
       end
-
-      # Update membership plan
-      put("/memberships/:id", MembershipController, :update)
-      # Get memberhsip
-      get("/organisations/:id/memberships", MembershipController, :show)
-
-      # Payments
-      resources("/payments", PaymentController, only: [:index, :show])
-      #   end
 
       # Blocks
       resources("/blocks", BlockController, except: [:index])

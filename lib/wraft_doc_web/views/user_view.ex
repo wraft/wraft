@@ -253,7 +253,5 @@ defmodule WraftDocWeb.Api.V1.UserView do
     WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
   end
 
-  def generate_url(nil), do: nil
-
   def generate_url(_), do: nil
 end
