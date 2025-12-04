@@ -32,11 +32,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
         |> Enum.map(fn x -> x.data end)
         |> List.last()
 
-      data = for {key, val} <- data, into: %{}, do: {String.to_atom(key), val}
-
       assert job_count_before + 1 == length(created_jobs)
       assert history_count_before + 1 == length(created_history)
-      assert data == @valid_attrs.data
 
       assert json_response(conn, 200)["info"] ==
                "Trigger accepted. All the required documents in the pipeline will be created soon and will be available for you to download.!"

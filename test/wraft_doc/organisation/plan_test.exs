@@ -5,14 +5,23 @@ defmodule WraftDoc.Enterprise.PlanTest do
   alias WraftDoc.{Enterprise.Plan, Repo}
 
   @valid_attrs %{
-    name: "Basic",
-    description: "A free plan, with only basic features",
-    yearly_amount: 0,
-    monthly_amount: 0
+    "name" => "Basic",
+    "description" => "Basic plan",
+    "plan_amount" => "200",
+    "currency" => "USD",
+    "billing_interval" => :year,
+    "limits" => %{
+      "instance_create" => 5,
+      "content_type_create" => 10,
+      "organisation_create" => 1,
+      "organisation_invite" => 20
+    },
+    "trial_period" => %{"period" => "", "frequency" => ""}
   }
 
   test "changeset with valid attributes" do
     changeset = Plan.changeset(%Plan{}, @valid_attrs)
+
     assert changeset.valid?
   end
 
@@ -22,9 +31,29 @@ defmodule WraftDoc.Enterprise.PlanTest do
   end
 
   test "organisation name unique constraint" do
-    insert(:plan, @valid_attrs)
-    {:error, changeset} = %Plan{} |> Plan.changeset(@valid_attrs) |> Repo.insert()
+    plan = insert(:plan)
 
-    assert "A plan with the same name exists.!" in errors_on(changeset, :name)
+    attrs = %{
+      "name" => plan.name,
+      "description" => plan.description,
+      "plan_amount" => plan.plan_amount,
+      "currency" => "USD",
+      "billing_interval" => plan.billing_interval,
+      "is_active?" => true,
+      "organisation_id" => plan.organisation_id,
+      "limits" => %{
+        "instance_create" => 5,
+        "content_type_create" => 10,
+        "organisation_create" => 1,
+        "organisation_invite" => 20
+      },
+      "trial_period" => %{"period" => "", "frequency" => ""}
+    }
+
+    {:error, changeset} = %Plan{} |> Plan.plan_changeset(attrs) |> Repo.insert()
+
+    name_errors = errors_on(changeset, :name)
+
+    assert "A plan with the same name and billing interval already exists!" in name_errors
   end
 end

@@ -7,11 +7,6 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
   alias WraftDoc.Repo
   import WraftDoc.Factory
 
-  @valid_attrs %{
-    name: "Test API Key",
-    rate_limit: 1000
-  }
-
   @invalid_attrs %{
     name: nil,
     organisation_id: nil,
@@ -165,7 +160,6 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
           key_hash: "new_hash"
         })
 
-      # key_hash should not be in the changeset changes
       assert get_change(changeset, :key_hash) == nil
     end
   end
@@ -184,7 +178,6 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
         })
         |> Repo.insert()
 
-      # Get the unhashed key from the virtual field
       key = api_key.key
 
       # Reload the api_key from DB

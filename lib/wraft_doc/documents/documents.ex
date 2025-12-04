@@ -141,9 +141,6 @@ defmodule WraftDoc.Documents do
     end
   end
 
-  # @spec create_instance(ContentType.t(), State.t(), map) ::
-  #         %Instance{content_type: ContentType.t(), state: State.t()}
-  #         | {:error, Ecto.Changeset.t()}
   def create_instance(
         %{id: c_id, prefix: prefix, type: type, organisation_id: organisation_id} = c_type,
         _state,
@@ -1748,7 +1745,7 @@ defmodule WraftDoc.Documents do
         }
       ) do
     File.mkdir_p("temp/bulk_build_source/")
-    dest_path = "temp/bulk_build_source/#{filename}"
+    dest_path = Path.join("temp/bulk_build_source/", Path.basename(filename))
     System.cmd("cp", [path, dest_path])
 
     create_bulk_job(%{

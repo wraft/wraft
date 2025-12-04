@@ -32,6 +32,7 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheckTest do
     assert returned_conn.status != 400
   end
 
+  # TO_DO - Add test case when user does not have current_org_id assigned
   test "user is blocked from accessing services when user's organisation does not have a valid membership" do
     organisation = insert(:organisation)
     insert(:membership, is_expired: true, organisation: organisation)

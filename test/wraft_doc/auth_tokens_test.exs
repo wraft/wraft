@@ -1,6 +1,6 @@
 defmodule WraftDoc.AuthTokensTest do
   @moduledoc false
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
 
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken

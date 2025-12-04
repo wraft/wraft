@@ -1,4 +1,4 @@
-defmodule WraftDoc.Assets.AssetTest do
+defmodule WraftDoc.Document.AssetTest do
   use WraftDoc.ModelCase, async: true
   @moduletag :document
   import WraftDoc.Factory

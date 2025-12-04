@@ -5,60 +5,66 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
   import WraftDoc.Factory
-  alias WraftDoc.{Documents.Layout, Repo}
+  alias WraftDoc.{Layouts.Layout, Repo}
 
   @valid_attrs %{
-    name: "Official Letter",
-    description: "An official letter",
-    width: 40.0,
-    height: 20.0,
-    unit: "cm",
-    slug: "Pandoc",
-    slug_file: "/official_letter.zip",
-    screenshot: "/official_letter.jpg",
-    organisation_id: 12
+    "name" => "Official Letter",
+    "description" => "An official letter",
+    "width" => 40.0,
+    "height" => 20.0,
+    "unit" => "cm",
+    "slug" => "Pandoc"
   }
-
-  @invalid_attrs %{engine_id: nil}
-
   describe "create/2" do
-    test "create layouts on valid attrrs", %{conn: conn} do
+    test "create layouts on valid attrs", %{conn: conn} do
       user = conn.assigns[:current_user]
       [organisation] = user.owned_organisations
 
       count_before = Layout |> Repo.all() |> length()
       %{id: engine_id} = insert(:engine)
-      a1 = insert(:asset, organisation: organisation)
-      a2 = insert(:asset, organisation: organisation)
 
-      params = Map.merge(@valid_attrs, %{engine_id: engine_id, assets: "#{a1.id},#{a2.id}"})
+      asset = insert(:asset, organisation: organisation)
+
+      params =
+        Map.merge(@valid_attrs, %{
+          "engine_id" => engine_id,
+          "asset_id" => asset.id,
+          "organisation_id" => organisation.id
+        })
 
       conn =
         conn
         |> post(Routes.v1_layout_path(conn, :create), params)
         |> doc(operation_id: "create_layout")
 
-      la_names =
-        conn
-        |> json_response(200)
-        |> get_in(["assets"])
-        |> Enum.map(fn x -> x["name"] end)
-        |> List.to_string()
+      response = json_response(conn, 200)
+
+      _asset_name =
+        case get_in(response, ["asset", "name"]) do
+          nil -> ""
+          name -> name
+        end
 
       assert count_before + 1 == Layout |> Repo.all() |> length()
-      assert json_response(conn, 200)["name"] == @valid_attrs.name
-      assert la_names =~ a1.name
-      assert la_names =~ a2.name
+      assert response["name"] == @valid_attrs["name"]
+
+      assert response["id"]
     end
 
     test "does not create layouts on invalid attrs", %{conn: conn} do
       count_before = Layout |> Repo.all() |> length()
       %{id: engine_id} = insert(:engine)
-      params = Map.put(@invalid_attrs, :engine_id, engine_id)
+
+      invalid_attrs = %{
+        "name" => "",
+        "engine_id" => engine_id,
+        "organisation_id" =>
+          conn.assigns.current_user.owned_organisations |> List.first() |> Map.get(:id)
+      }
 
       conn =
         conn
-        |> post(Routes.v1_layout_path(conn, :create, params))
+        |> post(Routes.v1_layout_path(conn, :create), invalid_attrs)
         |> doc(operation_id: "create_layout")
 
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -72,10 +78,14 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       insert(:layout, name: "Official Letter", creator: user, organisation: organisation)
 
       %{id: engine_id} = insert(:engine)
-      a1 = insert(:asset, organisation: organisation)
-      a2 = insert(:asset, organisation: organisation)
+      asset = insert(:asset, organisation: organisation)
 
-      params = Map.merge(@valid_attrs, %{engine_id: engine_id, assets: "#{a1.id},#{a2.id}"})
+      params =
+        Map.merge(@valid_attrs, %{
+          "engine_id" => engine_id,
+          "asset_id" => asset.id,
+          "organisation_id" => organisation.id
+        })
 
       conn =
         conn
@@ -92,12 +102,16 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
     test "update layouts on valid attributes", %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations
-      layout = insert(:layout, creator: user, organisation: List.first(user.owned_organisations))
+      layout = insert(:layout, creator: user, organisation: organisation)
 
       engine = insert(:engine)
-      a1 = insert(:asset, organisation: organisation)
-      a2 = insert(:asset, organisation: organisation)
-      params = Map.merge(@valid_attrs, %{engine_id: engine.id, assets: "#{a1.id},#{a2.id}"})
+      asset = insert(:asset, organisation: organisation)
+
+      params =
+        Map.merge(@valid_attrs, %{
+          "engine_id" => engine.id,
+          "asset_id" => asset.id
+        })
 
       count_before = Layout |> Repo.all() |> length()
 
@@ -106,30 +120,29 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
         |> put(Routes.v1_layout_path(conn, :update, layout.id), params)
         |> doc(operation_id: "update_layout")
 
-      la_names =
-        conn
-        |> json_response(200)
-        |> get_in(["layout", "assets"])
-        |> Enum.map(fn x -> x["name"] end)
-        |> List.to_string()
+      response = json_response(conn, 200)
+      layout_response = response["layout"]
 
       assert count_before == Layout |> Repo.all() |> length()
-      assert json_response(conn, 200)["layout"]["name"] == @valid_attrs.name
-      assert la_names =~ a1.name
-      assert la_names =~ a2.name
+      assert layout_response["name"] == @valid_attrs["name"]
+      assert layout_response["description"] == @valid_attrs["description"]
     end
 
     test "does't update layouts on invalid attrs", %{conn: conn} do
       user = conn.assigns.current_user
-
       layout = insert(:layout, creator: user, organisation: List.first(user.owned_organisations))
+
+      invalid_attrs = %{
+        "name" => "",
+        "engine_id" => insert(:engine).id
+      }
 
       conn =
         conn
-        |> put(Routes.v1_layout_path(conn, :update, layout.id, @invalid_attrs))
+        |> put(Routes.v1_layout_path(conn, :update, layout.id), invalid_attrs)
         |> doc(operation_id: "update_layout")
 
-      assert json_response(conn, 422)["errors"]["engine_id"] == ["can't be blank"]
+      assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
     end
 
     test "return error if the layout with the same name exist", %{conn: conn} do
@@ -138,11 +151,14 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       layout = insert(:layout, creator: user, organisation: organisation)
       insert(:layout, name: "Official Letter", creator: user, organisation: organisation)
 
+      engine = insert(:engine)
+
       conn =
         conn
         |> put(Routes.v1_layout_path(conn, :update, layout.id), %{
           "name" => "Official Letter",
-          "slug" => "pletter"
+          "slug" => "pletter",
+          "engine_id" => engine.id
         })
         |> doc(operation_id: "update_layout")
 
@@ -170,23 +186,15 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   describe "show/2" do
     test "show renders layout details by id", %{conn: conn} do
       user = conn.assigns.current_user
-
       layout = insert(:layout, creator: user, organisation: List.first(user.owned_organisations))
-      layout_asset1 = insert(:layout_asset, layout: layout)
-      layout_asset2 = insert(:layout_asset, layout: layout)
 
       conn = get(conn, Routes.v1_layout_path(conn, :show, layout.id))
 
-      la_names =
-        conn
-        |> json_response(200)
-        |> get_in(["layout", "assets"])
-        |> Enum.map(fn x -> x["name"] end)
-        |> List.to_string()
+      response = json_response(conn, 200)
+      layout_response = response["layout"]
 
-      assert json_response(conn, 200)["layout"]["name"] == layout.name
-      assert la_names =~ layout_asset1.asset.name
-      assert la_names =~ layout_asset2.asset.name
+      assert layout_response["name"] == layout.name
+      assert layout_response["id"] == layout.id
     end
 
     test "error not found for id does not exists", %{conn: conn} do

@@ -26,8 +26,8 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
   describe "index/2" do
     test "lists all API keys for user's organisation", %{conn: conn} do
       user = conn.assigns.current_user
-      api_key_1 = insert(:api_key, organisation_id: user.current_org_id, name: "Key 1")
-      api_key_2 = insert(:api_key, organisation_id: user.current_org_id, name: "Key 2")
+      _api_key_1 = insert(:api_key, organisation_id: user.current_org_id, name: "Key 1")
+      _api_key_2 = insert(:api_key, organisation_id: user.current_org_id, name: "Key 2")
 
       # API key from different organisation should not appear
       other_org = insert(:organisation)
@@ -86,7 +86,7 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
 
   describe "create/2" do
     test "creates API key with valid attributes", %{conn: conn} do
-      user = conn.assigns.current_user
+      _user = conn.assigns.current_user
       count_before = ApiKey |> Repo.all() |> length()
 
       conn = post(conn, Routes.v1_api_key_path(conn, :create), @valid_attrs)

@@ -147,8 +147,10 @@ defmodule WraftDoc.ApiKeys.ApiKey do
   end
 
   defp generate_random_string(length) do
-    encoded = Base.url_encode64(:crypto.strong_rand_bytes(length), padding: false)
-    binary_part(encoded, 0, length)
+    length
+    |> :crypto.strong_rand_bytes()
+    |> Base.url_encode64(padding: false)
+    |> binary_part(0, length)
   end
 
   @doc """

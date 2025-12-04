@@ -8,6 +8,9 @@ defmodule WraftDoc.StorageFixtures do
   Generate a repository.
   """
   def repository_fixture(attrs \\ %{}) do
+    user = WraftDoc.Factory.insert(:user)
+    organisation = WraftDoc.Factory.insert(:organisation)
+
     {:ok, repository} =
       attrs
       |> Enum.into(%{
@@ -16,7 +19,9 @@ defmodule WraftDoc.StorageFixtures do
         item_count: 42,
         name: "some name",
         status: "some status",
-        storage_limit: 42
+        storage_limit: 42,
+        creator_id: user.id,
+        organisation_id: organisation.id
       })
       |> WraftDoc.Storages.create_repository()
 
@@ -83,25 +88,6 @@ defmodule WraftDoc.StorageFixtures do
       |> WraftDoc.Storages.create_storage_item()
 
     storage_item
-  end
-
-  @doc """
-  Generate a access_log.
-  """
-  def access_log_fixture(attrs \\ %{}) do
-    {:ok, access_log} =
-      attrs
-      |> Enum.into(%{
-        action: "some action",
-        ip_address: "some ip_address",
-        metadata: %{},
-        session_id: "some session_id",
-        success: true,
-        user_agent: "some user_agent"
-      })
-      |> WraftDoc.Storages.create_access_log()
-
-    access_log
   end
 
   @doc """

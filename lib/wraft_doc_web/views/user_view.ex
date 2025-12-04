@@ -123,7 +123,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
       updated_at: me.updated_at,
       profile_pic: generate_url(me.profile),
       roles: render_many(me.roles, RegistrationView, "role.json", as: :role),
-      role_names: me.role_names,
+      role_names: me.role_names || [],
       permissions: me.permissions,
       features: features
     }
@@ -253,5 +253,5 @@ defmodule WraftDocWeb.Api.V1.UserView do
     WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
   end
 
-  def generate_url(nil), do: nil
+  def generate_url(_), do: nil
 end

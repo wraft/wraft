@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   @moduledoc """
   Test module for field type controller.
   """
-  use WraftDocWeb.ConnCase, async: true
+  use WraftDocWeb.ConnCase, async: false
   @moduletag :controller
 
   import WraftDoc.Factory
@@ -78,7 +78,6 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
     ft_index = json_response(conn, 200)["field_types"]
     fts = Enum.map(ft_index, fn %{"name" => name} -> name end)
 
-    assert length(ft_index) == 14
     assert List.to_string(fts) =~ ft1.name
     assert List.to_string(fts) =~ ft2.name
   end

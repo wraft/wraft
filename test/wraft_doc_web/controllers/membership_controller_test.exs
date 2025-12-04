@@ -10,7 +10,8 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
-  @invalid_razorpay_error %{
+  @invalid_razorpay_error ~s(
+  An error occurred: %{
     "code" => "BAD_REQUEST_ERROR",
     "description" => "The id provided does not exist",
     "metadata" => %{},
@@ -18,6 +19,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
     "source" => "business",
     "step" => "payment_initiation"
   }
+)
 
   describe "show/1" do
     test "shows organisation's membership with valid attrs", %{conn: conn, membership: membership} do
@@ -27,7 +29,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       assert json_response(conn, 200)["id"] == membership.id
       assert json_response(conn, 200)["plan_duration"] == membership.plan_duration
       assert json_response(conn, 200)["plan"]["name"] == membership.plan.name
-      assert json_response(conn, 200)["plan"]["yearly_amount"] == membership.plan.yearly_amount
+      assert json_response(conn, 200)["plan"]["plan_amount"] == membership.plan.plan_amount
     end
 
     test "returns nil when given organisation id is different from user's organisation id", %{
@@ -40,14 +42,14 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
 
   describe "update/2" do
     test "updates membership on valid attributes", %{conn: conn, membership: membership} do
-      plan = insert(:plan, yearly_amount: 100_000)
+      plan = insert(:plan, plan_amount: "1000")
       attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}
 
       expect(RazorpayMock, :get_payment, fn _ ->
         {:ok,
          %{
            "status" => "captured",
-           "amount" => 100_000,
+           "amount" => "1000",
            "id" => @valid_razorpay_id
          }}
       end)
@@ -56,7 +58,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
 
       assert json_response(conn, 200)["plan_duration"] == 365
       assert json_response(conn, 200)["plan"]["name"] == plan.name
-      assert json_response(conn, 200)["plan"]["yearly_amount"] == plan.yearly_amount
+      assert json_response(conn, 200)["plan"]["plan_amount"] == plan.plan_amount
     end
 
     test "does not update membership but creates new payment with failed razorpay id", %{
@@ -101,7 +103,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
 
     test "does not update membership and returns wrong amount error when razorpay amount does not match any plan amount",
          %{conn: conn, membership: membership} do
-      plan = insert(:plan, yearly_amount: 1000)
+      plan = insert(:plan, plan_amount: "2000")
       attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}
       payment_count = Payment |> Repo.all() |> length
 
@@ -109,7 +111,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
         {:ok,
          %{
            "status" => "captured",
-           "amount" => 100_000,
+           "amount" => "1000",
            "id" => @valid_razorpay_id
          }}
       end)

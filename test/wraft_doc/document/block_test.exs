@@ -1,8 +1,9 @@
-defmodule WraftDoc.Blocks.BlockTest do
+defmodule WraftDoc.Documents.BlockTest do
   use WraftDoc.ModelCase
   @moduletag :document
   import WraftDoc.Factory
-  alias WraftDoc.{Block, Repo}
+  alias WraftDoc.Blocks.Block
+  alias WraftDoc.Repo
 
   @invalid_attrs %{name: "Block name"}
 

@@ -40,7 +40,6 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Enterprise.Membership
   alias WraftDoc.Enterprise.Membership.Payment
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Fields.Field
   alias WraftDoc.Fields.FieldType
@@ -62,8 +61,9 @@ defmodule WraftDoc.Factory do
 
   def user_factory do
     %User{
-      name: "wrafts user",
-      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
+      name: sequence(:user_name, &"wrafts user #{&1}"),
+      email:
+        "#{Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)}#{System.system_time(:millisecond)}#{:erlang.phash2(self())}#{Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)}@wmail.com",
       email_verify: true,
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
@@ -74,12 +74,15 @@ defmodule WraftDoc.Factory do
   end
 
   def user_with_personal_organisation_factory do
-    email = sequence(:email, &"wraftuser-#{&1}@wmail.com")
-    organisation = insert(:organisation, name: "Personal", email: email)
+    unique_email =
+      "#{Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)}#{System.system_time(:millisecond)}#{:erlang.phash2(self())}#{Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)}@wmail.com"
+
+    organisation =
+      insert(:organisation, name: "Personal", email: unique_email, creator_id: nil, owner_id: nil)
 
     %User{
-      name: "wrafts user",
-      email: email,
+      name: sequence(:personal_user, &"wrafts user #{&1}"),
+      email: unique_email,
       email_verify: true,
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
@@ -91,11 +94,14 @@ defmodule WraftDoc.Factory do
 
   def user_with_organisation_factory do
     organisation = insert(:organisation)
+    # Use consistent sequence pattern
+    unique_email = "#{Base.encode16(:crypto.strong_rand_bytes(10), case: :lower)}@wmail.com"
 
     %User{
       name: "wrafts user",
-      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
+      email: unique_email,
       email_verify: true,
+      role_names: ["superadmin"],
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       current_org_id: organisation.id,
@@ -105,13 +111,14 @@ defmodule WraftDoc.Factory do
 
   def organisation_factory do
     %Organisation{
-      name: sequence(:name, &"organisation-#{&1}"),
-      legal_name: sequence(:legal_name, &"Legal name-#{&1}"),
-      address: sequence(:address, &"#{&1} th cross #{&1} th building"),
-      gstin: sequence(:gstin, &"32AASDGGDGDDGDG#{&1}"),
-      phone: sequence(:phone, &"985222332#{&1}"),
-      email: sequence(:email, &"acborg#{&1}@gmail.com"),
-      url: sequence(:url, &"acborg#{&1}@profile.com")
+      name: sequence(:org_name, &"organisation-#{&1}"),
+      legal_name: sequence(:org_legal_name, &"Legal name-#{&1}"),
+      address: sequence(:org_address, &"#{&1} th cross #{&1} th building"),
+      gstin: sequence(:org_gstin, &"32AASDGGDGDDGDG#{&1}"),
+      phone: sequence(:org_phone, &"985222332#{&1}"),
+      email:
+        "#{Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)}#{System.system_time(:millisecond)}#{:erlang.phash2(self())}#{Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)}@gmail.com",
+      url: sequence(:org_url, &"acborg#{&1}@profile.com")
     }
   end
 
@@ -261,18 +268,37 @@ defmodule WraftDoc.Factory do
     }
   end
 
-  def instance_factory do
-    %Instance{
-      instance_id: sequence(:instance_id, &"Prefix#{&1}"),
-      raw: "Content",
-      serialized: %{title: "Title of the content", body: "Body of the content"},
-      editable: true,
-      state: build(:state),
-      content_type: build(:content_type),
-      creator: build(:user),
-      allowed_users: [],
-      organisation: build(:organisation)
-    }
+  # In your factory file, ensure the instance factory creates proper associations:
+  def instance_factory(attrs) do
+    creator = Map.get(attrs, :creator) || build(:user_with_organisation)
+    creator_org = List.first(creator.owned_organisations)
+
+    content_type =
+      build(:content_type,
+        organisation: creator_org,
+        flow: build(:flow, organisation: creator_org)
+      )
+
+    instance =
+      %Instance{
+        instance_id: sequence(:instance_id, &"Prefix#{&1}"),
+        raw: "Content",
+        serialized: %{
+          "title" => "Title of the content",
+          "body" => "Body of the content"
+        },
+        editable: true,
+        state: build(:state, organisation: creator_org, flow: content_type.flow),
+        content_type: content_type,
+        creator: creator,
+        vendor: build(:vendor, organisation: creator_org),
+        allowed_users: [creator.id],
+        organisation: creator_org,
+        meta: nil,
+        type: 1
+      }
+
+    merge_attributes(instance, attrs)
   end
 
   def instance_version_factory do
@@ -280,7 +306,9 @@ defmodule WraftDoc.Factory do
       version_number: 1,
       raw: "Content",
       serialized: %{title: "Title of the content", body: "Body of the content"},
-      content: build(:instance)
+      content: build(:instance),
+      # Add explicit type to avoid nil comparison
+      type: "save"
     }
   end
 
@@ -485,9 +513,20 @@ defmodule WraftDoc.Factory do
   end
 
   def plan_factory do
-    %Plan{
+    %WraftDoc.Enterprise.Plan{
       name: sequence(:name, &"Plan-#{&1}"),
-      description: sequence(:description, &"Plan Description-#{&1}")
+      description: sequence(:description, &"Plan Description-#{&1}"),
+      features: ["feature_a", "feature_b", "feature_c"],
+      product_id: sequence(:product_id, &"prod_#{&1}"),
+      plan_id: sequence(:plan_id, &"plan_#{&1}"),
+      plan_amount: "#{Enum.random(10..500)}",
+      billing_interval: Enum.random([:month, :year]),
+      type: Enum.random([:free, :regular, :enterprise]),
+      currency: "USD",
+      payment_link: "https://example.com/payment/#{System.unique_integer()}",
+      is_active?: true,
+      organisation: build(:organisation),
+      coupon: build(:coupon)
     }
   end
 
@@ -523,6 +562,26 @@ defmodule WraftDoc.Factory do
       meta: %{id: sequence(:invoice, &"Razorpay-#{&1}")},
       from_plan: build(:plan, coupon: nil),
       to_plan: build(:plan, coupon: nil)
+    }
+  end
+
+  def coupon_factory do
+    %WraftDoc.Billing.Coupon{
+      name: sequence(:name, &"Coupon-#{&1}"),
+      description: "Discount for special users",
+      coupon_id: sequence(:coupon_id, &"CPN-#{&1}"),
+      status: Enum.random([:active, :expired, :archived]),
+      type: Enum.random([:percentage, :flat]),
+      coupon_code: sequence(:coupon_code, &"DISCOUNT#{&1}"),
+      amount: "#{Enum.random(5..50)}",
+      currency: "USD",
+      recurring: Enum.random([true, false]),
+      maximum_recurring_intervals: Enum.random([nil, 3, 6]),
+      start_date: Timex.now(),
+      expiry_date: Timex.shift(Timex.now(), days: Enum.random(30..180)),
+      usage_limit: Enum.random([nil, 50, 100]),
+      times_used: Enum.random(0..10),
+      creator: build(:internal_user)
     }
   end
 

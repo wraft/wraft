@@ -17,12 +17,15 @@ config :wraft_doc, WraftDoc.Repo,
   password: System.get_env("POSTGRES_PASSWORD") || "postgres",
   database: System.get_env("POSTGRES_DB") || "wraft_doc_test",
   hostname: System.get_env("POSTGRES_HOST") || "localhost",
+  port: System.get_env("POSTGRES_PORT") || "5432",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10
+  pool_size: 20
 
 config :wraft_doc, Oban, queues: false, plugins: false
 
 config :wraft_doc, WraftDocWeb.Mailer, adapter: Swoosh.Adapters.Test
+
+config :wraft_doc, WraftDoc.TypesenseServer, start: false
 
 config :wraft_doc, permissions_file: "test/mix/tasks/csv/test_permissions.csv"
 
@@ -33,4 +36,3 @@ config :tesla, adapter: Tesla.Mock
 config :waffle, storage: Waffle.Storage.Local
 
 # Initialize plugs at runtime for faster test compilation
-config :phoenix, :plug_init_mode, :runtime

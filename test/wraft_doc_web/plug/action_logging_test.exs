@@ -29,6 +29,7 @@ defmodule WraftDocWeb.Plug.AddActionLogTest do
     assert last_action.actor == %{
              "email" => user.email,
              "name" => user.name,
+             "id" => user.id,
              "current_org_id" => user.current_org_id
            }
   end
