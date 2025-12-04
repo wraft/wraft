@@ -730,10 +730,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
          %Instance{id: content_id} = content <-
            Documents.create_instance(current_user, c_type, params) do
       Typesense.create_document(content)
-
-      unless Mix.env() == :test do
-        Task.start(fn -> EventTrigger.trigger_document_created(content) end)
-      end
+      Task.start(fn -> EventTrigger.trigger_document_created(content) end)
 
       conn
       |> Map.update!(:params, &Map.put(&1, "id", content_id))
@@ -997,11 +994,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       Typesense.delete_document(instance_id, "content")
 
       # Trigger webhook for document deletion
-      unless Mix.env() == :test do
-        Task.start(fn ->
-          EventTrigger.trigger_document_deleted(instance)
-        end)
-      end
+      Task.start(fn ->
+        EventTrigger.trigger_document_deleted(instance)
+      end)
 
       render(conn, "instance.json", instance: instance)
     end
@@ -1038,7 +1033,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
              {_error, exit_code} = build_response <- Documents.build_doc(instance, layout) do
           end_time = Timex.now()
 
-          add_build_history_task(current_user, instance, start_time, end_time, exit_code)
+          Task.start_link(fn ->
+            Documents.add_build_history(current_user, instance, %{
+              start_time: start_time,
+              end_time: end_time,
+              exit_code: exit_code
+            })
+          end)
 
           handle_response(conn, build_response, instance, params)
         end
@@ -1056,33 +1057,16 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   defp handle_response(conn, build_response, instance, params) do
     case build_response do
       {_, 0} ->
-        create_version_task(conn.assigns.current_user, instance, params)
+        Task.start_link(fn ->
+          Documents.create_version(conn.assigns.current_user, instance, params, :build)
+        end)
+
         render(conn, "instance.json", instance: instance)
 
       {error, exit_code} ->
         conn
         |> put_status(:unprocessable_entity)
         |> render("build_fail.json", %{exit_code: exit_code, error: error})
-    end
-  end
-
-  defp create_version_task(current_user, instance, params) do
-    unless Mix.env() == :test do
-      Task.start_link(fn ->
-        Documents.create_version(current_user, instance, params, :build)
-      end)
-    end
-  end
-
-  defp add_build_history_task(current_user, instance, start_time, end_time, exit_code) do
-    unless Mix.env() == :test do
-      Task.start_link(fn ->
-        Documents.add_build_history(current_user, instance, %{
-          start_time: start_time,
-          end_time: end_time,
-          exit_code: exit_code
-        })
-      end)
     end
   end
 
@@ -1118,17 +1102,15 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
          %Instance{} = updated_instance <-
            Documents.update_instance_state(instance_with_state, state) do
       # Trigger webhook for state update
-      unless Mix.env() == :test do
-        Task.start(fn ->
-          previous_state_info = %{
-            id: previous_state.id,
-            state: previous_state.state,
-            order: previous_state.order
-          }
+      Task.start(fn ->
+        previous_state_info = %{
+          id: previous_state.id,
+          state: previous_state.state,
+          order: previous_state.order
+        }
 
-          EventTrigger.trigger_document_state_updated(updated_instance, previous_state_info)
-        end)
-      end
+        EventTrigger.trigger_document_state_updated(updated_instance, previous_state_info)
+      end)
 
       render(conn, "show.json", instance: updated_instance)
     end
@@ -1265,29 +1247,16 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
          } = instance <- Documents.show_instance(id, current_user),
          {:ok, %Instance{} = approved_instance, audit_message} <-
            Documents.approve_instance(current_user, instance) do
-      unless Mix.env() == :test do
-        Task.start(fn ->
-          Reminders.maybe_create_auto_reminders(current_user, approved_instance)
-        end)
+      Task.start(fn -> Reminders.maybe_create_auto_reminders(current_user, approved_instance) end)
 
-        Task.start(fn ->
-          Documents.document_notification(
-            current_user,
-            approved_instance,
-            organisation,
-            state
-          )
-        end)
-
-        # Trigger webhook for document completion if the document workflow is completed
-        Task.start(fn ->
-          EventTrigger.trigger_document_state_updated(instance, %{
-            id: approved_instance.state.id,
-            state: approved_instance.state.state,
-            order: approved_instance.state.order
-          })
-        end)
-      end
+      Task.start(fn ->
+        Documents.document_notification(
+          current_user,
+          approved_instance,
+          organisation,
+          state
+        )
+      end)
 
       # Trigger webhook for document completion if the document workflow is completed
       Task.start(fn ->
@@ -1304,7 +1273,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
       conn
       |> Plug.Conn.assign(:audit_log_message, audit_message)
-      |> render("approve_or_reject.json", %{instance: approved_instance})
+      |> render("approve_or_reject.json", %{instance: instance})
     end
   end
 
@@ -1333,11 +1302,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     with %Instance{} = instance <- Documents.show_instance(id, current_user),
          %Instance{} = rejected_instance <- Documents.reject_instance(current_user, instance) do
       # Trigger webhook for document rejection
-      unless Mix.env() == :test do
-        Task.start(fn ->
-          EventTrigger.trigger_document_rejected(rejected_instance)
-        end)
-      end
+      Task.start(fn ->
+        EventTrigger.trigger_document_rejected(rejected_instance)
+      end)
 
       render(conn, "approve_or_reject.json", %{instance: rejected_instance})
     end
@@ -1367,10 +1334,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Documents.show_instance(id, current_user),
          {:ok, _} <- Documents.send_document_email(instance, params) do
-      unless Mix.env() == :test do
-        Task.start(fn -> EventTrigger.trigger_document_sent(instance) end)
-      end
-
+      Task.start(fn -> EventTrigger.trigger_document_sent(instance) end)
       render(conn, "email.json", %{info: "Email sent successfully"})
     end
   end

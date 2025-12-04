@@ -211,8 +211,7 @@ defmodule WraftDoc.Documents do
           :content_type,
           :state,
           {:instance_approval_systems, :approver},
-          :vendor,
-          creator: :profile
+          :vendor
         ])
 
       {:error, _, changeset, _} ->
@@ -679,11 +678,11 @@ defmodule WraftDoc.Documents do
         where: i.organisation_id == ^org_id,
         order_by: [desc: i.id],
         preload: [
+          :content_type,
           :state,
           {:instance_approval_systems, :approver},
           :vendor,
-          creator: [:profile],
-          content_type: [flow: [:states]]
+          creator: [:profile]
         ]
       )
 

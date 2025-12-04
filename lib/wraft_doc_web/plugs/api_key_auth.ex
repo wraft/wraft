@@ -52,14 +52,14 @@ defmodule WraftDocWeb.Plug.ApiKeyAuth do
 
     case ApiKeys.verify_api_key(api_key_string, remote_ip) do
       {:ok, %{api_key: api_key, user: user, organisation: organisation}} ->
-        handle_successful_verification(conn, api_key, user, organisation)
+        handle_rate_limit_check(conn, api_key, user, organisation)
 
-      {:error, reason} ->
-        handle_verification_error(conn, reason)
+      {:error, error_type} ->
+        handle_authentication_error(conn, error_type)
     end
   end
 
-  defp handle_successful_verification(conn, api_key, user, organisation) do
+  defp handle_rate_limit_check(conn, api_key, user, organisation) do
     case ApiKeys.check_rate_limit(api_key) do
       {:ok, _} ->
         conn
@@ -74,32 +74,34 @@ defmodule WraftDocWeb.Plug.ApiKeyAuth do
     end
   end
 
-  defp handle_verification_error(conn, reason) do
-    case reason do
-      :invalid_api_key ->
-        Logger.warning("Invalid API key provided")
-        send_error_response(conn, 401, "Invalid API key")
+  defp handle_authentication_error(conn, :invalid_api_key) do
+    Logger.warning("Invalid API key provided")
+    send_error_response(conn, 401, "Invalid API key")
+  end
 
-      :api_key_expired ->
-        Logger.warning("Expired API key used")
-        send_error_response(conn, 401, "API key has expired")
+  defp handle_authentication_error(conn, :api_key_expired) do
+    Logger.warning("Expired API key used")
+    send_error_response(conn, 401, "API key has expired")
+  end
 
-      :api_key_inactive ->
-        Logger.warning("Inactive API key used")
-        send_error_response(conn, 401, "API key is inactive")
+  defp handle_authentication_error(conn, :api_key_inactive) do
+    Logger.warning("Inactive API key used")
+    send_error_response(conn, 401, "API key is inactive")
+  end
 
-      :ip_not_whitelisted ->
-        Logger.warning("API key used from non-whitelisted IP")
-        send_error_response(conn, 403, "IP address not authorized for this API key")
+  defp handle_authentication_error(conn, :ip_not_whitelisted) do
+    Logger.warning("API key used from non-whitelisted IP")
+    send_error_response(conn, 403, "IP address not authorized for this API key")
+  end
 
-      :user_not_found ->
-        Logger.warning("API key user not found")
-        send_error_response(conn, 401, "User associated with API key not found")
+  defp handle_authentication_error(conn, :user_not_found) do
+    Logger.warning("API key user not found")
+    send_error_response(conn, 401, "User associated with API key not found")
+  end
 
-      _ ->
-        Logger.warning("API key authentication failed: #{inspect(reason)}")
-        send_error_response(conn, 401, "API key authentication failed")
-    end
+  defp handle_authentication_error(conn, reason) do
+    Logger.warning("API key authentication failed: #{inspect(reason)}")
+    send_error_response(conn, 401, "API key authentication failed")
   end
 
   defp get_remote_ip(conn) do
