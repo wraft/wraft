@@ -106,7 +106,11 @@ defmodule WraftDoc.Workers.BulkWorker do
   @spec handle_exceptions(tuple(), User.t()) :: any()
   defp handle_exceptions(
          {:error,
-          %PipelineError{error: :form_mapping_not_complete, input: trigger, stage: stage}},
+          %PipelineError{
+            error: :form_mapping_not_complete,
+            input: %{trigger: trigger},
+            stage: stage
+          }},
          _current_user
        ) do
     state = TriggerHistory.states()[:failed]
@@ -140,7 +144,8 @@ defmodule WraftDoc.Workers.BulkWorker do
   end
 
   defp handle_exceptions(
-         {:error, %PipelineError{error: :pipeline_not_found, input: trigger, stage: stage}},
+         {:error,
+          %PipelineError{error: :pipeline_not_found, input: %{trigger: trigger}, stage: stage}},
          _current_user
        ) do
     state = TriggerHistory.states()[:failed]
@@ -175,7 +180,8 @@ defmodule WraftDoc.Workers.BulkWorker do
   end
 
   defp handle_exceptions(
-         {:error, %PipelineError{error: :instance_failed, input: trigger, stage: stage}},
+         {:error,
+          %PipelineError{error: :instance_failed, input: %{trigger: trigger}, stage: stage}},
          _current_user
        ) do
     state = TriggerHistory.states()[:failed]
@@ -210,7 +216,11 @@ defmodule WraftDoc.Workers.BulkWorker do
 
   defp handle_exceptions(
          {:error,
-          %PipelineError{error: %DownloadError{message: message}, input: trigger, stage: stage}},
+          %PipelineError{
+            error: %DownloadError{message: message},
+            input: %{trigger: trigger},
+            stage: stage
+          }},
          _current_user
        ) do
     state = TriggerHistory.states()[:failed]
@@ -245,7 +255,11 @@ defmodule WraftDoc.Workers.BulkWorker do
 
   defp handle_exceptions(
          {:error,
-          %PipelineError{error: %InvalidJsonError{message: message}, input: trigger, stage: stage}},
+          %PipelineError{
+            error: %InvalidJsonError{message: message},
+            input: %{trigger: trigger},
+            stage: stage
+          }},
          _current_user
        ) do
     state = TriggerHistory.states()[:failed]
@@ -400,7 +414,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   end
 
   defp handle_exceptions(
-         {:error, %PipelineError{error: e, input: trigger, stage: stage}},
+         {:error, %PipelineError{error: e, input: %{trigger: trigger}, stage: stage}},
          _current_user
        ) do
     state = TriggerHistory.states()[:failed]
@@ -413,6 +427,8 @@ defmodule WraftDoc.Workers.BulkWorker do
       message: msg,
       stage: stage
     })
+
+    trigger
   end
 
   # Update state and error of a trigger history

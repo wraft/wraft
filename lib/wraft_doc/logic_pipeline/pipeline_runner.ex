@@ -72,7 +72,7 @@ defmodule WraftDoc.PipelineRunner do
         try do
           transformed_data =
             case data["trigger_type"] do
-              "webhook" -> data
+              "webhook" -> Forms.transform_trigger_data_by_mapping(form_mapping, data)
               _ -> Forms.transform_data_by_mapping(form_mapping, data)
             end
 
