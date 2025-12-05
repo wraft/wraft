@@ -5,7 +5,6 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   plug WraftDocWeb.Plug.AddActionLog
 
   plug WraftDocWeb.Plug.Authorized,
-    get_subscription: "payment:show",
     change_plan_preview: "payment:show",
     change_plan: "payment:show",
     activate_trial_subscription: "payment:show",
