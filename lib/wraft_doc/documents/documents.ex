@@ -1370,10 +1370,18 @@ defmodule WraftDoc.Documents do
       |> add_margin(margin)
       |> concat_strings("--- \n")
 
-    raw =
-      instance.serialized["serialized"]
-      |> Jason.decode!()
-      |> ProsemirrorToMarkdown.convert()
+    serialized_data = Jason.decode!(instance.serialized["serialized"])
+
+    fields = Jason.decode!(instance.serialized["fields"])
+
+    updated_content =
+      WraftDoc.TokenEngine.replace(
+        serialized_data,
+        :prosemirror,
+        fields
+      )
+
+    raw = ProsemirrorToMarkdown.convert(updated_content)
 
     """
     #{header}
