@@ -555,7 +555,7 @@ defmodule WraftDoc.Forms do
   @doc """
     Transform form entry data fields by form mapping
   """
-  @spec transform_data_by_mapping(FormMapping.t(), map()) :: map()
+  @spec transform_data_by_mapping(FormMapping.t(), map()) :: map() | {:error, String.t()}
   def transform_data_by_mapping(
         %FormMapping{mapping: mappings, form_id: form_id} = _form_mapping,
         data
