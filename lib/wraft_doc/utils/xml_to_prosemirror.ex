@@ -367,6 +367,14 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
     }
   end
 
+  defp handle_element_by_type("dyn", attrs, content, opts) do
+    %{
+      "type" => "dyn",
+      "attrs" => convert_smart_block_attrs(attrs),
+      "content" => convert_content_list(content, opts)
+    }
+  end
+
   defp handle_element_by_type("tr", _attrs, content, opts) do
     %{
       "type" => "tableRow",
@@ -694,6 +702,19 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
       "kind" => Map.get(converted, "kind", "bullet"),
       "checked" => parse_boolean(Map.get(converted, "checked", "false")),
       "collapsed" => parse_boolean(Map.get(converted, "collapsed", "false"))
+    }
+  end
+
+  defp convert_smart_block_attrs(attrs) do
+    converted = convert_element_attrs(attrs)
+
+    %{
+      "field" => Map.get(converted, "field", "name"),
+      "operator" => Map.get(converted, "operator", "equals"),
+      "value" => Map.get(converted, "value", "Muneef"),
+      "activeClass" => Map.get(converted, "activeClass", ""),
+      "inactiveClass" => Map.get(converted, "inactiveClass", ""),
+      "showWhenInactive" => parse_boolean(Map.get(converted, "showWhenInactive", "false"))
     }
   end
 
