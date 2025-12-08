@@ -615,6 +615,26 @@ defmodule WraftDoc.Forms do
     end)
   end
 
+  @spec transform_trigger_data_by_mapping(FormMapping.t(), map()) :: map() | {:error, String.t()}
+  def transform_trigger_data_by_mapping(
+        %FormMapping{mapping: mappings} = _form_mapping,
+        data
+      ) do
+    mappings
+    |> transform_mappings
+    |> transform_trigger_data(data)
+    |> Enum.into(%{})
+  end
+
+  defp transform_trigger_data(mappings, data) do
+    Enum.flat_map(mappings, fn {content_type_field_name, form_field_name} ->
+      case Map.get(data, form_field_name) do
+        nil -> []
+        value -> [{content_type_field_name, value}]
+      end
+    end)
+  end
+
   @doc """
     Align form fields
   """
