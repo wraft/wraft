@@ -5,6 +5,32 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   @doc """
   Converts a ProseMirror Node JSON to Markdown.
+
+  Supports conditional blocks that are conditionally included based on field values.
+  Conditional blocks have the structure:
+  ```json
+  {
+    "type": "conditionalBlock",
+    "attrs": {
+      "conditions": [
+        {
+          "placeholder": "field_name",
+          "operation": "equal",
+          "value": "expected_value",
+          "logic": "and"  // optional, defaults to "and"
+        }
+      ]
+    },
+    "content": [...]
+  }
+  ```
+
+  Supported operations: equal, not_equal, like, not_like, greater_than,
+  greater_than_or_equal, less_than, less_than_or_equal
+
+  The "logic" field on each condition (except the first) specifies how to combine
+  with the previous result: "and" (default) or "or".
+
   ## Examples
       iex> WraftDoc.ProsemirrorToMarkdown.convert(%{"type" => "doc", "content" => []})
       ""
@@ -19,6 +45,7 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     upper: ~w(I II III IV V VI VII VIII IX X XI XII XIII XIV XV XVI XVII XVIII XIX XX)
   }
 
+  @spec convert(map(), keyword()) :: String.t()
   def convert(%{"type" => "doc", "content" => content}, opts \\ []) do
     Enum.map_join(content, "\n\n", &convert_node(&1, opts))
   end
@@ -1170,21 +1197,32 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   defp filter_table_controller_cells(cells),
     do: Enum.reject(cells, &match?(%{"type" => "tableControllerCell"}, &1))
 
+  @doc false
+  @spec evaluate_conditions(list(), map()) :: boolean()
   defp evaluate_conditions(conditions, field_values) when is_list(conditions) do
     evaluate_conditions_with_logic(conditions, field_values)
   end
 
   defp evaluate_conditions(_, _), do: false
 
+  # Empty conditions list returns true (block is always included)
+  # This allows conditional blocks without conditions to always render
+  @spec evaluate_conditions_with_logic(list(), map()) :: boolean()
   defp evaluate_conditions_with_logic([], _field_values), do: true
 
+  @spec evaluate_conditions_with_logic(list(), map()) :: boolean()
   defp evaluate_conditions_with_logic([first | rest], field_values) do
     first_result = evaluate_single_condition(first, field_values)
     evaluate_conditions_with_logic(rest, first_result, field_values)
   end
 
+  @spec evaluate_conditions_with_logic(list(), boolean(), map()) :: boolean()
   defp evaluate_conditions_with_logic([], acc, _field_values), do: acc
 
+  # Each condition's "logic" field specifies how to combine with the previous result.
+  # The first condition is evaluated alone, subsequent conditions use their "logic"
+  # field to combine with the accumulated result.
+  @spec evaluate_conditions_with_logic(list(), boolean(), map()) :: boolean()
   defp evaluate_conditions_with_logic(
          [condition | rest],
          acc,
@@ -1202,6 +1240,7 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     evaluate_conditions_with_logic(rest, new_acc, field_values)
   end
 
+  @spec evaluate_single_condition(map(), map()) :: boolean()
   defp evaluate_single_condition(
          %{"placeholder" => placeholder, "operation" => operation, "value" => value},
          field_values
@@ -1212,6 +1251,7 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp evaluate_single_condition(_, _), do: false
 
+  @spec get_field_value(String.t(), map()) :: String.t()
   defp get_field_value(placeholder, field_values) when is_map(field_values) do
     value =
       case Map.get(field_values, placeholder) do
@@ -1228,6 +1268,9 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp get_field_value(_, _), do: ""
 
+  # Converts a field name to a variable name format (lowercase, underscores)
+  # Used as fallback when exact field name is not found
+  @spec convert_to_variable_name(String.t()) :: String.t()
   defp convert_to_variable_name(name) do
     name
     |> String.downcase()
@@ -1236,6 +1279,7 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     |> String.trim("_")
   end
 
+  @spec compare_values(any(), String.t(), any()) :: boolean()
   defp compare_values(field_value, operation, expected_value) do
     field_str = String.trim(to_string(field_value))
     expected_str = String.trim(to_string(expected_value))
@@ -1310,6 +1354,7 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     end
   end
 
+  @spec parse_number(String.t()) :: {:ok, float()} | :error
   defp parse_number(str) do
     case Float.parse(str) do
       {num, _} -> {:ok, num}
