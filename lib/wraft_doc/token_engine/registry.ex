@@ -9,7 +9,6 @@ defmodule WraftDoc.TokenEngine.Registry do
 
   @handlers %{
     "SMART_TABLE" => WraftDoc.TokenEngine.Handlers.SmartTable,
-    "SMART_DYNAMIC" => WraftDoc.TokenEngine.Handlers.SmartBlock,
     "SMART_TABLE_PLACEHOLDER" => WraftDoc.TokenEngine.Handlers.SmartTable,
     "SIGNATURE_FIELD" => WraftDoc.TokenEngine.Handlers.Signature,
     "holder" => WraftDoc.TokenEngine.Handlers.Holder
