@@ -1381,7 +1381,7 @@ defmodule WraftDoc.Documents do
         fields
       )
 
-    raw = ProsemirrorToMarkdown.convert(updated_content)
+    raw = ProsemirrorToMarkdown.convert(updated_content, field_values: fields)
 
     """
     #{header}
@@ -1860,7 +1860,7 @@ defmodule WraftDoc.Documents do
         field_with_values
       )
 
-    raw = ProsemirrorToMarkdown.convert(updated_content)
+    raw = ProsemirrorToMarkdown.convert(updated_content, field_values: field_with_values)
 
     serialized =
       %{

@@ -23,6 +23,32 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     Enum.map_join(content, "\n\n", &convert_node(&1, opts))
   end
 
+  defp convert_node(
+         %{
+           "type" => "conditionalBlock",
+           "attrs" => attrs,
+           "content" => content
+         },
+         opts
+       )
+       when is_map(attrs) do
+    field_values = Keyword.get(opts, :field_values, %{})
+    conditions = Map.get(attrs, "conditions", [])
+
+    if evaluate_conditions(conditions, field_values) do
+      Enum.map_join(content, "\n\n", &convert_node(&1, opts))
+    else
+      ""
+    end
+  end
+
+  defp convert_node(
+         %{"type" => "conditionalBlock", "content" => content},
+         opts
+       ) do
+    Enum.map_join(content, "\n\n", &convert_node(&1, opts))
+  end
+
   defp convert_node(%{"type" => "paragraph", "content" => content}, opts) do
     Enum.map_join(content, "", &convert_node(&1, opts))
   end
@@ -1143,6 +1169,149 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp filter_table_controller_cells(cells),
     do: Enum.reject(cells, &match?(%{"type" => "tableControllerCell"}, &1))
+
+  defp evaluate_conditions(conditions, field_values) when is_list(conditions) do
+    evaluate_conditions_with_logic(conditions, field_values)
+  end
+
+  defp evaluate_conditions(_, _), do: false
+
+  defp evaluate_conditions_with_logic([], _field_values), do: true
+
+  defp evaluate_conditions_with_logic([first | rest], field_values) do
+    first_result = evaluate_single_condition(first, field_values)
+    evaluate_conditions_with_logic(rest, first_result, field_values)
+  end
+
+  defp evaluate_conditions_with_logic([], acc, _field_values), do: acc
+
+  defp evaluate_conditions_with_logic(
+         [condition | rest],
+         acc,
+         field_values
+       ) do
+    condition_result = evaluate_single_condition(condition, field_values)
+    logic = Map.get(condition, "logic", "and")
+
+    new_acc =
+      case logic do
+        "or" -> acc || condition_result
+        _ -> acc && condition_result
+      end
+
+    evaluate_conditions_with_logic(rest, new_acc, field_values)
+  end
+
+  defp evaluate_single_condition(
+         %{"placeholder" => placeholder, "operation" => operation, "value" => value},
+         field_values
+       ) do
+    field_value = get_field_value(placeholder, field_values)
+    compare_values(field_value, operation, value)
+  end
+
+  defp evaluate_single_condition(_, _), do: false
+
+  defp get_field_value(placeholder, field_values) when is_map(field_values) do
+    value =
+      case Map.get(field_values, placeholder) do
+        nil ->
+          converted_name = convert_to_variable_name(placeholder)
+          Map.get(field_values, converted_name, "")
+
+        val ->
+          val
+      end
+
+    to_string(value)
+  end
+
+  defp get_field_value(_, _), do: ""
+
+  defp convert_to_variable_name(name) do
+    name
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9]+/, "_")
+    |> String.replace(~r/_+/, "_")
+    |> String.trim("_")
+  end
+
+  defp compare_values(field_value, operation, expected_value) do
+    field_str = String.trim(to_string(field_value))
+    expected_str = String.trim(to_string(expected_value))
+    do_compare(operation, field_str, expected_str)
+  end
+
+  defp do_compare("equal", field_str, expected_str), do: compare_equal(field_str, expected_str)
+
+  defp do_compare("not_equal", field_str, expected_str),
+    do: compare_not_equal(field_str, expected_str)
+
+  defp do_compare("like", field_str, expected_str), do: compare_like(field_str, expected_str)
+
+  defp do_compare("not_like", field_str, expected_str),
+    do: compare_not_like(field_str, expected_str)
+
+  defp do_compare("greater_than", field_str, expected_str),
+    do: compare_numeric(field_str, expected_str, :>)
+
+  defp do_compare("greater_than_or_equal", field_str, expected_str),
+    do: compare_numeric(field_str, expected_str, :>=)
+
+  defp do_compare("less_than", field_str, expected_str),
+    do: compare_numeric(field_str, expected_str, :<)
+
+  defp do_compare("less_than_or_equal", field_str, expected_str),
+    do: compare_numeric(field_str, expected_str, :<=)
+
+  defp do_compare(_, _, _), do: false
+
+  defp compare_equal(field_str, expected_str), do: field_str == expected_str
+
+  defp compare_not_equal(field_str, expected_str), do: field_str != expected_str
+
+  defp compare_like(field_str, expected_str) do
+    String.contains?(String.downcase(field_str), String.downcase(expected_str))
+  end
+
+  defp compare_not_like(field_str, expected_str) do
+    not String.contains?(String.downcase(field_str), String.downcase(expected_str))
+  end
+
+  defp compare_numeric(field_str, expected_str, op) do
+    case {parse_number(field_str), parse_number(expected_str)} do
+      {{:ok, field_num}, {:ok, expected_num}} ->
+        apply_numeric_operator(field_num, expected_num, op)
+
+      _ ->
+        apply_string_operator(field_str, expected_str, op)
+    end
+  end
+
+  defp apply_numeric_operator(field_num, expected_num, op) do
+    case op do
+      :> -> field_num > expected_num
+      :>= -> field_num >= expected_num
+      :< -> field_num < expected_num
+      :<= -> field_num <= expected_num
+    end
+  end
+
+  defp apply_string_operator(field_str, expected_str, op) do
+    case op do
+      :> -> field_str > expected_str
+      :>= -> field_str >= expected_str
+      :< -> field_str < expected_str
+      :<= -> field_str <= expected_str
+    end
+  end
+
+  defp parse_number(str) do
+    case Float.parse(str) do
+      {num, _} -> {:ok, num}
+      :error -> :error
+    end
+  end
 end
 
 defmodule InvalidJsonError do
