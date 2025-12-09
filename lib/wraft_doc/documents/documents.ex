@@ -1374,14 +1374,7 @@ defmodule WraftDoc.Documents do
 
     fields = Jason.decode!(instance.serialized["fields"])
 
-    updated_content =
-      WraftDoc.TokenEngine.replace(
-        serialized_data,
-        :prosemirror,
-        fields
-      )
-
-    raw = ProsemirrorToMarkdown.convert(updated_content, field_values: fields)
+    raw = ProsemirrorToMarkdown.convert(serialized_data, field_values: fields)
 
     """
     #{header}

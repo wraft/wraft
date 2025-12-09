@@ -62,10 +62,6 @@ defmodule WraftDoc.TokenEngine.Adapters.Prosemirror do
     {:ok, "holder", attrs}
   end
 
-  defp identify_token(%{"type" => "dyna", "attrs" => attrs}) do
-    {:ok, "SMART_DYNAMIC", attrs}
-  end
-
   # Add more identifications here as needed or make this extensible via config
   defp identify_token(_node), do: :error
 end
