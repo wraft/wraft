@@ -1266,9 +1266,13 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp do_compare(_, _, _), do: false
 
-  defp compare_equal(field_str, expected_str), do: field_str == expected_str
+  defp compare_equal(field_str, expected_str) do
+    String.downcase(field_str) == String.downcase(expected_str)
+  end
 
-  defp compare_not_equal(field_str, expected_str), do: field_str != expected_str
+  defp compare_not_equal(field_str, expected_str) do
+    String.downcase(field_str) != String.downcase(expected_str)
+  end
 
   defp compare_like(field_str, expected_str) do
     String.contains?(String.downcase(field_str), String.downcase(expected_str))
