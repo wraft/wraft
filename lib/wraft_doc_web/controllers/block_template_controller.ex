@@ -1,6 +1,7 @@
 defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
+
   plug WraftDocWeb.Plug.AddActionLog
 
   plug WraftDocWeb.Plug.Authorized,
@@ -16,100 +17,24 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   alias WraftDoc.BlockTemplates
   alias WraftDoc.BlockTemplates.BlockTemplate
   alias WraftDoc.DataTemplates
+  alias WraftDocWeb.Schemas.BlockTemplate, as: BlockTemplateSchema
+  alias WraftDocWeb.Schemas.Error
 
-  def swagger_definitions do
-    %{
-      BlockTemplateRequest:
-        swagger_schema do
-          title("BlockTemplate Request")
-          description("Create block_template request.")
+  tags(["BlockTemplates"])
 
-          properties do
-            title(:string, "The Title of the Block Template", required: true)
-            body(:string, "The Body of the block template", required: true)
-            serialized(:string, "The serialized of the block template", required: true)
-          end
-
-          example(%{
-            title: "a sample title",
-            body: "a sample body",
-            serialized: "a sample serialized"
-          })
-        end,
-      BlockTemplate:
-        swagger_schema do
-          title("BlockTemplate")
-          description("A BlockTemplate")
-
-          properties do
-            title(:string, "The Title of the block template", required: true)
-            body(:string, "The Body of the block template", required: true)
-            serialized(:string, "The serialized of the block template", required: true)
-
-            inserted_at(:string, "When was the block_template inserted", format: "ISO-8601")
-            updated_at(:string, "When was the block_template last updated", format: "ISO-8601")
-          end
-
-          example(%{
-            title: "a sample title",
-            body: "a sample body",
-            serialized: "a sample serialized",
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z"
-          })
-        end,
-      BlockTemplates:
-        swagger_schema do
-          title("BlockTemplate list")
-          type(:array)
-          items(Schema.ref(:BlockTemplate))
-        end,
-      BlockTemplateIndex:
-        swagger_schema do
-          properties do
-            block_templates(Schema.ref(:BlockTemplates))
-            page_number(:integer, "Page number")
-            total_pages(:integer, "Total number of pages")
-            total_entries(:integer, "Total number of contents")
-          end
-
-          example(%{
-            block_templates: [
-              %{
-                title: "a sample title",
-                body: "a sample body",
-                serialized: "a sample serialized"
-              },
-              %{
-                title: "a sample title",
-                body: "a sample body",
-                serialized: "a sample serialized"
-              }
-            ],
-            page_number: 1,
-            total_pages: 2,
-            total_entries: 15
-          })
-        end
-    }
-  end
-
-  swagger_path :create do
-    post("/block_templates")
-    summary("Create block_template")
-    description("Create block_template API")
-
-    parameters do
-      block_template(:body, Schema.ref(:BlockTemplateRequest), "BlockTemplate to be created",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:BlockTemplate))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Create block_template",
+    description: "Create block_template API",
+    request_body:
+      {"BlockTemplate to be created", "application/json",
+       BlockTemplateSchema.BlockTemplateRequest},
+    responses: [
+      ok: {"Ok", "application/json", BlockTemplateSchema.BlockTemplate},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      bad_request: {"Bad Request", "application/json", Error}
+    ]
+  )
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
@@ -121,17 +46,18 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     end
   end
 
-  swagger_path :index do
-    get("/block_templates")
-    summary("BlockTemplate index")
-    description("API to get the list of all block_templates created so far")
-
-    parameter(:page, :query, :string, "Page number")
-
-    response(200, "Ok", Schema.ref(:BlockTemplateIndex))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  operation(:index,
+    summary: "BlockTemplate index",
+    description: "API to get the list of all block_templates created so far",
+    parameters: [
+      page: [in: :query, type: :string, description: "Page number"]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", BlockTemplateSchema.BlockTemplateIndex},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      bad_request: {"Bad Request", "application/json", Error}
+    ]
+  )
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, params) do
@@ -152,19 +78,18 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     end
   end
 
-  swagger_path :show do
-    get("/block_templates/{id}")
-    summary("Show a block_template")
-    description("API to show details of a block_template")
-
-    parameters do
-      id(:path, :string, "block_template id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:BlockTemplate))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Show a block_template",
+    description: "API to show details of a block_template",
+    parameters: [
+      id: [in: :path, type: :string, description: "block_template id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", BlockTemplateSchema.BlockTemplate},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      bad_request: {"Bad Request", "application/json", Error}
+    ]
+  )
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
@@ -175,24 +100,22 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     end
   end
 
-  swagger_path :update do
-    put("/block_templates/{id}")
-    summary("Update a block_template")
-    description("API to update a block_template")
-
-    parameters do
-      id(:path, :string, "block_template id", required: true)
-
-      block_template(:body, Schema.ref(:BlockTemplateRequest), "BlockTemplate to be updated",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:BlockTemplate))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  operation(:update,
+    summary: "Update a block_template",
+    description: "API to update a block_template",
+    parameters: [
+      id: [in: :path, type: :string, description: "block_template id", required: true]
+    ],
+    request_body:
+      {"BlockTemplate to be updated", "application/json",
+       BlockTemplateSchema.BlockTemplateRequest},
+    responses: [
+      ok: {"Ok", "application/json", BlockTemplateSchema.BlockTemplate},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      bad_request: {"Bad Request", "application/json", Error}
+    ]
+  )
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => id} = params) do
@@ -205,20 +128,19 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     end
   end
 
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/block_templates/{id}")
-    summary("Delete a block_template")
-    description("API to delete a block_template")
-
-    parameters do
-      id(:path, :string, "block_template id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:BlockTemplate))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  operation(:delete,
+    summary: "Delete a block_template",
+    description: "API to delete a block_template",
+    parameters: [
+      id: [in: :path, type: :string, description: "block_template id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", BlockTemplateSchema.BlockTemplate},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      bad_request: {"Bad Request", "application/json", Error}
+    ]
+  )
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
@@ -230,21 +152,27 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     end
   end
 
-  @doc """
-  Bulk block template creation.
-  """
-  swagger_path :bulk_import do
-    post("/block_templates/bulk_import")
-    summary("Create block template in bulk")
-    description("API for block template bulk creation")
-    consumes("multipart/form-data")
-
-    parameter(:file, :formData, :file, "Bulk block template creation source file")
-    parameter(:mapping, :formData, :map, "Mappings for the CSV")
-
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:bulk_import,
+    summary: "Create block template in bulk",
+    description: "API for block template bulk creation",
+    request_body:
+      {"Bulk block template creation source file and mapping", "multipart/form-data",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           file: %OpenApiSpex.Schema{
+             type: :string,
+             format: :binary,
+             description: "Bulk block template creation source file"
+           },
+           mapping: %OpenApiSpex.Schema{type: :string, description: "Mappings for the CSV"}
+         }
+       }},
+    responses: [
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec bulk_import(Plug.Conn.t(), map) :: Plug.Conn.t()
   def bulk_import(conn, params) do

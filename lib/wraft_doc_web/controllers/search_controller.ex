@@ -4,78 +4,53 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   """
 
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   alias WraftDoc.Account.User
   alias WraftDoc.Search.Presets
   alias WraftDoc.Search.Typesense
   alias WraftDoc.Search.TypesenseServer
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.Search, as: SearchSchema
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  def swagger_definitions do
-    %{
-      SearchResponse:
-        swagger_schema do
-          title("Search Results")
-          description("Results returned from the search operation")
+  tags(["Search"])
 
-          properties do
-            found(:integer, "Total number of results found")
-            page(:integer, "Current page number")
-            request_params(:object, "Parameters used in the search request")
-          end
-
-          example(%{
-            hits: [
-              %{
-                document: %{
-                  id: "124",
-                  title: "Sample Document"
-                },
-                highlights: [
-                  %{field: "title", snippet: "Sample <mark>Document</mark>"}
-                ]
-              }
-            ],
-            found: 1,
-            page: 1,
-            request_params: %{
-              q: "sample",
-              collection: "documents"
-            }
-          })
-        end
-    }
-  end
-
-  @doc """
-    Search endpoint for querying collections.
-  """
-  swagger_path :search do
-    get("/search")
-    summary("Search collections")
-    description("Search API for querying collections with various parameters")
-    operation_id("search_collections")
-    tag("Search")
-
-    parameters do
-      query(:query, :string, "Search query string", required: true)
-      collection(:query, :string, "Collection name to search in")
-      page(:query, :integer, "Page number for pagination", default: 1)
-      per_page(:query, :integer, "Number of results per page", default: 10)
-      sort_by(:query, :string, "Field to sort results by")
-      sort_order(:query, :string, "Sort order (asc or desc)", enum: ["asc", "desc"])
-      filter_by(:query, :string, "Filter expression")
-      group_by(:query, :string, "Field to group results by")
-      include_fields(:query, :string, "Comma-separated list of fields to include")
-      exclude_fields(:query, :string, "Comma-separated list of fields to exclude")
-    end
-
-    response(200, "OK", Schema.ref(:SearchResponse))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(404, "Collection Not Found", Schema.ref(:Error))
-  end
+  operation(:search,
+    summary: "Search collections",
+    description: "Search API for querying collections with various parameters",
+    operation_id: "search_collections",
+    parameters: [
+      query: [in: :query, type: :string, description: "Search query string", required: true],
+      collection: [in: :query, type: :string, description: "Collection name to search in"],
+      page: [in: :query, type: :integer, description: "Page number for pagination (default: 1)"],
+      per_page: [
+        in: :query,
+        type: :integer,
+        description: "Number of results per page (default: 10)"
+      ],
+      sort_by: [in: :query, type: :string, description: "Field to sort results by"],
+      sort_order: [in: :query, type: :string, description: "Sort order (asc or desc)"],
+      filter_by: [in: :query, type: :string, description: "Filter expression"],
+      group_by: [in: :query, type: :string, description: "Field to group results by"],
+      include_fields: [
+        in: :query,
+        type: :string,
+        description: "Comma-separated list of fields to include"
+      ],
+      exclude_fields: [
+        in: :query,
+        type: :string,
+        description: "Comma-separated list of fields to exclude"
+      ]
+    ],
+    responses: [
+      ok: {"OK", "application/json", SearchSchema.SearchResponse},
+      bad_request: {"Bad Request", "application/json", Error},
+      not_found: {"Collection Not Found", "application/json", Error}
+    ]
+  )
 
   @doc """
   Performs a search based on the provided query and collection, with options
@@ -112,15 +87,15 @@ defmodule WraftDocWeb.Api.V1.SearchController do
     end
   end
 
-  swagger_path :reindex do
-    get("/reindex")
-    summary("Typesense Reindex")
-    description("Reindexing Data from Typesense")
-    operation_id("reindexing")
-
-    response(200, "Ok", Schema.ref(:SearchResponse))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  operation(:reindex,
+    summary: "Typesense Reindex",
+    description: "Reindexing Data from Typesense",
+    operation_id: "reindexing",
+    responses: [
+      ok: {"Ok", "application/json", SearchSchema.ReindexResponse},
+      bad_request: {"Bad Request", "application/json", Error}
+    ]
+  )
 
   @doc """
   Recreate collections and reindex them in Typesense .

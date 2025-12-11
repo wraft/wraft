@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.StateController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.AddActionLog
 
@@ -21,213 +21,24 @@ defmodule WraftDocWeb.Api.V1.StateController do
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.StateUser
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.State, as: StateSchema
 
-  def swagger_definitions do
-    %{
-      StateRequest:
-        swagger_schema do
-          title("State Request")
-          description("Create state request.")
+  tags(["states"])
 
-          properties do
-            state(:string, "State name", required: true)
-            order(:integer, "State's order", required: true)
-            type(:string, "State's type")
-            approvers(:array, "State's approvers", required: true)
-          end
-
-          example(%{
-            state: "Published",
-            order: 1,
-            type: "reviewer",
-            approvers: [
-              "b840c04c-25a2-4426-895a-acd2685153e4",
-              "b190bece-160c-44cc-91e9-79367ed2ccf6"
-            ]
-          })
-        end,
-      UpdateStateRequest:
-        swagger_schema do
-          title("Update State Request")
-          description("Update state request.")
-
-          properties do
-            state(:string, "State name")
-            order(:integer, "State's order")
-            type(:string, "State's type")
-            approvers(:map, "State's approvers")
-          end
-
-          example(%{
-            state: "Published",
-            order: 3,
-            type: "reviewer",
-            approvers: %{
-              add: [
-                "b840c04c-25a2-4426-895a-acd2685153e4",
-                "b190bece-160c-44cc-91e9-79367ed2ccf6"
-              ],
-              remove: [
-                "b840c04c-25a2-4426-895a-acd2685153e4",
-                "b190bece-160c-44cc-91e9-79367ed2ccf6"
-              ]
-            }
-          })
-        end,
-      State:
-        swagger_schema do
-          title("State")
-          description("State assigened to contents")
-
-          properties do
-            id(:string, "ID of the state")
-            state(:string, "A state of content")
-            order(:integer, "Order of the state")
-            type(:string, "Type of the state")
-            inserted_at(:string, "When was the state inserted", format: "ISO-8601")
-            updated_at(:string, "When was the state last updated", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "1232148nb3478",
-            state: "published",
-            order: 1,
-            type: "reviewer",
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z"
-          })
-        end,
-      ShowState:
-        swagger_schema do
-          title("Show flow details")
-          description("Show all details of a flow")
-
-          properties do
-            state(Schema.ref(:State))
-            creator(Schema.ref(:User))
-            flow(Schema.ref(:Flow))
-          end
-
-          example(%{
-            state: %{
-              id: "1232148nb3478",
-              state: "published",
-              order: 1,
-              type: "reviewer",
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            },
-            approvers: [
-              "b840c04c-25a2-4426-895a-acd2685153e4",
-              "b190bece-160c-44cc-91e9-79367ed2ccf6"
-            ],
-            creator: %{
-              id: "1232148nb3478",
-              name: "John Doe",
-              email: "email@xyz.com",
-              email_verify: true,
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            },
-            flow: %{
-              id: "jnb234881adsad",
-              name: "Flow 1",
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            }
-          })
-        end,
-      ShowStates:
-        swagger_schema do
-          title("All states and its details")
-          description("All states that have been created and their details")
-          type(:array)
-          items(Schema.ref(:ShowState))
-        end,
-      FlowIndex:
-        swagger_schema do
-          properties do
-            states(Schema.ref(:ShowStates))
-          end
-
-          example(%{
-            states: [
-              %{
-                state: %{
-                  id: "1232148nb3478",
-                  state: "published",
-                  order: 1,
-                  type: "reviewer",
-                  updated_at: "2020-01-21T14:00:00Z",
-                  inserted_at: "2020-02-21T14:00:00Z"
-                },
-                creator: %{
-                  id: "1232148nb3478",
-                  name: "John Doe",
-                  email: "email@xyz.com",
-                  email_verify: true,
-                  updated_at: "2020-01-21T14:00:00Z",
-                  inserted_at: "2020-02-21T14:00:00Z"
-                },
-                flow: %{
-                  id: "jnb234881adsad",
-                  name: "Flow 1",
-                  updated_at: "2020-01-21T14:00:00Z",
-                  inserted_at: "2020-02-21T14:00:00Z"
-                }
-              }
-            ]
-          })
-        end,
-      StateUserDocumentLevelRequest:
-        swagger_schema do
-          properties do
-            content_id(:string, "Document id", required: true)
-          end
-
-          example(%{
-            content_id: "f0b206b0-94e5-4bcb-a87b-1656166d9ebb"
-          })
-        end,
-      StateUserDocumentLevelResponse:
-        swagger_schema do
-          properties do
-            users(Schema.ref(:User))
-          end
-
-          example(%{
-            users: [
-              %{
-                id: "1232148nb3478",
-                name: "John Doe",
-                email: "email@xyz.com",
-                email_verify: true,
-                updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z"
-              }
-            ]
-          })
-        end
-    }
-  end
-
-  @doc """
-  Create a state.
-  """
-  swagger_path :create do
-    post("/flows/{flow_id}/states")
-    summary("Create a state")
-    description("Create state API")
-
-    parameters do
-      state(:body, Schema.ref(:StateRequest), "State to be created", required: true)
-      flow_id(:path, :string, "Flow id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:State))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Create a state",
+    description: "Create state API",
+    parameters: [
+      flow_id: [in: :path, type: :string, description: "Flow id", required: true]
+    ],
+    request_body: {"State to be created", "application/json", StateSchema.StateRequest},
+    responses: [
+      ok: {"Ok", "application/json", StateSchema.State},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, %{"flow_id" => flow_id} = params) do
@@ -239,21 +50,17 @@ defmodule WraftDocWeb.Api.V1.StateController do
     end
   end
 
-  @doc """
-  State index.
-  """
-  swagger_path :index do
-    get("/flows/{flow_id}/states")
-    summary("State index")
-    description("Index of States under a flow")
-
-    parameters do
-      flow_id(:path, :string, "flow id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:FlowIndex))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:index,
+    summary: "State index",
+    description: "Index of States under a flow",
+    parameters: [
+      flow_id: [in: :path, type: :string, description: "flow id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", StateSchema.FlowIndex},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"flow_id" => flow_uuid} = _params) do
@@ -262,22 +69,18 @@ defmodule WraftDocWeb.Api.V1.StateController do
     end
   end
 
-  @doc """
-  List users in a state
-  """
-  swagger_path :list_users_in_state do
-    get("/states/{state_id}/users")
-    summary("List users in a state")
-    description("List users in a state")
-
-    parameters do
-      state_id(:path, :string, "state id", required: true)
-      document_id(:query, :string, "document id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:StateUserDocumentLevelResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:list_users_in_state,
+    summary: "List users in a state",
+    description: "List users in a state",
+    parameters: [
+      state_id: [in: :path, type: :string, description: "state id", required: true],
+      document_id: [in: :query, type: :string, description: "document id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", StateSchema.StateUserDocumentLevelResponse},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec list_users_in_state(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def list_users_in_state(conn, %{"state_id" => state_id, "document_id" => document_id}) do
@@ -286,24 +89,20 @@ defmodule WraftDocWeb.Api.V1.StateController do
     end
   end
 
-  @doc """
-  State update.
-  """
-  swagger_path :update do
-    put("/states/{id}")
-    summary("State update")
-    description("API to update a state")
-
-    parameters do
-      id(:path, :string, "state id", required: true)
-      state(:body, Schema.ref(:UpdateStateRequest), "State to be updated", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:ShowState))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:update,
+    summary: "State update",
+    description: "API to update a state",
+    parameters: [
+      id: [in: :path, type: :string, description: "state id", required: true]
+    ],
+    request_body: {"State to be updated", "application/json", StateSchema.UpdateStateRequest},
+    responses: [
+      ok: {"Ok", "application/json", StateSchema.ShowState},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not found", "application/json", Error}
+    ]
+  )
 
   # TODO - Missing tests
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
@@ -316,23 +115,19 @@ defmodule WraftDocWeb.Api.V1.StateController do
     end
   end
 
-  @doc """
-  State delete.
-  """
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/states/{id}")
-    summary("State delete")
-    description("API to delete a state")
-
-    parameters do
-      id(:path, :string, "state id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:State))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:delete,
+    summary: "State delete",
+    description: "API to delete a state",
+    parameters: [
+      id: [in: :path, type: :string, description: "state id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", StateSchema.State},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not found", "application/json", Error}
+    ]
+  )
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
@@ -346,30 +141,20 @@ defmodule WraftDocWeb.Api.V1.StateController do
     end
   end
 
-  @doc """
-    Add user to flow state at document level.
-  """
-  swagger_path :add_user_to_state do
-    post("states/{state_id}/users/{user_id}")
-    summary("Add user to state at document level")
-    description("Add user to flow state at document level")
-
-    parameters do
-      state_id(:path, :string, "State id", required: true)
-      user_id(:path, :string, "User id", required: true)
-
-      document_id(
-        :query,
-        "string",
-        "Document id",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:State))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:add_user_to_state,
+    summary: "Add user to state at document level",
+    description: "Add user to flow state at document level",
+    parameters: [
+      state_id: [in: :path, type: :string, description: "State id", required: true],
+      user_id: [in: :path, type: :string, description: "User id", required: true],
+      document_id: [in: :query, type: :string, description: "Document id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", StateSchema.State},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec add_user_to_state(Plug.Conn.t(), map) :: Plug.Conn.t()
   def add_user_to_state(
@@ -387,30 +172,20 @@ defmodule WraftDocWeb.Api.V1.StateController do
     end
   end
 
-  @doc """
-  Remove user from a flow state at document level.
-  """
-  swagger_path :remove_user_from_state do
-    PhoenixSwagger.Path.delete("/states/{state_id}/users/{user_id}")
-    summary("Remove user from state at document level")
-    description("Remove user from flow state at document level")
-
-    parameters do
-      state_id(:path, :string, "State id", required: true)
-      user_id(:path, :string, "User id", required: true)
-
-      document_id(
-        :query,
-        "string",
-        "Document id",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:State))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:remove_user_from_state,
+    summary: "Remove user from state at document level",
+    description: "Remove user from flow state at document level",
+    parameters: [
+      state_id: [in: :path, type: :string, description: "State id", required: true],
+      user_id: [in: :path, type: :string, description: "User id", required: true],
+      document_id: [in: :query, type: :string, description: "Document id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", StateSchema.State},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec remove_user_from_state(Plug.Conn.t(), map) :: Plug.Conn.t()
   def remove_user_from_state(conn, %{

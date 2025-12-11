@@ -1,6 +1,9 @@
 defmodule WraftDocWeb.Api.V1.DocumentController do
+  @moduledoc """
+  Controller for document operations including DOCX import
+  """
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.AddActionLog
 
@@ -11,50 +14,36 @@ defmodule WraftDocWeb.Api.V1.DocumentController do
 
   alias WraftDoc.DocConversion
   alias WraftDoc.Utils.MarkDownToProseMirror
+  alias WraftDocWeb.Schemas
 
-  def swagger_definitions do
-    %{
-      ImportDocxResponse:
-        swagger_schema do
-          title("Import Docx Response")
-          description("Response for importing docx file")
+  tags(["Documents"])
 
-          properties do
-            prosemirror(:map, "ProseMirror JSON")
-          end
-
-          example(%{
-            prosemirror: %{
-              "type" => "doc",
-              "content" => [
-                %{
-                  "type" => "heading",
-                  "attrs" => %{"level" => 1},
-                  "content" => [%{"type" => "text", "text" => "Hello"}]
-                },
-                %{
-                  "type" => "paragraph",
-                  "content" => [%{"type" => "text", "text" => "World"}]
-                }
-              ]
-            }
-          })
-        end
-    }
-  end
-
-  swagger_path :import_docx do
-    post("/import_docx")
-    summary("Import docx file")
-    description("Import docx file")
-    produces("application/json")
-    consumes("multipart/form-data")
-    parameter(:file, :formData, :file, "DOCX file to upload", required: true)
-
-    response(200, "Success", Schema.ref(:ImportDocxResponse))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  @doc """
+  Import a DOCX file and convert it to ProseMirror JSON format
+  """
+  operation(:import_docx,
+    summary: "Import DOCX file",
+    description: "Import a DOCX file and convert it to ProseMirror JSON format for editing",
+    request_body:
+      {"DOCX file to import", "multipart/form-data",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           file: %OpenApiSpex.Schema{
+             type: :string,
+             format: :binary,
+             description: "DOCX file to upload"
+           }
+         },
+         required: [:file]
+       }},
+    responses: [
+      ok: {"Success", "application/json", Schemas.Document.ImportDocxResponse},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      bad_request: {"Bad Request", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec import_docx(Plug.Conn.t(), map) :: Plug.Conn.t()
   def import_docx(conn, %{"file" => %Plug.Upload{path: docx_file_path, filename: filename}}) do

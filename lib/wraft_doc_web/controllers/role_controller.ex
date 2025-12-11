@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.RoleController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.Authorized,
     create: "role:manage",
@@ -18,110 +18,24 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Notifications.Delivery
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.Role, as: RoleSchema
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  def swagger_definitions do
-    %{
-      RoleRequest:
-        swagger_schema do
-          title("Role request")
-          description("Create role request")
+  tags(["Roles"])
 
-          properties do
-            name(:string, "Role name", required: true)
-            permissions(:list, "Permissions of the role")
-          end
-
-          example(%{
-            name: "Editor",
-            permissions: ["layout:index", "layout:show", "layout:create", "layout:update"]
-          })
-        end,
-      Role:
-        swagger_schema do
-          title("Content type under Role")
-          description("all the content type under the role")
-
-          properties do
-            id(:string, "Id of the role")
-            name(:string, "Name of the role")
-            permissions(:list, "Permissions of the role")
-          end
-
-          example(%{
-            id: "9322d1a5-4f44-463d-b4a5-ce797a029ac2",
-            name: "Editor",
-            permissions: ["layout:index", "layout:show", "layout:create", "layout:update"]
-          })
-        end,
-      ListOfRoles:
-        swagger_schema do
-          title("Roles array")
-          description("List of existing Roles")
-          type(:array)
-          items(Schema.ref(:Role))
-        end,
-      ContentType:
-        swagger_schema do
-          title("Content type")
-          description("all the content type")
-
-          properties do
-            id(:string, "ID of the content_type")
-            description(:string, "Content Type's description", required: true)
-            layout_uuid(:string, "ID of the layout selected", required: true)
-            flow_uuid(:string, "ID of the flow selected", required: true)
-            color(:string, "Hex code of color")
-
-            prefix(:string, "Prefix to be used for generating Unique ID for contents",
-              required: true
-            )
-          end
-        end,
-      AssignRole:
-        swagger_schema do
-          title("Assign Role")
-          description("Response for assign user role")
-
-          properties do
-            info(:string, "Response Info")
-          end
-
-          example(%{
-            info: "Assigned the given role to the user successfully.!"
-          })
-        end,
-      UnassignRole:
-        swagger_schema do
-          title("Unassign Role")
-          description("Response for unassigning user role")
-
-          properties do
-            info(:string, "Response Info")
-          end
-
-          example(%{
-            info: "Unassigned the given role for the user successfully.!"
-          })
-        end
-    }
-  end
-
-  swagger_path :create do
-    post("/roles")
-    summary("Create roles ")
-    description(" Create specified roles in organisation")
-
-    parameters do
-      role(:body, Schema.ref(:RoleRequest), "Role to be created", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Role))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Create roles",
+    description: "Create specified roles in organisation",
+    request_body: {"Role to be created", "application/json", RoleSchema.RoleRequest},
+    responses: [
+      ok: {"Ok", "application/json", RoleSchema.Role},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      bad_request: {"Bad Request", "application/json", Error}
+    ]
+  )
 
   def create(conn, params) do
     user = conn.assigns.current_user
@@ -131,19 +45,18 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     end
   end
 
-  swagger_path :show do
-    get("/roles/{id}")
-    summary("show all the content type under the role")
-    description("API to list all the content type under the role")
-
-    parameters do
-      id(:path, :string, "id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Role))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "show all the content type under the role",
+    description: "API to list all the content type under the role",
+    parameters: [
+      id: [in: :path, type: :string, description: "id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", RoleSchema.Role},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error}
+    ]
+  )
 
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
@@ -153,20 +66,19 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     end
   end
 
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/roles/{id}")
-    summary("Delete a role")
-    description("API to delete a role")
-
-    parameters do
-      id(:path, :string, "role id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Role))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  operation(:delete,
+    summary: "Delete a role",
+    description: "API to delete a role",
+    parameters: [
+      id: [in: :path, type: :string, description: "role id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", RoleSchema.Role},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      bad_request: {"Bad Request", "application/json", Error}
+    ]
+  )
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
@@ -178,17 +90,18 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     end
   end
 
-  swagger_path :index do
-    get("/roles")
-    summary("List of roles")
-    description("All roles in an organisation")
-
-    parameter(:name, :query, :string, "Role Name")
-    parameter(:sort, :query, :string, "Sort Keys => name, name_desc")
-
-    response(200, "Ok", Schema.ref(:ListOfRoles))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:index,
+    summary: "List of roles",
+    description: "All roles in an organisation",
+    parameters: [
+      name: [in: :query, type: :string, description: "Role Name"],
+      sort: [in: :query, type: :string, description: "Sort Keys => name, name_desc"]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", RoleSchema.ListOfRoles},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   def index(conn, params) do
     current_user = conn.assigns[:current_user]
@@ -196,21 +109,20 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     render(conn, "index.json", roles: roles)
   end
 
-  swagger_path :update do
-    put("/roles/{id}")
-    summary("Update role")
-    description("Update role name and permissions")
-
-    parameters do
-      id(:path, :string, "role id", required: true)
-      role(:body, Schema.ref(:RoleRequest), "Role to be updated", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Role))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:update,
+    summary: "Update role",
+    description: "Update role name and permissions",
+    parameters: [
+      id: [in: :path, type: :string, description: "role id", required: true]
+    ],
+    request_body: {"Role to be updated", "application/json", RoleSchema.RoleRequest},
+    responses: [
+      ok: {"Ok", "application/json", RoleSchema.Role},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not found", "application/json", Error}
+    ]
+  )
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
@@ -222,21 +134,21 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     end
   end
 
-  swagger_path :assign_role do
-    post("/users/{user_id}/roles/{role_id}")
-    summary("Assign Role")
-    description("Assign role to the given user")
-
-    parameter(:user_id, :path, :string, "user id", required: true)
-    parameter(:role_id, :path, :string, "role id", required: true)
-
-    response(200, "Ok", Schema.ref(:AssignRole))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-    # TODO shouldnt be returning 400
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  operation(:assign_role,
+    summary: "Assign Role",
+    description: "Assign role to the given user",
+    parameters: [
+      user_id: [in: :path, type: :string, description: "user id", required: true],
+      role_id: [in: :path, type: :string, description: "role id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", RoleSchema.AssignRole},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not found", "application/json", Error},
+      bad_request: {"Bad Request", "application/json", Error}
+    ]
+  )
 
   @doc """
     Assign role to the given user
@@ -268,19 +180,20 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     end
   end
 
-  swagger_path :unassign_role do
-    PhoenixSwagger.Path.delete("/users/{user_id}/roles/{role_id}")
-    summary("Unassign Role")
-    description("Unassign role to the given user")
-
-    parameter(:user_id, :path, :string, "user id", required: true)
-    parameter(:role_id, :path, :string, "role id", required: true)
-
-    response(200, "Ok", Schema.ref(:UnassignRole))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:unassign_role,
+    summary: "Unassign Role",
+    description: "Unassign role to the given user",
+    parameters: [
+      user_id: [in: :path, type: :string, description: "user id", required: true],
+      role_id: [in: :path, type: :string, description: "role id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", RoleSchema.UnassignRole},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not found", "application/json", Error}
+    ]
+  )
 
   @doc """
     Unassign role from the given user

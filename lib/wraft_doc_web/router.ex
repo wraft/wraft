@@ -22,6 +22,11 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Guardian.FlexibleAuthPipeline)
   end
 
+  pipeline :openapi do
+    # plug(OpenApiSpex.Plug.PutApiSpec, spec: WraftDocWeb.ApiSpec)
+    plug OpenApiSpex.Plug.PutApiSpec, module: WraftDocWeb.ApiSpec
+  end
+
   pipeline :valid_membership do
     plug(WraftDocWeb.Plug.ValidMembershipCheck)
   end
@@ -717,35 +722,18 @@ defmodule WraftDocWeb.Router do
     forward("/", FunWithFlags.UI.Router, namespace: "flags")
   end
 
-  scope "/api/swagger" do
-    forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :wraft_doc, swagger_file: "swagger.json")
+  scope "/" do
+    pipe_through(:browser)
+
+    # get("/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi")
+
+    get("/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi")
   end
 
-  def swagger_info do
-    %{
-      info: %{
-        version: "0.0.1",
-        title: "Wraft Docs"
-      },
-      basePath: "/api/v1",
-      securityDefinitions: %{
-        Bearer: %{
-          type: "apiKey",
-          name: "Authorization",
-          in: "header",
-          description: "API Operations require a valid token."
-        }
-      },
-      tags: [
-        %{name: "Registration", description: "User registration"},
-        %{name: "Organisation", description: "Manage Enterprise details"}
-      ],
-      security: [
-        # ApiKey is applied to all operations
-        %{
-          Bearer: []
-        }
-      ]
-    }
+  scope "/api" do
+    pipe_through(:api)
+    pipe_through(:openapi)
+
+    get("/openapi", OpenApiSpex.Plug.RenderSpec, spec: WraftDocWeb.ApiSpec)
   end
 end

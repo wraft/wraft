@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   """
 
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.AddActionLog
   plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
@@ -15,114 +15,34 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
 
   alias WraftDoc.CloudImport.CloudAuth
   alias WraftDoc.CloudImport.StateStore
+  alias WraftDocWeb.Schemas.CloudAuth, as: CloudAuthSchema
 
   require Logger
 
   @providers ["google_drive", "dropbox", "onedrive"]
 
-  def swagger_definitions do
-    %{
-      AuthLoginUrlRequest:
-        swagger_schema do
-          title("Auth Login URL Request")
-          description("Request parameters for generating OAuth login URL")
+  tags(["Authentication"])
 
-          properties do
-            provider(:string, "Provider to authenticate with",
-              required: true,
-              enum: @providers
-            )
-          end
-
-          example(%{
-            "provider" => "google_drive"
-          })
-        end,
-      AuthLoginUrlResponse:
-        swagger_schema do
-          title("Auth Login URL Response")
-          description("Successful response containing OAuth redirect URL")
-
-          properties do
-            status(:string, "Status of the request", example: "success")
-            redirect_url(:string, "URL to redirect for OAuth authentication")
-          end
-
-          example(%{
-            "status" => "success",
-            "redirect_url" =>
-              "https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=12345&redirect_uri=https%3A%2F%2Fyourapp.com%2Fauth%2Fcallback&scope=email%20profile&state=abc123"
-          })
-        end,
-      OAuthCallbackResponse:
-        swagger_schema do
-          title("OAuth Callback Response")
-          description("Response from OAuth callback - redirects to frontend")
-
-          properties do
-            message(:string, "Informational message about the redirect")
-            redirect_location(:string, "Frontend URL where user will be redirected")
-          end
-
-          example(%{
-            "message" => "Redirecting to frontend application",
-            "redirect_location" => "https://yourapp.com/dashboard?auth=success"
-          })
-        end,
-      ErrorResponse:
-        swagger_schema do
-          title("Error Response")
-          description("Standard error response format")
-
-          properties do
-            error(:string, "Error message")
-            details(:string, "Additional error details", required: false)
-          end
-
-          example(%{
-            "error" => "Invalid provider specified",
-            "details" => "Supported providers: google_drive, dropbox, onedrive"
-          })
-        end
-    }
-  end
-
-  swagger_path :login_url do
-    get("/auth/{provider}")
-    summary("Generate OAuth login URL")
-
-    description("""
+  operation(:login_url,
+    summary: "Generate OAuth login URL",
+    description: """
     Generates a redirect URL for OAuth authentication with the specified provider.
     Stores OAuth session parameters for later verification during the callback phase.
-    """)
-
-    operation_id("generateOAuthRedirectUrl")
-    produces("application/json")
-    tag("Authentication")
-
-    parameters do
-      provider(:path, :string, "Provider to authenticate with",
-        required: true,
-        enum: @providers,
-        example: "google_drive"
-      )
-    end
-
-    response(200, "OK", Schema.ref(:AuthLoginUrlResponse),
-      example: %{
-        "status" => "success",
-        "redirect_url" =>
-          "https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=12345&redirect_uri=https%3A%2F%2Fyourapp.com%2Fauth%2Fcallback&scope=email%20profile&state=abc123"
-      }
-    )
-
-    response(400, "Bad Request", Schema.ref(:ErrorResponse),
-      example: %{
-        "error" => "Invalid provider specified",
-        "details" => "Supported providers: google_drive, dropbox, onedrive"
-      }
-    )
-  end
+    """,
+    operation_id: "generateOAuthRedirectUrl",
+    parameters: [
+      provider: [
+        in: :path,
+        type: :string,
+        description: "Provider to authenticate with (google_drive, dropbox, onedrive)",
+        required: true
+      ]
+    ],
+    responses: [
+      ok: {"OK", "application/json", CloudAuthSchema.AuthLoginUrlResponse},
+      bad_request: {"Bad Request", "application/json", CloudAuthSchema.ErrorResponse}
+    ]
+  )
 
   @doc """
   Generates OAuth login URL for the specified provider.
@@ -169,11 +89,9 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
 
   def login_url(_conn, _params), do: {:error, "Invalid provider"}
 
-  swagger_path :google_callback do
-    get("/googledrive/callback")
-    summary("Google Drive OAuth callback endpoint")
-
-    description("""
+  operation(:google_callback,
+    summary: "Google Drive OAuth callback endpoint",
+    description: """
     **Internal OAuth callback endpoint - automatically called by Google OAuth servers.**
 
     This endpoint is not intended for direct developer use. It is automatically invoked by Google's
@@ -185,37 +103,29 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
     - Redirects the user back to the frontend application
 
     Developers should use the `/auth/google_drive` endpoint to initiate the OAuth flow.
-    """)
-
-    operation_id("handleGoogleOAuthCallback")
-    produces("text/html")
-    tag("OAuth Callbacks")
-
-    parameters do
-      code(:query, :string, "Authorization code from Google OAuth servers",
-        required: true,
-        description: "Temporary code provided by Google after user authorization"
-      )
-
-      state(:query, :string, "OAuth state parameter for CSRF protection",
-        required: false,
-        description: "State value originally sent to Google for security verification"
-      )
-    end
-
-    response(302, "Found - Redirect to frontend", Schema.ref(:OAuthCallbackResponse),
-      description:
-        "Successful OAuth callback - redirects user to frontend application with auth status"
-    )
-
-    response(400, "Bad Request", Schema.ref(:ErrorResponse),
-      description: "Invalid authorization code or missing required parameters"
-    )
-
-    response(403, "Unauthorized", Schema.ref(:ErrorResponse),
-      description: "OAuth state mismatch or invalid session"
-    )
-  end
+    """,
+    operation_id: "handleGoogleOAuthCallback",
+    tags: ["OAuth Callbacks"],
+    parameters: [
+      code: [
+        in: :query,
+        type: :string,
+        description: "Authorization code from Google OAuth servers",
+        required: true
+      ],
+      state: [
+        in: :query,
+        type: :string,
+        description: "OAuth state parameter for CSRF protection",
+        required: false
+      ]
+    ],
+    responses: [
+      found: {"Found - Redirect to frontend", "text/html", CloudAuthSchema.OAuthCallbackResponse},
+      bad_request: {"Bad Request", "application/json", CloudAuthSchema.ErrorResponse},
+      forbidden: {"Unauthorized", "application/json", CloudAuthSchema.ErrorResponse}
+    ]
+  )
 
   @doc """
   Handles Google Drive OAuth callback.
@@ -230,11 +140,9 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
     |> then(&redirect(conn, to: &1))
   end
 
-  swagger_path :dropbox_callback do
-    get("/dropbox/callback")
-    summary("Dropbox OAuth callback endpoint")
-
-    description("""
+  operation(:dropbox_callback,
+    summary: "Dropbox OAuth callback endpoint",
+    description: """
     **Internal OAuth callback endpoint - automatically called by Dropbox OAuth servers.**
 
     This endpoint is not intended for direct developer use. It is automatically invoked by Dropbox's
@@ -246,47 +154,41 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
     - Redirects the user back to the frontend application
 
     Developers should use the `/auth/dropbox` endpoint to initiate the OAuth flow.
-    """)
-
-    operation_id("handleDropboxOAuthCallback")
-    produces("text/html")
-    tag("OAuth Callbacks")
-
-    parameters do
-      code(:query, :string, "Authorization code from Dropbox OAuth servers",
-        required: true,
-        description: "Temporary code provided by Dropbox after user authorization"
-      )
-
-      state(:query, :string, "OAuth state parameter for CSRF protection",
-        required: false,
-        description: "State value originally sent to Dropbox for security verification"
-      )
-
-      error(:query, :string, "Error code if authorization was denied",
-        required: false,
-        description: "Present only when user denies authorization or an error occurs"
-      )
-
-      error_description(:query, :string, "Human-readable error description",
-        required: false,
-        description: "Additional details about the error if present"
-      )
-    end
-
-    response(302, "Found - Redirect to frontend", Schema.ref(:OAuthCallbackResponse),
-      description:
-        "Successful OAuth callback - redirects user to frontend application with auth status"
-    )
-
-    response(400, "Bad Request", Schema.ref(:ErrorResponse),
-      description: "Invalid authorization code or missing required parameters"
-    )
-
-    response(401, "Unauthorized", Schema.ref(:ErrorResponse),
-      description: "OAuth state mismatch or invalid session"
-    )
-  end
+    """,
+    operation_id: "handleDropboxOAuthCallback",
+    tags: ["OAuth Callbacks"],
+    parameters: [
+      code: [
+        in: :query,
+        type: :string,
+        description: "Authorization code from Dropbox OAuth servers",
+        required: true
+      ],
+      state: [
+        in: :query,
+        type: :string,
+        description: "OAuth state parameter for CSRF protection",
+        required: false
+      ],
+      error: [
+        in: :query,
+        type: :string,
+        description: "Error code if authorization was denied",
+        required: false
+      ],
+      error_description: [
+        in: :query,
+        type: :string,
+        description: "Human-readable error description",
+        required: false
+      ]
+    ],
+    responses: [
+      found: {"Found - Redirect to frontend", "text/html", CloudAuthSchema.OAuthCallbackResponse},
+      bad_request: {"Bad Request", "application/json", CloudAuthSchema.ErrorResponse},
+      unauthorized: {"Unauthorized", "application/json", CloudAuthSchema.ErrorResponse}
+    ]
+  )
 
   @doc """
   Handles Dropbox OAuth callback.
@@ -301,11 +203,9 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
     |> then(&redirect(conn, to: &1))
   end
 
-  swagger_path :onedrive_callback do
-    get("/onedrive/callback")
-    summary("OneDrive OAuth callback endpoint")
-
-    description("""
+  operation(:onedrive_callback,
+    summary: "OneDrive OAuth callback endpoint",
+    description: """
     **Internal OAuth callback endpoint - automatically called by Microsoft OAuth servers.**
 
     This endpoint is not intended for direct developer use. It is automatically invoked by Microsoft's
@@ -317,37 +217,29 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
     - Redirects the user back to the frontend application
 
     Developers should use the `/auth/onedrive` endpoint to initiate the OAuth flow.
-    """)
-
-    operation_id("handleOneDriveOAuthCallback")
-    produces("text/html")
-    tag("OAuth Callbacks")
-
-    parameters do
-      code(:query, :string, "Authorization code from Microsoft OAuth servers",
-        required: true,
-        description: "Temporary code provided by Microsoft after user authorization"
-      )
-
-      state(:query, :string, "OAuth state parameter for CSRF protection",
-        required: false,
-        description: "State value originally sent to Microsoft for security verification"
-      )
-    end
-
-    response(302, "Found - Redirect to frontend", Schema.ref(:OAuthCallbackResponse),
-      description:
-        "Successful OAuth callback - redirects user to frontend application with auth status"
-    )
-
-    response(400, "Bad Request", Schema.ref(:ErrorResponse),
-      description: "Invalid authorization code or missing required parameters"
-    )
-
-    response(403, "Unauthorized", Schema.ref(:ErrorResponse),
-      description: "OAuth state mismatch or invalid session"
-    )
-  end
+    """,
+    operation_id: "handleOneDriveOAuthCallback",
+    tags: ["OAuth Callbacks"],
+    parameters: [
+      code: [
+        in: :query,
+        type: :string,
+        description: "Authorization code from Microsoft OAuth servers",
+        required: true
+      ],
+      state: [
+        in: :query,
+        type: :string,
+        description: "OAuth state parameter for CSRF protection",
+        required: false
+      ]
+    ],
+    responses: [
+      found: {"Found - Redirect to frontend", "text/html", CloudAuthSchema.OAuthCallbackResponse},
+      bad_request: {"Bad Request", "application/json", CloudAuthSchema.ErrorResponse},
+      forbidden: {"Unauthorized", "application/json", CloudAuthSchema.ErrorResponse}
+    ]
+  )
 
   @doc """
   Handles OneDrive OAuth callback.

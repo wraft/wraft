@@ -3,196 +3,25 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   API endpoints for managing storage assets (file uploads and metadata).
   """
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
   require Logger
 
   alias WraftDoc.Storages.StorageAsset
   alias WraftDoc.Storages.StorageAssets
   alias WraftDoc.Storages.StorageItems
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.StorageAsset, as: StorageAssetSchema
 
   plug WraftDocWeb.Plug.AddActionLog
   plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  def swagger_definitions do
-    %{
-      StorageAsset:
-        swagger_schema do
-          title("Storage Asset")
-          description("A physical storage asset representing an uploaded file.")
+  tags(["StorageAssets"])
 
-          properties do
-            id(:string, "The ID of the storage asset", required: true, format: "uuid")
-            filename(:string, "Original filename", required: true)
-            storage_key(:string, "Storage system key", required: true)
-            storage_backend(:string, "Storage backend identifier")
-            file_size(:integer, "File size in bytes")
-            mime_type(:string, "MIME type of the file")
-
-            processing_status(:string, "Processing status",
-              enum: ["pending", "processing", "completed", "failed"]
-            )
-
-            upload_completed_at(:string, "Upload completion timestamp", format: "ISO-8601")
-            checksum_sha256(:string, "File checksum")
-            thumbnail_path(:string, "Path to generated thumbnail")
-            preview_path(:string, "Path to generated preview")
-            inserted_at(:string, "Creation timestamp", format: "ISO-8601")
-            updated_at(:string, "Last update timestamp", format: "ISO-8601")
-            url(:string, "Access URL for the asset")
-          end
-
-          example(%{
-            id: "650e8400-e29b-41d4-a716-446655440000",
-            filename: "contract.pdf",
-            storage_key: "uploads/contract.pdf",
-            storage_backend: "s3",
-            file_size: 1024,
-            mime_type: "application/pdf",
-            processing_status: "completed",
-            upload_completed_at: "2023-01-15T10:30:00Z",
-            checksum_sha256: "a1b2c3...",
-            thumbnail_path: "thumbnails/contract.jpg",
-            preview_path: "previews/contract.html",
-            inserted_at: "2023-01-15T10:25:00Z",
-            updated_at: "2023-01-15T10:30:00Z",
-            url: "https://storage.example.com/uploads/contract.pdf"
-          })
-        end,
-      StorageAssetList:
-        swagger_schema do
-          title("Storage Asset List")
-          description("A list of storage assets")
-          type(:array)
-          items(Schema.ref(:StorageAsset))
-        end,
-      StorageAssetCreateParams:
-        swagger_schema do
-          title("Storage Asset Creation Parameters")
-          description("Parameters for creating a storage asset (legacy endpoint)")
-
-          properties do
-            filename(:string, "Original filename", required: true)
-            storage_key(:string, "Storage system key", required: true)
-            file_size(:integer, "File size in bytes")
-            mime_type(:string, "MIME type of the file")
-          end
-
-          example(%{
-            filename: "contract.pdf",
-            storage_key: "uploads/contract.pdf",
-            file_size: 1024,
-            mime_type: "application/pdf"
-          })
-        end,
-      FileUploadParams:
-        swagger_schema do
-          title("File Upload Parameters")
-          description("Parameters for uploading a new file")
-
-          properties do
-            file(:string, "The file to upload", required: true, format: "binary")
-            parent_id(:string, "Parent folder ID", format: "uuid")
-            repository_id(:string, "Repository ID", format: "uuid")
-            display_name(:string, "Custom display name")
-
-            classification_level(:string, "Security classification level",
-              enum: ["public", "internal", "confidential", "secret"]
-            )
-          end
-
-          example(%{
-            parent_id: "550e8400-e29b-41d4-a716-446655440000",
-            repository_id: "550e8400-e29b-41d4-a716-446655440001",
-            display_name: "Contract Agreement",
-            classification_level: "confidential"
-          })
-        end,
-      FileUploadResponse:
-        swagger_schema do
-          title("File Upload Response")
-          description("Successful file upload response")
-
-          properties do
-            data(:object, "Created storage item with assets",
-              properties: %{
-                id: %{
-                  type: :string,
-                  format: "uuid",
-                  example: "550e8400-e29b-41d4-a716-446655440000"
-                },
-                name: %{type: :string, example: "contract.pdf"},
-                display_name: %{type: :string, example: "Contract Agreement"},
-                item_type: %{type: :string, example: "file"},
-                path: %{type: :string, example: "/Contracts/Q3"},
-                mime_type: %{type: :string, example: "application/pdf"},
-                size: %{type: :integer, example: 1024},
-                assets: %{
-                  type: :array,
-                  items: Schema.ref(:StorageAsset),
-                  example: [
-                    %{
-                      id: "650e8400-e29b-41d4-a716-446655440000",
-                      filename: "contract.pdf",
-                      storage_key: "uploads/2023/contract.pdf",
-                      file_size: 1024,
-                      mime_type: "application/pdf"
-                    }
-                  ]
-                }
-              }
-            )
-          end
-
-          example(%{
-            "data" => %{
-              "id" => "550e8400-e29b-41d4-a716-446655440000",
-              "name" => "contract.pdf",
-              "display_name" => "Contract Agreement",
-              "item_type" => "file",
-              "path" => "/Contracts/Q3",
-              "mime_type" => "application/pdf",
-              "size" => 1024,
-              "assets" => [
-                %{
-                  "id" => "650e8400-e29b-41d4-a716-446655440000",
-                  "filename" => "contract.pdf",
-                  "storage_key" => "uploads/2023/contract.pdf",
-                  "file_size" => 1024,
-                  "mime_type" => "application/pdf"
-                }
-              ]
-            }
-          })
-        end,
-      ErrorResponse:
-        swagger_schema do
-          title("Error Response")
-          description("Standard error format")
-
-          properties do
-            error(:string, "Error message", example: "File upload failed")
-            details(:string, "Additional details", example: "File size exceeds 10MB limit")
-            validation_errors(:object, "Field-specific errors", required: false)
-          end
-
-          example(%{
-            "error" => "Validation failed",
-            "details" => "Invalid file type",
-            "validation_errors" => %{
-              "file" => "Must be a PDF, DOCX, or JPG file"
-            }
-          })
-        end
-    }
-  end
-
-  swagger_path :index do
-    get("/storage/assets")
-    summary("List storage assets")
-
-    description("""
+  operation(:index,
+    summary: "List storage assets",
+    description: """
     Returns paginated list of storage assets for the current organization.
 
     ### Filtering
@@ -202,28 +31,24 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
 
     ### Sorting
     Supported via `sort_by` and `sort_order` parameters
-    """)
-
-    operation_id("listStorageAssets")
-    produces("application/json")
-
-    parameters do
-      # Add query parameters here
-      limit(:query, :integer, "Number of items to return",
-        default: 100,
-        minimum: 1,
-        maximum: 1000
-      )
-
-      offset(:query, :integer, "Number of items to skip", default: 0, minimum: 0)
-      # repository_id(:query, :string, "Filter by repository ID", format: "uuid")
-      # parent_id(:query, :string, "Filter by parent folder ID", format: "uuid")
-      # mime_type(:query, :string, "Filter by MIME type")
-    end
-
-    response(200, "OK", Schema.ref(:StorageAssetList))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+    """,
+    operation_id: "listStorageAssets",
+    parameters: [
+      limit: [
+        in: :query,
+        type: :integer,
+        description: "Number of items to return (default: 100, min: 1, max: 1000)"
+      ],
+      offset: [in: :query, type: :integer, description: "Number of items to skip (default: 0)"]
+      # repository_id: [in: :query, type: :string, description: "Filter by repository ID", format: "uuid"],
+      # parent_id: [in: :query, type: :string, description: "Filter by parent folder ID", format: "uuid"],
+      # mime_type: [in: :query, type: :string, description: "Filter by MIME type"]
+    ],
+    responses: [
+      ok: {"OK", "application/json", StorageAssetSchema.StorageAssetList},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @doc """
   Lists storage assets with optional filtering.
@@ -254,11 +79,9 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     end
   end
 
-  swagger_path :upload do
-    post("/storage/assets/upload")
-    summary("Upload a file")
-
-    description("""
+  operation(:upload,
+    summary: "Upload a file",
+    description: """
     Main endpoint for file uploads. Creates both:
     1. StorageAsset (physical file metadata)
     2. StorageItem (logical file representation)
@@ -268,29 +91,18 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     - Images: JPG, PNG
     - Archives: ZIP
     - Max size: 10MB
-    """)
-
-    operation_id("uploadFile")
-    consumes("multipart/form-data")
-    produces("application/json")
-
-    parameters do
-      file(:formData, :file, "The file to upload", required: true)
-      parent_id(:formData, :string, "Parent folder ID", format: "uuid")
-      repository_id(:formData, :string, "Repository ID", format: "uuid")
-      display_name(:formData, :string, "Custom display name")
-
-      classification_level(:formData, :string, "Security classification level",
-        enum: ["public", "internal", "confidential", "secret"]
-      )
-    end
-
-    response(201, "Created", Schema.ref(:FileUploadResponse))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(413, "Payload Too Large", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+    """,
+    operation_id: "uploadFile",
+    request_body:
+      {"The file to upload", "multipart/form-data", StorageAssetSchema.FileUploadParams},
+    responses: [
+      created: {"Created", "application/json", StorageAssetSchema.FileUploadResponse},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      request_entity_too_large: {"Payload Too Large", "application/json", Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error}
+    ]
+  )
 
   def upload(conn, %{"file" => _file} = params) do
     current_user = conn.assigns[:current_user]
@@ -305,30 +117,23 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
 
   def upload(_conn, _params), do: {:error, :file_required}
 
-  swagger_path :create do
-    post("/storage/assets")
-    summary("Create a storage asset (legacy)")
-
-    description("""
+  operation(:create,
+    summary: "Create a storage asset (legacy)",
+    description: """
     Legacy endpoint for creating storage assets directly.
     Prefer the upload endpoint for new implementations.
-    """)
-
-    operation_id("createStorageAsset")
-    consumes("application/json")
-    produces("application/json")
-
-    parameters do
-      asset(:body, Schema.ref(:StorageAssetCreateParams), "Storage asset creation parameters",
-        required: true
-      )
-    end
-
-    response(201, "Created", Schema.ref(:StorageAsset))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+    """,
+    operation_id: "createStorageAsset",
+    request_body:
+      {"Storage asset creation parameters", "application/json",
+       StorageAssetSchema.StorageAssetCreateParams},
+    responses: [
+      created: {"Created", "application/json", StorageAssetSchema.StorageAsset},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error}
+    ]
+  )
 
   @doc """
   Creates a storage asset (legacy endpoint for backwards compatibility).
@@ -343,22 +148,25 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     end
   end
 
-  swagger_path :show do
-    get("/storage/assets/{id}")
-    summary("Get storage asset details")
-    description("Returns detailed information about a specific storage asset")
-    operation_id("getStorageAsset")
-    produces("application/json")
-
-    parameters do
-      id(:path, :string, "ID of the storage asset", required: true, format: "uuid")
-    end
-
-    response(200, "OK", Schema.ref(:StorageAsset))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Get storage asset details",
+    description: "Returns detailed information about a specific storage asset",
+    operation_id: "getStorageAsset",
+    parameters: [
+      id: [
+        in: :path,
+        type: :string,
+        description: "ID of the storage asset (UUID)",
+        required: true
+      ]
+    ],
+    responses: [
+      ok: {"OK", "application/json", StorageAssetSchema.StorageAsset},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error}
+    ]
+  )
 
   @doc """
   Shows a storage asset by ID.
@@ -373,34 +181,44 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     end
   end
 
-  swagger_path :update do
-    patch("/storage/assets/{id}")
-    put("/storage/assets/{id}")
-    summary("Update a storage asset")
-    description("Updates metadata for an existing storage asset")
-    operation_id("updateStorageAsset")
-    consumes("application/json")
-    produces("application/json")
-
-    parameters do
-      id(:path, :string, "ID of the storage asset", required: true, format: "uuid")
-
-      storage_asset(:body, :object, "Storage asset update parameters",
-        example: %{
-          processing_status: "completed",
-          metadata: %{
-            notes: "Processed successfully"
-          }
-        }
-      )
-    end
-
-    response(200, "OK", Schema.ref(:StorageAsset))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:update,
+    summary: "Update a storage asset",
+    description: "Updates metadata for an existing storage asset",
+    operation_id: "updateStorageAsset",
+    parameters: [
+      id: [
+        in: :path,
+        type: :string,
+        description: "ID of the storage asset (UUID)",
+        required: true
+      ]
+    ],
+    request_body:
+      {"Storage asset update parameters", "application/json",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           processing_status: %OpenApiSpex.Schema{
+             type: :string,
+             enum: ["pending", "processing", "completed", "failed"]
+           },
+           metadata: %OpenApiSpex.Schema{type: :object}
+         },
+         example: %{
+           processing_status: "completed",
+           metadata: %{
+             notes: "Processed successfully"
+           }
+         }
+       }},
+    responses: [
+      ok: {"OK", "application/json", StorageAssetSchema.StorageAsset},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error}
+    ]
+  )
 
   @doc """
   Updates a storage asset.
@@ -417,27 +235,28 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   end
 
   # Delete action
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/storage/assets/{id}")
-    summary("Delete a storage asset")
-
-    description("""
+  operation(:delete,
+    summary: "Delete a storage asset",
+    description: """
     Soft deletes a storage asset.
     The actual file may be retained in storage according to retention policies.
-    """)
-
-    operation_id("deleteStorageAsset")
-    produces("application/json")
-
-    parameters do
-      id(:path, :string, "ID of the storage asset to delete", required: true, format: "uuid")
-    end
-
-    response(204, "No Content")
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+    """,
+    operation_id: "deleteStorageAsset",
+    parameters: [
+      id: [
+        in: :path,
+        type: :string,
+        description: "ID of the storage asset to delete (UUID)",
+        required: true
+      ]
+    ],
+    responses: [
+      no_content: {"No Content", "application/json", nil},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error}
+    ]
+  )
 
   @doc """
   Soft deletes a storage asset.
