@@ -4,7 +4,9 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
   Pipe stage model.
   """
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
+
+  alias WraftDocWeb.Schemas
 
   plug WraftDocWeb.Plug.AddActionLog
 
@@ -20,120 +22,25 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
   alias WraftDoc.Pipelines.Stages
   alias WraftDoc.Pipelines.Stages.Stage
 
-  def swagger_definitions do
-    %{
-      PipeStageRequestMap:
-        swagger_schema do
-          title("Pipe stage request")
-          description("Map with content type, data template and state UUIDs")
-
-          properties do
-            content_type_id(:string, "Content type UUID")
-            data_template_id(:string, "Data template UUID")
-            state_id(:string, "State UUID")
-          end
-
-          example(%{
-            content_type_id: "1232148nb3478",
-            data_template_id: "1232148nb3478"
-          })
-        end,
-      PipeStage:
-        swagger_schema do
-          title("Pipeline stage")
-          description("One stage in a pipeline.")
-
-          properties do
-            id(:string, "ID of the pipe stage")
-            inserted_at(:string, "When was the pipe stage inserted", format: "ISO-8601")
-            updated_at(:string, "When was the pipe stage last updated", format: "ISO-8601")
-            content_type(Schema.ref(:ContentTypeWithFields))
-            data_template(Schema.ref(:DataTemplate))
-            state(Schema.ref(:State))
-          end
-
-          example(%{
-            id: "kjasfqjbn",
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z",
-            content_type: %{
-              id: "1232148nb3478",
-              name: "Offer letter",
-              description: "An offer letter",
-              fields: [
-                %{
-                  key: "position",
-                  field_type_id: "kjb14713132lkdac",
-                  meta: %{"src" => "/img/img.png", "alt" => "Image"}
-                },
-                %{
-                  key: "name",
-                  field_type_id: "kjb2347mnsad",
-                  meta: %{"src" => "/img/img.png", "alt" => "Image"}
-                }
-              ],
-              prefix: "OFFLET",
-              color: "#fffff",
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            },
-            data_template: %{
-              id: "1232148nb3478",
-              title: "Template 1",
-              title_template: "Letter for [user]",
-              data: "Hi [user]",
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            }
-          })
-        end,
-      PipeStages:
-        swagger_schema do
-          title("Pipe stages list")
-          description("List of pipe stages")
-          type(:array)
-          items(Schema.ref(:PipeStage))
-        end,
-      DeletedPipeStage:
-        swagger_schema do
-          title("Deleted pipe stage")
-          description("Response when a pipe stage is deleted")
-
-          properties do
-            id(:string, "ID of the pipe stage")
-            inserted_at(:string, "When was the pipe stage inserted", format: "ISO-8601")
-            updated_at(:string, "When was the pipe stage last updated", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "kjasfqjbn",
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z"
-          })
-        end
-    }
-  end
+  tags(["Pipe Stages"])
 
   @doc """
-  Creates a pipe stage.
+  Creates a pipe stage
   """
-  swagger_path :create do
-    post("/pipelines/{pipeline_id}/stages")
-    summary("Create a pipe stage")
-    description("Create pipe stage API")
-
-    parameters do
-      pipeline_id(:path, :string, "ID of the pipeline", required: true)
-
-      pipeline(:body, Schema.ref(:PipeStageRequestMap), "Pipe stage to be created",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:PipeStage))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Create a pipe stage",
+    description: "Create a new pipe stage in a pipeline",
+    parameters: [
+      pipeline_id: [in: :path, type: :string, description: "ID of the pipeline", required: true]
+    ],
+    request_body:
+      {"Pipe stage to be created", "application/json", Schemas.PipeStage.PipeStageRequestMap},
+    responses: [
+      ok: {"Ok", "application/json", Schemas.PipeStage.PipeStage},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, %{"pipeline_id" => p_uuid} = params) do
@@ -147,22 +54,22 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
   end
 
   @doc """
-  Updates a pipe stage.
+  Updates a pipe stage
   """
-  swagger_path :update do
-    put("/stages/{id}")
-    summary("Update a pipe stage")
-    description("Update pipe stage API")
-
-    parameters do
-      id(:path, :string, "ID of the pipe stage", required: true)
-      stage(:body, Schema.ref(:PipeStageRequestMap), "Pipe stage to be updated", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:PipeStage))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:update,
+    summary: "Update a pipe stage",
+    description: "Update an existing pipe stage",
+    parameters: [
+      id: [in: :path, type: :string, description: "ID of the pipe stage", required: true]
+    ],
+    request_body:
+      {"Pipe stage to be updated", "application/json", Schemas.PipeStage.PipeStageRequestMap},
+    responses: [
+      ok: {"Ok", "application/json", Schemas.PipeStage.PipeStage},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => s_uuid} = params) do
@@ -176,21 +83,20 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
   end
 
   @doc """
-  Deletes a pipe stage.
+  Deletes a pipe stage
   """
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/stages/{id}")
-    summary("Delete a pipe stage")
-    description("Delete pipe stage API")
-
-    parameters do
-      id(:path, :string, "ID of the pipe stage", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:DeletedPipeStage))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:delete,
+    summary: "Delete a pipe stage",
+    description: "Delete an existing pipe stage",
+    parameters: [
+      id: [in: :path, type: :string, description: "ID of the pipe stage", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.PipeStage.DeletedPipeStage},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => s_uuid}) do

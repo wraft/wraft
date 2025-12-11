@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.FormMappingController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug(WraftDocWeb.Plug.AddActionLog)
 
@@ -12,98 +12,25 @@ defmodule WraftDocWeb.Api.V1.FormMappingController do
   alias WraftDoc.Forms.FormMapping
   alias WraftDoc.Pipelines.Stages
   alias WraftDoc.Pipelines.Stages.Stage
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.FormMapping, as: FormMappingSchema
 
-  def swagger_definitions do
-    %{
-      FormMappingResponse:
-        swagger_schema do
-          title("Wraft Form mapping response")
-          description("Form mapping response body")
+  tags(["FormMappings"])
 
-          properties do
-            form_id(:string, "Form id")
-            pipe_stage_id(:string, "Pipe stage id")
-            mapping(Schema.ref(:Mapping))
-          end
-
-          example(%{
-            form_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
-            pipe_stage_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
-            inserted_at: "2023-08-21T14:00:00Z",
-            updated_at: "2023-08-21T14:00:00Z",
-            mapping: [
-              %{
-                id: "e63d02aa-6ea6-4e10-87aa-61061e7557eb",
-                destination: %{
-                  name: "E_name",
-                  id: "992c50b2-c586-449f-b298-78d59d8ab81c"
-                },
-                source: %{
-                  id: "992c50b2-c586-449f-b298-78d59d8ab81c",
-                  name: "Name"
-                }
-              }
-            ]
-          })
-        end,
-      Mapping:
-        swagger_schema do
-          title("Form mapping")
-          description("Mapping body")
-
-          properties do
-            mapping(
-              :array,
-              "Mapping body Example:
-              `mapping: [{form_field_id: \"992c50b2-c586-449f-b298-78d59d8ab81c\", content_type_field_id: \"992c50b2-c586-449f-b298-78d59d8ab81c\"}]`",
-              required: true
-            )
-          end
-        end,
-      FormMapping:
-        swagger_schema do
-          title("Wraft Form mapping")
-          description("Form mapping body to create")
-
-          properties do
-            form_id(:string, "Form id", required: true)
-            pipe_stage_id(:string, "Pipe stage id", required: true)
-            mapping(Schema.ref(:Mapping))
-          end
-
-          example(%{
-            pipe_stage_id: "0043bde9-3903-4cb7-b898-cd4d7cbe99bb",
-            mapping: [
-              %{
-                destination: %{
-                  name: "E_name",
-                  destination_id: "992c50b2-c586-449f-b298-78d59d8ab81c"
-                },
-                source: %{
-                  id: "992c50b2-c586-449f-b298-78d59d8ab81c",
-                  name: "Name"
-                }
-              }
-            ]
-          })
-        end
-    }
-  end
-
-  swagger_path :create do
-    post("/forms/{form_id}/mapping")
-    summary("Create wraft form mapping")
-    description("Create wraft form mapping API")
-
-    parameters do
-      form_id(:path, :string, "Form id", required: true)
-      form_mapping(:body, Schema.ref(:FormMapping), "Form mapping to be created", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:FormMappingResponse))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Create wraft form mapping",
+    description: "Create wraft form mapping API",
+    parameters: [
+      form_id: [in: :path, type: :string, description: "Form id", required: true]
+    ],
+    request_body:
+      {"Form mapping to be created", "application/json", FormMappingSchema.FormMapping},
+    responses: [
+      ok: {"Ok", "application/json", FormMappingSchema.FormMappingResponse},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   # TODO write test cases
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
@@ -117,21 +44,20 @@ defmodule WraftDocWeb.Api.V1.FormMappingController do
     end
   end
 
-  swagger_path :show do
-    get("/forms/{form_id}/mapping/{mapping_id}")
-    summary("Get a form_mapping")
-    description("get form_mapping API")
-
-    parameters do
-      form_id(:path, :string, "Form id", required: true)
-      mapping_id(:path, :string, "form_mapping id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:FormMappingResponse))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Get a form_mapping",
+    description: "get form_mapping API",
+    parameters: [
+      form_id: [in: :path, type: :string, description: "Form id", required: true],
+      mapping_id: [in: :path, type: :string, description: "form_mapping id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", FormMappingSchema.FormMappingResponse},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error}
+    ]
+  )
 
   # TODO write test cases
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
@@ -143,28 +69,22 @@ defmodule WraftDocWeb.Api.V1.FormMappingController do
     end
   end
 
-  swagger_path :update do
-    put("/forms/{form_id}/mapping/{mapping_id}")
-    summary("Update a form_mapping")
-    description("Update form_mapping API")
-
-    parameters do
-      form_id(:path, :string, "Form id", required: true)
-      mapping_id(:path, :string, "form_mapping id", required: true)
-
-      form_mapping(
-        :body,
-        Schema.ref(:FormMapping),
-        "FormMapping to be updated",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:FormMappingResponse))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:update,
+    summary: "Update a form_mapping",
+    description: "Update form_mapping API",
+    parameters: [
+      form_id: [in: :path, type: :string, description: "Form id", required: true],
+      mapping_id: [in: :path, type: :string, description: "form_mapping id", required: true]
+    ],
+    request_body:
+      {"FormMapping to be updated", "application/json", FormMappingSchema.FormMapping},
+    responses: [
+      ok: {"Ok", "application/json", FormMappingSchema.FormMappingResponse},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error}
+    ]
+  )
 
   # TODO write test cases
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()

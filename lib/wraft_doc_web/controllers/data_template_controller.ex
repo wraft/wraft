@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.DataTemplateController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.AddActionLog
 
@@ -20,191 +20,25 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   alias WraftDoc.DataTemplates
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Search.TypesenseServer, as: Typesense
+  alias WraftDocWeb.Schemas.DataTemplate, as: DataTemplateSchema
+  alias WraftDocWeb.Schemas.Error
 
-  def swagger_definitions do
-    %{
-      DataTemplateRequest:
-        swagger_schema do
-          title("Data template Request")
-          description("Create data template request.")
+  tags(["DataTemplates"])
 
-          properties do
-            title(:string, "Data template's title", required: true)
-            title_template(:string, "Title template", required: true)
-            data(:string, "Data template's contents", required: true)
-            serialized(:map, "Serialized data", required: true)
-          end
-
-          example(%{
-            title: "Template 1",
-            title_template: "Letter for [user]",
-            data: "Hi [user]",
-            serialized: %{title: "Offer letter of [client]", data: "Hi [user]"}
-          })
-        end,
-      DataTemplate:
-        swagger_schema do
-          title("Data Template")
-          description("A Data Template")
-
-          properties do
-            id(:string, "The ID of the data template", required: true)
-            title(:string, "Title of the data template", required: true)
-            title_template(:string, "Title content of the data template", required: true)
-            data(:string, "Data template's contents")
-            serialized(:map, "Serialized data")
-            inserted_at(:string, "When was the layout created", format: "ISO-8601")
-            updated_at(:string, "When was the layout last updated", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "1232148nb3478",
-            title: "Template 1",
-            title_template: "Letter for [user]",
-            data: "Hi [user]",
-            serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z"
-          })
-        end,
-      DataTemplateAndContentType:
-        swagger_schema do
-          title("Data Template and its content type")
-          description("A Data Template and its content type")
-
-          properties do
-            id(:string, "The ID of the data template", required: true)
-            title(:string, "Title of the data template", required: true)
-            title_template(:string, "Title content of the data template", required: true)
-            data(:string, "Data template's contents")
-            serialized(:map, "Serialized data")
-            inserted_at(:string, "When was the layout created", format: "ISO-8601")
-            updated_at(:string, "When was the layout last updated", format: "ISO-8601")
-            content_type(Schema.ref(:ContentTypeWithoutFields))
-          end
-
-          example(%{
-            id: "1232148nb3478",
-            title: "Template 1",
-            title_template: "Letter for [user]",
-            data: "Hi [user]",
-            serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z",
-            content_type: %{
-              id: "1232148nb3478",
-              name: "Offer letter",
-              description: "An offer letter",
-              prefix: "OFFLET",
-              color: "#fffff",
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            }
-          })
-        end,
-      ShowDataTemplate:
-        swagger_schema do
-          title("Data template and all its details")
-          description("API to show a data template and all its details")
-
-          properties do
-            data_template(Schema.ref(:LayoutAndEngine))
-            creator(Schema.ref(:User))
-            content_type(Schema.ref(:ContentTypeWithoutFields))
-          end
-
-          example(%{
-            data_template: %{
-              id: "1232148nb3478",
-              title: "Main Template",
-              title_template: "Letter for [user]",
-              data: "Hi [user]",
-              serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            },
-            creator: %{
-              id: "1232148nb3478",
-              name: "John Doe",
-              email: "email@xyz.com",
-              email_verify: true,
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            },
-            content_type: %{
-              id: "1232148nb3478",
-              name: "Offer letter",
-              description: "An offer letter",
-              prefix: "OFFLET",
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            }
-          })
-        end,
-      DataTemplates:
-        swagger_schema do
-          title("Data templates under a content type")
-          description("All data template that have been created under a content type")
-          type(:array)
-          items(Schema.ref(:DataTemplate))
-        end,
-      DataTemplatesIndex:
-        swagger_schema do
-          properties do
-            data_templates(Schema.ref(:DataTemplateAndContentType))
-            page_number(:integer, "Page number")
-            total_pages(:integer, "Total number of pages")
-            total_entries(:integer, "Total number of contents")
-          end
-
-          example(%{
-            data_templates: [
-              %{
-                id: "1232148nb3478",
-                title: "Main template",
-                title_template: "Letter for [user]",
-                data: "Hi [user]",
-                serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
-                updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z",
-                content_type: %{
-                  id: "1232148nb3478",
-                  name: "Offer letter",
-                  description: "An offer letter",
-                  prefix: "OFFLET",
-                  updated_at: "2020-01-21T14:00:00Z",
-                  inserted_at: "2020-02-21T14:00:00Z"
-                }
-              }
-            ],
-            page_number: 1,
-            total_pages: 2,
-            total_entries: 15
-          })
-        end
-    }
-  end
-
-  @doc """
-  Create a data template.
-  """
-  swagger_path :create do
-    post("/content_types/{c_type_id}/data_templates")
-    summary("Create data template")
-    description("Create data template API")
-
-    parameters do
-      c_type_id(:path, :string, "ID of the content type", required: true)
-
-      data_template(:body, Schema.ref(:DataTemplateRequest), "Data template to be created",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:DataTemplate))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Create data template",
+    description: "Create data template API",
+    parameters: [
+      c_type_id: [in: :path, type: :string, description: "ID of the content type", required: true]
+    ],
+    request_body:
+      {"Data template to be created", "application/json", DataTemplateSchema.DataTemplateRequest},
+    responses: [
+      ok: {"Ok", "application/json", DataTemplateSchema.DataTemplate},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, %{"c_type_id" => c_type_id} = params) do
@@ -218,29 +52,24 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     end
   end
 
-  @doc """
-  Data template index.
-  """
-  swagger_path :index do
-    get("/content_types/{c_type_id}/data_templates")
-    summary("Data template index")
-    description("API to get the list of all data templates created so far under a content type")
-
-    parameters do
-      c_type_id(:path, :string, "ID of the content type", required: true)
-      page(:query, :string, "Page number")
-      title(:query, :string, "Title")
-
-      sort(
-        :query,
-        :string,
-        "sort keys => updated_at, updated_at_desc, inserted_at, inserted_at_desc"
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:DataTemplatesIndex))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:index,
+    summary: "Data template index",
+    description: "API to get the list of all data templates created so far under a content type",
+    parameters: [
+      c_type_id: [in: :path, type: :string, description: "ID of the content type", required: true],
+      page: [in: :query, type: :string, description: "Page number"],
+      title: [in: :query, type: :string, description: "Title"],
+      sort: [
+        in: :query,
+        type: :string,
+        description: "sort keys => updated_at, updated_at_desc, inserted_at, inserted_at_desc"
+      ]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", DataTemplateSchema.DataTemplatesIndex},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, %{"c_type_id" => c_type_id} = params) do
@@ -259,18 +88,18 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     end
   end
 
-  @doc """
-  All Data templates.
-  """
-  swagger_path :all_templates do
-    get("/data_templates")
-    summary("All Data templates")
-    description("API to get the list of all data templates created so far under an organisation")
-    parameter(:page, :query, :string, "Page number")
-    parameter(:title, :query, :string, "Title")
-    response(200, "Ok", Schema.ref(:DataTemplatesIndex))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:all_templates,
+    summary: "All Data templates",
+    description: "API to get the list of all data templates created so far under an organisation",
+    parameters: [
+      page: [in: :query, type: :string, description: "Page number"],
+      title: [in: :query, type: :string, description: "Title"]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", DataTemplateSchema.DataTemplatesIndex},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec all_templates(Plug.Conn.t(), map) :: Plug.Conn.t()
   def all_templates(conn, params) do
@@ -291,22 +120,17 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     end
   end
 
-  @doc """
-  Show data template.
-  """
-  # TODO update the swagger docs for data template show to add fields as well
-  swagger_path :show do
-    get("/data_templates/{id}")
-    summary("Show Data template")
-    description("API to get all details of a data template")
-
-    parameters do
-      id(:path, :string, "ID of the data template", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:ShowDataTemplate))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Show Data template",
+    description: "API to get all details of a data template",
+    parameters: [
+      id: [in: :path, type: :string, description: "ID of the data template", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", DataTemplateSchema.ShowDataTemplate},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => d_temp_id}) do
@@ -318,27 +142,21 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     end
   end
 
-  @doc """
-  Update a data template.
-  """
-  swagger_path :update do
-    put("/data_templates/{id}")
-    summary("Update a data template")
-    description("API to update a data template")
-
-    parameters do
-      id(:path, :string, "Data template id", required: true)
-
-      data_templte(:body, Schema.ref(:DataTemplateRequest), "Data template to be updated",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:ShowDataTemplate))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:update,
+    summary: "Update a data template",
+    description: "API to update a data template",
+    parameters: [
+      id: [in: :path, type: :string, description: "Data template id", required: true]
+    ],
+    request_body:
+      {"Data template to be updated", "application/json", DataTemplateSchema.DataTemplateRequest},
+    responses: [
+      ok: {"Ok", "application/json", DataTemplateSchema.ShowDataTemplate},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not found", "application/json", Error}
+    ]
+  )
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => id} = params) do
@@ -351,23 +169,19 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     end
   end
 
-  @doc """
-  Delete a Data template.
-  """
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/data_templates/{id}")
-    summary("Delete a data template")
-    description("API to delete a data template")
-
-    parameters do
-      id(:path, :string, "data template id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:DataTemplate))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:delete,
+    summary: "Delete a data template",
+    description: "API to delete a data template",
+    parameters: [
+      id: [in: :path, type: :string, description: "data template id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", DataTemplateSchema.DataTemplate},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not found", "application/json", Error}
+    ]
+  )
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
@@ -380,22 +194,30 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     end
   end
 
-  @doc """
-  Bulk data template creation.
-  """
-  swagger_path :bulk_import do
-    post("/content_types/{c_type_id}/data_templates/bulk_import")
-    summary("Create data template in bulk")
-    description("API for data template bulk creation")
-    consumes("multipart/form-data")
-
-    parameter(:c_type_id, :path, :string, "Content type id", required: true)
-    parameter(:file, :formData, :file, "Bulk data template creation source file")
-    parameter(:mapping, :formData, :map, "Mappings for the CSV")
-
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:bulk_import,
+    summary: "Create data template in bulk",
+    description: "API for data template bulk creation",
+    parameters: [
+      c_type_id: [in: :path, type: :string, description: "Content type id", required: true]
+    ],
+    request_body:
+      {"Bulk data template creation source file", "multipart/form-data",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           file: %OpenApiSpex.Schema{
+             type: :string,
+             format: :binary,
+             description: "Bulk data template creation source file"
+           },
+           mapping: %OpenApiSpex.Schema{type: :string, description: "Mappings for the CSV"}
+         }
+       }},
+    responses: [
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec bulk_import(Plug.Conn.t(), map) :: Plug.Conn.t()
   def bulk_import(

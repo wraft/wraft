@@ -127,7 +127,8 @@ defmodule WraftDoc.Mixfile do
       {:jido, "~> 1.1.0-rc.2"},
       {:jido_ai, github: "wraft/jido_ai", override: true},
       {:instructor, github: "thmsmlr/instructor_ex", override: true},
-      {:cloak_ecto, "~> 1.3.0"}
+      {:cloak_ecto, "~> 1.3.0"},
+      {:open_api_spex, "~> 3.21"}
     ]
   end
 
