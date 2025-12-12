@@ -1,5 +1,5 @@
 defmodule WraftDoc.DocumentTest do
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
   import WraftDoc.Factory
   import Mox
 
@@ -52,7 +52,7 @@ defmodule WraftDoc.DocumentTest do
     "name" => "Farming"
   }
 
-  describe "create_instance/4" do
+  describe "create_instance/3 with state" do
     test "create instance on valid attributes and updates count of instances at counter" do
       user = insert(:user)
       content_type = insert(:content_type)
@@ -68,10 +68,8 @@ defmodule WraftDoc.DocumentTest do
           "title" => "title of the content"
         },
         "type" => 1,
-        "state_id" => "a041a482-202c-4c53-99f3-79a8dab252d5"
+        "state_id" => state_id
       }
-
-      params = Map.merge(params, %{"state_id" => state_id})
 
       counter_count =
         Counter
@@ -83,7 +81,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      instance = Documents.create_instance(user, content_type, state, params)
+      instance = Documents.create_instance(user, content_type, params)
 
       count_after =
         Instance
@@ -110,9 +108,9 @@ defmodule WraftDoc.DocumentTest do
         |> length()
 
       content_type = insert(:content_type)
-      state = insert(:state, flow: content_type.flow)
+      _state = insert(:state, flow: content_type.flow)
 
-      {:error, changeset} = Documents.create_instance(user, content_type, state, @invalid_attrs)
+      {:error, changeset} = Documents.create_instance(user, content_type, @invalid_attrs)
 
       count_after =
         Instance
@@ -576,7 +574,6 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  # TODO update the tests as per the new implementation
   describe "instance_index_of_an_organisation/2" do
     test "instance index of an organisation lists instances under an organisation" do
       user = insert(:user_with_organisation)
@@ -613,7 +610,6 @@ defmodule WraftDoc.DocumentTest do
              |> List.to_string() =~ i2.instance_id
     end
 
-    # TO-DO
     test "instance index returns nil if user is not part of the organisation" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -683,7 +679,6 @@ defmodule WraftDoc.DocumentTest do
       # TODO
     end
 
-    # TO_DO
     test "instance index returns if the user is an approver" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -808,7 +803,6 @@ defmodule WraftDoc.DocumentTest do
                i2.instance_id
     end
 
-    # TO_DO
     test "filter by content_type_name" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -838,7 +832,6 @@ defmodule WraftDoc.DocumentTest do
                instance2.instance_id
     end
 
-    # TO_DO
     test "returns an empty list when there are no EXACT matches for content_type_name keyword" do
       user = insert(:user_with_organisation)
 
@@ -869,7 +862,6 @@ defmodule WraftDoc.DocumentTest do
                instance2.instance_id
     end
 
-    # TO_DO
     test "filter by creator_id" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -916,7 +908,6 @@ defmodule WraftDoc.DocumentTest do
                i2.instance_id
     end
 
-    # to_DO
     test "return an empty list if there are no matches for creator_id" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -958,7 +949,6 @@ defmodule WraftDoc.DocumentTest do
                i2.instance_id
     end
 
-    # to_do
     test "return the default index if the creator id is invalid" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -1010,7 +1000,6 @@ defmodule WraftDoc.DocumentTest do
                i2.instance_id
     end
 
-    # TO_DO
     test "filter by state" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -1058,7 +1047,6 @@ defmodule WraftDoc.DocumentTest do
                i2.instance_id
     end
 
-    # TO_DO
     test "returns an empty list when the state does not belong to the user's organisation" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -1149,7 +1137,6 @@ defmodule WraftDoc.DocumentTest do
                i2.instance_id
     end
 
-    # TO_DO
     test "filter by document instance title name" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -1246,7 +1233,6 @@ defmodule WraftDoc.DocumentTest do
                i2.instance_id
     end
 
-    # TO_DO
     test "sorts by instance_id in ascending order when sort key is instance_id" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -1282,7 +1268,6 @@ defmodule WraftDoc.DocumentTest do
       assert List.last(instance_index.entries).instance_id == i2.instance_id
     end
 
-    # TO_D_
     test "sorts by instance_id in descending order when sort key is instance_id_desc" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -1318,7 +1303,6 @@ defmodule WraftDoc.DocumentTest do
       assert List.last(instance_index.entries).instance_id == i1.instance_id
     end
 
-    # TO_D0
     test "sorts by inserted_at in ascending order when sort key is inserted_at" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -1444,9 +1428,19 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "update_instance/2" do
-    @describetag :skip
     test "updates instance on valid attrs" do
-      instance = insert(:instance)
+      organisation = insert(:organisation)
+
+      creator =
+        insert(:user,
+          email: "test_creator_#{Base.encode16(:crypto.strong_rand_bytes(16))}@example.com",
+          current_org_id: organisation.id,
+          owned_organisations: [organisation]
+        )
+
+      flow = insert(:flow, creator: creator, organisation: organisation)
+      content_type = insert(:content_type, flow: flow, organisation: organisation)
+      instance = insert(:instance, creator: creator, content_type: content_type, vendor: nil)
       instance = Documents.update_instance(instance, @valid_instance_attrs)
 
       assert 1 == 1
@@ -1454,11 +1448,19 @@ defmodule WraftDoc.DocumentTest do
       assert instance.serialized == @valid_instance_attrs["serialized"]
     end
 
-    @tag :skip
     test "returns error changeset on invalid attrs" do
-      user = insert(:user)
+      organisation = insert(:organisation)
 
-      instance = insert(:instance, creator: user)
+      user =
+        insert(:user,
+          email: "test_user_#{Base.encode16(:crypto.strong_rand_bytes(16))}@example.com",
+          current_org_id: organisation.id,
+          owned_organisations: [organisation]
+        )
+
+      flow = insert(:flow, creator: user, organisation: organisation)
+      content_type = insert(:content_type, flow: flow, organisation: organisation)
+      instance = insert(:instance, creator: user, content_type: content_type, vendor: nil)
 
       _count_before =
         Instance
@@ -1599,9 +1601,19 @@ defmodule WraftDoc.DocumentTest do
     #   assert count_before + 1 == count_after
     # end
 
-    @tag :skip
     test "Same as add_build_history/3, but creator will not be stored." do
-      user = insert(:user)
+      organisation = insert(:organisation)
+
+      user =
+        insert(:user,
+          email: "test_user_history_#{Base.encode16(:crypto.strong_rand_bytes(16))}@example.com",
+          current_org_id: organisation.id,
+          owned_organisations: [organisation]
+        )
+
+      flow = insert(:flow, creator: user, organisation: organisation)
+      content_type = insert(:content_type, flow: flow, organisation: organisation)
+      instance = insert(:instance, creator: user, content_type: content_type, vendor: nil)
 
       build_history = build(:build_history, creator_id: user.id)
 
@@ -1610,17 +1622,15 @@ defmodule WraftDoc.DocumentTest do
         |> Map.from_struct()
         |> Map.drop([:id, :inserted_at, :updated_at])
 
-      instance = insert(:instance, creator: user)
-
       count_before =
-        History
+        WraftDoc.Documents.Instance.History
         |> Repo.all()
         |> length()
 
       add_build_history = Documents.add_build_history(instance, params)
 
       count_after =
-        History
+        WraftDoc.Documents.Instance.History
         |> Repo.all()
         |> length()
 

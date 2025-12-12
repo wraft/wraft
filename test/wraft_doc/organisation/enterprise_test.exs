@@ -874,15 +874,15 @@ defmodule WraftDoc.EnterpriseTest do
 
   describe "create_plan/1" do
     setup do
-      # Mock the Paddle API calls - use relative URLs or match the actual base URL
+      # Mock the Paddle API calls
       Tesla.Mock.mock(fn
-        %{method: :post, url: "products"} ->
+        %{method: :post, url: "https://sandbox-api.paddle.com/products"} ->
           %Tesla.Env{status: 200, body: %{"data" => %{"id" => "prod_test_123"}}}
 
-        %{method: :post, url: "prices"} ->
+        %{method: :post, url: "https://sandbox-api.paddle.com/prices"} ->
           %Tesla.Env{status: 200, body: %{"data" => %{"id" => "price_test_456"}}}
 
-        %{method: :post, url: "payment-links"} ->
+        %{method: :post, url: "https://sandbox-api.paddle.com/payment-links"} ->
           %Tesla.Env{
             status: 200,
             body: %{"data" => %{"url" => "https://paddle.com/test-payment-link"}}
@@ -892,6 +892,7 @@ defmodule WraftDoc.EnterpriseTest do
       :ok
     end
 
+    # FIX_ME
     test "creates a plan with valid attrs" do
       attrs = %{
         "billing_interval" => "month",
@@ -977,16 +978,17 @@ defmodule WraftDoc.EnterpriseTest do
   describe "update_plan/2" do
     setup do
       Tesla.Mock.mock(fn
-        %{method: :patch, url: "products/" <> _} ->
+        %{method: :patch, url: "https://sandbox-api.paddle.com/products/" <> _} ->
           %Tesla.Env{status: 200, body: %{"data" => %{"id" => "prod_updated"}}}
 
-        %{method: :patch, url: "prices/" <> _} ->
+        %{method: :patch, url: "https://sandbox-api.paddle.com/prices/" <> _} ->
           %Tesla.Env{status: 200, body: %{"data" => %{"id" => "price_updated"}}}
       end)
 
       :ok
     end
 
+    # FIX_ME
     test "updates a plan with valid attrs" do
       plan = insert(:plan)
 
@@ -1013,6 +1015,7 @@ defmodule WraftDoc.EnterpriseTest do
       assert updated_plan.plan_amount == attrs["plan_amount"]
     end
 
+    # FIX_ME
     test "does not update plan with invalid attrs" do
       plan = insert(:plan)
 
@@ -1146,6 +1149,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   describe "update_membership/4" do
+    # FIX_ME
     test "updates membership and creates new payment with valid attrs" do
       user = insert(:user_with_organisation)
       organisation = List.first(user.owned_organisations)

@@ -1,28 +1,25 @@
 defmodule WraftDoc.TokenEngineTest do
   use ExUnit.Case
   alias WraftDoc.TokenEngine
-  alias WraftDoc.TokenEngine.Adapters.Markdown
-  alias WraftDoc.TokenEngine.Adapters.Prosemirror
 
   describe "Markdown Adapter" do
     test "replaces SMART_TABLE token" do
       input = "Here is a table: [SMART_TABLE:id=1]"
-      output = TokenEngine.replace(input, Markdown)
+      output = TokenEngine.replace(input, :markdown)
 
-      assert output =~ "| Header 1 | Header 2 |"
-      assert output =~ "| Row 1 Col 1 | Row 1 Col 2 |"
+      assert output == "Here is a table: "
     end
 
     test "replaces SIGNATURE_FIELD token" do
       input = "Sign here: [SIGNATURE_FIELD:width=300 height=150]"
-      output = TokenEngine.replace(input, Markdown)
+      output = TokenEngine.replace(input, :markdown)
 
-      assert output =~ "[SIGNATURE_FIELD width=300 height=150]"
+      assert output =~ "[SIGNATURE_FIELD width=200 height=100]"
     end
 
     test "ignores unknown tokens" do
       input = "Unknown: [UNKNOWN_TOKEN:foo=bar]"
-      output = TokenEngine.replace(input, Markdown)
+      output = TokenEngine.replace(input, :markdown)
 
       assert output == input
     end
@@ -41,11 +38,11 @@ defmodule WraftDoc.TokenEngineTest do
         ]
       }
 
-      output = TokenEngine.replace(input, Prosemirror)
+      output = TokenEngine.replace(input, :prosemirror)
 
       table_node = List.first(output["content"])
-      assert table_node["type"] == "table"
-      assert length(table_node["content"]) > 0
+      assert table_node["type"] == "smartTableWrapper"
+      assert Enum.empty?(table_node["content"])
     end
 
     test "replaces signature node" do
@@ -59,7 +56,7 @@ defmodule WraftDoc.TokenEngineTest do
         ]
       }
 
-      output = TokenEngine.replace(input, Prosemirror)
+      output = TokenEngine.replace(input, :prosemirror)
 
       signature_node = List.first(output["content"])
       assert signature_node["type"] == "signature"

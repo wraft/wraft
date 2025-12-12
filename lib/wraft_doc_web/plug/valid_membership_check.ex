@@ -5,7 +5,6 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheck do
 
   import Plug.Conn
 
-  alias WraftDoc.Billing
   alias WraftDoc.Enterprise
 
   def init(_params) do
@@ -19,14 +18,20 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheck do
     if Enterprise.self_hosted?() do
       conn
     else
-      valid_subscription?(conn, user)
+      valid_membership?(conn, user)
     end
   end
 
-  defp valid_subscription?(conn, user) do
-    case Billing.has_valid_subscription?(user.current_org_id) do
-      true -> conn
-      _ -> error_response(conn)
+  defp valid_membership?(conn, user) do
+    organisation = Enterprise.get_organisation(user.current_org_id)
+
+    if organisation && organisation.name == "Personal" do
+      conn
+    else
+      case Enterprise.get_organisation_membership(user.current_org_id) do
+        %Enterprise.Membership{is_expired: false} -> conn
+        _ -> error_response(conn)
+      end
     end
   end
 

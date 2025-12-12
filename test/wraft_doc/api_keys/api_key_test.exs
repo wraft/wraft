@@ -1,6 +1,6 @@
 defmodule WraftDoc.ApiKeys.ApiKeyTest do
   @moduledoc false
-  use WraftDoc.ModelCase
+  use WraftDoc.ModelCase, async: false
   @moduletag :api_keys
 
   alias WraftDoc.ApiKeys.ApiKey
@@ -137,7 +137,9 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
 
   describe "update_changeset/2" do
     test "allows updating name and settings" do
-      api_key = insert(:api_key)
+      user = insert(:user, email: "test_update_allow_#{:erlang.unique_integer()}@example.com")
+      organisation = insert(:organisation)
+      api_key = insert(:api_key, user: user, organisation: organisation, created_by: user)
 
       changeset =
         ApiKey.update_changeset(api_key, %{
@@ -153,7 +155,9 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
     end
 
     test "does not allow changing the key itself" do
-      api_key = insert(:api_key)
+      user = insert(:user, email: "test_update_no_key_#{:erlang.unique_integer()}@example.com")
+      organisation = insert(:organisation)
+      api_key = insert(:api_key, user: user, organisation: organisation, created_by: user)
 
       changeset =
         ApiKey.update_changeset(api_key, %{
@@ -187,48 +191,124 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
     end
 
     test "returns false for non-matching key" do
-      api_key = insert(:api_key)
+      user = insert(:user, email: "test_verify_false_#{:erlang.unique_integer()}@example.com")
+      organisation = insert(:organisation)
+      api_key = insert(:api_key, user: user, organisation: organisation, created_by: user)
       assert ApiKey.verify_key?(api_key, "wrong_key") == false
     end
   end
 
   describe "valid?/1" do
+    # FIX_ME
     test "returns false for inactive key" do
-      api_key = insert(:api_key, is_active: false)
+      user = insert(:user, email: "test_valid_false_#{:erlang.unique_integer()}@example.com")
+      organisation = insert(:organisation)
+
+      api_key =
+        insert(:api_key,
+          user: user,
+          organisation: organisation,
+          created_by: user,
+          is_active: false
+        )
+
       refute ApiKey.valid?(api_key)
     end
 
     test "returns true for active key without expiration" do
-      api_key = insert(:api_key, is_active: true, expires_at: nil)
+      user = insert(:user, email: "test_valid_no_expire_#{:erlang.unique_integer()}@example.com")
+      organisation = insert(:organisation)
+
+      api_key =
+        insert(:api_key,
+          user: user,
+          organisation: organisation,
+          created_by: user,
+          is_active: true,
+          expires_at: nil
+        )
+
       assert ApiKey.valid?(api_key)
     end
 
     test "returns true for active key with future expiration" do
+      user = insert(:user, email: "test_valid_future_#{:erlang.unique_integer()}@example.com")
+      organisation = insert(:organisation)
       future_date = DateTime.add(DateTime.utc_now(), 3600, :second)
-      api_key = insert(:api_key, is_active: true, expires_at: future_date)
+
+      api_key =
+        insert(:api_key,
+          user: user,
+          organisation: organisation,
+          created_by: user,
+          is_active: true,
+          expires_at: future_date
+        )
+
       assert ApiKey.valid?(api_key)
     end
 
     test "returns false for expired key" do
+      user = insert(:user, email: "test_valid_expired_#{:erlang.unique_integer()}@example.com")
+      organisation = insert(:organisation)
       past_date = DateTime.add(DateTime.utc_now(), -3600, :second)
-      api_key = insert(:api_key, is_active: true, expires_at: past_date)
+
+      api_key =
+        insert(:api_key,
+          user: user,
+          organisation: organisation,
+          created_by: user,
+          is_active: true,
+          expires_at: past_date
+        )
+
       refute ApiKey.valid?(api_key)
     end
   end
 
   describe "ip_allowed?/2" do
     test "returns true when ip_whitelist is empty" do
-      api_key = insert(:api_key, ip_whitelist: [])
+      user = insert(:user, email: "test_ip_empty_#{:erlang.unique_integer()}@example.com")
+      organisation = insert(:organisation)
+
+      api_key =
+        insert(:api_key,
+          user: user,
+          organisation: organisation,
+          created_by: user,
+          ip_whitelist: []
+        )
+
       assert ApiKey.ip_allowed?(api_key, "192.168.1.1")
     end
 
     test "returns true when IP is in the whitelist" do
-      api_key = insert(:api_key, ip_whitelist: ["192.168.1.1", "10.0.0.1"])
+      user = insert(:user, email: "test_ip_true_#{:erlang.unique_integer()}@example.com")
+      organisation = insert(:organisation)
+
+      api_key =
+        insert(:api_key,
+          user: user,
+          organisation: organisation,
+          created_by: user,
+          ip_whitelist: ["192.168.1.1", "10.0.0.1"]
+        )
+
       assert ApiKey.ip_allowed?(api_key, "192.168.1.1")
     end
 
     test "returns false when IP is not in the whitelist" do
-      api_key = insert(:api_key, ip_whitelist: ["192.168.1.1"])
+      user = insert(:user, email: "test_ip_false_#{:erlang.unique_integer()}@example.com")
+      organisation = insert(:organisation)
+
+      api_key =
+        insert(:api_key,
+          user: user,
+          organisation: organisation,
+          created_by: user,
+          ip_whitelist: ["192.168.1.1"]
+        )
+
       refute ApiKey.ip_allowed?(api_key, "192.168.1.2")
     end
   end

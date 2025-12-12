@@ -17,6 +17,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Authorization.Permission
   alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.Billing.Subscription
   alias WraftDoc.Blocks.Block
   alias WraftDoc.BlockTemplates.BlockTemplate
   alias WraftDoc.CollectionForms.CollectionForm
@@ -558,7 +559,7 @@ defmodule WraftDoc.Factory do
       invoice_number: sequence(:invoice, &"WRAFT-INVOICE-#{&1}"),
       amount: Enum.random(1000..2000) / 1,
       action: Enum.random(1..3),
-      status: Enum.random([1, 2, 3]),
+      status: 1,
       meta: %{id: sequence(:invoice, &"Razorpay-#{&1}")},
       from_plan: build(:plan, coupon: nil),
       to_plan: build(:plan, coupon: nil)
@@ -780,9 +781,28 @@ defmodule WraftDoc.Factory do
     }
   end
 
-  def api_key_factory do
-    organisation = build(:organisation)
-    user = build(:user)
+  def subscription_factory do
+    %Subscription{
+      provider_subscription_id: sequence(:provider_subscription_id, &"sub_#{&1}"),
+      provider_plan_id: sequence(:provider_plan_id, &"plan_#{&1}"),
+      status: "active",
+      start_date: Timex.now(),
+      end_date: Timex.shift(Timex.now(), days: 30),
+      next_bill_date: Timex.shift(Timex.now(), days: 30),
+      next_bill_amount: "1000",
+      currency: "USD",
+      transaction_id: sequence(:transaction_id, &"txn_#{&1}")
+    }
+  end
+
+  def api_key_factory(attrs \\ %{}) do
+    user =
+      if Map.has_key?(attrs, :user_id) or Map.has_key?(attrs, :user), do: nil, else: build(:user)
+
+    organisation =
+      if Map.has_key?(attrs, :organisation_id) or Map.has_key?(attrs, :organisation),
+        do: nil,
+        else: build(:organisation)
 
     # Generate a sample API key
     prefix = Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)
@@ -807,5 +827,24 @@ defmodule WraftDoc.Factory do
       usage_count: 0,
       metadata: %{}
     }
+
+    merge_attributes(
+      %{
+        name: sequence(:api_key_name, &"API Key #{&1}"),
+        key_hash: Bcrypt.hash_pwd_salt(full_key),
+        key_prefix: prefix,
+        organisation: organisation,
+        user: user,
+        created_by: user,
+        expires_at: nil,
+        is_active: true,
+        rate_limit: 1000,
+        ip_whitelist: [],
+        last_used_at: nil,
+        usage_count: 0,
+        metadata: %{}
+      },
+      attrs
+    )
   end
 end

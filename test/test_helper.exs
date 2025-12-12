@@ -1,18 +1,8 @@
+# test/test_helper.exs
 ExUnit.start(formatters: [ExUnit.CLIFormatter, Bureaucrat.Formatter])
 
-# Start only your main application
-{:ok, _} = Application.ensure_all_started(:wraft_doc)
-
-# Set SQL sandbox mode after starting the application
-case Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, :manual) do
-  :ok ->
-    :ok
-
-  {:error, reason} ->
-    IO.warn("SQL Sandbox not available: #{inspect(reason)}")
-end
-
-# Mock definitions are in test/support/mocks.ex
+# Configure Ecto sandbox
+Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, :manual)
 
 # Bureaucrat setup
 Bureaucrat.start(

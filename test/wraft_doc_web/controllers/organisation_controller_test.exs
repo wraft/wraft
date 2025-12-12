@@ -60,7 +60,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert count_before == Organisation |> Repo.all() |> length
     end
 
-    @tag :skip
     test "return error when waiting_list_organisation_create_control flag is disabled for current user",
          %{conn: conn} do
       conn =

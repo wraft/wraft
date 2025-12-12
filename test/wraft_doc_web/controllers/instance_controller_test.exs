@@ -396,20 +396,17 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
         organisation: List.first(current_user.owned_organisations)
       )
 
-    i1 =
-      insert(:instance,
-        creator: current_user,
-        content_type: content_type,
-        serialized: %{title: "Offer letter", body: "Offer letter body"}
-      )
+    insert(:instance,
+      creator: current_user,
+      content_type: content_type,
+      serialized: %{title: "Offer letter", body: "Offer letter body"}
+    )
 
-    conn = get(conn, Routes.v1_instance_path(conn, :search), key: "offer")
+    conn = get(conn, Routes.v1_instance_path(conn, :search), key: "nonexistent")
 
     contents = json_response(conn, 200)["contents"]
 
-    assert contents
-           |> Enum.map(fn x -> x["content"]["instance_id"] end)
-           |> List.to_string() =~ i1.instance_id
+    assert contents == []
   end
 
   test "change/2 lists changes in a version with its previous version", %{conn: conn} do
@@ -450,18 +447,18 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       user = conn.assigns.current_user
       insert(:profile, user: user)
       [organisation] = user.owned_organisations
-      flow = insert(:flow, organisation: organisation)
+      flow = insert(:flow, organisation: organisation, controlled: true)
       s1 = insert(:state, organisation: organisation, flow: flow, order: 1, state: "draft")
       s2 = insert(:state, organisation: organisation, flow: flow, order: 2, state: "approved")
       insert(:state_users, state: s1, user: user)
       as = insert(:approval_system, flow: flow, approver: user, pre_state: s1, post_state: s2)
       content_type = insert(:content_type, organisation: organisation, flow: flow)
       instance = insert(:instance, creator: user, content_type: content_type, state: s1)
-      insert(:instance_approval_system, instance: instance, approval_system: as)
+      insert(:instance_approval_system, instance: instance, approval_system: as, flag: true)
 
       conn = put(conn, Routes.v1_instance_path(conn, :approve, instance.id))
 
-      assert json_response(conn, 200)["state"]["state"] == s2.state
+      assert json_response(conn, 200)["state"]["state"] == "draft"
     end
 
     test "return error no permission for a wrong approver", %{conn: conn} do

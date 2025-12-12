@@ -37,7 +37,10 @@ defmodule WraftDoc.Authorization.PermissionTest do
 
       refute changeset.valid?
 
-      assert "permission already exist" in errors_on(changeset, :name)
+      assert "combination of resource and action has to be unique" in errors_on(
+               changeset,
+               :resource
+             )
     end
   end
 end
