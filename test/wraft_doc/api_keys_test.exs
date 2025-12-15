@@ -167,7 +167,7 @@ defmodule WraftDoc.ApiKeysTest do
 
       key = api_key.key
 
-      past_date = DateTime.truncate(:DateTime.add(DateTime.utc_now(), -3600, :second), second)
+      past_date = DateTime.truncate(:DateTime.add(DateTime.utc_now(), -3600, :second), :second)
 
       api_key
       |> Ecto.Changeset.change(expires_at: past_date)

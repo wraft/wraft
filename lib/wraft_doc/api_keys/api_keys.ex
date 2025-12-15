@@ -46,10 +46,11 @@ defmodule WraftDoc.ApiKeys do
     # Find all keys with this prefix and check each one
     ApiKey
     |> where([k], k.key_prefix == ^prefix)
+    |> where([k], k.is_active == true)
     |> preload([:user, :organisation])
     |> Repo.all()
     |> Enum.find(fn api_key ->
-      ApiKey.verify_key?(api_key, full_key)
+      ApiKey.verify_key?(api_key, full_key) and ApiKey.valid?(api_key)
     end)
   end
 

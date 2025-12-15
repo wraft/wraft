@@ -770,7 +770,6 @@ defmodule WraftDoc.AccountTest do
     end
   end
 
-  # FIX_M#
   describe "send_password_reset_mail/1" do
     test "creates email background job for valid token" do
       auth_token = insert(:auth_token, token_type: "password_verify")
