@@ -23,7 +23,6 @@ defmodule WraftDocWeb.Router do
   end
 
   pipeline :openapi do
-    # plug(OpenApiSpex.Plug.PutApiSpec, spec: WraftDocWeb.ApiSpec)
     plug OpenApiSpex.Plug.PutApiSpec, module: WraftDocWeb.ApiSpec
   end
 
@@ -271,7 +270,6 @@ defmodule WraftDocWeb.Router do
       scope "/notifications" do
         post("/", NotificationController, :create)
         get("/", NotificationController, :index)
-        get("/read", NotificationController, :index_read)
         get("/count", NotificationController, :count)
         put("/read/:id", NotificationController, :read)
         put("/read_all", NotificationController, :read_all)
@@ -338,12 +336,12 @@ defmodule WraftDocWeb.Router do
       delete(
         "/contents/:id/remove_counterparty/:counterparty_id",
         InstanceGuestController,
-        :remove_counterpart
+        :remove_counterparty
       )
 
       # Document reminders
       scope "/contents/:content_id" do
-        resources("/reminders", ReminderController, except: [:index])
+        resources("/reminders", ReminderController, except: [:index, :new, :edit])
       end
 
       # List all reminders
@@ -407,7 +405,7 @@ defmodule WraftDocWeb.Router do
 
       # collection form field api
       resources("/collection_forms/:c_form_id/collection_fields", CollectionFormFieldController,
-        only: [:create, :update, :show, :delete, :index]
+        only: [:create, :update, :show, :delete]
       )
 
       # Role group apis
@@ -457,7 +455,7 @@ defmodule WraftDocWeb.Router do
       end
 
       # Blocks
-      resources("/blocks", BlockController, except: [:index])
+      resources("/blocks", BlockController, except: [:index, :new, :edit])
 
       # Delete content type field
       delete(
@@ -483,18 +481,18 @@ defmodule WraftDocWeb.Router do
       # All data in an organisation
       get("/data_templates", DataTemplateController, :all_templates)
       # Block templates
-      resources("/block_templates", BlockTemplateController)
+      resources("/block_templates", BlockTemplateController, except: [:new, :edit])
       post("/block_templates/bulk_import", BlockTemplateController, :bulk_import)
 
       # Assets
-      resources("/assets", AssetController)
+      resources("/assets", AssetController, except: [:new, :edit])
 
       post("/global_asset/pre_import", GlobalImportController, :pre_import_global_file)
       post("/global_asset/re_validate", GlobalImportController, :re_validate_global_file)
       post("/global_asset/import", GlobalImportController, :import_global_file)
 
       # Template Assets
-      resources("/template_assets", TemplateAssetController)
+      resources("/template_assets", TemplateAssetController, except: [:new, :edit, :update])
       post("/template_assets/:id/import", TemplateAssetController, :template_import)
 
       post(
@@ -507,7 +505,7 @@ defmodule WraftDocWeb.Router do
       get("/template_assets/:id/pre_import", TemplateAssetController, :template_pre_import)
 
       # Comments
-      resources("/comments", CommentController)
+      resources("/comments", CommentController, except: [:new, :edit])
       get("/comments/:id/replies", CommentController, :reply)
       put("/comments/:id/resolve", CommentController, :resolve)
 
@@ -572,9 +570,9 @@ defmodule WraftDocWeb.Router do
 
       # AI/ML Management
       scope "/ai" do
-        resources("/models", ModelController)
+        resources("/models", ModelController, except: [:new, :edit])
         put("/models/:id/set_default", ModelController, :set_default)
-        resources("/prompts", PromptsController)
+        resources("/prompts", PromptsController, except: [:new, :edit])
         post("/generate", AIToolController, :execute)
       end
 
@@ -610,7 +608,8 @@ defmodule WraftDocWeb.Router do
         get("/folders", CloudImportController, :list_dropbox_folders)
         get("/folders/search", CloudImportController, :search_dropbox_folders)
         get("/folder/*folder_path", CloudImportController, :get_dropbox_folder)
-        get("/folder_files/*folder_path", CloudImportController, :list_dropbox_folder_files)
+        # TODO
+        # get("/folder_files/*folder_path", CloudImportController, :list_dropbox_folder_files)
       end
 
       scope "/clouds/onedrive" do
@@ -648,8 +647,6 @@ defmodule WraftDocWeb.Router do
 
         # Signature
         post("/send_document", DocumentSignController, :send_document)
-        post("/document/get_status", DocumentSignController, :get_document_status)
-        post("/document/download", DocumentSignController, :download_document)
 
         # Docusign
         scope "/docusign" do
@@ -722,18 +719,9 @@ defmodule WraftDocWeb.Router do
     forward("/", FunWithFlags.UI.Router, namespace: "flags")
   end
 
-  scope "/" do
-    pipe_through(:browser)
-
-    # get("/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi")
-
-    get("/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi")
-  end
-
-  scope "/api" do
-    pipe_through(:api)
-    pipe_through(:openapi)
-
-    get("/openapi", OpenApiSpex.Plug.RenderSpec, spec: WraftDocWeb.ApiSpec)
+  scope "/spec" do
+    pipe_through([:api, :openapi])
+    get("/openapi", OpenApiSpex.Plug.RenderSpec, [])
+    get("/swagger", OpenApiSpex.Plug.SwaggerUI, path: "/spec/openapi")
   end
 end
