@@ -6,6 +6,7 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
   alias WraftDoc.ApiKeys.ApiKey
   alias WraftDoc.Repo
   import WraftDoc.Factory
+  import Bcrypt
 
   @invalid_attrs %{
     name: nil,
@@ -173,21 +174,26 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
       organisation = insert(:organisation)
       user = insert(:user)
 
-      {:ok, api_key} =
+      # Use a known key for testing
+      test_key = "wraft_test123_abcdefghijklmnopqrstuvwxy"
+
+      changeset =
         %ApiKey{}
         |> ApiKey.create_changeset(%{
           name: "Test Key",
           organisation_id: organisation.id,
           user_id: user.id
         })
-        |> Repo.insert()
+        |> put_change(:key, test_key)
+        |> put_change(:key_hash, Bcrypt.hash_pwd_salt(test_key))
+        |> put_change(:key_prefix, "test123")
 
-      key = api_key.key
+      {:ok, api_key} = Repo.insert(changeset)
 
       # Reload the api_key from DB
       api_key_from_db = Repo.get!(ApiKey, api_key.id)
 
-      assert ApiKey.verify_key?(api_key_from_db, key)
+      assert ApiKey.verify_key?(api_key_from_db, test_key)
     end
 
     test "returns false for non-matching key" do

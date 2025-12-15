@@ -812,7 +812,7 @@ defmodule WraftDoc.Factory do
 
     full_key = "wraft_#{prefix}_#{random_part}"
 
-    %ApiKey{
+    default_attrs = %{
       name: sequence(:api_key_name, &"API Key #{&1}"),
       key_hash: Bcrypt.hash_pwd_salt(full_key),
       key_prefix: prefix,
@@ -828,23 +828,8 @@ defmodule WraftDoc.Factory do
       metadata: %{}
     }
 
-    merge_attributes(
-      %{
-        name: sequence(:api_key_name, &"API Key #{&1}"),
-        key_hash: Bcrypt.hash_pwd_salt(full_key),
-        key_prefix: prefix,
-        organisation: organisation,
-        user: user,
-        created_by: user,
-        expires_at: nil,
-        is_active: true,
-        rate_limit: 1000,
-        ip_whitelist: [],
-        last_used_at: nil,
-        usage_count: 0,
-        metadata: %{}
-      },
-      attrs
-    )
+    merged_attrs = Map.merge(default_attrs, attrs)
+
+    struct(ApiKey, merged_attrs)
   end
 end

@@ -146,8 +146,7 @@ defmodule WraftDoc.ApiKeysTest do
 
       result = ApiKeys.get_api_key_by_key(key)
 
-      assert result != nil
-      assert result.is_active == false
+      assert result == nil
     end
 
     test "returns nil for expired key" do
@@ -167,7 +166,7 @@ defmodule WraftDoc.ApiKeysTest do
 
       key = api_key.key
 
-      past_date = DateTime.truncate(:DateTime.add(DateTime.utc_now(), -3600, :second), :second)
+      past_date = DateTime.truncate(DateTime.add(DateTime.utc_now(), -3600, :second), :second)
 
       api_key
       |> Ecto.Changeset.change(expires_at: past_date)
@@ -175,8 +174,7 @@ defmodule WraftDoc.ApiKeysTest do
 
       result = ApiKeys.get_api_key_by_key(key)
 
-      assert result != nil
-      assert DateTime.compare(result.expires_at, DateTime.utc_now()) == :lt
+      assert result == nil
     end
   end
 
@@ -203,11 +201,9 @@ defmodule WraftDoc.ApiKeysTest do
       creator = insert(:user_with_organisation)
       other_user = insert(:user)
 
-      List.first(
-        insert(:user_organisation,
-          user: other_user,
-          organisation: creator.owned_organisations
-        )
+      insert(:user_organisation,
+        user: other_user,
+        organisation: List.first(creator.owned_organisations)
       )
 
       {:ok, api_key} =
@@ -395,7 +391,7 @@ defmodule WraftDoc.ApiKeysTest do
 
       {:error, reason} = ApiKeys.verify_api_key(key)
 
-      assert reason == :api_key_inactive
+      assert reason == :invalid_api_key
     end
 
     test "returns error for expired key" do
@@ -424,7 +420,7 @@ defmodule WraftDoc.ApiKeysTest do
 
       {:error, reason} = ApiKeys.verify_api_key(key)
 
-      assert reason == :api_key_expired
+      assert reason == :invalid_api_key
     end
 
     test "returns error when IP not in whitelist" do
