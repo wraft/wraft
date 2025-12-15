@@ -19,7 +19,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   alias WraftDoc.Documents
   alias WraftDoc.Search.TypesenseServer, as: Typesense
 
-  # tags(["Blocks"])
+  tags(["Blocks"])
 
   @doc """
   Create New one

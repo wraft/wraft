@@ -530,6 +530,36 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
     end
   end
 
+  operation(:list_dropbox_folder_files,
+    summary: "List files in Dropbox folder",
+    description: "Lists all files within a specific Dropbox folder",
+    parameters: [
+      folder_path: [
+        in: :path,
+        type: :string,
+        description: "Path of the folder in Dropbox",
+        required: true
+      ],
+      limit: [in: :query, type: :integer, description: "Maximum number of results to return"],
+      recursive: [in: :query, type: :boolean, description: "Whether to list recursively"]
+    ],
+    responses: [
+      ok: {"Success", "application/json", %OpenApiSpex.Schema{type: :object}},
+      bad_request: {"Bad Request", "application/json", %OpenApiSpex.Schema{type: :object}},
+      forbidden: {"Unauthorized", "application/json", %OpenApiSpex.Schema{type: :object}},
+      not_found: {"Folder Not Found", "application/json", %OpenApiSpex.Schema{type: :object}}
+    ]
+  )
+
+  def list_dropbox_folder_files(conn, %{"folder_path" => folder_path} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with {:ok, token} <- Integrations.get_latest_token(current_user, :dropbox),
+         {:ok, files} <- Dropbox.list_files_in_folder(token, folder_path, params) do
+      json(conn, %{"status" => "success", "files" => files["files"]})
+    end
+  end
+
   # OneDrive Operations
 
   operation(:list_onedrive_files,
