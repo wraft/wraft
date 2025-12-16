@@ -747,7 +747,8 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
     %{
       "name" => Map.get(converted, "name", ""),
       "named" => Map.get(converted, "named", nil),
-      "id" => Map.get(converted, "id", nil)
+      "id" => Map.get(converted, "id", nil),
+      "machineName" => Map.get(converted, "machineName", nil)
     }
   end
 

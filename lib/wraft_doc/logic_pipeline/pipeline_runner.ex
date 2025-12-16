@@ -72,8 +72,20 @@ defmodule WraftDoc.PipelineRunner do
         try do
           transformed_data =
             case data["trigger_type"] do
-              "webhook" -> Forms.transform_trigger_data_by_mapping(form_mapping, data)
-              _ -> Forms.transform_data_by_mapping(form_mapping, data)
+              "webhook" ->
+                data
+
+              _ ->
+                case Forms.transform_data_by_mapping(form_mapping, data) do
+                  {:error, reason} ->
+                    raise "Failed to transform data: #{reason}"
+
+                  result when is_map(result) ->
+                    result
+
+                  other ->
+                    raise "Unexpected result from transform_data_by_mapping: #{inspect(other)}"
+                end
             end
 
           params =

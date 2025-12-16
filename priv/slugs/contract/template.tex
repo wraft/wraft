@@ -40,10 +40,8 @@
 \usepackage{titlesec}
 \usepackage{multicol}
 \usepackage{pgfgantt}
-\usepackage{rotating,multirow,longtable,booktabs}
 
 % Typeface settings
-\usepackage{microtype}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
 \usepackage{setspace}
@@ -58,18 +56,18 @@ $if(mainfont)$
   Path=$path$/fonts/,
   $for(mainfontoptions)$$mainfontoptions$$sep$,$endfor$
   ]{$mainfont$}
-  $endif$
+$endif$
 
-  % Longtabe and friends
-  \usepackage{rotating,multirow,longtable,booktabs,calc,array}
+% Longtabe and friends
+\usepackage{rotating,multirow,longtable,booktabs,calc,array}
 
-  % Polyglossia settings
-  \setmainlanguage{english} % or danish
-  \addto\captionsenglish{%
+% Polyglossia settings
+\setmainlanguage{english} % or danish
+\addto\captionsenglish{%
   \renewcommand{\contentsname}{Table of Contents}
-  }
+}
 \addto\captionsdanish{%
-\renewcommand{\contentsname}{Indholdsfortegnelse}
+  \renewcommand{\contentsname}{Indholdsfortegnelse}
 }
 
 \renewcommand{\baselinestretch}{1.25}
@@ -142,7 +140,7 @@ $highlighting-macros$
 	numbers=left,numberstyle=\scriptsize
 }
 \setlength{\tabcolsep}{0.8em} % for the horizontal padding
-{\renewcommand{\arraystretch}{1.7}% for the vertical padding
+\renewcommand{\arraystretch}{1.7}% for the vertical padding
 
 $if(letterhead)$
 \usepackage{wallpaper}

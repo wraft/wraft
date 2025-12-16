@@ -40,6 +40,7 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Themes
   alias WraftDoc.Utils.CSVHelper
   alias WraftDoc.Utils.ProsemirrorToMarkdown
+  alias WraftDoc.Utils.StringHelper
   alias WraftDoc.Workers.BulkWorker
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Mailer
@@ -1877,12 +1878,22 @@ defmodule WraftDoc.Documents do
   end
 
   defp replace_content_title(fields, title) do
-    Enum.reduce(fields, title, fn
-      {k, v}, acc when is_binary(k) and is_binary(v) ->
-        WraftDoc.DocConversion.replace_content(k, v, acc)
+    placeholders = Regex.scan(~r/\[([^\]]+)\]/, title)
 
-      _, acc ->
+    Enum.reduce(placeholders, title, fn [match, key], acc ->
+      value =
+        if Map.has_key?(fields, key) do
+          Map.get(fields, key)
+        else
+          converted_key = StringHelper.convert_to_variable_name(key)
+          Map.get(fields, converted_key)
+        end
+
+      if value do
+        String.replace(acc, match, to_string(value))
+      else
         acc
+      end
     end)
   end
 

@@ -3,6 +3,8 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   Prosemirror2Md is a library that converts ProseMirror Node JSON to Markdown.
   """
 
+  alias WraftDoc.Utils.StringHelper
+
   @doc """
   Converts a ProseMirror Node JSON to Markdown.
 
@@ -158,8 +160,13 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     "  #{named}  "
   end
 
-  defp convert_node(%{"type" => "holder", "attrs" => %{"name" => name}}, _opts) do
-    " [#{name}] "
+  defp convert_node(%{"type" => "holder", "attrs" => attrs} = _node, opts) do
+    field_values = Keyword.get(opts, :field_values, %{})
+    machine_name = Map.get(attrs, "machineName") || Map.get(attrs, "machine_name")
+    name = Map.get(attrs, "name")
+
+    value = get_holder_value(field_values, machine_name, name)
+    format_holder_output(value, name)
   end
 
   defp convert_node(%{"type" => "holder"}, _opts),
@@ -242,6 +249,35 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp convert_node(%{"type" => type}, _opts),
     do: raise(InvalidJsonError, "Invalid node type: #{type}")
+
+  defp get_holder_value(field_values, machine_name, name) do
+    cond do
+      machine_name && Map.has_key?(field_values, machine_name) ->
+        value = Map.get(field_values, machine_name)
+        if value != nil, do: value, else: try_name_lookup(field_values, name)
+
+      name ->
+        try_name_lookup(field_values, name)
+
+      true ->
+        nil
+    end
+  end
+
+  defp try_name_lookup(field_values, name) when is_binary(name) do
+    if Map.has_key?(field_values, name) do
+      Map.get(field_values, name)
+    else
+      converted_name = StringHelper.convert_to_variable_name(name)
+      Map.get(field_values, converted_name)
+    end
+  end
+
+  defp try_name_lookup(_field_values, _name), do: nil
+
+  defp format_holder_output(nil, nil), do: " [holder] "
+  defp format_holder_output(nil, name), do: " [#{name}] "
+  defp format_holder_output(value, _name), do: "  #{value}  "
 
   defp convert_mark(text, %{"type" => "textHighlight"}, _opts), do: "#{text}"
 
@@ -1242,41 +1278,51 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   @spec evaluate_single_condition(map(), map()) :: boolean()
   defp evaluate_single_condition(
-         %{"placeholder" => placeholder, "operation" => operation, "value" => value},
+         %{"placeholder" => placeholder, "operation" => operation, "value" => value} = condition,
          field_values
        ) do
-    field_value = get_field_value(placeholder, field_values)
+    machine_name = Map.get(condition, "machineName") || Map.get(condition, "machine_name")
+    field_value = get_field_value_with_machine_name(machine_name, placeholder, field_values)
     compare_values(field_value, operation, value)
   end
 
   defp evaluate_single_condition(_, _), do: false
 
-  @spec get_field_value(String.t(), map()) :: String.t()
-  defp get_field_value(placeholder, field_values) when is_map(field_values) do
+  @spec get_field_value_with_machine_name(String.t() | nil, String.t(), map()) :: String.t()
+  defp get_field_value_with_machine_name(machine_name, placeholder, field_values)
+       when is_map(field_values) do
     value =
-      case Map.get(field_values, placeholder) do
-        nil ->
-          converted_name = convert_to_variable_name(placeholder)
-          Map.get(field_values, converted_name, "")
+      cond do
+        machine_name && Map.has_key?(field_values, machine_name) ->
+          field_val = Map.get(field_values, machine_name)
 
-        val ->
-          val
+          if field_val != nil,
+            do: field_val,
+            else: try_placeholder_lookup(field_values, placeholder)
+
+        Map.has_key?(field_values, placeholder) ->
+          field_val = Map.get(field_values, placeholder)
+          if field_val != nil, do: field_val, else: try_converted_name(field_values, placeholder)
+
+        true ->
+          try_converted_name(field_values, placeholder)
       end
 
     to_string(value)
   end
 
-  defp get_field_value(_, _), do: ""
+  defp get_field_value_with_machine_name(_, _, _), do: ""
 
-  # Converts a field name to a variable name format (lowercase, underscores)
-  # Used as fallback when exact field name is not found
-  @spec convert_to_variable_name(String.t()) :: String.t()
-  defp convert_to_variable_name(name) do
-    name
-    |> String.downcase()
-    |> String.replace(~r/[^a-z0-9]+/, "_")
-    |> String.replace(~r/_+/, "_")
-    |> String.trim("_")
+  defp try_placeholder_lookup(field_values, placeholder) do
+    case Map.get(field_values, placeholder) do
+      nil -> try_converted_name(field_values, placeholder)
+      val -> val
+    end
+  end
+
+  defp try_converted_name(field_values, placeholder) do
+    converted_name = StringHelper.convert_to_variable_name(placeholder)
+    Map.get(field_values, converted_name, "")
   end
 
   @spec compare_values(any(), String.t(), any()) :: boolean()

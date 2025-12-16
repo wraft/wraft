@@ -384,8 +384,24 @@ defmodule WraftDoc.Forms do
         %{"data" => data} = _params
       ) do
     data_map =
-      Enum.reduce(data, %{}, fn %{"field_id" => field_id, "value" => value}, acc ->
-        Map.put(acc, field_id, value)
+      Enum.reduce(data, %{}, fn %{"field_id" => field_id, "value" => value} = _item, acc ->
+        form_field = Enum.find(fields, &(&1.field_id == field_id))
+
+        key =
+          cond do
+            form_field && form_field.machine_name && form_field.machine_name != "" ->
+              form_field.machine_name
+
+            match?(%FormField{field: %Field{}}, form_field) ->
+              form_field.field.name
+
+            true ->
+              field_id
+          end
+
+        acc
+        |> Map.put(key, value)
+        |> Map.put(field_id, value)
       end)
 
     if check_data_mapping(fields, data) do
@@ -424,9 +440,19 @@ defmodule WraftDoc.Forms do
 
   defp validate_single_field(validation, field, data_map) do
     validator_module = Module.concat(Validator, Macro.camelize(validation.validation["rule"]))
+    field_id_key = to_string(field.field_id)
 
     field_value =
-      Map.get(data_map, field.machine_name)
+      cond do
+        field.machine_name && Map.has_key?(data_map, field.machine_name) ->
+          Map.get(data_map, field.machine_name)
+
+        match?(%FormField{field: %Field{}}, field) && Map.has_key?(data_map, field.field.name) ->
+          Map.get(data_map, field.field.name)
+
+        true ->
+          Map.get(data_map, field_id_key)
+      end
 
     case validator_module.validate(validation, field_value) do
       {:error, error} ->
@@ -569,48 +595,93 @@ defmodule WraftDoc.Forms do
   def transform_data_by_mapping(nil, _data), do: {:error, "No mappings found"}
 
   defp transform_data(mappings, data, form_id) do
-    # Convert form data with field_id => value to machine_name (or name) => value
-    # Look up form_fields to get machine_name
-    form_data =
-      data
-      |> Enum.map(fn {field_id, value} ->
-        form_field =
-          Repo.one(
-            from(ff in FormField,
-              where: ff.form_id == ^form_id and ff.field_id == ^field_id,
-              preload: [:field]
-            )
-          )
+    form_data = build_form_data(data, form_id)
 
-        field_identifier =
-          case form_field do
-            %{machine_name: machine_name} when not is_nil(machine_name) ->
-              machine_name
-
-            %{field: %{name: name}} ->
-              name
-
-            _ ->
-              field = Repo.get(Field, field_id)
-              (field && field.name) || "field_#{field_id}"
-          end
-
-        {field_identifier, value}
-      end)
-      |> Map.new()
-
-    Enum.flat_map(mappings, fn {content_type_field_name, form_field_name} ->
+    Enum.reduce(mappings, %{}, fn {content_type_field_name, form_field_name}, acc ->
       case Map.get(form_data, form_field_name) do
-        nil -> []
-        value -> [{content_type_field_name, value}]
+        nil -> acc
+        value -> Map.put(acc, content_type_field_name, value)
       end
     end)
   end
 
+  defp build_form_data(data, form_id) do
+    Enum.reduce(data, %{}, fn {key, value}, acc ->
+      form_field = find_form_field(key, form_id)
+      add_field_to_acc(acc, form_field, key, value)
+    end)
+  end
+
+  defp find_form_field(key, form_id) do
+    case Ecto.UUID.cast(key) do
+      {:ok, field_id} ->
+        find_form_field_by_id(form_id, field_id)
+
+      _ ->
+        find_form_field_by_name(form_id, key)
+    end
+  end
+
+  defp find_form_field_by_id(form_id, field_id) do
+    Repo.one(
+      from(ff in FormField,
+        where: ff.form_id == ^form_id and ff.field_id == ^field_id,
+        preload: [:field]
+      )
+    )
+  end
+
+  defp find_form_field_by_name(form_id, key) do
+    Repo.one(
+      from(ff in FormField,
+        where: ff.form_id == ^form_id and ff.machine_name == ^key,
+        preload: [:field]
+      )
+    ) ||
+      Repo.one(
+        from(ff in FormField,
+          join: f in assoc(ff, :field),
+          where: ff.form_id == ^form_id and f.name == ^key,
+          preload: [:field]
+        )
+      )
+  end
+
+  defp add_field_to_acc(acc, %FormField{machine_name: machine_name} = ff, key, value)
+       when not is_nil(machine_name) do
+    field_name = get_field_name(ff)
+
+    acc
+    |> Map.put(machine_name, value)
+    |> maybe_put_field_name(field_name, machine_name, value)
+    |> Map.put(key, value)
+  end
+
+  defp add_field_to_acc(acc, %FormField{field: %Field{name: name}}, key, value)
+       when not is_nil(name) do
+    acc
+    |> Map.put(name, value)
+    |> Map.put(key, value)
+  end
+
+  defp add_field_to_acc(acc, _form_field, key, value) do
+    Map.put(acc, key, value)
+  end
+
+  defp get_field_name(%FormField{field: %Field{name: name}}), do: name
+  defp get_field_name(_), do: nil
+
+  defp maybe_put_field_name(acc, field_name, machine_name, value)
+       when not is_nil(field_name) and field_name != machine_name do
+    Map.put(acc, field_name, value)
+  end
+
+  defp maybe_put_field_name(acc, _, _, _), do: acc
+
   defp transform_mappings(mappings) do
     Enum.reduce(mappings, %{}, fn mapping, acc ->
-      destination_name = mapping.destination["name"]
-      source_name = mapping.source["name"]
+      destination_name = mapping.destination["machine_name"] || mapping.destination["name"]
+      source_name = mapping.source["machine_name"] || mapping.source["name"]
       Map.put(acc, destination_name, source_name)
     end)
   end

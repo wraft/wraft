@@ -96,7 +96,10 @@ defmodule WraftDoc.DataTemplates do
           %DataTemplate{creator: User.t(), content_type: ContentType.t()} | nil
   def show_data_template(user, d_temp_id) do
     with %DataTemplate{} = data_template <- get_data_template(user, d_temp_id) do
-      Repo.preload(data_template, [:creator, [content_type: [{:fields, :field_type}]]])
+      Repo.preload(data_template, [
+        :creator,
+        [content_type: [{:fields, [:field_type, :content_type_fields]}]]
+      ])
     end
   end
 
