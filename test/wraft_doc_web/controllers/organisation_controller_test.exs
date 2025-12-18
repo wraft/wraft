@@ -13,8 +13,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   @moduletag :controller
 
   @valid_attrs %{
-    "name" => "ABC enterprices",
-    "legal_name" => "ABC enterprices LLC",
+    "name" => "ABC enterprises",
+    "legal_name" => "ABC enterprises LLC",
     "address" => "#24, XV Building, TS DEB Layout ",
     "gstin" => "32AA65FF56545353",
     "email" => "abcent@gmail.com",

@@ -46,8 +46,8 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
             status: "success",
             organisation: %{
               id: "mnbjhb23488n23e",
-              name: "ABC enterprices",
-              legal_name: "ABC enterprices LLC",
+              name: "ABC enterprises",
+              legal_name: "ABC enterprises LLC",
               address: "#24, XV Building, TS DEB Layout ",
               name_of_ceo: "John Doe",
               name_of_cto: "Foo Doo",
@@ -173,8 +173,8 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
             status: "success",
             organisation: %{
               id: "mnbjhb23488n23e",
-              name: "ABC enterprices",
-              legal_name: "ABC enterprices LLC",
+              name: "ABC enterprises",
+              legal_name: "ABC enterprises LLC",
               address: "#24, XV Building, TS DEB Layout ",
               name_of_ceo: "John Doe",
               name_of_cto: "Foo Doo",

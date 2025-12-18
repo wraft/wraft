@@ -10,7 +10,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
       p1 = insert(:payment, organisation: organisation)
       p2 = insert(:payment, organisation: organisation)
 
-      conn = get(conn, Routes.v1_payment_path(conn, :index))
+      conn = get(conn, "/api/v1/payments")
 
       payments =
         json_response(conn, 200)["payments"]
@@ -28,7 +28,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
 
       payment = insert(:payment, organisation: List.first(user.owned_organisations))
 
-      conn = get(conn, Routes.v1_payment_path(conn, :show, payment.id))
+      conn = get(conn, "/api/v1/payments/#{payment.id}")
 
       assert json_response(conn, 200)["razorpay_id"] == payment.razorpay_id
       assert json_response(conn, 200)["id"] == payment.id
@@ -41,17 +41,17 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
 
     test "returns nil when payment does not belong to the user's organisation", %{conn: conn} do
       payment = insert(:payment)
-      conn = get(conn, Routes.v1_payment_path(conn, :show, payment.id))
+      conn = get(conn, "/api/v1/payments/#{payment.id}")
       assert json_response(conn, 404) == "Not Found"
     end
 
     test "returns nil for non existent payment", %{conn: conn} do
-      conn = get(conn, Routes.v1_payment_path(conn, :show, Ecto.UUID.generate()))
+      conn = get(conn, "/api/v1/payments/#{Ecto.UUID.generate()}")
       assert json_response(conn, 404) == "Not Found"
     end
 
     test "returns nil for invalid data", %{conn: conn} do
-      conn = get(conn, Routes.v1_payment_path(conn, :show, Ecto.UUID.generate()))
+      conn = get(conn, "/api/v1/payments/#{Ecto.UUID.generate()}")
       assert json_response(conn, 404) == "Not Found"
     end
   end

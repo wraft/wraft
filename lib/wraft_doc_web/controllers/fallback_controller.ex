@@ -22,7 +22,7 @@ defmodule WraftDocWeb.FallbackController do
   end
 
   def call(conn, {:error, :no_data}) do
-    body = Jason.encode!(%{errors: "Please provide all necessary datas for this action.!"})
+    body = Jason.encode!(%{errors: "Please provide all necessary data for this action.!"})
     conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
@@ -93,7 +93,7 @@ defmodule WraftDocWeb.FallbackController do
   end
 
   def call(conn, {:error, :cant_update}) do
-    body = Jason.encode!(%{errors: "The instance is not avaliable to edit..!!"})
+    body = Jason.encode!(%{errors: "The instance is not available to edit..!!"})
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 
@@ -108,7 +108,7 @@ defmodule WraftDocWeb.FallbackController do
   end
 
   def call(conn, {:error, :invalid_data}) do
-    body = Jason.encode!(%{errors: "Did't have enough body parameters..!"})
+    body = Jason.encode!(%{errors: "Didn't have enough body parameters..!"})
     conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 

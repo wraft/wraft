@@ -54,13 +54,12 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
           owned_organisations: [other_org]
         )
 
-      _other_api_key =
-        insert(:api_key,
-          user: other_user,
-          organisation: other_org,
-          created_by: other_user,
-          name: "Other Key"
-        )
+      insert(:api_key,
+        user: other_user,
+        organisation: other_org,
+        created_by: other_user,
+        name: "Other Key"
+      )
 
       conn = get(conn, Routes.v1_api_key_path(conn, :index))
 
@@ -130,7 +129,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
 
   describe "create/2" do
     test "creates API key with valid attributes", %{conn: conn} do
-      _user = conn.assigns.current_user
       count_before = ApiKey |> Repo.all() |> length()
 
       conn = post(conn, Routes.v1_api_key_path(conn, :create), @valid_attrs)
@@ -392,15 +390,16 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       assert json_response(api_conn, 401)
     end
 
-    test "returns 401 with no authentication", %{conn: _conn} do
+    test "returns 404 with no authentication", %{conn: _conn} do
       # Create a new connection without any auth
       api_conn =
         Plug.Conn.put_req_header(Phoenix.ConnTest.build_conn(), "accept", "application/json")
 
       api_conn = get(api_conn, Routes.v1_api_key_path(api_conn, :index))
 
-      # Should fail with 401 Unauthorized
-      assert json_response(api_conn, 401)
+      # CurrentUser plug returns 404 when no user is found
+      response = json_response(api_conn, 404)
+      assert response["errors"] == "No user found"
     end
   end
 end

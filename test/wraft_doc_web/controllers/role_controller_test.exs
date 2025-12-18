@@ -4,12 +4,13 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
   """
   use WraftDocWeb.ConnCase
   @moduletag :controller
+  alias Ecto.Adapters.SQL.Sandbox
   alias WraftDoc.Account.Role
   alias WraftDoc.Repo
   import WraftDoc.Factory
 
-  @valid_attrs %{name: "Test Role", description: "Test description"}
-  @invalid_attrs %{name: "", description: "Test"}
+  @valid_attrs %{name: "Test Role"}
+  @invalid_attrs %{name: ""}
 
   describe "create/2" do
     test "create role with valid attrs", %{conn: conn} do
@@ -31,7 +32,7 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
     end
   end
 
-  test "show all the role with the content type", %{conn: conn} do
+  test "show role by id", %{conn: conn} do
     user = conn.assigns.current_user
     role = insert(:role, name: "Editor", organisation: List.first(user.owned_organisations))
     conn = get(conn, Routes.v1_role_path(conn, :show, role.id))
@@ -88,7 +89,7 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
       assert roles_index_by_org =~ role_2.name
     end
 
-    test "returns an empty list when there are no roles in user's organisation", %{conn: conn} do
+    test "returns an empty list when filtering by name that does not exist", %{conn: conn} do
       conn = get(conn, Routes.v1_role_path(conn, :index, %{"name" => "Does not exist"}))
       assert [] == json_response(conn, 200)
     end
@@ -123,12 +124,21 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
   end
 
   describe "assign_role/2" do
+    setup do
+      # Ensure shared mode for spawned tasks
+      Sandbox.mode(WraftDoc.Repo, {:shared, self()})
+      :ok
+    end
+
     test "assigns role to user successfully", %{conn: conn} do
       organisation = List.first(conn.assigns.current_user.owned_organisations)
       role = insert(:role, name: "assign_role", organisation: organisation)
       user = insert(:user)
       insert(:user_organisation, user: user, organisation: organisation)
       conn = post(conn, Routes.v1_role_path(conn, :assign_role, user.id, role.id))
+
+      # Wait a bit for the task to complete
+      Process.sleep(100)
 
       assert json_response(conn, 200)["info"] ==
                "Assigned the given role to the user successfully.!"
@@ -152,6 +162,12 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
   end
 
   describe "unassign_role/2" do
+    setup do
+      # Ensure shared mode for spawned tasks
+      Sandbox.mode(WraftDoc.Repo, {:shared, self()})
+      :ok
+    end
+
     test "successfully unassigns a role from a user", %{conn: conn} do
       organisation = List.first(conn.assigns.current_user.owned_organisations)
       role_1 = insert(:role, name: "editor", organisation: organisation)
@@ -166,6 +182,9 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
           conn,
           Routes.v1_role_path(conn, :unassign_role, user.id, role_1.id)
         )
+
+      # Wait a bit for the task to complete
+      Process.sleep(100)
 
       assert json_response(conn, 200) == %{
                "info" => "Unassigned the given role for the user successfully.!"

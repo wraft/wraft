@@ -38,7 +38,7 @@ defmodule WraftDoc.EnterpriseTest do
     assert state.state == r_state.state
   end
 
-  test "create a controlled flow by adding conttrolled true and adding three default states" do
+  test "create a controlled flow by adding controlled true and adding three default states" do
     user = insert(:user_with_organisation)
 
     params = %{
@@ -57,7 +57,7 @@ defmodule WraftDoc.EnterpriseTest do
     refute state_count_before == state_count_after
   end
 
-  test "create an uncontrolled flow by adding conttrolled false and adding two default states" do
+  test "create an uncontrolled flow by adding controlled false and adding two default states" do
     user = insert(:user_with_organisation)
 
     params = %{
@@ -622,13 +622,13 @@ defmodule WraftDoc.EnterpriseTest do
 
       {:ok, organisation} =
         Enterprise.update_organisation(organisation, %{
-          "name" => "Abc enterprices",
+          "name" => "Abc enterprises",
           "legal_name" => "Abc pvt ltd",
           "url" => "wraftdoc@customprofile.com"
         })
 
       assert count_before == Organisation |> Repo.all() |> length()
-      assert organisation.name == "Abc enterprices"
+      assert organisation.name == "Abc enterprises"
       assert organisation.url == "wraftdoc@customprofile.com"
     end
 
@@ -637,7 +637,7 @@ defmodule WraftDoc.EnterpriseTest do
 
       {:ok, organisation} =
         Enterprise.update_organisation(organisation, %{
-          "name" => "Abc enterprices",
+          "name" => "Abc enterprises",
           "legal_name" => "Abc pvt ltd",
           "logo" => %Plug.Upload{
             content_type: "image/png",
@@ -646,7 +646,7 @@ defmodule WraftDoc.EnterpriseTest do
           }
         })
 
-      assert organisation.name == "Abc enterprices"
+      assert organisation.name == "Abc enterprises"
       assert %{file_name: "logo.png"} = organisation.logo
     end
 
@@ -752,7 +752,7 @@ defmodule WraftDoc.EnterpriseTest do
     end
   end
 
-  test "show approval system returns apprval system data" do
+  test "show approval system returns approval system data" do
     user = insert(:user_with_organisation)
     flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
 
@@ -874,6 +874,12 @@ defmodule WraftDoc.EnterpriseTest do
 
   describe "create_plan/1" do
     setup do
+      # Set paddle config for tests
+      Application.put_env(:wraft_doc, :paddle,
+        api_key: "test_key",
+        base_url: "https://sandbox-api.paddle.com"
+      )
+
       # Mock the Paddle API calls
       Tesla.Mock.mock(fn
         %{method: :post, url: "https://sandbox-api.paddle.com/products"} ->
@@ -977,6 +983,12 @@ defmodule WraftDoc.EnterpriseTest do
 
   describe "update_plan/2" do
     setup do
+      # Set paddle config for tests
+      Application.put_env(:wraft_doc, :paddle,
+        api_key: "test_key",
+        base_url: "https://sandbox-api.paddle.com"
+      )
+
       Tesla.Mock.mock(fn
         %{method: :patch, url: "https://sandbox-api.paddle.com/products/" <> _} ->
           %Tesla.Env{status: 200, body: %{"data" => %{"id" => "prod_updated"}}}

@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   alias WraftDocWeb.Guardian
 
   describe "signin/2" do
-    test "succesfully logs in with correct email-password combination" do
+    test "successfully logs in with correct email-password combination" do
       user = insert(:user_with_personal_organisation)
       insert(:profile, user: user)
       [organisation] = user.owned_organisations
@@ -74,14 +74,14 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = post(conn, Routes.v1_user_path(conn, :signin, %{email: user.email}))
 
       assert json_response(conn, 400)["errors"] ==
-               "Please provide all necessary datas for this action.!"
+               "Please provide all necessary data for this action.!"
     end
   end
 
   describe "me/2" do
     test "returns the current logged in user", %{conn: conn} do
       user = Repo.preload(conn.assigns.current_user, :roles)
-      profile = insert(:profile, user: user)
+      insert(:profile, user: user)
 
       conn = assign(conn, :current_user, user)
       conn = get(conn, Routes.v1_user_path(conn, :me))
@@ -264,7 +264,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = put(conn, Routes.v1_user_path(conn, :update_password, %{}))
 
       assert json_response(conn, 400)["errors"] ==
-               "Please provide all necessary datas for this action.!"
+               "Please provide all necessary data for this action.!"
     end
   end
 

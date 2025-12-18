@@ -21,7 +21,10 @@ config :wraft_doc, WraftDoc.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 20
 
-config :wraft_doc, Oban, queues: false, plugins: false
+config :wraft_doc, Oban,
+  queues: false,
+  plugins: false,
+  testing: :disabled
 
 config :wraft_doc, WraftDocWeb.Mailer, adapter: Swoosh.Adapters.Test
 
@@ -34,5 +37,8 @@ config :wraft_doc, :test_module, minio: ExAwsMock, razorpay: WraftDoc.Client.Raz
 config :tesla, adapter: Tesla.Mock
 
 config :waffle, storage: Waffle.Storage.Local
+
+# Set is_self_hosted to false in test environment to enable payment routes
+config :wraft_doc, :deployment, is_self_hosted: false
 
 # Initialize plugs at runtime for faster test compilation

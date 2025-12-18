@@ -28,7 +28,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
   end
 
   describe "registration/1" do
-    test "succesfully registers users with valid attrs and organisation invite token", %{
+    test "successfully registers users with valid attrs and organisation invite token", %{
       conn: conn
     } do
       organisation = insert(:organisation)
@@ -60,7 +60,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
                Enum.map(json_response(conn, 201)["organisations"], & &1["name"])
     end
 
-    test "succesfully registers users with valid attrs and without organisation invite token", %{
+    test "successfully registers users with valid attrs and without organisation invite token", %{
       conn: conn
     } do
       conn =

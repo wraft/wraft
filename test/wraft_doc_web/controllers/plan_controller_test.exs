@@ -8,7 +8,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
       p1 = insert(:plan)
       p2 = insert(:plan)
 
-      conn = get(conn, Routes.v1_plan_path(conn, :index))
+      conn = get(conn, "/api/v1/plans")
       response = json_response(conn, 200)
 
       plans = response["plans"]
@@ -26,7 +26,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
       p1 = insert(:plan)
       p2 = insert(:plan)
 
-      conn = get(conn, Routes.v1_plan_path(conn, :index))
+      conn = get(conn, "/api/v1/plans")
       response = json_response(conn, 200)
 
       plans = response["plans"]
@@ -45,7 +45,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
       p1 = insert(:plan)
       p2 = insert(:plan)
 
-      conn = get(conn, Routes.v1_plan_path(conn, :index))
+      conn = get(conn, "/api/v1/plans")
       response = json_response(conn, 200)
 
       plans = response["plans"]
@@ -63,7 +63,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
   describe "show/2" do
     test "shows a plan on valid uuid when admin user is logged in", %{conn: conn} do
       plan = insert(:plan)
-      conn = get(conn, Routes.v1_plan_path(conn, :show, plan.id))
+      conn = get(conn, "/api/v1/plans/#{plan.id}")
 
       response = json_response(conn, 200)
       assert response["name"] == plan.name
@@ -73,7 +73,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
 
     test "shows a plan on valid uuid when normal user is logged in", %{conn: conn} do
       plan = insert(:plan)
-      conn = get(conn, Routes.v1_plan_path(conn, :show, plan.id))
+      conn = get(conn, "/api/v1/plans/#{plan.id}")
 
       response = json_response(conn, 200)
       assert response["name"] == plan.name
@@ -84,7 +84,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
     test "shows a plan on valid uuid when there is no user logged in" do
       conn = build_conn()
       plan = insert(:plan)
-      conn = get(conn, Routes.v1_plan_path(conn, :show, plan.id))
+      conn = get(conn, "/api/v1/plans/#{plan.id}")
 
       response = json_response(conn, 200)
       assert response["name"] == plan.name
@@ -94,7 +94,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
 
     test "error not found on invalid id" do
       conn = build_conn()
-      conn = get(conn, Routes.v1_plan_path(conn, :show, Ecto.UUID.autogenerate()))
+      conn = get(conn, "/api/v1/plans/#{Ecto.UUID.autogenerate()}")
 
       assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end

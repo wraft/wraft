@@ -164,7 +164,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
     conn = post(conn, Routes.v1_data_template_path(conn, :bulk_import, c_type.id), %{})
 
     assert count_before == Oban.Job |> Repo.all() |> length()
-    assert json_response(conn, 400)["errors"] == "Did't have enough body parameters..!"
+    assert json_response(conn, 400)["errors"] == "Didn't have enough body parameters..!"
   end
 
   test "error not found on user from another organisation", %{conn: conn} do

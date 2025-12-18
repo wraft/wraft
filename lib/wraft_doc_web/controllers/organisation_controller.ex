@@ -41,8 +41,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
           end
 
           example(%{
-            name: "ABC enterprices",
-            legal_name: "ABC enterprices LLC",
+            name: "ABC enterprises",
+            legal_name: "ABC enterprises LLC",
             address: "#24, XV Building, TS DEB Layout ",
             gstin: "32AA65FF56545353",
             email: "abcent@gmail.com",
@@ -73,8 +73,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
           example(%{
             id: "mnbjhb23488n23e",
-            name: "ABC enterprices",
-            legal_name: "ABC enterprices LLC",
+            name: "ABC enterprises",
+            legal_name: "ABC enterprises LLC",
             address: "#24, XV Building, TS DEB Layout ",
             name_of_ceo: "John Doe",
             name_of_cto: "Foo Doo",

@@ -22,6 +22,12 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   setup :verify_on_exit!
 
+  # Setup shared mode for tests that create instances (which spawn webhook and audit log tasks)
+  setup do
+    Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, {:shared, self()})
+    :ok
+  end
+
   test "create instances by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:profile, user: user)
@@ -37,11 +43,14 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> post(Routes.v1_instance_path(conn, :create, content_type.id), @valid_attrs)
       |> doc(operation_id: "create_instance")
 
+    # Wait for spawned tasks (webhooks, audit logs) to complete
+    Process.sleep(100)
+
     assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
     assert count_before + 1 == Instance |> Repo.all() |> length()
   end
 
-  test "adds log on succesfully creating an instance", %{conn: conn} do
+  test "adds log on successfully creating an instance", %{conn: conn} do
     Logger.configure(level: :info)
     user = conn.assigns.current_user
     insert(:profile, user: user)
@@ -110,6 +119,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> post(Routes.v1_instance_path(conn, :create, content_type.id), @valid_attrs)
       |> doc(operation_id: "create_instance")
 
+    # Wait for spawned tasks (webhooks, audit logs) to complete
+    Process.sleep(100)
+
     ias_count_after = InstanceApprovalSystem |> Repo.all() |> length()
 
     assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
@@ -142,6 +154,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       conn
       |> put(Routes.v1_instance_path(conn, :update, instance.id, params))
       |> doc(operation_id: "update_asset")
+
+    # Wait for spawned tasks (audit logs) to complete
+    Process.sleep(100)
 
     assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
     assert count_before == Instance |> Repo.all() |> length()
@@ -289,6 +304,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
           state_id: state.id
         })
 
+      # Wait for spawned tasks (audit logs) to complete
+      Process.sleep(100)
+
       assert response = json_response(conn, 200)
       assert response["state"]["id"] == state.id
     end
@@ -365,6 +383,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     conn =
       patch(conn, Routes.v1_instance_path(conn, :lock_unlock, instance.id), %{editable: true})
 
+    # Wait for spawned tasks (audit logs) to complete
+    Process.sleep(100)
+
     assert json_response(conn, 200)["content"]["editable"] == true
   end
 
@@ -383,7 +404,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     conn = patch(conn, Routes.v1_instance_path(conn, :update, instance.id), @valid_attrs)
 
     assert json_response(conn, 422)["errors"] ==
-             "The instance is not avaliable to edit..!!"
+             "The instance is not available to edit..!!"
   end
 
   test "search instances searches instances by title on serialized", %{conn: conn} do
@@ -458,6 +479,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
       conn = put(conn, Routes.v1_instance_path(conn, :approve, instance.id))
 
+      # Wait for spawned tasks (audit logs) to complete
+      Process.sleep(100)
+
       assert json_response(conn, 200)["state"]["state"] == "draft"
     end
 
@@ -469,7 +493,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       flow = insert(:flow, organisation: organisation)
       s1 = insert(:state, organisation: organisation, flow: flow, order: 1)
       s2 = insert(:state, organisation: organisation, flow: flow, order: 2)
-      _as = insert(:approval_system, flow: flow, approver: u2, pre_state: s1, post_state: s2)
+      insert(:approval_system, flow: flow, approver: u2, pre_state: s1, post_state: s2)
       content_type = insert(:content_type, organisation: organisation, flow: flow)
       instance = insert(:instance, creator: user, content_type: content_type, state: s1)
 
@@ -499,6 +523,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       insert(:instance_approval_system, instance: instance, approval_system: as)
 
       conn = put(conn, Routes.v1_instance_path(conn, :reject, instance.id))
+
+      # Wait for spawned tasks (audit logs) to complete
+      Process.sleep(100)
 
       assert json_response(conn, 200)["state"]["state"] == s1.state
     end

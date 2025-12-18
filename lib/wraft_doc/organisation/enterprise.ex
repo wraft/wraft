@@ -45,7 +45,7 @@ defmodule WraftDoc.Enterprise do
   ]
 
   # Moved to runtime configuration to avoid compile-time vs runtime mismatch
-  defp self_hosted_deployment?, do: Application.get_env(:wraft_doc, :deployement)[:is_self_hosted]
+  defp self_hosted_deployment?, do: Application.get_env(:wraft_doc, :deployment)[:is_self_hosted]
 
   @superadmin_role "superadmin"
   @editor_role "editor"
@@ -156,7 +156,7 @@ defmodule WraftDoc.Enterprise do
   def create_flow(_, _), do: {:error, :fake}
 
   @doc """
-  Funtion to align order of states under  a flow
+  Function to align order of states under  a flow
   ## Params
   * flow - Flow struct
   * params - a map with states key
@@ -288,7 +288,7 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
-  Create default states for a controlled fow
+  Create default states for a controlled flow
   """
   @spec create_default_states(User.t(), Flow.t(), boolean()) :: list
   def create_default_states(current_user, flow, true) do
@@ -1026,8 +1026,8 @@ defmodule WraftDoc.Enterprise do
   - `params` - A map of params to paginate list of organisation
 
   ## Examples
-  organisations=list_organisations(%{"page"=>1, "name"=> "ABC Enterprices"})
-  organisation.entries= [%Organisation{name: "ABC Enterprices"}]
+  organisations=list_organisations(%{"page"=>1, "name"=> "ABC Enterprises"})
+  organisation.entries= [%Organisation{name: "ABC Enterprises"}]
   """
 
   @spec list_organisations(map) :: Scrivener.Page.t()
@@ -1107,7 +1107,7 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
-  Update an uproval system
+  Update an approval system
   """
   @spec update_approval_system(User.t(), ApprovalSystem.t(), map) ::
           ApprovalSystem.t() | {:error, Ecto.Changeset.t()}
@@ -1866,7 +1866,7 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
-  Returns true if deployement mode is saas.
+  Returns true if deployment mode is saas.
   """
   @spec self_hosted? :: boolean()
   def self_hosted?, do: self_hosted_deployment?()

@@ -24,7 +24,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
   describe "show/1" do
     test "shows organisation's membership with valid attrs", %{conn: conn, membership: membership} do
       user = conn.assigns[:current_user]
-      conn = get(conn, Routes.v1_membership_path(conn, :show, user.current_org_id))
+      conn = get(conn, "/api/v1/organisations/#{user.current_org_id}/memberships")
 
       assert json_response(conn, 200)["id"] == membership.id
       assert json_response(conn, 200)["plan_duration"] == membership.plan_duration
@@ -35,7 +35,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
     test "returns nil when given organisation id is different from user's organisation id", %{
       conn: conn
     } do
-      conn = get(conn, Routes.v1_membership_path(conn, :show, Ecto.UUID.generate()))
+      conn = get(conn, "/api/v1/organisations/#{Ecto.UUID.generate()}/memberships")
       assert json_response(conn, 400)["errors"] == "The Organisation id does not exist..!"
     end
   end
@@ -54,7 +54,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
          }}
       end)
 
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
+      conn = put(conn, "/api/v1/memberships/#{membership.id}", attrs)
 
       assert json_response(conn, 200)["plan_duration"] == 365
       assert json_response(conn, 200)["plan"]["name"] == plan.name
@@ -78,7 +78,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
          }}
       end)
 
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
+      conn = put(conn, "/api/v1/memberships/#{membership.id}", attrs)
 
       assert json_response(conn, 400)["info"] == "Payment failed. Membership not updated.!"
       assert payment_count + 1 == Payment |> Repo.all() |> length
@@ -96,7 +96,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
         {:error, @invalid_razorpay_error}
       end)
 
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
+      conn = put(conn, "/api/v1/memberships/#{membership.id}", attrs)
       assert payment_count == Payment |> Repo.all() |> length
       assert @invalid_razorpay_error = json_response(conn, 400)["errors"]
     end
@@ -116,7 +116,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
          }}
       end)
 
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
+      conn = put(conn, "/api/v1/memberships/#{membership.id}", attrs)
 
       assert payment_count == Payment |> Repo.all() |> length
       assert json_response(conn, 422)["errors"] == "No plan with paid amount..!!"
@@ -131,7 +131,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}
       payment_count = Payment |> Repo.all() |> length
 
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
+      conn = put(conn, "/api/v1/memberships/#{membership.id}", attrs)
 
       assert payment_count == Payment |> Repo.all() |> length
       assert json_response(conn, 404) == "Not Found"
@@ -144,7 +144,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       attrs = %{plan_id: Ecto.UUID.generate(), razorpay_id: @valid_razorpay_id}
       payment_count = Payment |> Repo.all() |> length
 
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
+      conn = put(conn, "/api/v1/memberships/#{membership.id}", attrs)
 
       assert payment_count == Payment |> Repo.all() |> length
       assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"

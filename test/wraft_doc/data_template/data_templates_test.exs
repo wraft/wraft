@@ -21,8 +21,8 @@ defmodule WraftDoc.DataTemplates.DataTemplatesTest do
   }
   @invalid_data_template_attrs %{title: nil, title_template: nil, data: nil}
 
-  @tag :individual
   describe "insert_data_template_bulk/4" do
+    @describetag :individual
     test "test bulk data template creation with valid data" do
       c_type = insert(:content_type)
       user = insert(:user)
