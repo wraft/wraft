@@ -397,11 +397,10 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       api_conn =
         Plug.Conn.put_req_header(Phoenix.ConnTest.build_conn(), "accept", "application/json")
 
-      # Try to access the index endpoint
       api_conn = get(api_conn, Routes.v1_api_key_path(api_conn, :index))
 
-      # Should fail
-      assert json_response(api_conn, 404)
+      # Should fail with 401 Unauthorized
+      assert json_response(api_conn, 401)
     end
   end
 end

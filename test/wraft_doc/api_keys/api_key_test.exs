@@ -6,7 +6,6 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
   alias WraftDoc.ApiKeys.ApiKey
   alias WraftDoc.Repo
   import WraftDoc.Factory
-  import Bcrypt
 
   @invalid_attrs %{
     name: nil,
@@ -205,7 +204,6 @@ defmodule WraftDoc.ApiKeys.ApiKeyTest do
   end
 
   describe "valid?/1" do
-    # FIX_ME
     test "returns false for inactive key" do
       user = insert(:user, email: "test_valid_false_#{:erlang.unique_integer()}@example.com")
       organisation = insert(:organisation)
