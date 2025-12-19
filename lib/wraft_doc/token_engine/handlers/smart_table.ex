@@ -15,10 +15,24 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
 
     We'll assume context IS the smart_tables map for simplicity, or we check for a key.
     Let's support both for flexibility.
+    
+    Now also checks for machineName first, then falls back to tableName for lookup.
   """
   def resolve(token, context) do
+    machine_name = token.params["machineName"] || token.params["machine_name"]
     table_name = token.params["tableName"]
-    data = Map.get(context, table_name)
+
+    data =
+      cond do
+        machine_name && Map.has_key?(context, machine_name) ->
+          Map.get(context, machine_name)
+
+        table_name && Map.has_key?(context, table_name) ->
+          Map.get(context, table_name)
+
+        true ->
+          nil
+      end
 
     data = validate_table_map(data)
 

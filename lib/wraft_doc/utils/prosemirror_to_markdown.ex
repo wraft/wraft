@@ -3,8 +3,36 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   Prosemirror2Md is a library that converts ProseMirror Node JSON to Markdown.
   """
 
+  alias WraftDoc.Utils.StringHelper
+
   @doc """
   Converts a ProseMirror Node JSON to Markdown.
+
+  Supports conditional blocks that are conditionally included based on field values.
+  Conditional blocks have the structure:
+  ```json
+  {
+    "type": "conditionalBlock",
+    "attrs": {
+      "conditions": [
+        {
+          "placeholder": "field_name",
+          "operation": "equal",
+          "value": "expected_value",
+          "logic": "and"  // optional, defaults to "and"
+        }
+      ]
+    },
+    "content": [...]
+  }
+  ```
+
+  Supported operations: equal, not_equal, like, not_like, greater_than,
+  greater_than_or_equal, less_than, less_than_or_equal
+
+  The "logic" field on each condition (except the first) specifies how to combine
+  with the previous result: "and" (default) or "or".
+
   ## Examples
       iex> WraftDoc.ProsemirrorToMarkdown.convert(%{"type" => "doc", "content" => []})
       ""
@@ -19,7 +47,34 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     upper: ~w(I II III IV V VI VII VIII IX X XI XII XIII XIV XV XVI XVII XVIII XIX XX)
   }
 
+  @spec convert(map(), keyword()) :: String.t()
   def convert(%{"type" => "doc", "content" => content}, opts \\ []) do
+    Enum.map_join(content, "\n\n", &convert_node(&1, opts))
+  end
+
+  defp convert_node(
+         %{
+           "type" => "conditionalBlock",
+           "attrs" => attrs,
+           "content" => content
+         },
+         opts
+       )
+       when is_map(attrs) do
+    field_values = Keyword.get(opts, :field_values, %{})
+    conditions = Map.get(attrs, "conditions", [])
+
+    if evaluate_conditions(conditions, field_values) do
+      Enum.map_join(content, "\n\n", &convert_node(&1, opts))
+    else
+      ""
+    end
+  end
+
+  defp convert_node(
+         %{"type" => "conditionalBlock", "content" => content},
+         opts
+       ) do
     Enum.map_join(content, "\n\n", &convert_node(&1, opts))
   end
 
@@ -105,8 +160,13 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     "  #{named}  "
   end
 
-  defp convert_node(%{"type" => "holder", "attrs" => %{"name" => name}}, _opts) do
-    " [#{name}] "
+  defp convert_node(%{"type" => "holder", "attrs" => attrs} = _node, opts) do
+    field_values = Keyword.get(opts, :field_values, %{})
+    machine_name = Map.get(attrs, "machineName") || Map.get(attrs, "machine_name")
+    name = Map.get(attrs, "name")
+
+    value = get_holder_value(field_values, machine_name, name)
+    format_holder_output(value, name)
   end
 
   defp convert_node(%{"type" => "holder"}, _opts),
@@ -189,6 +249,35 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp convert_node(%{"type" => type}, _opts),
     do: raise(InvalidJsonError, "Invalid node type: #{type}")
+
+  defp get_holder_value(field_values, machine_name, name) do
+    cond do
+      machine_name && Map.has_key?(field_values, machine_name) ->
+        value = Map.get(field_values, machine_name)
+        if value != nil, do: value, else: try_name_lookup(field_values, name)
+
+      name ->
+        try_name_lookup(field_values, name)
+
+      true ->
+        nil
+    end
+  end
+
+  defp try_name_lookup(field_values, name) when is_binary(name) do
+    if Map.has_key?(field_values, name) do
+      Map.get(field_values, name)
+    else
+      converted_name = StringHelper.convert_to_variable_name(name)
+      Map.get(field_values, converted_name)
+    end
+  end
+
+  defp try_name_lookup(_field_values, _name), do: nil
+
+  defp format_holder_output(nil, nil), do: " [holder] "
+  defp format_holder_output(nil, name), do: " [#{name}] "
+  defp format_holder_output(value, _name), do: "  #{value}  "
 
   defp convert_mark(text, %{"type" => "textHighlight"}, _opts), do: "#{text}"
 
@@ -1143,6 +1232,181 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp filter_table_controller_cells(cells),
     do: Enum.reject(cells, &match?(%{"type" => "tableControllerCell"}, &1))
+
+  @doc false
+  @spec evaluate_conditions(list(), map()) :: boolean()
+  defp evaluate_conditions(conditions, field_values) when is_list(conditions) do
+    evaluate_conditions_with_logic(conditions, field_values)
+  end
+
+  defp evaluate_conditions(_, _), do: false
+
+  # Empty conditions list returns true (block is always included)
+  # This allows conditional blocks without conditions to always render
+  @spec evaluate_conditions_with_logic(list(), map()) :: boolean()
+  defp evaluate_conditions_with_logic([], _field_values), do: true
+
+  @spec evaluate_conditions_with_logic(list(), map()) :: boolean()
+  defp evaluate_conditions_with_logic([first | rest], field_values) do
+    first_result = evaluate_single_condition(first, field_values)
+    evaluate_conditions_with_logic(rest, first_result, field_values)
+  end
+
+  @spec evaluate_conditions_with_logic(list(), boolean(), map()) :: boolean()
+  defp evaluate_conditions_with_logic([], acc, _field_values), do: acc
+
+  # Each condition's "logic" field specifies how to combine with the previous result.
+  # The first condition is evaluated alone, subsequent conditions use their "logic"
+  # field to combine with the accumulated result.
+  @spec evaluate_conditions_with_logic(list(), boolean(), map()) :: boolean()
+  defp evaluate_conditions_with_logic(
+         [condition | rest],
+         acc,
+         field_values
+       ) do
+    condition_result = evaluate_single_condition(condition, field_values)
+    logic = Map.get(condition, "logic", "and")
+
+    new_acc =
+      case logic do
+        "or" -> acc || condition_result
+        _ -> acc && condition_result
+      end
+
+    evaluate_conditions_with_logic(rest, new_acc, field_values)
+  end
+
+  @spec evaluate_single_condition(map(), map()) :: boolean()
+  defp evaluate_single_condition(
+         %{"placeholder" => placeholder, "operation" => operation, "value" => value} = condition,
+         field_values
+       ) do
+    machine_name = Map.get(condition, "machineName") || Map.get(condition, "machine_name")
+    field_value = get_field_value_with_machine_name(machine_name, placeholder, field_values)
+    compare_values(field_value, operation, value)
+  end
+
+  defp evaluate_single_condition(_, _), do: false
+
+  @spec get_field_value_with_machine_name(String.t() | nil, String.t(), map()) :: String.t()
+  defp get_field_value_with_machine_name(machine_name, placeholder, field_values)
+       when is_map(field_values) do
+    value =
+      cond do
+        machine_name && Map.has_key?(field_values, machine_name) ->
+          field_val = Map.get(field_values, machine_name)
+
+          if field_val != nil,
+            do: field_val,
+            else: try_placeholder_lookup(field_values, placeholder)
+
+        Map.has_key?(field_values, placeholder) ->
+          field_val = Map.get(field_values, placeholder)
+          if field_val != nil, do: field_val, else: try_converted_name(field_values, placeholder)
+
+        true ->
+          try_converted_name(field_values, placeholder)
+      end
+
+    to_string(value)
+  end
+
+  defp get_field_value_with_machine_name(_, _, _), do: ""
+
+  defp try_placeholder_lookup(field_values, placeholder) do
+    case Map.get(field_values, placeholder) do
+      nil -> try_converted_name(field_values, placeholder)
+      val -> val
+    end
+  end
+
+  defp try_converted_name(field_values, placeholder) do
+    converted_name = StringHelper.convert_to_variable_name(placeholder)
+    Map.get(field_values, converted_name, "")
+  end
+
+  @spec compare_values(any(), String.t(), any()) :: boolean()
+  defp compare_values(field_value, operation, expected_value) do
+    field_str = String.trim(to_string(field_value))
+    expected_str = String.trim(to_string(expected_value))
+    do_compare(operation, field_str, expected_str)
+  end
+
+  defp do_compare("equal", field_str, expected_str), do: compare_equal(field_str, expected_str)
+
+  defp do_compare("not_equal", field_str, expected_str),
+    do: compare_not_equal(field_str, expected_str)
+
+  defp do_compare("like", field_str, expected_str), do: compare_like(field_str, expected_str)
+
+  defp do_compare("not_like", field_str, expected_str),
+    do: compare_not_like(field_str, expected_str)
+
+  defp do_compare("greater_than", field_str, expected_str),
+    do: compare_numeric(field_str, expected_str, :>)
+
+  defp do_compare("greater_than_or_equal", field_str, expected_str),
+    do: compare_numeric(field_str, expected_str, :>=)
+
+  defp do_compare("less_than", field_str, expected_str),
+    do: compare_numeric(field_str, expected_str, :<)
+
+  defp do_compare("less_than_or_equal", field_str, expected_str),
+    do: compare_numeric(field_str, expected_str, :<=)
+
+  defp do_compare(_, _, _), do: false
+
+  defp compare_equal(field_str, expected_str) do
+    String.downcase(field_str) == String.downcase(expected_str)
+  end
+
+  defp compare_not_equal(field_str, expected_str) do
+    String.downcase(field_str) != String.downcase(expected_str)
+  end
+
+  defp compare_like(field_str, expected_str) do
+    String.contains?(String.downcase(field_str), String.downcase(expected_str))
+  end
+
+  defp compare_not_like(field_str, expected_str) do
+    not String.contains?(String.downcase(field_str), String.downcase(expected_str))
+  end
+
+  defp compare_numeric(field_str, expected_str, op) do
+    case {parse_number(field_str), parse_number(expected_str)} do
+      {{:ok, field_num}, {:ok, expected_num}} ->
+        apply_numeric_operator(field_num, expected_num, op)
+
+      _ ->
+        apply_string_operator(field_str, expected_str, op)
+    end
+  end
+
+  defp apply_numeric_operator(field_num, expected_num, op) do
+    case op do
+      :> -> field_num > expected_num
+      :>= -> field_num >= expected_num
+      :< -> field_num < expected_num
+      :<= -> field_num <= expected_num
+    end
+  end
+
+  defp apply_string_operator(field_str, expected_str, op) do
+    case op do
+      :> -> field_str > expected_str
+      :>= -> field_str >= expected_str
+      :< -> field_str < expected_str
+      :<= -> field_str <= expected_str
+    end
+  end
+
+  @spec parse_number(String.t()) :: {:ok, float()} | :error
+  defp parse_number(str) do
+    case Float.parse(str) do
+      {num, _} -> {:ok, num}
+      :error -> :error
+    end
+  end
 end
 
 defmodule InvalidJsonError do

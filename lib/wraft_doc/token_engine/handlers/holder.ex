@@ -3,6 +3,8 @@ defmodule WraftDoc.TokenEngine.Handlers.Holder do
   Handler for Holder tokens (variable replacement).
   """
 
+  alias WraftDoc.Utils.StringHelper
+
   # Return the updated attributes or the value to be merged into the node
   # The adapter expects the replacement to be the full node if it's a node replacement.
   # But wait, the adapter's `check_node` replaces the *entire node* with the result of `render`.
@@ -45,10 +47,35 @@ defmodule WraftDoc.TokenEngine.Handlers.Holder do
 
   @impl true
   def resolve(token, context) do
+    machine_name = token.params["machineName"] || token.params["machine_name"]
     name = token.params["name"]
-    value = Map.get(context, name)
+
+    value =
+      cond do
+        machine_name && Map.has_key?(context, machine_name) ->
+          value = Map.get(context, machine_name)
+          if value != nil, do: value, else: try_name_lookup(context, name)
+
+        name ->
+          try_name_lookup(context, name)
+
+        true ->
+          nil
+      end
+
     {:ok, %{value: value, original_node: token.original_node}}
   end
+
+  defp try_name_lookup(context, name) when is_binary(name) do
+    if Map.has_key?(context, name) do
+      Map.get(context, name)
+    else
+      converted_name = StringHelper.convert_to_variable_name(name)
+      Map.get(context, converted_name)
+    end
+  end
+
+  defp try_name_lookup(_context, _name), do: nil
 
   @impl true
   def render(%{value: nil, original_node: node}, :prosemirror, _options), do: {:ok, node}

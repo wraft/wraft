@@ -40,6 +40,7 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Themes
   alias WraftDoc.Utils.CSVHelper
   alias WraftDoc.Utils.ProsemirrorToMarkdown
+  alias WraftDoc.Utils.StringHelper
   alias WraftDoc.Workers.BulkWorker
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Mailer
@@ -1370,10 +1371,19 @@ defmodule WraftDoc.Documents do
       |> add_margin(margin)
       |> concat_strings("--- \n")
 
-    raw =
-      instance.serialized["serialized"]
-      |> Jason.decode!()
-      |> ProsemirrorToMarkdown.convert()
+    serialized_data =
+      case Jason.decode(instance.serialized["serialized"]) do
+        {:ok, data} -> data
+        {:error, _} -> %{"type" => "doc", "content" => []}
+      end
+
+    fields =
+      case Jason.decode(instance.serialized["fields"]) do
+        {:ok, field_data} -> field_data
+        {:error, _} -> %{}
+      end
+
+    raw = ProsemirrorToMarkdown.convert(serialized_data, field_values: fields)
 
     """
     #{header}
@@ -1846,13 +1856,15 @@ defmodule WraftDoc.Documents do
         serialized: %{"data" => serialized_data}
       }) do
     updated_content =
-      WraftDoc.TokenEngine.replace(
-        Jason.decode!(serialized_data),
-        :prosemirror,
-        field_with_values
-      )
+      case Jason.decode(serialized_data) do
+        {:ok, data} ->
+          WraftDoc.TokenEngine.replace(data, :prosemirror, field_with_values)
 
-    raw = ProsemirrorToMarkdown.convert(updated_content)
+        {:error, _} ->
+          %{"type" => "doc", "content" => []}
+      end
+
+    raw = ProsemirrorToMarkdown.convert(updated_content, field_values: field_with_values)
 
     serialized =
       %{
@@ -1866,12 +1878,22 @@ defmodule WraftDoc.Documents do
   end
 
   defp replace_content_title(fields, title) do
-    Enum.reduce(fields, title, fn
-      {k, v}, acc when is_binary(k) and is_binary(v) ->
-        WraftDoc.DocConversion.replace_content(k, v, acc)
+    placeholders = Regex.scan(~r/\[([^\]]+)\]/, title)
 
-      _, acc ->
+    Enum.reduce(placeholders, title, fn [match, key], acc ->
+      value =
+        if Map.has_key?(fields, key) do
+          Map.get(fields, key)
+        else
+          converted_key = StringHelper.convert_to_variable_name(key)
+          Map.get(fields, converted_key)
+        end
+
+      if value do
+        String.replace(acc, match, to_string(value))
+      else
         acc
+      end
     end)
   end
 
