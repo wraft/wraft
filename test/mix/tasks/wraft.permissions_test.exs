@@ -11,7 +11,7 @@ defmodule Mix.Tasks.Wraft.PermissionsTest do
 
   setup do
     Logger.configure(level: :info)
-    on_exit(fn -> Logger.configure(level: :warn) end)
+    on_exit(fn -> Logger.configure(level: :warning) end)
   end
 
   describe "run/1" do

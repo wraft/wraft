@@ -8,18 +8,7 @@ config :wraft_doc, WraftDocWeb.Endpoint,
   secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE")
 
 # Print only warnings and errors during test
-config :logger, level: :warn
-
-# Configure your database
-config :wraft_doc, WraftDoc.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  username: System.get_env("POSTGRES_USER") || "postgres",
-  password: System.get_env("POSTGRES_PASSWORD") || "postgres",
-  database: System.get_env("POSTGRES_DB") || "wraft_doc_test",
-  hostname: System.get_env("POSTGRES_HOST") || "localhost",
-  port: System.get_env("POSTGRES_PORT") || "5432",
-  pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 20
+config :logger, level: :warning
 
 config :wraft_doc, Oban,
   queues: false,

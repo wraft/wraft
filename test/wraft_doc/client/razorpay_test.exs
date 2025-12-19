@@ -8,7 +8,7 @@ defmodule WraftDoc.Client.RazorpayTest do
 
   setup do
     Logger.configure(level: :info)
-    on_exit(fn -> Logger.configure(level: :warn) end)
+    on_exit(fn -> Logger.configure(level: :warning) end)
   end
 
   describe "get_payment/1" do

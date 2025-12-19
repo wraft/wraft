@@ -419,7 +419,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
         })
 
       assert json_response(conn, 400) == %{
-               "errors" => "Please provide all necessary datas for this action.!"
+               "errors" => "Please provide all necessary data for this action.!"
              }
     end
 

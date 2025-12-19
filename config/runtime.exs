@@ -12,8 +12,11 @@ if System.get_env("PHX_SERVER") && System.get_env("RELEASE_NAME") do
   config :wraft_doc, WraftDocWeb.Endpoint, server: true
 end
 
+# Ensure Sandbox pool is set for tests
 if config_env() == :test do
-  config :wraft_doc, WraftDoc.Repo, pool: Ecto.Adapters.SQL.Sandbox
+  config :wraft_doc, WraftDoc.Repo,
+    pool: Ecto.Adapters.SQL.Sandbox,
+    ownership_timeout: 60_000
 end
 
 if config_env() == :prod do
