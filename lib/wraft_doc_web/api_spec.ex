@@ -2,7 +2,12 @@ defmodule WraftDocWeb.ApiSpec do
   @moduledoc """
   API spec for Wraft Docs
   """
-  alias OpenApiSpex.{Components, Info, OpenApi, Server}
+  alias OpenApiSpex.Components
+  alias OpenApiSpex.Info
+  alias OpenApiSpex.OpenApi
+  alias OpenApiSpex.SecurityScheme
+  alias OpenApiSpex.Server
+
   alias WraftDocWeb.Endpoint
   alias WraftDocWeb.Router
 
@@ -16,22 +21,30 @@ defmodule WraftDocWeb.ApiSpec do
         Server.from_endpoint(Endpoint)
       ],
       info: %Info{
-        title: "Wraft Docs",
-        version: "0.0.1"
+        title: "Wraft",
+        version: to_string(Application.spec(:wraft_doc, :vsn))
       },
       # Populate the paths from a phoenix router
       paths: OpenApiSpex.Paths.from_router(Router),
       components: %Components{
         securitySchemes: %{
-          "authorization" => %{
-            type: "apiKey",
-            name: "Authorization",
-            in: "header"
+          "authorization" => %SecurityScheme{
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+            description: """
+            JWT-based authentication.
+            - Pass the token in the `Authorization` header as `Bearer <token>`.
+            """
           },
-          "x-api-key" => %{
+          "x-api-key" => %SecurityScheme{
             type: "apiKey",
-            name: "X-API-Key",
-            in: "header"
+            in: "header",
+            name: "x-api-key",
+            description: """
+            API key based authentication.
+            - Include `x-api-key` in the request headers.
+            """
           }
         }
       },
