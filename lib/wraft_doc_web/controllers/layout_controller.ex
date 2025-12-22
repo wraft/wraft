@@ -23,7 +23,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   alias WraftDocWeb.Schemas.Error
   alias WraftDocWeb.Schemas.Layout, as: LayoutSchema
 
-  tags(["layouts"])
+  tags(["Layouts"])
 
   operation(:create,
     summary: "Create Layout",

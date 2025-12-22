@@ -10,7 +10,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
   alias WraftDocWeb.Schemas.CollectionFormField, as: CollectionFormFieldSchema
   alias WraftDocWeb.Schemas.Error
 
-  tags(["CollectionFormFields"])
+  tags(["Collection Form Fields"])
 
   operation(:show,
     summary: "Show an collection form fields",

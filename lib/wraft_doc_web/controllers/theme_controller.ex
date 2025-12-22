@@ -19,7 +19,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
   alias WraftDocWeb.Schemas.Error
   alias WraftDocWeb.Schemas.Theme, as: ThemeSchema
 
-  tags(["themes"])
+  tags(["Themes"])
 
   operation(:create,
     summary: "Create theme",

@@ -24,7 +24,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
   alias WraftDocWeb.Schemas.Error
   alias WraftDocWeb.Schemas.State, as: StateSchema
 
-  tags(["states"])
+  tags(["States"])
 
   operation(:create,
     summary: "Create a state",

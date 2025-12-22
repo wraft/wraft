@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
   alias WraftDocWeb.Schemas.Error
   alias WraftDocWeb.Schemas.RoleGroup, as: RoleGroupSchema
 
-  tags(["role_groups"])
+  tags(["Role Groups"])
 
   operation(:create,
     summary: "/create a role group",

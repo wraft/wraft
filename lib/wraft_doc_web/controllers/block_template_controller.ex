@@ -20,7 +20,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   alias WraftDocWeb.Schemas.BlockTemplate, as: BlockTemplateSchema
   alias WraftDocWeb.Schemas.Error
 
-  tags(["BlockTemplates"])
+  tags(["Block Templates"])
 
   operation(:create,
     summary: "Create block_template",

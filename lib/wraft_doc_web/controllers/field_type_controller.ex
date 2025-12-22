@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
   alias WraftDocWeb.Schemas.Error
   alias WraftDocWeb.Schemas.FieldType, as: FieldTypeSchema
 
-  tags(["field_types"])
+  tags(["Field Types"])
 
   operation(:create,
     summary: "Create a field type",

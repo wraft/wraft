@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.WaitingListController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  tags(["WaitingList"])
+  tags(["Waiting List"])
 
   operation(:create,
     summary: "Join Waiting list",

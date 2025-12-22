@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
   alias WraftDocWeb.Schemas.Error
   alias WraftDocWeb.Schemas.GlobalImport, as: GlobalImportSchema
 
-  tags(["GlobalImport"])
+  tags(["Global Import"])
 
   operation(:import_global_file,
     summary: "Import a global file",

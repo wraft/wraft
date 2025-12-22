@@ -9,7 +9,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
   alias WraftDocWeb.Schemas.ContentTypeRole, as: ContentTypeRoleSchema
   alias WraftDocWeb.Schemas.Error
 
-  tags(["ContentTypeRoles"])
+  tags(["Content Type Roles"])
 
   operation(:create,
     summary: "Create the content type role",
