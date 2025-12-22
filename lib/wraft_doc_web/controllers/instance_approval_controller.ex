@@ -3,53 +3,30 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalController do
   Controller module for Instance approval
   """
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   alias WraftDoc.Documents.Approval
+  alias WraftDocWeb.Schemas
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  def swagger_definitions do
-    %{
-      ApprovalHistoryIndex:
-        swagger_schema do
-          example([
-            %{
-              approver: %{
-                id: "",
-                name: "John",
-                profile_pic: "logo.png"
-              },
-              id: "016a9ade-6ffb-4ef2-b32e-af1c71bf7803",
-              reviewed_at: "2024-03-22T13:11:48",
-              review_status: "approved",
-              to_state: %{
-                id: "c10ae004-69b9-47ee-ba9e-40217e42334f",
-                order: 8,
-                state: "Review"
-              }
-            }
-          ])
-        end
-    }
-  end
+  tags(["Instance Approval"])
 
   @doc """
-    Show approval history
+  Show approval history for a document instance
   """
-  swagger_path :approval_history do
-    get("/contents/{id}/approval_history")
-    summary("Show approval history")
-    description("Show approval history")
-
-    parameters do
-      id(:path, :string, "Instance ID", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:ApprovalHistoryIndex))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:approval_history,
+    summary: "Show approval history",
+    description: "Retrieve the approval history for a specific document instance",
+    parameters: [
+      id: [in: :path, type: :string, description: "Instance ID", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.InstanceApproval.ApprovalHistoryIndex},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   # TODO write test cases
   @spec approval_history(Plug.Conn.t(), map()) :: Plug.Conn.t()

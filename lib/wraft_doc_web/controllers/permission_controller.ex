@@ -1,72 +1,28 @@
 defmodule WraftDocWeb.Api.V1.PermissionController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Authorization
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.Permission, as: PermissionSchema
 
-  def swagger_definitions do
-    %{
-      Permission:
-        swagger_schema do
-          title("A permission JSON response")
-          description("JSON response for a permission")
+  tags(["Permissions"])
 
-          properties do
-            id(:string, "The ID of the permission", required: true)
-            name(:string, "Permissions's name", required: true)
-            action(:string, "Permission's action", required: true)
-          end
-
-          example(%{
-            id: "1232148nb3478",
-            name: "layout:index",
-            action: "Index",
-            resource: "Layout"
-          })
-        end,
-      PermissionByResource:
-        swagger_schema do
-          title("Permissions by resource")
-          description("Permissions grouped by resource")
-          type(:map)
-
-          example(%{
-            "Layout" => [
-              %{id: "1232148nb3478", name: "layout:index", action: "Index"},
-              %{id: "2374679278373", name: "layout:manage", action: "Manage"}
-            ]
-          })
-        end,
-      ResourceIndex:
-        swagger_schema do
-          title("Resources index")
-          description("All resources we have in Wraft")
-          type(:list)
-
-          example(["Layout", "Content Type", "Data Template"])
-        end
-    }
-  end
-
-  @doc """
-  Permissions index, grouped by resource.
-  """
-  swagger_path :index do
-    get("/permissions")
-    summary("Permission index")
-    description("API to get the list of all permissions created so far")
-
-    parameters do
-      name(:query, :string, "Permission name")
-      resource(:query, :string, "Name of Resource")
-    end
-
-    response(200, "Ok", Schema.ref(:PermissionByResource))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  operation(:index,
+    summary: "Permission index",
+    description: "API to get the list of all permissions created so far",
+    parameters: [
+      name: [in: :query, type: :string, description: "Permission name"],
+      resource: [in: :query, type: :string, description: "Name of Resource"]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", PermissionSchema.PermissionByResource},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      bad_request: {"Bad Request", "application/json", Error}
+    ]
+  )
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, params) do
@@ -74,18 +30,15 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
     render(conn, "index.json", permissions_by_resource: permissions_by_resource)
   end
 
-  @doc """
-  Lists all the resources we have in Wraft.
-  """
-  swagger_path :resource_index do
-    get("/resources")
-    summary("Resource index")
-    description("API to get the list of all resources we have in Wraft")
-
-    response(200, "Ok", Schema.ref(:ResourceIndex))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  operation(:resource_index,
+    summary: "Resource index",
+    description: "API to get the list of all resources we have in Wraft",
+    responses: [
+      ok: {"Ok", "application/json", PermissionSchema.ResourceIndex},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      bad_request: {"Bad Request", "application/json", Error}
+    ]
+  )
 
   @spec resource_index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def resource_index(conn, _params) do

@@ -1,108 +1,19 @@
 defmodule WraftDocWeb.Api.V1.DocumentSignController do
+  @moduledoc """
+  Controller for sending documents for electronic signature
+  """
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   alias WraftDoc.Integrations.DocuSign
+  alias WraftDocWeb.Schemas
 
   plug WraftDocWeb.Plug.AddActionLog
   plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  def swagger_definitions do
-    %{
-      SignerRequest:
-        swagger_schema do
-          title("Signer")
-          description("A recipient who will sign the document")
-
-          properties do
-            name(:string, "Name of the signer", required: true)
-            email(:string, "Email of the signer", required: true)
-
-            anchor(:string, "Anchor text for signature placement (default: \"SIGN_HERE\")",
-              required: false
-            )
-          end
-
-          example(%{
-            name: "John Doe",
-            email: "john.doe@example.com",
-            anchor: "SIGN_HERE"
-          })
-        end,
-      SendDocumentRequest:
-        swagger_schema do
-          title("Send Document Request")
-          description("Request to send a document for electronic signature")
-
-          properties do
-            id(:string, "Document ID to be sent for signature", required: true)
-
-            type(:string, "Signature provider type (\"docusign\" or \"documenso\")",
-              required: true
-            )
-
-            signers(:array, "List of document signers",
-              items: Schema.ref(:SignerRequest),
-              required: true
-            )
-          end
-
-          example(%{
-            id: "550e8400-e29b-41d4-a716-446655440000",
-            type: "docusign",
-            signers: [
-              %{
-                name: "John Doe",
-                email: "john.doe@example.com"
-              }
-            ]
-          })
-        end,
-      SendDocumentResponse:
-        swagger_schema do
-          title("Send Document Response")
-          description("Response after document is sent for signature")
-
-          properties do
-            envelopeId(:string, "Unique ID of the signature envelope")
-            status(:string, "Status of the signature request")
-            statusDateTime(:string, "Timestamp of the status", format: "date-time")
-            uri(:string, "URI to access the envelope")
-          end
-
-          example(%{
-            envelopeId: "1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p",
-            status: "sent",
-            statusDateTime: "2023-05-15T09:30:00Z",
-            uri: "/envelopes/1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p"
-          })
-        end
-    }
-  end
-
-  swagger_path :send_document do
-    post("/send_document")
-    summary("Send document for electronic signature")
-
-    description(
-      "Sends a document to specified recipients for electronic signature using the selected provider (DocuSign or Documenso)"
-    )
-
-    parameters do
-      body(:body, Schema.ref(:SendDocumentRequest), "Document and signer details", required: true)
-    end
-
-    response(201, "Created", Schema.ref(:SendDocumentResponse))
-    response(400, "Bad Request")
-    response(401, "Unauthorized")
-    response(404, "Not Found")
-    response(422, "Unprocessable Entity")
-    response(500, "Server Error")
-
-    tag("Signature")
-  end
+  tags(["Signature"])
 
   @doc """
   Sends a document for electronic signature.
@@ -116,6 +27,22 @@ defmodule WraftDocWeb.Api.V1.DocumentSignController do
 
   Returns the signature request details upon successful creation.
   """
+  operation(:send_document,
+    summary: "Send document for electronic signature",
+    description:
+      "Sends a document to specified recipients for electronic signature using the selected provider (DocuSign or Documenso)",
+    request_body:
+      {"Document and signer details", "application/json",
+       Schemas.DocumentSign.SendDocumentRequest},
+    responses: [
+      created: {"Created", "application/json", Schemas.DocumentSign.SendDocumentResponse},
+      bad_request: {"Bad Request", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
+
   @spec send_document(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def send_document(conn, %{"id" => document_id, "type" => type, "signers" => signers}) do
     org_id = conn.assigns.current_user.current_org_id

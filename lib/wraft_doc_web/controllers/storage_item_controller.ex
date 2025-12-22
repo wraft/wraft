@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
         - Files
   """
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
   require Logger
 
   alias WraftDoc.Storages
@@ -25,6 +25,8 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   alias WraftDoc.Storages.StorageAssets
   alias WraftDoc.Storages.StorageItem
   alias WraftDoc.Storages.StorageItems
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.StorageItem, as: StorageItemSchema
 
   import WraftDocWeb.ErrorHelpers
 
@@ -33,365 +35,11 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  def swagger_definitions do
-    %{
-      StorageItem:
-        swagger_schema do
-          title("Storage Item")
-          description("A file or folder in the storage system")
+  tags(["Storage Items"])
 
-          properties do
-            id(:string, "The ID of the storage item", required: true, format: "uuid")
-            name(:string, "Name of the item", required: true)
-            display_name(:string, "Display name of the item")
-            item_type(:string, "Type of item", enum: ["file", "folder"])
-            path(:string, "Path to the item")
-            mime_type(:string, "MIME type of the item")
-            file_extension(:string, "File extension")
-            size(:integer, "Size in bytes")
-            is_folder(:boolean, "Whether the item is a folder")
-            depth_level(:integer, "Depth level in the folder hierarchy")
-            materialized_path(:string, "Materialized path for hierarchy")
-            version_number(:integer, "Version number of the item")
-            is_current_version(:boolean, "Whether this is the current version")
-            classification_level(:string, "Security classification level")
-            content_extracted(:boolean, "Whether content has been extracted")
-            thumbnail_generated(:boolean, "Whether thumbnail has been generated")
-            download_count(:integer, "Number of times downloaded")
-            last_accessed_at(:string, "Last access timestamp", format: "ISO-8601")
-            metadata(:object, "Additional metadata")
-            parent_id(:string, "ID of parent folder", format: "uuid")
-            repository_id(:string, "ID of the repository", format: "uuid")
-            creator_id(:string, "ID of the creator", format: "uuid")
-            organisation_id(:string, "ID of the organisation", format: "uuid")
-            inserted_at(:string, "Creation timestamp", format: "ISO-8601")
-            updated_at(:string, "Last update timestamp", format: "ISO-8601")
-            assets(:array, "Associated storage assets", items: Schema.ref(:StorageAsset))
-          end
-
-          example(%{
-            id: "550e8400-e29b-41d4-a716-446655440000",
-            name: "contract.pdf",
-            display_name: "Contract Agreement",
-            item_type: "file",
-            path: "/Contracts/Q4/contract.pdf",
-            mime_type: "application/pdf",
-            file_extension: "pdf",
-            size: 1_024_000,
-            is_folder: false,
-            depth_level: 2,
-            materialized_path: "/Contracts/Q4/",
-            version_number: 1,
-            is_current_version: true,
-            classification_level: "public",
-            content_extracted: true,
-            thumbnail_generated: true,
-            download_count: 5,
-            last_accessed_at: "2023-01-15T10:30:00Z",
-            metadata: %{},
-            parent_id: "550e8400-e29b-41d4-a716-446655440001",
-            repository_id: "550e8400-e29b-41d4-a716-446655440002",
-            creator_id: "550e8400-e29b-41d4-a716-446655440003",
-            organisation_id: "550e8400-e29b-41d4-a716-446655440004",
-            inserted_at: "2023-01-10T14:00:00Z",
-            updated_at: "2023-01-12T09:15:00Z",
-            assets: []
-          })
-        end,
-      StorageAsset:
-        swagger_schema do
-          title("Storage Asset")
-          description("A physical storage asset associated with a storage item")
-
-          properties do
-            id(:string, "The ID of the storage asset", required: true, format: "uuid")
-            filename(:string, "Original filename", required: true)
-            storage_key(:string, "Storage backend key")
-            storage_backend(:string, "Storage backend type")
-            file_size(:integer, "File size in bytes")
-            mime_type(:string, "MIME type")
-
-            processing_status(:string, "Processing status",
-              enum: ["pending", "processing", "completed", "failed"]
-            )
-
-            upload_completed_at(:string, "Upload completion timestamp", format: "ISO-8601")
-            checksum_sha256(:string, "SHA256 checksum")
-            thumbnail_path(:string, "Path to thumbnail")
-            preview_path(:string, "Path to preview")
-            url(:string, "Access URL")
-            inserted_at(:string, "Creation timestamp", format: "ISO-8601")
-            updated_at(:string, "Last update timestamp", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "550e8400-e29b-41d4-a716-446655440000",
-            filename: "contract.pdf",
-            storage_key: "uploads/2023/01/contract_abc123.pdf",
-            storage_backend: "s3",
-            file_size: 1_024_000,
-            mime_type: "application/pdf",
-            processing_status: "completed",
-            upload_completed_at: "2023-01-10T14:05:00Z",
-            checksum_sha256: "abc123def456...",
-            thumbnail_path: "/thumbnails/contract_thumb.jpg",
-            preview_path: "/previews/contract_preview.jpg",
-            url: "https://storage.example.com/contract.pdf",
-            inserted_at: "2023-01-10T14:00:00Z",
-            updated_at: "2023-01-10T14:05:00Z"
-          })
-        end,
-      # StorageStats:
-      #   swagger_schema do
-      #     title("Storage Statistics")
-      #     description("Statistics for a folder or root directory")
-
-      #     properties do
-      #       total_items(:integer, "Total number of items")
-      #       total_size(:integer, "Total size in bytes")
-      #       file_count(:integer, "Number of files")
-      #       folder_count(:integer, "Number of folders")
-      #       last_updated(:string, "Last update timestamp", format: "ISO-8601")
-      #     end
-
-      #     example(%{
-      #       total_items: 42,
-      #       total_size: 10_485_760,
-      #       file_count: 35,
-      #       folder_count: 7,
-      #       last_updated: "2023-01-15T10:30:00Z"
-      #     })
-      #   end,
-      StorageItemsList:
-        swagger_schema do
-          title("Storage Items List")
-          description("List of storage items with metadata")
-
-          properties do
-            data(:array, "List of storage items", items: Schema.ref(:StorageItem))
-            # breadcrumbs(:array, "Breadcrumb navigation", items: Schema.ref(:Breadcrumb))
-            current_folder(Schema.ref(:CurrentFolder), "Current folder information")
-            meta(Schema.ref(:ListMeta), "List metadata")
-          end
-
-          example(%{
-            data: [
-              %{
-                id: "550e8400-e29b-41d4-a716-446655440000",
-                name: "Documents",
-                is_folder: true,
-                size: 0,
-                mime_type: "inode/directory"
-              }
-            ],
-            breadcrumbs: [
-              %{id: "root", name: "Root", path: "/"}
-            ],
-            current_folder: %{
-              id: "550e8400-e29b-41d4-a716-446655440000",
-              name: "Documents",
-              is_folder: true
-            },
-            meta: %{
-              count: 1,
-              sort_by: "created",
-              sort_order: "desc"
-            }
-          })
-        end,
-      Breadcrumb:
-        swagger_schema do
-          title("Breadcrumb")
-          description("Navigation breadcrumb item")
-
-          properties do
-            id(:string, "ID of the folder", format: "uuid")
-            name(:string, "Name of the folder", required: true)
-            path(:string, "Path to the folder")
-            is_folder(:boolean, "Whether this is a folder", default: true)
-          end
-
-          example(%{
-            id: "550e8400-e29b-41d4-a716-446655440000",
-            name: "Documents",
-            path: "/Documents",
-            is_folder: true
-          })
-        end,
-      CurrentFolder:
-        swagger_schema do
-          title("Current Folder")
-          description("Information about the current folder")
-
-          properties do
-            id(:string, "ID of the folder", format: "uuid")
-            name(:string, "Name of the folder", required: true)
-            is_folder(:boolean, "Whether this is a folder", default: true)
-            path(:string, "Path to the folder")
-            materialized_path(:string, "Materialized path")
-          end
-
-          example(%{
-            id: "550e8400-e29b-41d4-a716-446655440000",
-            name: "Documents",
-            is_folder: true,
-            path: "/Documents",
-            materialized_path: "/Documents/"
-          })
-        end,
-      ListMeta:
-        swagger_schema do
-          title("List Metadata")
-          description("Metadata for list responses")
-
-          properties do
-            count(:integer, "Number of items returned")
-            breadcrumbs_count(:integer, "Number of breadcrumb items")
-            sort_by(:string, "Sort field used")
-            sort_order(:string, "Sort order used")
-            timestamp(:string, "Response timestamp", format: "ISO-8601")
-          end
-
-          example(%{
-            count: 25,
-            breadcrumbs_count: 3,
-            sort_by: "created",
-            sort_order: "desc",
-            timestamp: "2023-01-15T10:30:00Z"
-          })
-        end,
-      StorageItemCreateParams:
-        swagger_schema do
-          title("Storage Item Create Parameters")
-          description("Parameters for creating a storage item")
-
-          properties do
-            name(:string, "Name of the item", required: true)
-            display_name(:string, "Display name of the item")
-            item_type(:string, "Type of item", enum: ["file", "folder"], required: true)
-            path(:string, "Path to the item")
-            mime_type(:string, "MIME type of the item")
-            size(:integer, "Size in bytes", default: 0)
-            parent_id(:string, "ID of parent folder", format: "uuid")
-            metadata(:object, "Additional metadata")
-          end
-
-          example(%{
-            name: "new_document.pdf",
-            display_name: "New Document",
-            item_type: "file",
-            path: "/Documents/new_document.pdf",
-            mime_type: "application/pdf",
-            size: 1_024_000,
-            parent_id: "550e8400-e29b-41d4-a716-446655440000",
-            metadata: %{}
-          })
-        end,
-      FolderCreateParams:
-        swagger_schema do
-          title("Folder Create Parameters")
-          description("Parameters for creating a folder")
-
-          properties do
-            name(:string, "Name of the folder", required: true)
-            path(:string, "Path to the folder", required: true)
-            parent_id(:string, "ID of parent folder", format: "uuid")
-          end
-
-          example(%{
-            name: "New Folder",
-            path: "/Documents/New Folder",
-            parent_id: "550e8400-e29b-41d4-a716-446655440000"
-          })
-        end,
-      StorageItemUpdateParams:
-        swagger_schema do
-          title("Storage Item Update Parameters")
-          description("Parameters for updating a storage item")
-
-          properties do
-            name(:string, "Name of the item")
-            display_name(:string, "Display name of the item")
-            metadata(:object, "Additional metadata")
-          end
-
-          example(%{
-            name: "updated_document.pdf",
-            display_name: "Updated Document",
-            metadata: %{category: "contracts"}
-          })
-        end,
-      RenameParams:
-        swagger_schema do
-          title("Rename Parameters")
-          description("Parameters for renaming a storage item")
-
-          properties do
-            new_name(:string, "New name for the item", required: true)
-          end
-
-          example(%{
-            new_name: "renamed_document.pdf"
-          })
-        end,
-      NavigationData:
-        swagger_schema do
-          title("Navigation Data")
-          description("Storage navigation data")
-
-          properties do
-            data(Schema.ref(:NavigationItems), "Navigation items and breadcrumbs")
-            meta(Schema.ref(:ListMeta), "Navigation metadata")
-          end
-
-          example(%{
-            data: %{
-              items: [],
-              breadcrumbs: []
-            },
-            meta: %{
-              count: 0,
-              timestamp: "2023-01-15T10:30:00Z"
-            }
-          })
-        end,
-      DeleteStorageItemResponse:
-        swagger_schema do
-          title("Delete Storage Item Response")
-          description("Response for successful storage item deletion")
-
-          properties do
-            message(:string, "Success message", example: "Storage item marked for deletion")
-
-            id(:string, "ID of deleted item",
-              format: "uuid",
-              example: "550e8400-e29b-41d4-a716-446655440000"
-            )
-          end
-        end,
-      NavigationItems:
-        swagger_schema do
-          title("Navigation Items")
-          description("Items and breadcrumbs for navigation")
-
-          properties do
-            items(:array, "List of storage items", items: Schema.ref(:StorageItem))
-            # breadcrumbs(:array, "Breadcrumb navigation", items: Schema.ref(:Breadcrumb))
-          end
-
-          example(%{
-            items: [],
-            breadcrumbs: []
-          })
-        end
-    }
-  end
-
-  swagger_path :index do
-    get("/storage/items")
-    summary("List storage items")
-
-    description("""
+  operation(:index,
+    summary: "List storage items",
+    description: """
     Lists storage items with pagination, sorting and filtering.
 
     ### Path Variations
@@ -401,39 +49,40 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
 
     ### Sorting
     Supported sort fields: name, created, updated, size, type
-    """)
-
-    operation_id("listStorageItems")
-    produces("application/json")
-    tag("Storage Items")
-
-    parameters do
-      parent_id(:query, :string, "Parent folder ID to list contents", format: "uuid")
-      repository_id(:query, :string, "Repository ID to filter by", format: "uuid")
-
-      limit(:query, :integer, "Number of items to return (1-1000)",
-        default: 100,
-        minimum: 1,
-        maximum: 1000
-      )
-
-      page(:query, :integer, "Page number", default: 1)
-
-      sort_by(:query, :string, "Sort field",
-        enum: ["name", "created", "updated", "size", "type"],
-        default: "created"
-      )
-
-      sort_order(:query, :string, "Sort direction", enum: ["asc", "desc"], default: "desc")
-
-      search(:query, :string, "Search query")
-    end
-
-    response(200, "OK", Schema.ref(:StorageItemsList))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+    """,
+    operation_id: "listStorageItems",
+    parameters: [
+      parent_id: [
+        in: :query,
+        type: :string,
+        description: "Parent folder ID to list contents (UUID)"
+      ],
+      repository_id: [in: :query, type: :string, description: "Repository ID to filter by (UUID)"],
+      limit: [
+        in: :query,
+        type: :integer,
+        description: "Number of items to return (default: 100, min: 1, max: 1000)"
+      ],
+      page: [in: :query, type: :integer, description: "Page number (default: 1)"],
+      sort_by: [
+        in: :query,
+        type: :string,
+        description: "Sort field (name, created, updated, size, type; default: created)"
+      ],
+      sort_order: [
+        in: :query,
+        type: :string,
+        description: "Sort direction (asc, desc; default: desc)"
+      ],
+      search: [in: :query, type: :string, description: "Search query"]
+    ],
+    responses: [
+      ok: {"OK", "application/json", StorageItemSchema.StorageItemsList},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error}
+    ]
+  )
 
   @doc """
   Lists storage items with optional filtering.
@@ -468,33 +117,31 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
     end
   end
 
-  swagger_path :breadcrumbs do
-    get("/storage/items/{id}/breadcrumbs")
-    summary("Get breadcrumb navigation")
-    description("Gets breadcrumb navigation for a storage item")
-    operation_id("getStorageItemBreadcrumbs")
-    produces("application/json")
-    tag("Storage Items")
-
-    parameters do
-      id(:path, :string, "ID of the storage item", required: true, format: "uuid")
-    end
-
-    response(200, "OK", %{
-      type: :object,
-      properties: %{
-        data: %{
-          type: :array,
-          items: Schema.ref(:Breadcrumb),
-          description: "Breadcrumb navigation items"
-        }
-      }
-    })
-
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:breadcrumbs,
+    summary: "Get breadcrumb navigation",
+    description: "Gets breadcrumb navigation for a storage item",
+    operation_id: "getStorageItemBreadcrumbs",
+    parameters: [
+      id: [in: :path, type: :string, description: "ID of the storage item (UUID)", required: true]
+    ],
+    responses: [
+      ok:
+        {"OK", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{
+             data: %OpenApiSpex.Schema{
+               type: :array,
+               items: StorageItemSchema.Breadcrumb,
+               description: "Breadcrumb navigation items"
+             }
+           }
+         }},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error}
+    ]
+  )
 
   @doc """
   Gets breadcrumb navigation for a storage item.
@@ -509,39 +156,32 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
     end
   end
 
-  swagger_path :navigation do
-    get("/storage/items/navigation")
-    summary("Get navigation structure")
-
-    description("""
+  operation(:navigation,
+    summary: "Get navigation structure",
+    description: """
     Returns combined folder contents and breadcrumbs for efficient navigation.
 
     ### Typical Flow
     1. Client loads root navigation
     2. User clicks into folder
     3. Client requests navigation for that folder
-    """)
-
-    operation_id("getStorageNavigation")
-    produces("application/json")
-    tag("Storage Items")
-
-    parameters do
-      parent_id(:query, :string, "Parent folder ID", format: "uuid")
-
-      limit(:query, :integer, "Number of items to return",
-        default: 100,
-        minimum: 1,
-        maximum: 1000
-      )
-
-      offset(:query, :integer, "Number of items to skip", default: 0, minimum: 0)
-    end
-
-    response(200, "OK", Schema.ref(:NavigationData))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+    """,
+    operation_id: "getStorageNavigation",
+    parameters: [
+      parent_id: [in: :query, type: :string, description: "Parent folder ID (UUID)"],
+      limit: [
+        in: :query,
+        type: :integer,
+        description: "Number of items to return (default: 100, min: 1, max: 1000)"
+      ],
+      offset: [in: :query, type: :integer, description: "Number of items to skip (default: 0)"]
+    ],
+    responses: [
+      ok: {"OK", "application/json", StorageItemSchema.NavigationData},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @doc """
   Gets navigation data including items and breadcrumbs.
@@ -571,29 +211,20 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
     end
   end
 
-  swagger_path :create do
-    post("/storage/items")
-    summary("Create a storage item")
-    description("Creates a new storage item (file or folder)")
-    operation_id("createStorageItem")
-    consumes("application/json")
-    produces("application/json")
-    tag("Storage Items")
-
-    parameters do
-      storage_item(
-        :body,
-        Schema.ref(:StorageItemCreateParams),
-        "Storage item creation parameters",
-        required: true
-      )
-    end
-
-    response(201, "Created", Schema.ref(:StorageItem))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Create a storage item",
+    description: "Creates a new storage item (file or folder)",
+    operation_id: "createStorageItem",
+    request_body:
+      {"Storage item creation parameters", "application/json",
+       StorageItemSchema.StorageItemCreateParams},
+    responses: [
+      created: {"Created", "application/json", StorageItemSchema.StorageItem},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error}
+    ]
+  )
 
   def create(conn, params) do
     with {:ok, %StorageItem{} = storage_item} <-
@@ -605,33 +236,26 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
     end
   end
 
-  swagger_path :create_folder do
-    post("/storage/folder")
-    summary("Create a folder")
-
-    description("""
+  operation(:create_folder,
+    summary: "Create a folder",
+    description: """
     Creates a new folder in the specified location.
 
     ### Path Requirements
     - Path must be absolute (start with /)
     - Parent folders must exist
-    """)
-
-    operation_id("createFolder")
-    consumes("application/json")
-    produces("application/json")
-    tag("Storage Items")
-
-    parameters do
-      folder(:body, Schema.ref(:FolderCreateParams), "Folder creation parameters", required: true)
-    end
-
-    response(201, "Created", Schema.ref(:StorageItem))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+    """,
+    operation_id: "createFolder",
+    request_body:
+      {"Folder creation parameters", "application/json", StorageItemSchema.FolderCreateParams},
+    responses: [
+      created: {"Created", "application/json", StorageItemSchema.StorageItem},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error}
+    ]
+  )
 
   @doc """
   Creates a new folder.
@@ -695,23 +319,25 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
     end
   end
 
-  swagger_path :show do
-    get("/storage/items/{id}")
-    summary("Get storage item details")
-    description("Returns detailed information about a specific storage item")
-    operation_id("getStorageItem")
-    produces("application/json")
-    tag("Storage Items")
-
-    parameters do
-      id(:path, :string, "ID of the storage item to fetch", required: true, format: "uuid")
-    end
-
-    response(200, "OK", Schema.ref(:StorageItem))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Get storage item details",
+    description: "Returns detailed information about a specific storage item",
+    operation_id: "getStorageItem",
+    parameters: [
+      id: [
+        in: :path,
+        type: :string,
+        description: "ID of the storage item to fetch (UUID)",
+        required: true
+      ]
+    ],
+    responses: [
+      ok: {"OK", "application/json", StorageItemSchema.StorageItem},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error}
+    ]
+  )
 
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
@@ -738,30 +364,29 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
     end
   end
 
-  swagger_path :update do
-    patch("/storage/items/{id}")
-    put("/storage/items/{id}")
-    summary("Update storage item")
-    description("Updates an existing storage item")
-    operation_id("updateStorageItem")
-    consumes("application/json")
-    produces("application/json")
-    tag("Storage Items")
-
-    parameters do
-      id(:path, :string, "ID of the storage item to update", required: true, format: "uuid")
-
-      storage_item(:body, Schema.ref(:StorageItemUpdateParams), "Storage item update parameters",
+  operation(:update,
+    summary: "Update storage item",
+    description: "Updates an existing storage item",
+    operation_id: "updateStorageItem",
+    parameters: [
+      id: [
+        in: :path,
+        type: :string,
+        description: "ID of the storage item to update (UUID)",
         required: true
-      )
-    end
-
-    response(200, "OK", Schema.ref(:StorageItem))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+      ]
+    ],
+    request_body:
+      {"Storage item update parameters", "application/json",
+       StorageItemSchema.StorageItemUpdateParams},
+    responses: [
+      ok: {"OK", "application/json", StorageItemSchema.StorageItem},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error}
+    ]
+  )
 
   def update(conn, %{"id" => id, "storage_item" => storage_item_params}) do
     storage_item = StorageItems.get_storage_item!(id)
@@ -772,24 +397,26 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
     end
   end
 
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/storage/items/{id}")
-    summary("Delete storage item")
-    description("Marks a storage item for deletion")
-    operation_id("deleteStorageItem")
-    produces("application/json")
-    tag("Storage Items")
-
-    parameters do
-      id(:path, :string, "ID of the storage item to delete", required: true, format: "uuid")
-    end
-
-    response(200, "OK", Schema.ref(:DeleteStorageItemResponse))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:delete,
+    summary: "Delete storage item",
+    description: "Marks a storage item for deletion",
+    operation_id: "deleteStorageItem",
+    parameters: [
+      id: [
+        in: :path,
+        type: :string,
+        description: "ID of the storage item to delete (UUID)",
+        required: true
+      ]
+    ],
+    responses: [
+      ok: {"OK", "application/json", StorageItemSchema.DeleteStorageItemResponse},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error}
+    ]
+  )
 
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
@@ -819,33 +446,32 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
     end
   end
 
-  swagger_path :rename do
-    put("/storage/items/{id}/rename")
-    summary("Rename a storage item")
-
-    description("""
+  operation(:rename,
+    summary: "Rename a storage item",
+    description: """
     Renames a file or folder while maintaining all other properties.
 
     ### Restrictions
     - Cannot rename to existing name in same folder
     - Cannot include path separators (/)
-    """)
-
-    operation_id("renameStorageItem")
-    consumes("application/json")
-    produces("application/json")
-    tag("Storage Items")
-
-    parameters do
-      id(:path, :string, "ID of the item to rename", required: true, format: "uuid")
-      new_name(:body, :string, "New name for the item", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:StorageItem))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(409, "Conflict", Schema.ref(:Error))
-  end
+    """,
+    operation_id: "renameStorageItem",
+    parameters: [
+      id: [
+        in: :path,
+        type: :string,
+        description: "ID of the item to rename (UUID)",
+        required: true
+      ]
+    ],
+    request_body: {"New name for the item", "application/json", StorageItemSchema.RenameParams},
+    responses: [
+      ok: {"OK", "application/json", StorageItemSchema.StorageItem},
+      bad_request: {"Bad Request", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error},
+      conflict: {"Conflict", "application/json", Error}
+    ]
+  )
 
   @doc """
   Renames a storage item (file or folder).

@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.AddActionLog
 
@@ -20,156 +20,26 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   alias WraftDoc.Documents
   alias WraftDoc.Documents.ContentCollaboration
   alias WraftDoc.Documents.Instance
+  alias WraftDocWeb.Schemas.Content, as: ContentSchema
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.InstanceGuest, as: InstanceGuestSchema
 
-  def swagger_definitions do
-    %{
-      InviteDocumentRequest:
-        swagger_schema do
-          title("Share document request")
-          description("Request to share a document")
+  tags(["Instance Guests"])
 
-          properties do
-            email(:string, "Email", required: true)
-            role(:string, "Role", required: true, enum: ["suggestor", "viewer"])
-          end
-
-          example(%{
-            "email" => "example@example.com",
-            "role" => "suggestor"
-          })
-        end,
-      VerifyDocumentInviteTokenResponse:
-        swagger_schema do
-          title("Verify document invite token response")
-          description("Response for document invite token verification")
-
-          properties do
-            token(:string, "Token")
-            role(:string, "Role")
-            user(Schema.ref(:User), "User")
-          end
-
-          example(%{
-            token: "1232148nb3478",
-            role: "suggestor",
-            user: %{
-              id: "6529b52b-071c-4b82-950c-539b73b8833e",
-              name: "John Doe",
-              email: "john@example.com",
-              is_guest: false,
-              email_verified: true,
-              inserted_at: "2023-04-23T10:00:00Z",
-              updated_at: "2023-04-23T10:00:00Z"
-            }
-          })
-        end,
-      Collaborator:
-        swagger_schema do
-          title("Collaborator")
-          description("A collaborator")
-
-          properties do
-            id(:string, "Id")
-            name(:string, "Name")
-            email(:string, "Email")
-            role(:string, "Role")
-            status(:string, "Status")
-            created_at(:string, "Created at")
-            updated_at(:string, "Updated at")
-          end
-
-          example(%{
-            id: "6529b52b-071c-4b82-950c-539b73b8833e",
-            name: "John Doe",
-            email: "john@example.com",
-            role: "viewer",
-            status: "active",
-            created_at: "2023-04-23T10:00:00Z",
-            updated_at: "2023-04-23T10:00:00Z"
-          })
-        end,
-      CounterPartiesRequest:
-        swagger_schema do
-          title("Counter parties request")
-          description("Request to create counter parties")
-
-          properties do
-            name(:string, "Name", required: true)
-            guest_user_id(:string, "Guest user id", required: true)
-          end
-
-          example(%{
-            name: "John Doe",
-            guest_user_id: "1232148nb3478"
-          })
-        end,
-      CounterPartiesResponse:
-        swagger_schema do
-          title("Counter parties response")
-          description("Response for counter parties")
-
-          properties do
-            id(:string, "Id")
-            name(:string, "Name")
-            guest_user_id(:string, "Guest user id")
-            content(Schema.ref(:Content))
-            created_at(:string, "Created at")
-            updated_at(:string, "Updated at")
-          end
-
-          example(%{
-            id: "6529b52b-071c-4b82-950c-539b73b8833e",
-            name: "John Doe",
-            guest_user_id: "1232148nb3478",
-            content: %{
-              id: "1232148nb3478",
-              instance_id: "OFFL01",
-              raw: "Content",
-              serialized: %{title: "Title of the content", body: "Body of the content"},
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            },
-            created_at: "2023-04-23T10:00:00Z",
-            updated_at: "2023-04-23T10:00:00Z"
-          })
-        end,
-      ShareDocumentRequest:
-        swagger_schema do
-          title("Share document request")
-          description("Request to share a document")
-
-          properties do
-            email(:string, "Email", required: true)
-            role(:string, "Role", required: true, enum: ["suggestor", "viewer"])
-            state_id(:string, "Document State", required: true)
-          end
-
-          example(%{
-            "email" => "example@example.com",
-            "role" => "suggestor",
-            "state_id" => "a102cdb1-e5f4-4c28-98ec-9a10a94b9173"
-          })
-        end
-    }
-  end
-
-  @doc """
-   Share an instance.
-  """
-  swagger_path :invite do
-    post("/contents/{id}/invite")
-    summary("Share an instance")
-    description("Api to share an instance")
-
-    parameters do
-      id(:path, :string, "Instance id", required: true)
-      content(:body, Schema.ref(:InviteDocumentRequest), "Share Request", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Collaborator))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:invite,
+    summary: "Share an instance",
+    description: "Api to share an instance",
+    parameters: [
+      id: [in: :path, type: :string, description: "Instance id", required: true]
+    ],
+    request_body:
+      {"Share Request", "application/json", InstanceGuestSchema.InviteDocumentRequest},
+    responses: [
+      ok: {"Ok", "application/json", InstanceGuestSchema.Collaborator},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec invite(Plug.Conn.t(), map) :: Plug.Conn.t()
   def invite(conn, %{"id" => document_id, "email" => _email} = params) do
@@ -193,23 +63,19 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
     end
   end
 
-  @doc """
-  Verify document invite token.
-  """
-  swagger_path :verify_document_access do
-    get("/contents/{id}/verify_access/{token}")
-    summary("Verify document invite token")
-    description("Api to verify document invite token")
-
-    parameters do
-      id(:path, :string, "Instance id", required: true)
-      token(:path, :string, "Invite token", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:VerifyDocumentInviteTokenResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:verify_document_access,
+    summary: "Verify document invite token",
+    description: "Api to verify document invite token",
+    parameters: [
+      id: [in: :path, type: :string, description: "Instance id", required: true],
+      token: [in: :path, type: :string, description: "Invite token", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", InstanceGuestSchema.VerifyDocumentInviteTokenResponse},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not found", "application/json", Error}
+    ]
+  )
 
   @spec verify_document_access(Plug.Conn.t(), map) :: Plug.Conn.t()
   def verify_document_access(conn, %{
@@ -277,24 +143,20 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
     end
   end
 
-  @doc """
-  Revoke document access.
-  """
-  swagger_path :revoke_document_access do
-    put("/contents/{id}/revoke_access/{collaborator_id}")
-    summary("Revoke document access")
-    description("Api to revoke document access")
-
-    parameters do
-      id(:path, :string, "Instance id", required: true)
-      collaborator_id(:path, :string, "Collaborator id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Collaborator))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:revoke_document_access,
+    summary: "Revoke document access",
+    description: "Api to revoke document access",
+    parameters: [
+      id: [in: :path, type: :string, description: "Instance id", required: true],
+      collaborator_id: [in: :path, type: :string, description: "Collaborator id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", InstanceGuestSchema.Collaborator},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not found", "application/json", Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error}
+    ]
+  )
 
   @spec revoke_document_access(Plug.Conn.t(), map) :: Plug.Conn.t()
   def revoke_document_access(
@@ -312,21 +174,17 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
     end
   end
 
-  @doc """
-  List document instance collaborators.
-  """
-  swagger_path :collaborators do
-    get("/contents/{id}/collaborators")
-    summary("List document instance collaborators")
-    description("Api to list document instance collaborators")
-
-    parameters do
-      id(:path, :string, "Instance id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Collaborator))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:list_collaborators,
+    summary: "List document instance collaborators",
+    description: "Api to list document instance collaborators",
+    parameters: [
+      id: [in: :path, type: :string, description: "Instance id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", InstanceGuestSchema.Collaborator},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec list_collaborators(Plug.Conn.t(), map) :: Plug.Conn.t()
   def list_collaborators(conn, %{"id" => document_id}) do
@@ -338,22 +196,18 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
     end
   end
 
-  @doc """
-  Update Collaborator role.
-  """
-  swagger_path :update_collaborator_role do
-    patch("/contents/{id}/collaborators/{collaborator_id}")
-    summary("Update Collaborator role")
-    description("Api to update collaborator role")
-
-    parameters do
-      id(:path, :string, "Instance id", required: true)
-      collaborator_id(:path, :string, "Collaborator id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Content))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:update_collaborator_role,
+    summary: "Update Collaborator role",
+    description: "Api to update collaborator role",
+    parameters: [
+      id: [in: :path, type: :string, description: "Instance id", required: true],
+      collaborator_id: [in: :path, type: :string, description: "Collaborator id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", ContentSchema.Content},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec update_collaborator_role(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update_collaborator_role(
@@ -374,24 +228,20 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
     end
   end
 
-  @doc """
-  Remove counterparty from a contract document
-  """
-  swagger_path :remove_counterparty do
-    PhoenixSwagger.Path.delete("/contents/{id}/remove_counterparty/{counterparty_id}")
-    summary("Remove counterparty from a document")
-    description("Api to remove counterparty from a document")
-
-    parameters do
-      id(:path, :string, "Instance id", required: true)
-      counterparty_id(:path, :string, "Counterparty id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:CounterPartyResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:remove_counterparty,
+    summary: "Remove counterparty from a document",
+    description: "Api to remove counterparty from a document",
+    parameters: [
+      id: [in: :path, type: :string, description: "Instance id", required: true],
+      counterparty_id: [in: :path, type: :string, description: "Counterparty id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", InstanceGuestSchema.CounterPartiesResponse},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not found", "application/json", Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error}
+    ]
+  )
 
   @spec remove_counterparty(Plug.Conn.t(), map) :: Plug.Conn.t()
   def remove_counterparty(

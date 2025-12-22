@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.MembershipController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug(WraftDocWeb.Plug.AddActionLog)
 
@@ -10,99 +10,26 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
   alias WraftDoc.Enterprise.Membership
   alias WraftDoc.Enterprise.Membership.Payment
   alias WraftDoc.Enterprise.Plan
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.Membership, as: MembershipSchema
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  def swagger_definitions do
-    %{
-      MembershipRequest:
-        swagger_schema do
-          title("Membership request")
-          description("Membership update request")
+  tags(["Memberships"])
 
-          properties do
-            plan_id(:string, "ID of the selected plan")
-            razorpay_id(:string, "Razorpay unique ID", required: true)
-          end
-
-          example(%{
-            plan_id: "kjbdi1237691823i",
-            razorpay_id: "pay-23vgoin453412"
-          })
-        end,
-      Membership:
-        swagger_schema do
-          title("Membership")
-          description("A Membership object")
-
-          properties do
-            id(:string, "ID of the membership")
-            start_end(:string, "Start date of membership")
-            end_date(:string, "End date of membership")
-            plan_duration(:integer, "Duration of the membership")
-            plan(Schema.ref(:Plan))
-            inserted_at(:string, "When was the membership created", format: "ISO-8601")
-            updated_at(:string, "When was the membership last updated", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "uhja8324jdadsmsd",
-            start_date: "2020-01-21T14:00:00Z",
-            end_date: "2020-01-21T14:00:00Z",
-            plan_duration: 30,
-            plan: %{
-              id: "c68b0988-790b-45e8-965c-c4aeb427e70d",
-              name: "Basic",
-              description: "A basic plan",
-              yearly_amount: 10,
-              monthly_amount: 6,
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            },
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z"
-          })
-        end,
-      OnlyMembership:
-        swagger_schema do
-          title("A Membership")
-          description("A Membership without plan details")
-
-          properties do
-            id(:string, "ID of the membership")
-            start_end(:string, "Start date of membership")
-            end_date(:string, "End date of membership")
-            plan_duration(:integer, "Duration of the membership")
-            inserted_at(:string, "When was the membership created", format: "ISO-8601")
-            updated_at(:string, "When was the membership last updated", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "uhja8324jdadsmsd",
-            start_date: "2020-01-21T14:00:00Z",
-            end_date: "2020-01-21T14:00:00Z",
-            plan_duration: 30,
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z"
-          })
-        end
-    }
-  end
-
-  swagger_path :show do
-    get("/organisations/{id}/memberships")
-    summary("Show membership")
-    description("Show membership of an organisation")
-    operation_id("show_membership")
-
-    parameters do
-      id(:path, :string, "Organisation ID", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:Membership))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Show membership",
+    description: "Show membership of an organisation",
+    operation_id: "show_membership",
+    parameters: [
+      id: [in: :path, type: :string, description: "Organisation ID", required: true]
+    ],
+    responses: [
+      ok: {"OK", "application/json", MembershipSchema.Membership},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => organisation_id}) do
@@ -117,24 +44,21 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
     end
   end
 
-  swagger_path :update do
-    put("/memberships/{id}")
-    summary("Update a membership")
-    description("Update a membership")
-    operation_id("update_membership")
-
-    parameters do
-      id(:path, :string, "Membership ID", required: true)
-
-      membership(:body, Schema.ref(:MembershipRequest), "Membership to be updated",
-        required: true
-      )
-    end
-
-    response(200, "OK", Schema.ref(:Membership))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:update,
+    summary: "Update a membership",
+    description: "Update a membership",
+    operation_id: "update_membership",
+    parameters: [
+      id: [in: :path, type: :string, description: "Membership ID", required: true]
+    ],
+    request_body:
+      {"Membership to be updated", "application/json", MembershipSchema.MembershipRequest},
+    responses: [
+      ok: {"OK", "application/json", MembershipSchema.Membership},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => m_id} = params) do

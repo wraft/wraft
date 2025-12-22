@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.GlobalImportController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.AddActionLog
 
@@ -14,70 +14,39 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
   alias WraftDoc.GlobalFile
   alias WraftDoc.Utils.FileHelper
   alias WraftDoc.Utils.FileValidator
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.GlobalImport, as: GlobalImportSchema
 
-  def swagger_definitions do
-    %{
-      GlobalImportResponse:
-        swagger_schema do
-          title("Global Import Response")
-          description("Response schema for a successful global file import")
+  tags(["Global Import"])
 
-          properties do
-            frame(Schema.ref(:Frame), "Frame response")
-            template_asset(Schema.ref(:TemplateAsset), "Template Asset response")
-          end
-        end,
-      GlobalPreImportResponse:
-        swagger_schema do
-          title("Global Pre Import Response")
-          description("Response schema for a successful global file pre-import")
-
-          properties do
-            meta(:string, "Wraft JSON")
-            file_details(:string, "File details")
-            errors(:array, "Errors", items: :string)
-          end
-
-          example(%{
-            file_details: %{
-              file_name: "example.zip",
-              file_size: 123_456,
-              file_type: "application/zip",
-              files: ["assets/logo.svg", "template.typst", "default.typst"]
-            },
-            meta: %{},
-            errors: [
-              %{
-                type: "File_validation",
-                error: "Invalid file"
-              }
-            ]
-          })
-        end
-    }
-  end
-
-  @doc """
-  Imports a global file.
-  """
-  swagger_path :import_global_file do
-    post("/global_asset/import")
-    summary("Import a global file")
-    description("Imports a global file using the provided asset ID and additional parameters.")
-
-    consumes("multipart/form-data")
-
-    parameters do
-      name(:formData, :string, "Name of the global file")
-      description(:formData, :string, "Description of the global file")
-
-      file(:formData, :file, "The ID of the asset to import")
-    end
-
-    response(200, "File imported successfully", Schema.ref(:GlobalImportResponse))
-    response(400, "Bad Request")
-    response(401, "Unauthorized")
-  end
+  operation(:import_global_file,
+    summary: "Import a global file",
+    description: "Imports a global file using the provided asset ID and additional parameters.",
+    request_body:
+      {"Global file import data", "multipart/form-data",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           name: %OpenApiSpex.Schema{type: :string, description: "Name of the global file"},
+           description: %OpenApiSpex.Schema{
+             type: :string,
+             description: "Description of the global file"
+           },
+           file: %OpenApiSpex.Schema{
+             type: :string,
+             format: :binary,
+             description: "The ID of the asset to import"
+           }
+         }
+       }},
+    responses: [
+      ok:
+        {"File imported successfully", "application/json",
+         GlobalImportSchema.GlobalImportResponse},
+      bad_request: {"Bad Request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec import_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def import_global_file(conn, %{"file" => %{path: file_path} = file} = params) do
@@ -98,30 +67,34 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
 
   def import_global_file(_, _), do: {:error, "No file provided. Please upload a file."}
 
-  @doc """
-  Pre-imports global file.
-  """
-  swagger_path :pre_import_global_file do
-    post("/global_asset/pre_import")
-    summary("pre-import a global file")
-
-    description(
-      "Pre-imports and validates global file using the provided asset ID and additional parameters."
-    )
-
-    consumes("multipart/form-data")
-
-    parameters do
-      name(:formData, :string, "Name of the global file")
-      description(:formData, :string, "Description of the global file")
-
-      file(:formData, :file, "The ID of the asset to import", required: true)
-    end
-
-    response(200, "ok", Schema.ref(:GlobalPreImportResponse))
-    response(400, "Bad request", Schema.ref(:Error))
-    response(401, "Unauthorized")
-  end
+  operation(:pre_import_global_file,
+    summary: "pre-import a global file",
+    description:
+      "Pre-imports and validates global file using the provided asset ID and additional parameters.",
+    request_body:
+      {"Global file pre-import data", "multipart/form-data",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           name: %OpenApiSpex.Schema{type: :string, description: "Name of the global file"},
+           description: %OpenApiSpex.Schema{
+             type: :string,
+             description: "Description of the global file"
+           },
+           file: %OpenApiSpex.Schema{
+             type: :string,
+             format: :binary,
+             description: "The ID of the asset to import"
+           }
+         },
+         required: [:file]
+       }},
+    responses: [
+      ok: {"ok", "application/json", GlobalImportSchema.GlobalPreImportResponse},
+      bad_request: {"Bad request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec pre_import_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def pre_import_global_file(conn, %{"file" => file}) do
@@ -136,25 +109,33 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
 
   def pre_import_global_file(_, _), do: {:error, "No file provided. Please upload a file."}
 
-  @doc """
-  Validates a global file.
-  """
-  swagger_path :re_validate_global_file do
-    post("/global_asset/validate")
-    summary("Validate a global file")
-
-    description("Validates a global file using the provided asset ID and additional parameters.")
-
-    parameters do
-      name(:formData, :string, "Name of the global file")
-      description(:formData, :string, "Description of the global file")
-      file(:formData, :file, "The ID of the asset to import", required: true)
-    end
-
-    response(200, "ok", Schema.ref(:GlobalPreImportResponse))
-    response(400, "Bad request", Schema.ref(:Error))
-    response(401, "Unauthorized")
-  end
+  operation(:re_validate_global_file,
+    summary: "Validate a global file",
+    description: "Validates a global file using the provided asset ID and additional parameters.",
+    request_body:
+      {"Global file validation data", "multipart/form-data",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           name: %OpenApiSpex.Schema{type: :string, description: "Name of the global file"},
+           description: %OpenApiSpex.Schema{
+             type: :string,
+             description: "Description of the global file"
+           },
+           file: %OpenApiSpex.Schema{
+             type: :string,
+             format: :binary,
+             description: "The ID of the asset to import"
+           }
+         },
+         required: [:file]
+       }},
+    responses: [
+      ok: {"ok", "application/json", GlobalImportSchema.GlobalFileValidationResponse},
+      bad_request: {"Bad request", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec re_validate_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def re_validate_global_file(conn, %{"file" => %{path: file_path} = file} = params) do

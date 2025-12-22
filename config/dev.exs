@@ -74,6 +74,8 @@ config :wraft_doc, WraftDocWeb.Mailer, adapter: Swoosh.Adapters.Local
 
 config :swoosh, :api_client, false
 
+config :open_api_spex, :cache_adapter, OpenApiSpex.Plug.NoneCache
+
 config :httpoison,
   timeout: 30_000,
   recv_timeout: 30_000

@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.ContentTypeFieldController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.AddActionLog
   plug WraftDocWeb.Plug.Authorized, delete: "variant:delete"
@@ -10,27 +10,26 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldController do
   alias WraftDoc.ContentTypes
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.ContentTypes.ContentTypeField
+  alias WraftDocWeb.Schemas.Error
 
-  @doc """
-  Delete a Content Type Field.
-  """
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/content_type/{content_type_id}/field/{field_id}")
-    summary("Delete a Content Type Field")
-    description("API to delete a content type field")
+  tags(["Content Type Fields"])
 
-    parameters do
-      id(:path, :string, "content type id", required: true)
-      field_id(:path, :string, "content type field id", required: true)
-    end
+  operation(:delete,
+    summary: "Delete a Content Type Field",
+    description: "API to delete a content type field",
+    parameters: [
+      content_type_id: [in: :path, type: :string, description: "content type id", required: true],
+      field_id: [in: :path, type: :string, description: "content type field id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", WraftDocWeb.Schemas.ContentType.ShowContentType},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
-    response(200, "Ok", Schema.ref(:ShowContentType))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"content_type_id" => content_type_id, "field_id" => _field_id} = params) do
     current_user = conn.assigns[:current_user]
 

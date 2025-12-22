@@ -438,7 +438,7 @@ defmodule WraftDoc.Forms do
     end)
   end
 
-  defp validate_single_field(validation, field, data_map) do
+  defp validate_single_field(validation, %{id: field_id_key} = field, data_map) do
     validator_module = Module.concat(Validator, Macro.camelize(validation.validation["rule"]))
     field_id_key = to_string(field.field_id)
 

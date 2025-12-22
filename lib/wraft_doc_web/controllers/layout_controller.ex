@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.LayoutController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.AddActionLog
 
@@ -20,312 +20,59 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Search.TypesenseServer, as: Typesense
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.Layout, as: LayoutSchema
 
-  def swagger_definitions do
-    %{
-      Layout:
-        swagger_schema do
-          title("Layout")
-          description("A Layout")
+  tags(["Layouts"])
 
-          properties do
-            id(:string, "The ID of the layout", required: true)
-            name(:string, "Layout's name", required: true)
-            description(:string, "Layout's description")
-            width(:float, "Width of the layout")
-            height(:float, "Height of the layout")
-            unit(:string, "Unit of dimensions")
-            slug(:string, "Name of the slug to be used for the layout")
-            frame_id(:string, "The ID of the layout")
-            screenshot(:string, "URL of the uploaded screenshot")
-            inserted_at(:string, "When was the layout created", format: "ISO-8601")
-            updated_at(:string, "When was the layout last updated", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "1232148nb3478",
-            name: "Official Letter",
-            description: "An official letter",
-            width: 40.0,
-            height: 20.0,
-            unit: "cm",
-            slug: "Pandoc",
-            frame: %{
-              id: "123e4567-e89b-12d3-a456-426614174000",
-              name: "my-document-frame",
-              frame: %{
-                file_name: "template.tex",
-                updated_at: "2024-11-29T12:56:47"
-              },
-              inserted_at: "2024-01-15T10:30:00Z",
-              updated_at: "2024-01-15T10:30:00Z"
-            },
-            screenshot: "/official_letter.jpg",
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z"
-          })
-        end,
-      LayoutAndEngine:
-        swagger_schema do
-          title("Layout and Engine")
-          description("Layout to be used for the generation of a document.")
-
-          properties do
-            id(:string, "The ID of the layout", required: true)
-            name(:string, "Layout's name", required: true)
-            description(:string, "Layout's description")
-            width(:float, "Width of the layout")
-            height(:float, "Height of the layout")
-            unit(:string, "Unit of dimensions")
-            slug(:string, "Name of the slug to be used for the layout")
-            frame_id(:string, "The ID of the layout")
-            screenshot(:string, "URL of the uploaded screenshot")
-            engine(Schema.ref(:Engine))
-            assets(Schema.ref(:Assets))
-            inserted_at(:string, "When was the layout created", format: "ISO-8601")
-            updated_at(:string, "When was the layout last updated", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "1232148nb3478",
-            name: "Official Letter",
-            description: "An official letter",
-            width: 40.0,
-            height: 20.0,
-            unit: "cm",
-            slug: "Pandoc",
-            screenshot: "/official_letter.jpg",
-            frame: %{
-              id: "123e4567-e89b-12d3-a456-426614174000",
-              name: "my-document-frame",
-              frame: %{
-                file_name: "template.tex",
-                updated_at: "2024-11-29T12:56:47"
-              },
-              inserted_at: "2024-01-15T10:30:00Z",
-              updated_at: "2024-01-15T10:30:00Z"
-            },
-            engine: %{
-              id: "1232148nb3478",
-              name: "Pandoc",
-              api_route: "",
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            },
-            assets: [
-              %{
-                id: "1232148nb3478",
-                name: "Asset",
-                file: "/signature.pdf",
-                updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z"
-              }
-            ],
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z"
-          })
-        end,
-      LayoutsAndEngines:
-        swagger_schema do
-          title("Layouts and its Engines")
-          description("All layouts that have been created and their engines")
-          type(:array)
-          items(Schema.ref(:LayoutAndEngine))
-        end,
-      ShowLayout:
-        swagger_schema do
-          title("Layout and all its details")
-          description("API to show a layout and all its details")
-
-          properties do
-            layout(Schema.ref(:LayoutAndEngine))
-            creator(Schema.ref(:User))
-          end
-
-          example(%{
-            layout: %{
-              id: "1232148nb3478",
-              name: "Official Letter",
-              description: "An official letter",
-              width: 40.0,
-              height: 20.0,
-              unit: "cm",
-              slug: "Pandoc",
-              screenshot: "/official_letter.jpg",
-              frame: %{
-                id: "123e4567-e89b-12d3-a456-426614174000",
-                name: "my-document-frame",
-                frame: %{
-                  file_name: "template.tex",
-                  updated_at: "2024-11-29T12:56:47"
-                },
-                inserted_at: "2024-01-15T10:30:00Z",
-                updated_at: "2024-01-15T10:30:00Z"
-              },
-              engine: %{
-                id: "1232148nb3478",
-                name: "Pandoc",
-                api_route: "",
-                updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z"
-              },
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            },
-            creator: %{
-              id: "1232148nb3478",
-              name: "John Doe",
-              email: "email@xyz.com",
-              email_verify: true,
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            }
-          })
-        end,
-      LayoutIndex:
-        swagger_schema do
-          properties do
-            layouts(Schema.ref(:LayoutsAndEngines))
-            page_number(:integer, "Page number")
-            total_pages(:integer, "Total number of pages")
-            total_entries(:integer, "Total number of contents")
-          end
-
-          example(%{
-            layouts: [
-              %{
-                id: "1232148nb3478",
-                name: "Official Letter",
-                description: "An official letter",
-                width: 40.0,
-                height: 20.0,
-                unit: "cm",
-                slug: "Pandoc",
-                frame: %{
-                  id: "123e4567-e89b-12d3-a456-426614174000",
-                  name: "my-document-frame",
-                  frame: %{
-                    file_name: "template.tex",
-                    updated_at: "2024-11-29T12:56:47"
-                  },
-                  inserted_at: "2024-01-15T10:30:00Z",
-                  updated_at: "2024-01-15T10:30:00Z"
-                },
-                screenshot: "/official_letter.jpg",
-                engine: %{
-                  id: "1232148nb3478",
-                  name: "Pandoc",
-                  api_route: "",
-                  updated_at: "2020-01-21T14:00:00Z",
-                  inserted_at: "2020-02-21T14:00:00Z"
-                },
-                updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z"
-              }
-            ],
-            page_number: 1,
-            total_pages: 2,
-            total_entries: 15
-          })
-        end,
-      LayoutCreate:
-        swagger_schema do
-          title("LayoutCreate")
-          description("Payload for creating a layout")
-
-          properties do
-            name(:string, "Layout name", required: true)
-            description(:string, "Description", required: true)
-            width(:string, "Layout width", required: true)
-            height(:string, "Layout height", required: true)
-            unit(:string, "Dimension unit", required: true)
-            slug(:string, "Slug for the layout")
-            frame_id(:string, "ID of the frame")
-            screenshot(:string, "Screenshot file name or URL")
-            assets(Schema.array(:string), "List of asset IDs")
-            engine_id(:string, "Layout engine ID", required: true)
-            margin(Schema.ref(:Margin), "Margins object")
-          end
-
-          example(%{
-            name: "Letter Layout",
-            description: "Standard letter page",
-            width: "216",
-            height: "279",
-            unit: "mm",
-            slug: "letter-layout",
-            frame_id: "uuid-frame",
-            screenshot: "letter_preview.png",
-            assets: ["asset-1", "asset-2"],
-            engine_id: "uuid-engine",
-            margin: %{
-              top: 2.5,
-              right: 2.5,
-              bottom: 2.5,
-              left: 2.5
-            }
-          })
-        end,
-      Margin:
-        swagger_schema do
-          title("Margin")
-          description("Margins for layout")
-
-          properties do
-            top(:float, "Top margin", required: true)
-            right(:float, "Right margin", required: true)
-            bottom(:float, "Bottom margin", required: true)
-            left(:float, "Left margin", required: true)
-          end
-
-          example(%{
-            top: 2.5,
-            right: 2.5,
-            bottom: 2.5,
-            left: 2.5
-          })
-        end
-    }
-  end
-
-  @doc """
-  Create a layout.
-  """
-  swagger_path :create do
-    post("/layouts")
-    summary("Create Layout")
-    description("Creates a new asset and uses it to create a layout")
-
-    consumes("multipart/form-data")
-
-    parameter(:asset_name, :formData, :string, "Name of the asset", required: true)
-
-    parameter(:file, :formData, :file, "Asset file to upload", required: true)
-
-    parameter(:type, :formData, :string, "Type of the asset", required: true)
-
-    parameter(:name, :formData, :string, "Layout's name", required: true)
-
-    parameter(:description, :formData, :string, "Layout description", required: true)
-
-    parameter(:width, :formData, :string, "Layout width", required: true)
-
-    parameter(:height, :formData, :string, "Layout height", required: true)
-
-    parameter(:unit, :formData, :string, "Layout dimension unit", required: true)
-
-    parameter(:slug, :formData, :string, "Name of slug to be used")
-
-    parameter(:frame_id, :formData, :string, "ID of the frame")
-
-    parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
-
-    parameter(:engine_id, :formData, :string, "ID of layout's engine", required: true)
-
-    response(200, "Ok", Schema.ref(:LayoutAndEngine))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Create Layout",
+    description: "Creates a new asset and uses it to create a layout",
+    request_body:
+      {"Layout creation params", "multipart/form-data",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           asset_name: %OpenApiSpex.Schema{type: :string, description: "Name of the asset"},
+           file: %OpenApiSpex.Schema{
+             type: :string,
+             format: :binary,
+             description: "Asset file to upload"
+           },
+           type: %OpenApiSpex.Schema{type: :string, description: "Type of the asset"},
+           name: %OpenApiSpex.Schema{type: :string, description: "Layout's name"},
+           description: %OpenApiSpex.Schema{type: :string, description: "Layout description"},
+           width: %OpenApiSpex.Schema{type: :string, description: "Layout width"},
+           height: %OpenApiSpex.Schema{type: :string, description: "Layout height"},
+           unit: %OpenApiSpex.Schema{type: :string, description: "Layout dimension unit"},
+           slug: %OpenApiSpex.Schema{type: :string, description: "Name of slug to be used"},
+           frame_id: %OpenApiSpex.Schema{type: :string, description: "ID of the frame"},
+           screenshot: %OpenApiSpex.Schema{
+             type: :string,
+             format: :binary,
+             description: "Screenshot to upload"
+           },
+           engine_id: %OpenApiSpex.Schema{type: :string, description: "ID of layout's engine"}
+         },
+         required: [
+           :asset_name,
+           :file,
+           :type,
+           :name,
+           :description,
+           :width,
+           :height,
+           :unit,
+           :screenshot,
+           :engine_id
+         ]
+       }},
+    responses: [
+      ok: {"Ok", "application/json", LayoutSchema.LayoutAndEngine},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
@@ -338,27 +85,23 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     end
   end
 
-  @doc """
-  Layout index.
-  """
-  swagger_path :index do
-    get("/layouts")
-    summary("Layout index")
-    description("API to get the list of all layouts created so far")
-
-    parameter(:page, :query, :string, "Page number")
-    parameter(:name, :query, :string, "Layout Name")
-
-    parameter(
-      :sort,
-      :query,
-      :string,
-      "Sort Keys => name, name_desc, inserted_at, inserted_at_desc"
-    )
-
-    response(200, "Ok", Schema.ref(:LayoutIndex))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:index,
+    summary: "Layout index",
+    description: "API to get the list of all layouts created so far",
+    parameters: [
+      page: [in: :query, type: :string, description: "Page number"],
+      name: [in: :query, type: :string, description: "Layout Name"],
+      sort: [
+        in: :query,
+        type: :string,
+        description: "Sort Keys => name, name_desc, inserted_at, inserted_at_desc"
+      ]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", LayoutSchema.LayoutIndex},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
@@ -379,21 +122,17 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     end
   end
 
-  @doc """
-  Show a Layout.
-  """
-  swagger_path :show do
-    get("/layouts/{id}")
-    summary("Show a Layout")
-    description("API to show details of a layout")
-
-    parameters do
-      id(:path, :string, "layout id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:ShowLayout))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Show a Layout",
+    description: "API to show details of a layout",
+    parameters: [
+      id: [in: :path, type: :string, description: "layout id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", LayoutSchema.ShowLayout},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
@@ -404,48 +143,59 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     end
   end
 
-  @doc """
-  Update a Layout.
-  """
-  swagger_path :update do
-    put("/layouts/{id}")
-    summary("Update a Layout")
-    description("API to update a layout")
-
-    consumes("multipart/form-data")
-
-    parameter(:id, :path, :string, "layout id", required: true)
-
-    parameter(:asset_id, :path, :string, "asset id", required: true)
-
-    parameter(:asset_name, :formData, :string, "Name of the asset", required: true)
-
-    parameter(:file, :formData, :file, "Asset file to upload", required: true)
-
-    parameter(:type, :formData, :string, "Type of the asset", required: true)
-
-    parameter(:name, :formData, :string, "Layout's name", required: true)
-
-    parameter(:description, :formData, :string, "Layout description", required: true)
-
-    parameter(:width, :formData, :string, "Layout width", required: true)
-
-    parameter(:height, :formData, :string, "Layout height", required: true)
-
-    parameter(:unit, :formData, :string, "Layout dimension unit", required: true)
-
-    parameter(:slug, :formData, :string, "Name of slug to be used")
-
-    parameter(:frame_id, :formData, :string, "ID of the frame")
-
-    parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
-
-    parameter(:engine_id, :formData, :string, "ID of layout's engine", required: true)
-
-    response(200, "Ok", Schema.ref(:ShowLayout))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:update,
+    summary: "Update a Layout",
+    description: "API to update a layout",
+    parameters: [
+      id: [in: :path, type: :string, description: "layout id", required: true]
+    ],
+    request_body:
+      {"Layout update params", "multipart/form-data",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           asset_id: %OpenApiSpex.Schema{type: :string, description: "asset id"},
+           asset_name: %OpenApiSpex.Schema{type: :string, description: "Name of the asset"},
+           file: %OpenApiSpex.Schema{
+             type: :string,
+             format: :binary,
+             description: "Asset file to upload"
+           },
+           type: %OpenApiSpex.Schema{type: :string, description: "Type of the asset"},
+           name: %OpenApiSpex.Schema{type: :string, description: "Layout's name"},
+           description: %OpenApiSpex.Schema{type: :string, description: "Layout description"},
+           width: %OpenApiSpex.Schema{type: :string, description: "Layout width"},
+           height: %OpenApiSpex.Schema{type: :string, description: "Layout height"},
+           unit: %OpenApiSpex.Schema{type: :string, description: "Layout dimension unit"},
+           slug: %OpenApiSpex.Schema{type: :string, description: "Name of slug to be used"},
+           frame_id: %OpenApiSpex.Schema{type: :string, description: "ID of the frame"},
+           screenshot: %OpenApiSpex.Schema{
+             type: :string,
+             format: :binary,
+             description: "Screenshot to upload"
+           },
+           engine_id: %OpenApiSpex.Schema{type: :string, description: "ID of layout's engine"}
+         },
+         required: [
+           :asset_id,
+           :asset_name,
+           :file,
+           :type,
+           :name,
+           :description,
+           :width,
+           :height,
+           :unit,
+           :screenshot,
+           :engine_id
+         ]
+       }},
+    responses: [
+      ok: {"Ok", "application/json", LayoutSchema.ShowLayout},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => layout_id} = params) do
@@ -464,22 +214,18 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     end
   end
 
-  @doc """
-  Delete a Layout.
-  """
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/layouts/{id}")
-    summary("Delete a Layout")
-    description("API to delete a layout")
-
-    parameters do
-      id(:path, :string, "layout id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Layout))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:delete,
+    summary: "Delete a Layout",
+    description: "API to delete a layout",
+    parameters: [
+      id: [in: :path, type: :string, description: "layout id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", LayoutSchema.Layout},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
@@ -492,23 +238,19 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     end
   end
 
-  @doc """
-  Delete a Layout Asset.
-  """
-  swagger_path :delete_layout_asset do
-    PhoenixSwagger.Path.delete("/layouts/{id}/assets/{a_id}")
-    summary("Delete a Layout Asset")
-    description("API to delete a layout-asset association")
-
-    parameters do
-      id(:path, :string, "layout id", required: true)
-      a_id(:path, :string, "asset id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:ShowLayout))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:delete_layout_asset,
+    summary: "Delete a Layout Asset",
+    description: "API to delete a layout-asset association",
+    parameters: [
+      id: [in: :path, type: :string, description: "layout id", required: true],
+      a_id: [in: :path, type: :string, description: "asset id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", LayoutSchema.ShowLayout},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec delete_layout_asset(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete_layout_asset(conn, %{"id" => l_id, "a_id" => a_id}) do

@@ -3,33 +3,19 @@ defmodule WraftDocWeb.Api.V1.HealthController do
   Simple health check API that always responds with status `ok`.
   """
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
-  def swagger_definitions do
-    %{
-      HealthResponse:
-        swagger_schema do
-          title("HealthResponse")
-          description("Health check response")
+  alias WraftDocWeb.Schemas.Health, as: HealthSchema
 
-          properties do
-            status(:string, "Service status", example: "ok")
-          end
+  tags(["Health"])
 
-          example(%{
-            status: "ok"
-          })
-        end
-    }
-  end
-
-  swagger_path :check_health do
-    get("/health")
-    summary("Service Health Check")
-    description("Returns a simple `ok` status if the service is up.")
-
-    response(200, "Successful response", Schema.ref(:HealthResponse))
-  end
+  operation(:check_health,
+    summary: "Service Health Check",
+    description: "Returns a simple `ok` status if the service is up.",
+    responses: [
+      ok: {"Successful response", "application/json", HealthSchema.HealthResponse}
+    ]
+  )
 
   def check_health(conn, _), do: json(conn, %{status: "ok"})
 end
