@@ -28,7 +28,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   alias WraftDocWeb.Schemas.ContentType, as: ContentTypeSchema
   alias WraftDocWeb.Schemas.Error
 
-  tags(["content_types"])
+  tags(["Content Types"])
 
   operation(:create,
     summary: "Create content type",

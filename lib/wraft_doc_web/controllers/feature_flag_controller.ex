@@ -18,7 +18,7 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
   alias WraftDocWeb.Schemas.Error
   alias WraftDocWeb.Schemas.FeatureFlag, as: FeatureFlagSchema
 
-  tags(["FeatureFlags"])
+  tags(["Feature Flags"])
 
   operation(:index,
     summary: "List organization feature flags",

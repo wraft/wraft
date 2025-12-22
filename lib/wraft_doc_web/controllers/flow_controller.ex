@@ -20,7 +20,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   alias WraftDocWeb.Schemas.Error
   alias WraftDocWeb.Schemas.Flow, as: FlowSchema
 
-  tags(["flows"])
+  tags(["Flows"])
 
   operation(:create,
     summary: "Create a flow",

@@ -9,7 +9,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  tags(["CollectionForms"])
+  tags(["Collection Forms"])
 
   operation(:show,
     summary: "Show an collection form",

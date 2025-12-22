@@ -24,7 +24,7 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   alias WraftDocWeb.Schemas.Error
   alias WraftDocWeb.Schemas.InstanceGuest, as: InstanceGuestSchema
 
-  tags(["InstanceGuests"])
+  tags(["Instance Guests"])
 
   operation(:invite,
     summary: "Share an instance",

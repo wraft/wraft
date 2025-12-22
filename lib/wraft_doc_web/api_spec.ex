@@ -53,10 +53,15 @@ defmodule WraftDocWeb.ApiSpec do
         %{"x-api-key" => []}
       ],
       tags: [
+        %OpenApiSpex.Tag{name: "Health", description: "Health check operations"},
+        %OpenApiSpex.Tag{name: "User", description: "User operations"},
+        %OpenApiSpex.Tag{name: "Profile", description: "Profile operations"},
+        %OpenApiSpex.Tag{name: "Organisation", description: "Organisation operations"},
+        %OpenApiSpex.Tag{name: "Registration", description: "Registration operations"},
         %OpenApiSpex.Tag{name: "Instance", description: "Core instance operations"},
         %OpenApiSpex.Tag{name: "Instance Approval", description: "Approval workflows"},
         %OpenApiSpex.Tag{name: "Instance Approval System", description: "System approvals"},
-        %OpenApiSpex.Tag{name: "InstanceGuests", description: "Guest access"}
+        %OpenApiSpex.Tag{name: "Instance Guests", description: "Guest access"}
       ]
     }
 

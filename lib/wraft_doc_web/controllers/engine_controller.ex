@@ -10,7 +10,7 @@ defmodule WraftDocWeb.Api.V1.EngineController do
   alias WraftDocWeb.Schemas.Engine, as: EngineSchema
   alias WraftDocWeb.Schemas.Error
 
-  tags(["engines"])
+  tags(["Engines"])
 
   operation(:index,
     summary: "List of all enignes",

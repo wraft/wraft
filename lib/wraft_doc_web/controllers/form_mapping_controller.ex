@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Api.V1.FormMappingController do
   alias WraftDocWeb.Schemas.Error
   alias WraftDocWeb.Schemas.FormMapping, as: FormMappingSchema
 
-  tags(["FormMappings"])
+  tags(["Form Mappings"])
 
   operation(:create,
     summary: "Create wraft form mapping",

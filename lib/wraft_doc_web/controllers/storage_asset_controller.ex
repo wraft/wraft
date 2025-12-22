@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  tags(["StorageAssets"])
+  tags(["Storage Assets"])
 
   operation(:index,
     summary: "List storage assets",

@@ -23,7 +23,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   alias WraftDocWeb.Schemas.DataTemplate, as: DataTemplateSchema
   alias WraftDocWeb.Schemas.Error
 
-  tags(["DataTemplates"])
+  tags(["Data Templates"])
 
   operation(:create,
     summary: "Create data template",

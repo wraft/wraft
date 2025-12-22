@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   alias WraftDocWeb.Schemas.Error
   alias WraftDocWeb.Schemas.TemplateAsset, as: TemplateAssetSchema
 
-  tags(["TemplateAssets"])
+  tags(["Template Assets"])
 
   operation(:create,
     summary: "Create a template asset",

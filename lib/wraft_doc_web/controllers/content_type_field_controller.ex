@@ -12,7 +12,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldController do
   alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDocWeb.Schemas.Error
 
-  tags(["ContentTypeFields"])
+  tags(["Content Type Fields"])
 
   operation(:delete,
     summary: "Delete a Content Type Field",
