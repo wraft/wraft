@@ -19,12 +19,7 @@ defmodule WraftDocWeb.Api.V1.PlanView do
       updated_at: plan.updated_at,
       inserted_at: plan.inserted_at,
       coupon_id: plan.coupon_id || nil,
-      coupon:
-        if Ecto.assoc_loaded?(plan.coupon) do
-          render_one(plan.coupon, __MODULE__, "coupon.json", as: :coupon)
-        else
-          nil
-        end
+      coupon: render_one(plan.coupon, __MODULE__, "coupon.json", as: :coupon)
     }
   end
 

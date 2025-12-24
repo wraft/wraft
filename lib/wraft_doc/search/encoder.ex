@@ -126,11 +126,8 @@ end
 
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.Themes.Theme do
   def to_document(%WraftDoc.Themes.Theme{} = theme) do
-    theme_id = to_string(theme.id)
-
     %{
-      id: theme_id,
-      theme_id: theme_id,
+      theme_id: to_string(theme.id),
       collection_name: "theme",
       name: theme.name,
       font: theme.font,

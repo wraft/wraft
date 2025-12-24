@@ -4,8 +4,6 @@ defmodule WraftDocWeb.Api.V1.VendorView do
   alias WraftDocWeb.Api.V1.InstanceView
 
   alias WraftDocWeb.Api.V1.UserView
-  def render("vendor.json", %{vendor: %Ecto.Association.NotLoaded{}}), do: nil
-  def render("vendor.json", %{vendor: nil}), do: nil
 
   def render("vendor.json", %{vendor: vendor}) do
     %{

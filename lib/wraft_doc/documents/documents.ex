@@ -1755,7 +1755,7 @@ defmodule WraftDoc.Documents do
         }
       ) do
     File.mkdir_p("temp/bulk_build_source/")
-    dest_path = Path.join("temp/bulk_build_source/", Path.basename(filename))
+    dest_path = "temp/bulk_build_source/#{filename}"
     System.cmd("cp", [path, dest_path])
 
     create_bulk_job(%{
