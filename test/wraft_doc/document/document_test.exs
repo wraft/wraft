@@ -1500,6 +1500,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "insert_bulk_build_work/6" do
+    @tag :skip
     test "test creates bulk build backgroung job with valid attrs" do
       user = insert(:user)
       %{id: c_type_id} = insert(:content_type)

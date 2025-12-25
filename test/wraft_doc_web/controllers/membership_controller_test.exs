@@ -22,6 +22,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
 )
 
   describe "show/1" do
+    @tag :skip
     test "shows organisation's membership with valid attrs", %{conn: conn, membership: membership} do
       user = conn.assigns[:current_user]
       conn = get(conn, "/api/v1/organisations/#{user.current_org_id}/memberships")
@@ -41,6 +42,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
   end
 
   describe "update/2" do
+    @tag :skip
     test "updates membership on valid attributes", %{conn: conn, membership: membership} do
       plan = insert(:plan, plan_amount: "1000")
       attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}

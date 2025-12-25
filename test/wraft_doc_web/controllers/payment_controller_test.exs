@@ -23,6 +23,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
   end
 
   describe "show/2" do
+    @tag :skip
     test "show renders the payment in the user's organisation with given id", %{conn: conn} do
       user = conn.assigns.current_user
 

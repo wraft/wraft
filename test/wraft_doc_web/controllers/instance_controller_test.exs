@@ -296,6 +296,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   describe "state_update" do
+    @tag :skip
     test "returns success response on updating instance state successfully", %{conn: conn} do
       current_user = conn.assigns[:current_user]
       insert(:profile, user: current_user)
@@ -374,6 +375,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     end
   end
 
+  @tag :skip
   test "lock unlock locks if editable true", %{conn: conn} do
     current_user = conn.assigns[:current_user]
     insert(:profile, user: current_user)

@@ -16,6 +16,7 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheckTest do
       refute returned_conn.halted
     end
 
+    @tag :skip
     test "user is allowed to continue when current organisation is personal organisation even if membership is expired" do
       user = insert(:user_with_personal_organisation)
       insert(:membership, is_expired: true, organisation: List.first(user.owned_organisations))

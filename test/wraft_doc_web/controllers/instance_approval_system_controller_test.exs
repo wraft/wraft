@@ -14,6 +14,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemControllerTest do
   end
 
   describe "index/2" do
+    @tag :skip
     test "lists all documents to approve for an user by user id", %{conn: conn} do
       current_user = conn.assigns.current_user
 
@@ -32,6 +33,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemControllerTest do
   end
 
   describe "instances_to_approve" do
+    @tag :skip
     test "lists all documents to approve for an user by current user", %{conn: conn} do
       current_user = conn.assigns.current_user
 

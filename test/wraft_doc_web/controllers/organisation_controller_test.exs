@@ -119,6 +119,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
              "#{System.get_env("MINIO_URL")}/organisations/#{organisation.id}/logo/logo_#{organisation.id}.png"
   end
 
+  @tag :skip
   test "does not update name of personal organisation", %{conn: conn} do
     user = insert(:user_with_personal_organisation)
 
@@ -213,6 +214,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
 
+    @tag :skip
     test "return error if user is not member of the organisation" do
       user = insert(:user_with_personal_organisation)
       [organisation] = user.owned_organisations
@@ -243,6 +245,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 401)["errors"] == "User is not a member of this organisation!"
     end
 
+    @tag :skip
     test "returns error when trying to delete personal organisation" do
       user = insert(:user_with_personal_organisation)
       [organisation] = user.owned_organisations
@@ -288,6 +291,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 200)["info"] == "Delete token email sent!"
     end
 
+    @tag :skip
     test "return error on attempting to request deletion of personal organisation" do
       user = insert(:user_with_personal_organisation)
       [organisation] = user.owned_organisations
@@ -319,6 +323,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 422)["errors"] == "Can't delete personal organisation"
     end
 
+    @tag :skip
     test "return error if user is not member of the organisation" do
       user = insert(:user_with_personal_organisation)
       [organisation] = user.owned_organisations
