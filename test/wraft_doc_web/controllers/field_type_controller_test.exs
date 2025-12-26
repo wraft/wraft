@@ -31,7 +31,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
     :ok
   end
 
-  test "create field type by valid attrrs", %{conn: conn} do
+  test "create field type by valid attrs", %{conn: conn} do
     conn = post(conn, Routes.v1_field_type_path(conn, :create), @valid_attrs)
 
     assert response = json_response(conn, 200)

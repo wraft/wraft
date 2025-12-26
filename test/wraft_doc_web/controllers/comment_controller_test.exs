@@ -18,7 +18,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
     master_id: Ecto.UUID.generate()
   }
 
-  test "create comments by valid attrrs", %{conn: conn} do
+  test "create comments by valid attrs", %{conn: conn} do
     count_before = Comment |> Repo.all() |> length()
 
     conn =

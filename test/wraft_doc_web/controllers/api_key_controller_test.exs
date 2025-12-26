@@ -273,7 +273,7 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
       conn = delete(conn, Routes.v1_api_key_path(conn, :delete, api_key.id))
 
       count_after = ApiKey |> Repo.all() |> length()
-      assert response(conn, 204)
+      assert conn.status == 204
       assert count_after == count_before - 1
       assert Repo.get(ApiKey, api_key.id) == nil
     end

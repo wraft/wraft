@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   }
   @invalid_attrs %{title: ""}
 
-  test "create data templates by valid attrrs", %{conn: conn} do
+  test "create data templates by valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
 
     content_type =

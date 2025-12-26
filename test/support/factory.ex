@@ -60,11 +60,20 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Themes.ThemeAsset
   alias WraftDoc.WaitingLists.WaitingList
 
+  # Helper function to generate unique email addresses for tests
+  defp unique_email(domain \\ "wmail.com") do
+    "#{Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)}#{System.system_time(:millisecond)}#{:erlang.phash2(self())}#{Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)}@#{domain}"
+  end
+
+  # Helper function for shorter unique emails (used in some factories)
+  defp short_unique_email(domain \\ "wmail.com") do
+    "#{Base.encode16(:crypto.strong_rand_bytes(10), case: :lower)}@#{domain}"
+  end
+
   def user_factory do
     %User{
       name: sequence(:user_name, &"wrafts user #{&1}"),
-      email:
-        "#{Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)}#{System.system_time(:millisecond)}#{:erlang.phash2(self())}#{Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)}@wmail.com",
+      email: unique_email(),
       email_verify: true,
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
@@ -75,8 +84,7 @@ defmodule WraftDoc.Factory do
   end
 
   def user_with_personal_organisation_factory do
-    unique_email =
-      "#{Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)}#{System.system_time(:millisecond)}#{:erlang.phash2(self())}#{Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)}@wmail.com"
+    unique_email = unique_email()
 
     organisation =
       insert(:organisation, name: "Personal", email: unique_email, creator_id: nil, owner_id: nil)
@@ -96,7 +104,7 @@ defmodule WraftDoc.Factory do
   def user_with_organisation_factory do
     organisation = insert(:organisation)
     # Use consistent sequence pattern
-    unique_email = "#{Base.encode16(:crypto.strong_rand_bytes(10), case: :lower)}@wmail.com"
+    unique_email = short_unique_email()
 
     %User{
       name: "wrafts user",
@@ -117,8 +125,7 @@ defmodule WraftDoc.Factory do
       address: sequence(:org_address, &"#{&1} th cross #{&1} th building"),
       gstin: sequence(:org_gstin, &"32AASDGGDGDDGDG#{&1}"),
       phone: sequence(:org_phone, &"985222332#{&1}"),
-      email:
-        "#{Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)}#{System.system_time(:millisecond)}#{:erlang.phash2(self())}#{Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)}@gmail.com",
+      email: unique_email("gmail.com"),
       url: sequence(:org_url, &"acborg#{&1}@profile.com")
     }
   end

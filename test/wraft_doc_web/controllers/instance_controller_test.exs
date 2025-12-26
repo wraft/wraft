@@ -30,7 +30,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     :ok
   end
 
-  test "create instances by valid attrrs", %{conn: conn} do
+  test "create instances by valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:profile, user: user)
     [organisation] = user.owned_organisations

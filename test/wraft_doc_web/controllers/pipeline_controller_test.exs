@@ -16,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   }
 
   describe "create/2" do
-    test "create pipeline by valid attrrs", %{conn: conn} do
+    test "create pipeline by valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations
       c_type = insert(:content_type, organisation: organisation)
