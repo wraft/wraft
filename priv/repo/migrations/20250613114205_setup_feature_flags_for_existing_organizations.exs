@@ -28,6 +28,6 @@ defmodule WraftDoc.Repo.Migrations.SetupFeatureFlagsForExistingOrganizations do
   end
 
   defp self_hosted? do
-    Application.get_env(:wraft_doc, :deployement)[:is_self_hosted] == true
+    Application.get_env(:wraft_doc, :deployment)[:is_self_hosted] == true
   end
 end

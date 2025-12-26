@@ -18,12 +18,14 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
     phone: "9090909090",
     email: "hello@company.com",
     url: "wraftdoc@customprofile.com",
-    creator_id: Faker.UUID.v4()
+    creator_id: Faker.UUID.v4(),
+    owner_id: Faker.UUID.v4()
   }
 
   @valid_attrs_personal %{
     name: "Personal",
-    email: "hello@company.com"
+    email: "hello@company.com",
+    owner_id: nil
   }
 
   @invalid_attrs %{name: ""}
@@ -43,19 +45,39 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
 
     test "checks GSTIN unique constraint" do
       user = insert(:user)
-      params = Map.merge(@valid_attrs, %{name: "Company 2", creator_id: user.id})
-      params2 = Map.merge(params, %{name: "Company 2"})
 
-      {:ok, _} =
+      # Create first organization with unique GSTIN
+      params1 =
+        Map.merge(@valid_attrs, %{
+          creator_id: user.id,
+          owner_id: user.id,
+          name: "Company 1",
+          # Explicit GSTIN
+          gstin: "GSTIN12345678901"
+        })
+
+      {:ok, _organisation1} =
         %Organisation{}
-        |> Organisation.changeset(params)
+        |> Organisation.changeset(params1)
         |> Repo.insert()
+
+      # Try to create second organization with same GSTIN but different name
+      params2 =
+        Map.merge(@valid_attrs, %{
+          creator_id: user.id,
+          owner_id: user.id,
+          # Different name
+          name: "Company 2",
+          # Same GSTIN - should trigger constraint
+          gstin: "GSTIN12345678901"
+        })
 
       {:error, changeset} =
         %Organisation{}
         |> Organisation.changeset(params2)
         |> Repo.insert()
 
+      # Check for GSTIN constraint error
       assert "GSTIN Already Registered" in errors_on(changeset, :gstin)
     end
 
@@ -77,17 +99,31 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
 
     test "checks GSTIN unique constraint" do
       user = insert(:user)
-      params = Map.merge(@valid_attrs, %{name: "Company 2", creator_id: user.id})
-      params2 = Map.merge(params, %{name: "Company 2"})
+
+      params1 =
+        Map.merge(@valid_attrs, %{
+          name: "Company 1",
+          creator_id: user.id,
+          owner_id: user.id,
+          gstin: "GSTIN12345678901"
+        })
 
       {:ok, _} =
         %Organisation{}
-        |> Organisation.update_changeset(params)
+        |> Organisation.changeset(params1)
         |> Repo.insert()
+
+      params2 =
+        Map.merge(@valid_attrs, %{
+          name: "Company 2",
+          creator_id: user.id,
+          owner_id: user.id,
+          gstin: "GSTIN12345678901"
+        })
 
       {:error, changeset} =
         %Organisation{}
-        |> Organisation.update_changeset(params2)
+        |> Organisation.changeset(params2)
         |> Repo.insert()
 
       assert "GSTIN Already Registered" in errors_on(changeset, :gstin)

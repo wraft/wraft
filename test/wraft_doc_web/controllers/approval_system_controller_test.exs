@@ -8,7 +8,7 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
   @updated_name "Final review"
   @invalid_attrs %{pre_state_id: nil}
 
-  test "create approval_systems by valid attrrs", %{conn: conn} do
+  test "create approval_systems by valid attrs", %{conn: conn} do
     current_user = conn.assigns.current_user
     [organisation] = current_user.owned_organisations
 

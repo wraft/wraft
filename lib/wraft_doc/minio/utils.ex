@@ -12,7 +12,13 @@ defmodule WraftDoc.Minio.Utils do
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
 
-  @ex_aws_module Application.compile_env(:wraft_doc, [:test_module, :minio], ExAws)
+  defp ex_aws_module do
+    if Mix.env() == :test do
+      Application.get_env(:wraft_doc, [:test_module, :minio], ExAws)
+    else
+      ExAws
+    end
+  end
 
   defmodule DownloadError do
     defexception message: "MinIO download error. File not found."
@@ -72,7 +78,7 @@ defmodule WraftDoc.Minio.Utils do
       source_path
       |> S3.Upload.stream_file()
       |> S3.upload(bucket, target_path)
-      |> @ex_aws_module.request()
+      |> ex_aws_module().request()
     end
   end
 
@@ -118,7 +124,7 @@ defmodule WraftDoc.Minio.Utils do
          [binary] <-
            bucket
            |> S3.download_file(file_path, :memory)
-           |> @ex_aws_module.stream!()
+           |> ex_aws_module().stream!()
            |> Enum.to_list() do
       binary
     else
@@ -132,7 +138,7 @@ defmodule WraftDoc.Minio.Utils do
   def list_files(bucket, prefix) do
     bucket
     |> S3.list_objects(prefix: prefix)
-    |> @ex_aws_module.stream!()
+    |> ex_aws_module().stream!()
     |> Stream.map(& &1.key)
     |> Enum.sort(:desc)
   end
@@ -141,7 +147,7 @@ defmodule WraftDoc.Minio.Utils do
   def create_bucket(bucket) do
     bucket
     |> S3.put_bucket("")
-    |> @ex_aws_module.request()
+    |> ex_aws_module().request()
   end
 
   # Copy files from source bucket to target bucket
@@ -152,7 +158,7 @@ defmodule WraftDoc.Minio.Utils do
     else
       target_bucket
       |> S3.put_object_copy(target_path, source_bucket, source_path)
-      |> @ex_aws_module.request()
+      |> ex_aws_module().request()
       |> case do
         {:ok, %{status_code: 200}} -> true
         {:error, _reason} -> false
@@ -169,7 +175,7 @@ defmodule WraftDoc.Minio.Utils do
   def file_exists?(bucket, file_path) do
     bucket
     |> S3.head_object(file_path)
-    |> @ex_aws_module.request()
+    |> ex_aws_module().request()
     |> case do
       {:ok, _} -> true
       {:error, _} -> false
@@ -180,7 +186,7 @@ defmodule WraftDoc.Minio.Utils do
   def bucket_exists?(bucket) do
     bucket
     |> S3.head_bucket()
-    |> @ex_aws_module.request()
+    |> ex_aws_module().request()
     |> case do
       {:ok, _} -> true
       {:error, _} -> false
@@ -191,7 +197,7 @@ defmodule WraftDoc.Minio.Utils do
   def list_all_objects(bucket) do
     bucket
     |> S3.list_objects()
-    |> @ex_aws_module.stream!()
+    |> ex_aws_module().stream!()
     |> Enum.map(& &1.key)
   end
 
@@ -202,7 +208,7 @@ defmodule WraftDoc.Minio.Utils do
     |> Enum.each(fn chunk ->
       bucket
       |> S3.delete_multiple_objects(chunk)
-      |> @ex_aws_module.request!()
+      |> ex_aws_module().request!()
     end)
   end
 
@@ -210,7 +216,7 @@ defmodule WraftDoc.Minio.Utils do
   def delete_bucket(bucket) do
     bucket
     |> S3.delete_bucket()
-    |> @ex_aws_module.request!()
+    |> ex_aws_module().request!()
   end
 
   # Delete a file
@@ -225,13 +231,13 @@ defmodule WraftDoc.Minio.Utils do
   defp delete_object(bucket, file_path) do
     bucket
     |> S3.delete_object(file_path)
-    |> @ex_aws_module.request()
+    |> ex_aws_module().request()
   end
 
   defp list_objects(bucket, file_path) do
     bucket
     |> S3.list_objects(prefix: file_path)
-    |> @ex_aws_module.request()
+    |> ex_aws_module().request()
   end
 
   ######### Revamp File Structure ##########

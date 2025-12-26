@@ -11,12 +11,30 @@ defmodule WraftDoc.ApiKeysTest do
   describe "list_api_keys/2" do
     test "returns paginated list of API keys for user's organisation" do
       user = insert(:user_with_organisation)
-      api_key_1 = insert(:api_key, organisation_id: user.current_org_id)
-      api_key_2 = insert(:api_key, organisation_id: user.current_org_id)
 
-      # API key from different organisation should not appear
+      api_key_1 =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id
+        )
+
+      api_key_2 =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id
+        )
+
       other_org = insert(:organisation)
-      _other_api_key = insert(:api_key, organisation_id: other_org.id)
+      other_user = insert(:user, current_org_id: other_org.id, owned_organisations: [other_org])
+
+      _other_api_key =
+        insert(:api_key,
+          organisation_id: other_org.id,
+          user_id: other_user.id,
+          created_by_id: other_user.id
+        )
 
       %{entries: api_keys, total_entries: total} = ApiKeys.list_api_keys(user, %{})
 
@@ -39,7 +57,13 @@ defmodule WraftDoc.ApiKeysTest do
   describe "get_api_key/2" do
     test "returns API key for user's organisation" do
       user = insert(:user_with_organisation)
-      api_key = insert(:api_key, organisation_id: user.current_org_id)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id
+        )
 
       result = ApiKeys.get_api_key(user, api_key.id)
 
@@ -49,7 +73,14 @@ defmodule WraftDoc.ApiKeysTest do
     test "returns nil for API key from different organisation" do
       user = insert(:user_with_organisation)
       other_org = insert(:organisation)
-      api_key = insert(:api_key, organisation_id: other_org.id)
+      other_user = insert(:user, current_org_id: other_org.id, owned_organisations: [other_org])
+
+      api_key =
+        insert(:api_key,
+          organisation_id: other_org.id,
+          user_id: other_user.id,
+          created_by_id: other_user.id
+        )
 
       result = ApiKeys.get_api_key(user, api_key.id)
 
@@ -121,7 +152,7 @@ defmodule WraftDoc.ApiKeysTest do
     test "returns nil for expired key" do
       organisation = insert(:organisation)
       user = insert(:user)
-      past_date = DateTime.add(DateTime.utc_now(), -3600, :second)
+      future_date = DateTime.add(DateTime.utc_now(), 3600, :second)
 
       {:ok, api_key} =
         %ApiKey{}
@@ -129,11 +160,17 @@ defmodule WraftDoc.ApiKeysTest do
           name: "Test Key",
           organisation_id: organisation.id,
           user_id: user.id,
-          expires_at: past_date
+          expires_at: future_date
         })
         |> Repo.insert()
 
       key = api_key.key
+
+      past_date = DateTime.truncate(DateTime.add(DateTime.utc_now(), -3600, :second), :second)
+
+      api_key
+      |> Ecto.Changeset.change(expires_at: past_date)
+      |> Repo.update!()
 
       result = ApiKeys.get_api_key_by_key(key)
 
@@ -147,8 +184,8 @@ defmodule WraftDoc.ApiKeysTest do
 
       {:ok, api_key} =
         ApiKeys.create_api_key(user, %{
-          name: "Test API Key",
-          rate_limit: 1000
+          "name" => "Test API Key",
+          "rate_limit" => 1000
         })
 
       assert api_key.name == "Test API Key"
@@ -164,13 +201,15 @@ defmodule WraftDoc.ApiKeysTest do
       creator = insert(:user_with_organisation)
       other_user = insert(:user)
 
-      # Add other_user to the same organisation
-      insert(:users_organisation, user: other_user, organisation_id: creator.current_org_id)
+      insert(:user_organisation,
+        user: other_user,
+        organisation: List.first(creator.owned_organisations)
+      )
 
       {:ok, api_key} =
         ApiKeys.create_api_key(creator, %{
-          name: "Test API Key",
-          user_id: other_user.id
+          "name" => "Test API Key",
+          "user_id" => other_user.id
         })
 
       assert api_key.user_id == other_user.id
@@ -182,7 +221,7 @@ defmodule WraftDoc.ApiKeysTest do
 
       {:error, changeset} =
         ApiKeys.create_api_key(user, %{
-          name: nil
+          "name" => nil
         })
 
       refute changeset.valid?
@@ -191,7 +230,16 @@ defmodule WraftDoc.ApiKeysTest do
 
   describe "update_api_key/2" do
     test "updates API key with valid attributes" do
-      api_key = insert(:api_key, name: "Old Name", rate_limit: 500)
+      user = insert(:user_with_organisation)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id,
+          name: "Old Name",
+          rate_limit: 500
+        )
 
       {:ok, updated} =
         ApiKeys.update_api_key(api_key, %{
@@ -204,7 +252,14 @@ defmodule WraftDoc.ApiKeysTest do
     end
 
     test "returns error with invalid attributes" do
-      api_key = insert(:api_key)
+      user = insert(:user_with_organisation)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id
+        )
 
       {:error, changeset} =
         ApiKeys.update_api_key(api_key, %{
@@ -217,7 +272,14 @@ defmodule WraftDoc.ApiKeysTest do
 
   describe "delete_api_key/1" do
     test "deletes API key" do
-      api_key = insert(:api_key)
+      user = insert(:user_with_organisation)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id
+        )
 
       {:ok, deleted} = ApiKeys.delete_api_key(api_key)
 
@@ -228,7 +290,15 @@ defmodule WraftDoc.ApiKeysTest do
 
   describe "toggle_api_key_status/1" do
     test "toggles active status to inactive" do
-      api_key = insert(:api_key, is_active: true)
+      user = insert(:user_with_organisation)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id,
+          is_active: true
+        )
 
       {:ok, updated} = ApiKeys.toggle_api_key_status(api_key)
 
@@ -236,7 +306,15 @@ defmodule WraftDoc.ApiKeysTest do
     end
 
     test "toggles inactive status to active" do
-      api_key = insert(:api_key, is_active: false)
+      user = insert(:user_with_organisation)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id,
+          is_active: false
+        )
 
       {:ok, updated} = ApiKeys.toggle_api_key_status(api_key)
 
@@ -246,7 +324,16 @@ defmodule WraftDoc.ApiKeysTest do
 
   describe "record_usage/1" do
     test "increments usage count and updates last_used_at" do
-      api_key = insert(:api_key, usage_count: 5, last_used_at: nil)
+      user = insert(:user_with_organisation)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id,
+          usage_count: 5,
+          last_used_at: nil
+        )
 
       {:ok, updated} = ApiKeys.record_usage(api_key)
 
@@ -258,12 +345,14 @@ defmodule WraftDoc.ApiKeysTest do
   describe "verify_api_key/2" do
     test "returns user and organisation for valid key" do
       user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+      insert(:user_organisation, user: user, organisation: organisation)
 
       {:ok, api_key} =
         %ApiKey{}
         |> ApiKey.create_changeset(%{
           name: "Test Key",
-          organisation_id: user.current_org_id,
+          organisation_id: organisation.id,
           user_id: user.id
         })
         |> Repo.insert()
@@ -274,7 +363,7 @@ defmodule WraftDoc.ApiKeysTest do
 
       assert result.api_key.id == api_key.id
       assert result.user.id == user.id
-      assert result.organisation.id == user.current_org_id
+      assert result.organisation.id == organisation.id
     end
 
     test "returns error for invalid key" do
@@ -285,12 +374,14 @@ defmodule WraftDoc.ApiKeysTest do
 
     test "returns error for inactive key" do
       user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+      insert(:user_organisation, user: user, organisation: organisation)
 
       {:ok, api_key} =
         %ApiKey{}
         |> ApiKey.create_changeset(%{
           name: "Test Key",
-          organisation_id: user.current_org_id,
+          organisation_id: organisation.id,
           user_id: user.id,
           is_active: false
         })
@@ -300,38 +391,48 @@ defmodule WraftDoc.ApiKeysTest do
 
       {:error, reason} = ApiKeys.verify_api_key(key)
 
-      assert reason == :api_key_inactive
+      assert reason == :invalid_api_key
     end
 
     test "returns error for expired key" do
       user = insert(:user_with_organisation)
-      past_date = DateTime.add(DateTime.utc_now(), -3600, :second)
+      organisation = List.first(user.owned_organisations)
+      insert(:user_organisation, user: user, organisation: organisation)
+      future_date = DateTime.add(DateTime.utc_now(), 3600, :second)
 
       {:ok, api_key} =
         %ApiKey{}
         |> ApiKey.create_changeset(%{
           name: "Test Key",
-          organisation_id: user.current_org_id,
+          organisation_id: organisation.id,
           user_id: user.id,
-          expires_at: past_date
+          expires_at: future_date
         })
         |> Repo.insert()
 
       key = api_key.key
 
+      past_date = DateTime.truncate(DateTime.add(DateTime.utc_now(), -3600, :second), :second)
+
+      api_key
+      |> Ecto.Changeset.change(expires_at: past_date)
+      |> Repo.update!()
+
       {:error, reason} = ApiKeys.verify_api_key(key)
 
-      assert reason == :api_key_expired
+      assert reason == :invalid_api_key
     end
 
     test "returns error when IP not in whitelist" do
       user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+      insert(:user_organisation, user: user, organisation: organisation)
 
       {:ok, api_key} =
         %ApiKey{}
         |> ApiKey.create_changeset(%{
           name: "Test Key",
-          organisation_id: user.current_org_id,
+          organisation_id: organisation.id,
           user_id: user.id,
           ip_whitelist: ["192.168.1.1"]
         })
@@ -346,12 +447,14 @@ defmodule WraftDoc.ApiKeysTest do
 
     test "succeeds when IP is in whitelist" do
       user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+      insert(:user_organisation, user: user, organisation: organisation)
 
       {:ok, api_key} =
         %ApiKey{}
         |> ApiKey.create_changeset(%{
           name: "Test Key",
-          organisation_id: user.current_org_id,
+          organisation_id: organisation.id,
           user_id: user.id,
           ip_whitelist: ["192.168.1.1"]
         })

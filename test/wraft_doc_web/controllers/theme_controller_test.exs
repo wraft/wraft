@@ -10,6 +10,9 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
   alias WraftDoc.Repo
   alias WraftDoc.Themes.Theme
 
+  setup :set_mox_from_context
+  setup :verify_on_exit!
+
   @valid_attrs %{
     name: "Official Letter Theme",
     font: "Malery",
@@ -19,7 +22,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   @invalid_attrs %{body_color: "invalid hex format"}
 
-  test "create themes by valid attrrs", %{conn: conn} do
+  test "create themes by valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     asset1 = insert(:asset, organisation: List.first(user.owned_organisations))
     asset2 = insert(:asset, organisation: List.first(user.owned_organisations))

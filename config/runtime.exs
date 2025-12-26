@@ -12,6 +12,13 @@ if System.get_env("PHX_SERVER") && System.get_env("RELEASE_NAME") do
   config :wraft_doc, WraftDocWeb.Endpoint, server: true
 end
 
+# Ensure Sandbox pool is set for tests
+if config_env() == :test do
+  config :wraft_doc, WraftDoc.Repo,
+    pool: Ecto.Adapters.SQL.Sandbox,
+    ownership_timeout: 60_000
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
@@ -179,10 +186,12 @@ end
 config :wraft_doc, sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"
 
 # Configure Resend mail
-if api_key = System.get_env("RESEND_API_KEY") do
-  config :wraft_doc, WraftDocWeb.Mailer,
-    adapter: Resend.Swoosh.Adapter,
-    api_key: api_key
+if config_env() != :test do
+  if api_key = System.get_env("RESEND_API_KEY") do
+    config :wraft_doc, WraftDocWeb.Mailer,
+      adapter: Resend.Swoosh.Adapter,
+      api_key: api_key
+  end
 end
 
 # Configure SMTP

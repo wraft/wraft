@@ -29,7 +29,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     color: "#ffffff"
   }
 
-  @invalid_attrs %{name: ""}
+  @invalid_attrs %{"name" => "", "layout_id" => Ecto.UUID.generate()}
 
   describe "create/2" do
     test "create content types by valid attrs", %{conn: conn} do
@@ -85,7 +85,11 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       %{id: theme_id} = insert(:theme, organisation: organisation)
 
       params =
-        Map.merge(@invalid_attrs, %{flow_id: flow_id, layout_id: layout_id, theme_id: theme_id})
+        Map.merge(@invalid_attrs, %{
+          "flow_id" => flow_id,
+          "layout_id" => layout_id,
+          "theme_id" => theme_id
+        })
 
       conn =
         conn
@@ -202,13 +206,17 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
     test "does't update content types for invalid attrs", %{conn: conn} do
       user = conn.assigns[:current_user]
+      organisation = List.first(user.owned_organisations)
 
-      content_type =
-        insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+      content_type = insert(:content_type, creator: user, organisation: organisation)
+      layout = insert(:layout, organisation: organisation)
+
+      # Merge the valid layout_id with your invalid attrs
+      params = Map.merge(@invalid_attrs, %{"layout_id" => layout.id})
 
       conn =
         conn
-        |> put(Routes.v1_content_type_path(conn, :update, content_type.id), @invalid_attrs)
+        |> put(Routes.v1_content_type_path(conn, :update, content_type.id), params)
         |> doc(operation_id: "update_content_type")
 
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]

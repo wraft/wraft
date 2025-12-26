@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
   @moduletag :controller
   import WraftDoc.Factory
 
-  alias WraftDoc.{Block, Repo}
+  alias WraftDoc.{Blocks.Block, Repo}
 
   @data [
     %{"label" => "January", "value" => 10},

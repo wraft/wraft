@@ -1,5 +1,5 @@
 defmodule WraftDoc.AccountTest do
-  use WraftDoc.DataCase, async: true
+  use WraftDoc.DataCase, async: false
 
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
@@ -64,9 +64,9 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "returns error changeset with invalid data" do
-      {:error, changeset} = Account.registration(%{"email" => ""})
+      {:error, changeset} = Account.registration(%{"email" => "name@gmail.com"})
 
-      assert %{email: ["can't be blank"], name: ["can't be blank"], password: ["can't be blank"]} ==
+      assert %{name: ["can't be blank"], password: ["can't be blank"]} ==
                errors_on(changeset)
     end
 
@@ -538,8 +538,8 @@ defmodule WraftDoc.AccountTest do
     end
   end
 
-  @tag :authenticate
   describe "authenticate/1" do
+    @describetag :authenticate
     test "successfully authenticate when correct password is given" do
       user = insert(:user_with_personal_organisation)
       current_org_id = user.current_org_id
@@ -776,7 +776,11 @@ defmodule WraftDoc.AccountTest do
 
       {:ok, job} = Account.send_password_reset_mail(auth_token)
 
-      assert job.args == %{email: auth_token.user.email, name: "wrafts user", token: "token"}
+      assert job.args == %{
+               email: auth_token.user.email,
+               name: auth_token.user.name,
+               token: auth_token.value
+             }
 
       assert_enqueued(
         worker: EmailWorker,

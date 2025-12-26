@@ -29,7 +29,7 @@ defmodule WraftDocWeb.Api.V1.VendorControllerTest do
   @invalid_contact_attrs %{name: nil, vendor_id: nil}
 
   describe "create/2" do
-    test "create vendors by valid attrrs", %{conn: conn} do
+    test "create vendors by valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
       insert(:profile, user: user)
       count_before = Vendor |> Repo.all() |> length()

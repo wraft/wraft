@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   }
 
   @invalid_attrs %{title: ""}
-  test "create block_templates by valid attrrs", %{conn: conn} do
+  test "create block_templates by valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:profile, user: user)
     count_before = BlockTemplate |> Repo.all() |> length()

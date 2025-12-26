@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Api.V1.VendorView do
 
   def render("vendor.json", %{vendor: vendor}) do
     %{
-      id: vendor.id,
+      id: vendor.id || nil,
       name: vendor.name,
       email: vendor.email,
       phone: vendor.phone,
@@ -24,7 +24,7 @@ defmodule WraftDocWeb.Api.V1.VendorView do
 
   def render("create.json", %{vendor: vendor}) do
     %{
-      id: vendor.id,
+      id: vendor.id || nil,
       name: vendor.name,
       email: vendor.email,
       phone: vendor.phone,

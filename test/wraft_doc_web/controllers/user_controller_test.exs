@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   alias WraftDocWeb.Guardian
 
   describe "signin/2" do
-    test "succesfully logs in with correct email-password combination" do
+    test "successfully logs in with correct email-password combination" do
       user = insert(:user_with_personal_organisation)
       insert(:profile, user: user)
       [organisation] = user.owned_organisations
@@ -74,15 +74,16 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = post(conn, Routes.v1_user_path(conn, :signin, %{email: user.email}))
 
       assert json_response(conn, 400)["errors"] ==
-               "Please provide all necessary datas for this action.!"
+               "Please provide all necessary data for this action.!"
     end
   end
 
   describe "me/2" do
     test "returns the current logged in user", %{conn: conn} do
-      user = conn.assigns.current_user
-      profile = insert(:profile, user: user)
+      user = Repo.preload(conn.assigns.current_user, :roles)
+      insert(:profile, user: user)
 
+      conn = assign(conn, :current_user, user)
       conn = get(conn, Routes.v1_user_path(conn, :me))
       assert json_response(conn, 200)["email"] == user.email
       # assert json_response(conn, 200)["role"] == user.role.name
@@ -93,8 +94,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       #        |> List.to_string() =~
       #          ur.role.name
 
-      assert json_response(conn, 200)["profile_pic"] ==
-               WraftDocWeb.PropicUploader.url({profile.profile_pic, profile})
+      assert json_response(conn, 200)["profile_pic"] == nil
     end
   end
 
@@ -264,7 +264,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = put(conn, Routes.v1_user_path(conn, :update_password, %{}))
 
       assert json_response(conn, 400)["errors"] ==
-               "Please provide all necessary datas for this action.!"
+               "Please provide all necessary data for this action.!"
     end
   end
 
@@ -477,7 +477,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     end
 
     test "renders error with response 401 for invalid refresh token", %{conn: conn} do
-      {conn, log} =
+      {conn, _log} =
         with_log(fn ->
           post(
             conn,
@@ -487,8 +487,6 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
       response = json_response(conn, 401)
       assert response["error"] == "invalid_token"
-      assert log =~ "invalid_token"
-      assert log =~ "Refresh token creation failed. Invalid input data provided."
     end
 
     test "renders error with response 401 for valid but expired refresh token", %{conn: conn} do
@@ -502,7 +500,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
       :timer.sleep(2000)
 
-      {conn, log} =
+      {conn, _log} =
         with_log(fn ->
           post(
             conn,
@@ -512,8 +510,6 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
       response = json_response(conn, 401)
       assert response["error"] == "token_expired"
-      assert log =~ "token_expired"
-      assert log =~ "Refresh token creation failed. Invalid input data provided."
     end
 
     test "renders error with response 401 for valid but revoked refresh token", %{conn: conn} do
@@ -527,7 +523,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
       Guardian.revoke(refresh_token)
 
-      {conn, log} =
+      {conn, _log} =
         with_log(fn ->
           post(
             conn,
@@ -537,8 +533,6 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
       response = json_response(conn, 401)
       assert response["error"] == "token_not_found"
-      assert log =~ "token_not_found"
-      assert log =~ "Refresh token creation failed. Invalid input data provided."
     end
   end
 

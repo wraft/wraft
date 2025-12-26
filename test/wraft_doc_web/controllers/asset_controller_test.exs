@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   @moduledoc """
   Test module for asset controller
   """
-  use WraftDocWeb.ConnCase, async: true
+  use WraftDocWeb.ConnCase, async: false
   @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.Assets.Asset
@@ -22,7 +22,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   @invalid_attrs %{}
 
   describe "create/2" do
-    test "create assets by valid attrrs", %{conn: conn} do
+    test "create assets by valid attrs", %{conn: conn} do
       count_before = Asset |> Repo.all() |> length()
 
       conn =

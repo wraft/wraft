@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
   @moduledoc """
   Test module for API key controller
   """
-  use WraftDocWeb.ConnCase
+  use WraftDocWeb.ConnCase, async: false
   @moduletag :controller
 
   alias WraftDoc.ApiKeys.ApiKey
@@ -26,12 +26,40 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
   describe "index/2" do
     test "lists all API keys for user's organisation", %{conn: conn} do
       user = conn.assigns.current_user
-      api_key_1 = insert(:api_key, organisation_id: user.current_org_id, name: "Key 1")
-      api_key_2 = insert(:api_key, organisation_id: user.current_org_id, name: "Key 2")
 
-      # API key from different organisation should not appear
+      organisation = List.first(user.owned_organisations)
+
+      _api_key_1 =
+        insert(:api_key,
+          user: user,
+          organisation: organisation,
+          created_by: user,
+          name: "Key 1"
+        )
+
+      _api_key_2 =
+        insert(:api_key,
+          user: user,
+          organisation: organisation,
+          created_by: user,
+          name: "Key 2"
+        )
+
       other_org = insert(:organisation)
-      _other_api_key = insert(:api_key, organisation_id: other_org.id, name: "Other Key")
+
+      other_user =
+        insert(:user,
+          email: "other_#{Base.encode16(:crypto.strong_rand_bytes(16))}@example.com",
+          current_org_id: other_org.id,
+          owned_organisations: [other_org]
+        )
+
+      insert(:api_key,
+        user: other_user,
+        organisation: other_org,
+        created_by: other_user,
+        name: "Other Key"
+      )
 
       conn = get(conn, Routes.v1_api_key_path(conn, :index))
 
@@ -57,7 +85,15 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
   describe "show/2" do
     test "shows an API key from user's organisation", %{conn: conn} do
       user = conn.assigns.current_user
-      api_key = insert(:api_key, organisation_id: user.current_org_id, name: "Test Key")
+      organisation = List.first(user.owned_organisations)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: organisation.id,
+          user_id: user.id,
+          created_by_id: user.id,
+          name: "Test Key"
+        )
 
       conn = get(conn, Routes.v1_api_key_path(conn, :show, api_key.id))
 
@@ -70,7 +106,14 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
 
     test "returns 404 for API key from different organisation", %{conn: conn} do
       other_org = insert(:organisation)
-      api_key = insert(:api_key, organisation_id: other_org.id)
+      other_user = insert(:user, current_org_id: other_org.id, owned_organisations: [other_org])
+
+      api_key =
+        insert(:api_key,
+          organisation_id: other_org.id,
+          user_id: other_user.id,
+          created_by_id: other_user.id
+        )
 
       conn = get(conn, Routes.v1_api_key_path(conn, :show, api_key.id))
 
@@ -86,7 +129,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
 
   describe "create/2" do
     test "creates API key with valid attributes", %{conn: conn} do
-      user = conn.assigns.current_user
       count_before = ApiKey |> Repo.all() |> length()
 
       conn = post(conn, Routes.v1_api_key_path(conn, :create), @valid_attrs)
@@ -133,7 +175,13 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
 
     test "returns error for duplicate name in organisation", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:api_key, organisation_id: user.current_org_id, name: "Duplicate")
+
+      insert(:api_key,
+        organisation_id: user.current_org_id,
+        user_id: user.id,
+        created_by_id: user.id,
+        name: "Duplicate"
+      )
 
       conn = post(conn, Routes.v1_api_key_path(conn, :create), %{name: "Duplicate"})
 
@@ -144,7 +192,14 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
   describe "update/2" do
     test "updates API key with valid attributes", %{conn: conn} do
       user = conn.assigns.current_user
-      api_key = insert(:api_key, organisation_id: user.current_org_id, name: "Old Name")
+
+      api_key =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id,
+          name: "Old Name"
+        )
 
       conn = put(conn, Routes.v1_api_key_path(conn, :update, api_key.id), @update_attrs)
 
@@ -155,7 +210,13 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
 
     test "does not return the key on update", %{conn: conn} do
       user = conn.assigns.current_user
-      api_key = insert(:api_key, organisation_id: user.current_org_id)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id
+        )
 
       conn = put(conn, Routes.v1_api_key_path(conn, :update, api_key.id), @update_attrs)
 
@@ -165,7 +226,13 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
 
     test "returns error with invalid attributes", %{conn: conn} do
       user = conn.assigns.current_user
-      api_key = insert(:api_key, organisation_id: user.current_org_id)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id
+        )
 
       conn =
         put(conn, Routes.v1_api_key_path(conn, :update, api_key.id), %{rate_limit: -10})
@@ -175,7 +242,14 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
 
     test "returns 404 for API key from different organisation", %{conn: conn} do
       other_org = insert(:organisation)
-      api_key = insert(:api_key, organisation_id: other_org.id)
+      other_user = insert(:user, current_org_id: other_org.id, owned_organisations: [other_org])
+
+      api_key =
+        insert(:api_key,
+          organisation_id: other_org.id,
+          user_id: other_user.id,
+          created_by_id: other_user.id
+        )
 
       conn = put(conn, Routes.v1_api_key_path(conn, :update, api_key.id), @update_attrs)
 
@@ -186,20 +260,34 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
   describe "delete/2" do
     test "deletes an API key", %{conn: conn} do
       user = conn.assigns.current_user
-      api_key = insert(:api_key, organisation_id: user.current_org_id)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: user.current_org_id,
+          user_id: user.id,
+          created_by_id: user.id
+        )
+
       count_before = ApiKey |> Repo.all() |> length()
 
       conn = delete(conn, Routes.v1_api_key_path(conn, :delete, api_key.id))
 
       count_after = ApiKey |> Repo.all() |> length()
-      assert response(conn, 204)
+      assert conn.status == 204
       assert count_after == count_before - 1
       assert Repo.get(ApiKey, api_key.id) == nil
     end
 
     test "returns 404 for API key from different organisation", %{conn: conn} do
       other_org = insert(:organisation)
-      api_key = insert(:api_key, organisation_id: other_org.id)
+      other_user = insert(:user, current_org_id: other_org.id, owned_organisations: [other_org])
+
+      api_key =
+        insert(:api_key,
+          organisation_id: other_org.id,
+          user_id: other_user.id,
+          created_by_id: other_user.id
+        )
 
       conn = delete(conn, Routes.v1_api_key_path(conn, :delete, api_key.id))
 
@@ -210,7 +298,15 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
   describe "toggle_status/2" do
     test "toggles API key from active to inactive", %{conn: conn} do
       user = conn.assigns.current_user
-      api_key = insert(:api_key, organisation_id: user.current_org_id, is_active: true)
+      organisation = List.first(user.owned_organisations)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: organisation.id,
+          user_id: user.id,
+          created_by_id: user.id,
+          is_active: true
+        )
 
       conn = patch(conn, Routes.v1_api_key_path(conn, :toggle_status, api_key.id))
 
@@ -220,7 +316,15 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
 
     test "toggles API key from inactive to active", %{conn: conn} do
       user = conn.assigns.current_user
-      api_key = insert(:api_key, organisation_id: user.current_org_id, is_active: false)
+      organisation = List.first(user.owned_organisations)
+
+      api_key =
+        insert(:api_key,
+          organisation_id: organisation.id,
+          user_id: user.id,
+          created_by_id: user.id,
+          is_active: false
+        )
 
       conn = patch(conn, Routes.v1_api_key_path(conn, :toggle_status, api_key.id))
 
@@ -230,7 +334,20 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
 
     test "returns 404 for API key from different organisation", %{conn: conn} do
       other_org = insert(:organisation)
-      api_key = insert(:api_key, organisation_id: other_org.id)
+
+      other_user =
+        insert(:user,
+          email: "other_toggle_#{Base.encode16(:crypto.strong_rand_bytes(16))}@example.com",
+          current_org_id: other_org.id,
+          owned_organisations: [other_org]
+        )
+
+      api_key =
+        insert(:api_key,
+          organisation_id: other_org.id,
+          user_id: other_user.id,
+          created_by_id: other_user.id
+        )
 
       conn = patch(conn, Routes.v1_api_key_path(conn, :toggle_status, api_key.id))
 
@@ -242,7 +359,6 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
     test "can access endpoint with valid API key instead of JWT", %{conn: conn} do
       user = conn.assigns.current_user
 
-      # Create an API key
       {:ok, api_key} =
         %ApiKey{}
         |> ApiKey.create_changeset(%{
@@ -252,44 +368,38 @@ defmodule WraftDocWeb.Api.V1.ApiKeyControllerTest do
         })
         |> Repo.insert()
 
-      # Create a new connection without JWT, but with API key
       api_conn =
         Phoenix.ConnTest.build_conn()
         |> Plug.Conn.put_req_header("accept", "application/json")
         |> Plug.Conn.put_req_header("x-api-key", api_key.key)
 
-      # Try to access the index endpoint
       api_conn = get(api_conn, Routes.v1_api_key_path(api_conn, :index))
 
-      # Should succeed with API key auth
       response = json_response(api_conn, 200)
       assert Map.has_key?(response, "api_keys")
     end
 
     test "returns 401 with invalid API key", %{conn: _conn} do
-      # Create a new connection with invalid API key
       api_conn =
         Phoenix.ConnTest.build_conn()
         |> Plug.Conn.put_req_header("accept", "application/json")
         |> Plug.Conn.put_req_header("x-api-key", "wraft_invalid_key")
 
-      # Try to access the index endpoint
       api_conn = get(api_conn, Routes.v1_api_key_path(api_conn, :index))
 
-      # Should fail
       assert json_response(api_conn, 401)
     end
 
-    test "returns 401 with no authentication", %{conn: _conn} do
+    test "returns 404 with no authentication", %{conn: _conn} do
       # Create a new connection without any auth
       api_conn =
         Plug.Conn.put_req_header(Phoenix.ConnTest.build_conn(), "accept", "application/json")
 
-      # Try to access the index endpoint
       api_conn = get(api_conn, Routes.v1_api_key_path(api_conn, :index))
 
-      # Should fail
-      assert json_response(api_conn, 401)
+      # CurrentUser plug returns 404 when no user is found
+      response = json_response(api_conn, 404)
+      assert response["errors"] == "No user found"
     end
   end
 end

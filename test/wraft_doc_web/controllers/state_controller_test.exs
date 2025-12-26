@@ -16,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
   @invalid_attrs %{state: ""}
 
-  test "create states by valid attrrs", %{conn: conn} do
+  test "create states by valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:profile, user: user)
     flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))

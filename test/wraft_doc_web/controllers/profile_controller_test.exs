@@ -47,6 +47,12 @@ defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
     test "renders current profile ", %{conn: conn} do
       current_user = conn.assigns.current_user
 
+      WraftDoc.Repo.get_by(WraftDoc.Account.Profile, user_id: current_user.id) ||
+        insert(:profile, user: current_user)
+
+      current_user = WraftDoc.Repo.preload(current_user, :profile)
+      conn = assign(conn, :current_user, current_user)
+
       conn = get(conn, Routes.v1_profile_path(conn, :show_current_profile))
 
       assert json_response(conn, 200)["name"] == current_user.name

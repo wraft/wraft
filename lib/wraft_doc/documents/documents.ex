@@ -142,9 +142,6 @@ defmodule WraftDoc.Documents do
     end
   end
 
-  # @spec create_instance(ContentType.t(), State.t(), map) ::
-  #         %Instance{content_type: ContentType.t(), state: State.t()}
-  #         | {:error, Ecto.Changeset.t()}
   def create_instance(
         %{id: c_id, prefix: prefix, type: type, organisation_id: organisation_id} = c_type,
         _state,

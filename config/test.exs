@@ -8,21 +8,16 @@ config :wraft_doc, WraftDocWeb.Endpoint,
   secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE")
 
 # Print only warnings and errors during test
-config :logger, level: :warn
+config :logger, level: :warning
 
-# Configure your database
-config :wraft_doc, WraftDoc.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  username: System.get_env("POSTGRES_USER") || "postgres",
-  password: System.get_env("POSTGRES_PASSWORD") || "postgres",
-  database: System.get_env("POSTGRES_DB") || "wraft_doc_test",
-  hostname: System.get_env("POSTGRES_HOST") || "localhost",
-  pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10
-
-config :wraft_doc, Oban, queues: false, plugins: false
+config :wraft_doc, Oban,
+  queues: false,
+  plugins: false,
+  testing: :disabled
 
 config :wraft_doc, WraftDocWeb.Mailer, adapter: Swoosh.Adapters.Test
+
+config :wraft_doc, WraftDoc.TypesenseServer, start: false
 
 config :wraft_doc, permissions_file: "test/mix/tasks/csv/test_permissions.csv"
 
@@ -32,5 +27,7 @@ config :tesla, adapter: Tesla.Mock
 
 config :waffle, storage: Waffle.Storage.Local
 
+# Set is_self_hosted to false in test environment to enable payment routes
+config :wraft_doc, :deployment, is_self_hosted: false
+
 # Initialize plugs at runtime for faster test compilation
-config :phoenix, :plug_init_mode, :runtime

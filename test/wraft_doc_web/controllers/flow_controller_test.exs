@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   @invalid_attrs %{name: ""}
 
-  test "create flow by valid attrrs and creates default state", %{conn: conn} do
+  test "create flow by valid attrs and creates default state", %{conn: conn} do
     state_count_before = State |> Repo.all() |> length()
     count_before = Flow |> Repo.all() |> length()
     %{id: organisation_id} = insert(:organisation)

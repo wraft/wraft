@@ -18,7 +18,7 @@ defmodule WraftDocWeb.Api.V1.PlanView do
       currency: plan.currency,
       updated_at: plan.updated_at,
       inserted_at: plan.inserted_at,
-      coupon_id: plan.coupon_id,
+      coupon_id: plan.coupon_id || nil,
       coupon: render_one(plan.coupon, __MODULE__, "coupon.json", as: :coupon)
     }
   end

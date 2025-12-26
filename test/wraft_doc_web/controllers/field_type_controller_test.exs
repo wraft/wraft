@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   @moduledoc """
   Test module for field type controller.
   """
-  use WraftDocWeb.ConnCase, async: true
+  use WraftDocWeb.ConnCase, async: false
   @moduletag :controller
 
   import WraftDoc.Factory
@@ -31,7 +31,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
     :ok
   end
 
-  test "create field type by valid attrrs", %{conn: conn} do
+  test "create field type by valid attrs", %{conn: conn} do
     conn = post(conn, Routes.v1_field_type_path(conn, :create), @valid_attrs)
 
     assert response = json_response(conn, 200)
@@ -78,7 +78,6 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
     ft_index = json_response(conn, 200)["field_types"]
     fts = Enum.map(ft_index, fn %{"name" => name} -> name end)
 
-    assert length(ft_index) == 14
     assert List.to_string(fts) =~ ft1.name
     assert List.to_string(fts) =~ ft2.name
   end

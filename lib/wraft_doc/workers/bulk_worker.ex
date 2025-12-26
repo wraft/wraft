@@ -337,7 +337,7 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
     end)
 
-    Logger.info("Pipeline completed succesfully.!")
+    Logger.info("Pipeline completed successfully.!")
     trigger
   end
 

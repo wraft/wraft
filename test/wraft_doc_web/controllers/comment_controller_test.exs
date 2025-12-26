@@ -3,18 +3,22 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
   @moduletag :controller
 
   import WraftDoc.Factory
-  alias WraftDoc.{Comment, Repo}
+  alias WraftDoc.{Comments.Comment, Repo}
 
   @valid_attrs %{
     comment: "a sample Comment",
     is_parent: true,
     master: "Instance",
-    master_id: "3adfs5sdffdas5fsdas5df"
+    master_id: Ecto.UUID.generate()
   }
 
-  @invalid_attrs %{comment: nil}
+  @invalid_attrs %{
+    comment: nil,
+    master: "Instance",
+    master_id: Ecto.UUID.generate()
+  }
 
-  test "create comments by valid attrrs", %{conn: conn} do
+  test "create comments by valid attrs", %{conn: conn} do
     count_before = Comment |> Repo.all() |> length()
 
     conn =
