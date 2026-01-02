@@ -57,7 +57,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     ],
     request_body: {"Content to be created", "application/json", ContentSchema.ContentRequest},
     responses: [
-      ok: {"Ok", "application/json", ContentSchema.ContentAndContentTypeAndState},
+      ok: {"Ok", "application/json", ContentSchema.ContentSummary},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error}
     ]
@@ -281,7 +281,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     request_body:
       {"Meta data to be updated", "application/json", ContentSchema.MetaUpdateRequest},
     responses: [
-      ok: {"Ok", "application/json", ContentSchema.ShowContent},
+      ok: {"Ok", "application/json", ContentSchema.MetaResponse},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error},
       not_found: {"Not found", "application/json", Error}
@@ -339,7 +339,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     request_body: {"Params for version", "application/json", ContentSchema.BuildRequest},
     responses: [
       ok: {"Ok", "application/json", ContentSchema.Content},
-      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", ContentSchema.BuildFail},
       unauthorized: {"Unauthorized", "application/json", Error},
       not_found: {"Not found", "application/json", Error}
     ]
@@ -527,7 +527,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       id: [in: :path, type: :string, description: "Instance id"]
     ],
     responses: [
-      ok: {"Ok", "application/json", ContentSchema.ShowContent},
+      ok: {"Ok", "application/json", ContentSchema.ApproveRejectResponse},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error},
       not_found: {"Not found", "application/json", Error}
@@ -583,7 +583,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       id: [in: :path, type: :string, description: "Instance id"]
     ],
     responses: [
-      ok: {"Ok", "application/json", ContentSchema.ShowContent},
+      ok: {"Ok", "application/json", ContentSchema.ApproveRejectResponse},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error},
       not_found: {"Not found", "application/json", Error}

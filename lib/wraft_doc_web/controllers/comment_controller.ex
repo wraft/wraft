@@ -206,7 +206,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
       id: [in: :path, type: :string, description: "comment id", required: true]
     ],
     responses: [
-      ok: {"Ok", "application/json", CommentSchema.Comment},
+      ok: {"Ok", "application/json", CommentSchema.DeleteCommentResponse},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error},
       bad_request: {"Bad Request", "application/json", Error}

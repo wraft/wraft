@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Schemas.BlockTemplate do
   """
   require OpenApiSpex
   alias OpenApiSpex.Schema
+  alias WraftDocWeb.Schemas.User
 
   defmodule BlockTemplateRequest do
     @moduledoc false
@@ -32,9 +33,11 @@ defmodule WraftDocWeb.Schemas.BlockTemplate do
       description: "A BlockTemplate",
       type: :object,
       properties: %{
+        id: %Schema{type: :string, description: "The ID of the block template"},
         title: %Schema{type: :string, description: "The Title of the block template"},
         body: %Schema{type: :string, description: "The Body of the block template"},
         serialized: %Schema{type: :string, description: "The serialized of the block template"},
+        creator: User.UserIdAndName,
         inserted_at: %Schema{
           type: :string,
           description: "When was the block_template inserted",
@@ -46,11 +49,16 @@ defmodule WraftDocWeb.Schemas.BlockTemplate do
           format: "ISO-8601"
         }
       },
-      required: [:title, :body, :serialized],
+      required: [:id, :title, :body, :serialized],
       example: %{
+        id: "123456789",
         title: "a sample title",
         body: "a sample body",
         serialized: "a sample serialized",
+        creator: %{
+          id: "123",
+          name: "John Doe"
+        },
         updated_at: "2020-01-21T14:00:00Z",
         inserted_at: "2020-02-21T14:00:00Z"
       }
@@ -62,7 +70,21 @@ defmodule WraftDocWeb.Schemas.BlockTemplate do
     OpenApiSpex.schema(%{
       title: "BlockTemplate list",
       type: :array,
-      items: BlockTemplate
+      items: BlockTemplate,
+      example: [
+        %{
+          id: "123456789",
+          title: "a sample title",
+          body: "a sample body",
+          serialized: "a sample serialized",
+          creator: %{
+            id: "123",
+            name: "John Doe"
+          },
+          updated_at: "2020-01-21T14:00:00Z",
+          inserted_at: "2020-02-21T14:00:00Z"
+        }
+      ]
     })
   end
 
@@ -80,19 +102,35 @@ defmodule WraftDocWeb.Schemas.BlockTemplate do
       example: %{
         block_templates: [
           %{
+            id: "123456789",
             title: "a sample title",
             body: "a sample body",
-            serialized: "a sample serialized"
-          },
-          %{
-            title: "a sample title",
-            body: "a sample body",
-            serialized: "a sample serialized"
+            serialized: "a sample serialized",
+            creator: %{
+              id: "123",
+              name: "John Doe"
+            },
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
           }
         ],
         page_number: 1,
         total_pages: 2,
         total_entries: 15
+      }
+    })
+  end
+
+  defmodule BulkImportResponse do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      title: "Bulk Import Response",
+      type: :object,
+      properties: %{
+        info: %Schema{type: :string, description: "Info message"}
+      },
+      example: %{
+        info: "Block Template will be created soon"
       }
     })
   end

@@ -169,6 +169,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
          }
        }},
     responses: [
+      ok: {"Ok", "application/json", BlockTemplateSchema.BulkImportResponse},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error}
     ]
