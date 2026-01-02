@@ -567,4 +567,21 @@ defmodule WraftDocWeb.Schemas.User do
       }
     })
   end
+
+  defmodule UserIdAndName do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      title: "User ID and Name",
+      description: "User ID and Name",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :string, description: "User ID"},
+        name: %Schema{type: :string, description: "User Name"}
+      },
+      example: %{
+        id: "123",
+        name: "John Doe"
+      }
+    })
+  end
 end

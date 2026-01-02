@@ -120,7 +120,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
       page: [in: :query, type: :string, description: "Page"]
     ],
     responses: [
-      ok: {"Ok", "application/json", ApprovalSystemSchema.Approved},
+      ok: {"Ok", "application/json", ApprovalSystemSchema.ApprovalSystemResponse},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error},
       bad_request: {"Bad Request", "application/json", Error}

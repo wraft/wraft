@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Schemas.Billing do
   """
   require OpenApiSpex
   alias OpenApiSpex.Schema
+  alias WraftDocWeb.Schemas.{Coupon, Organisation, Plan, User}
 
   defmodule Subscription do
     @moduledoc false
@@ -18,7 +19,7 @@ defmodule WraftDocWeb.Schemas.Billing do
           description: "Provider's subscription ID"
         },
         provider_plan_id: %Schema{type: :string, description: "Provider's plan ID"},
-        provider: %Schema{type: :string, description: "Subscription provider name"},
+        transaction_id: %Schema{type: :string, description: "Transaction ID"},
         status: %Schema{type: :string, description: "Current subscription status"},
         start_date: %Schema{type: :string, description: "Format: ISO8601 datetime"},
         end_date: %Schema{type: :string, description: "Format: ISO8601 datetime"},
@@ -27,20 +28,26 @@ defmodule WraftDocWeb.Schemas.Billing do
           description: "Next billing date. Format: ISO8601 datetime"
         },
         next_bill_amount: %Schema{type: :number, description: "Amount of next bill"},
+        coupon_id: %Schema{type: :string, description: "Coupon ID"},
+        coupon: Coupon.Coupon,
+        coupon_start_date: %Schema{type: :string, description: "Coupon start date"},
+        coupon_end_date: %Schema{type: :string, description: "Coupon end date"},
         currency: %Schema{type: :string, description: "Currency code"},
-        organisation_id: %Schema{type: :string, description: "Organization ID"},
         subscriber_id: %Schema{type: :string, description: "User ID"},
-        plan_id: %Schema{type: :string, description: "Plan ID"}
+        subscriber: User.User,
+        organisation_id: %Schema{type: :string, description: "Organization ID"},
+        organisation: Organisation.Organisation,
+        plan_id: %Schema{type: :string, description: "Plan ID"},
+        plan: Plan.Plan
       },
       example: %{
         id: "4296a052-e147-491b-84cf-9931e4776410",
         provider_subscription_id: "sub_01jj2hnvs63hsbhea7qw6k7m0z",
         provider_plan_id: "pri_01jj19s7ev25a4a1m3b6efbpgd",
         status: "active",
-        type: "regular",
         start_date: "2025-01-20T19:18:01Z",
         end_date: "2025-02-20T19:18:01Z",
-        next_payment_date: "2025-02-20",
+        next_bill_date: "2025-02-20",
         next_bill_amount: 467,
         currency: "INR",
         organisation_id: "a19aadca-7655-40e7-9647-0a2bd49d20cc",
@@ -59,6 +66,9 @@ defmodule WraftDocWeb.Schemas.Billing do
       type: :object,
       properties: %{
         invoice_url: %Schema{type: :string, description: "Invoice url"}
+      },
+      example: %{
+        invoice_url: "https://example.com/invoice.pdf"
       }
     })
   end
@@ -72,6 +82,24 @@ defmodule WraftDocWeb.Schemas.Billing do
       properties: %{
         message: %Schema{type: :string, description: "message of plan change"},
         subscription: %Schema{anyOf: [Subscription], description: "active subscription"}
+      },
+      example: %{
+        message: "Plan changed successfully",
+        subscription: %{
+          id: "4296a052-e147-491b-84cf-9931e4776410",
+          provider_subscription_id: "sub_01jj2hnvs63hsbhea7qw6k7m0z",
+          provider_plan_id: "pri_01jj19s7ev25a4a1m3b6efbpgd",
+          status: "active",
+          start_date: "2025-01-20T19:18:01Z",
+          end_date: "2025-02-20T19:18:01Z",
+          next_bill_date: "2025-02-20",
+          next_bill_amount: 467,
+          currency: "INR",
+          organisation_id: "a19aadca-7655-40e7-9647-0a2bd49d20cc",
+          subscriber_id: "b0c5cfc9-bdd4-4809-898f-d75e6b95e719",
+          plan_id: "5932900c-8d9a-4493-95f9-96375032cabc",
+          transaction_id: "txn_01jj2jd17gg4n3j1k71zm6eatv"
+        }
       }
     })
   end
@@ -85,6 +113,10 @@ defmodule WraftDocWeb.Schemas.Billing do
       properties: %{
         frequency: %Schema{type: :integer, description: "Billing frequency"},
         interval: %Schema{type: :string, description: "Billing interval (e.g., month, year)"}
+      },
+      example: %{
+        frequency: 1,
+        interval: "month"
       }
     })
   end
@@ -101,6 +133,10 @@ defmodule WraftDocWeb.Schemas.Billing do
           description: "Period start date. Format: ISO8601 datetime"
         },
         ends_at: %Schema{type: :string, description: "Period end date. Format: ISO8601 datetime"}
+      },
+      example: %{
+        starts_at: "2025-01-01T00:00:00Z",
+        ends_at: "2025-02-01T00:00:00Z"
       }
     })
   end
@@ -113,37 +149,40 @@ defmodule WraftDocWeb.Schemas.Billing do
       type: :object,
       properties: %{
         subtotal: %Schema{type: :number, description: "Subtotal amount"},
+        discount: %Schema{type: :number, description: "Discount amount"},
         tax: %Schema{type: :number, description: "Tax amount"},
         total: %Schema{type: :number, description: "Total amount"}
+      },
+      example: %{
+        subtotal: 100.0,
+        discount: 0.0,
+        tax: 10.0,
+        total: 110.0
       }
     })
   end
 
-  defmodule ProductDetail do
+  defmodule PlanPricing do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "Product Detail",
-      description: "Details about a product in the subscription",
+      title: "Plan Pricing",
+      description: "Details about a product pricing in the subscription",
       type: :object,
       properties: %{
         product_name: %Schema{type: :string, description: "Name of the product"},
         description: %Schema{type: :string, description: "Product description"},
         subtotal: %Schema{type: :number, description: "Product subtotal"},
+        discount: %Schema{type: :number, description: "Product discount"},
         tax: %Schema{type: :number, description: "Product tax"},
         total: %Schema{type: :number, description: "Product total"}
-      }
-    })
-  end
-
-  defmodule ManagementUrls do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      title: "Management URLs",
-      description: "URLs for managing the subscription",
-      type: :object,
-      properties: %{
-        update_payment_method: %Schema{type: :string, description: "URL to update payment method"},
-        cancel: %Schema{type: :string, description: "URL to cancel subscription"}
+      },
+      example: %{
+        product_name: "Pro Plan",
+        description: "Monthly subscription",
+        subtotal: 100.0,
+        discount: 0.0,
+        tax: 10.0,
+        total: 110.0
       }
     })
   end
@@ -170,12 +209,32 @@ defmodule WraftDocWeb.Schemas.Billing do
           type: :string,
           description: "Next billing date. Format: ISO8601 datetime"
         },
-        product_details: %Schema{
+        plan_pricing: %Schema{
           type: :array,
-          description: "List of product details",
-          items: ProductDetail
+          description: "List of plan pricing details",
+          items: PlanPricing
+        }
+      },
+      example: %{
+        status: "active",
+        currency_code: "USD",
+        billing_cycle: %{frequency: 1, interval: "month"},
+        current_billing_period: %{
+          starts_at: "2025-01-01T00:00:00Z",
+          ends_at: "2025-02-01T00:00:00Z"
         },
-        management_urls: %Schema{anyOf: [ManagementUrls], description: "Management URLs"}
+        recurring_transaction_totals: %{subtotal: 100.0, discount: 0.0, tax: 10.0, total: 110.0},
+        next_billed_at: "2025-02-01T00:00:00Z",
+        plan_pricing: [
+          %{
+            product_name: "Pro Plan",
+            description: "Monthly",
+            subtotal: 100.0,
+            discount: 0.0,
+            tax: 10.0,
+            total: 110.0
+          }
+        ]
       }
     })
   end
@@ -189,6 +248,24 @@ defmodule WraftDocWeb.Schemas.Billing do
       properties: %{
         message: %Schema{type: :string, description: "message of cancel subscription"},
         subscription: %Schema{anyOf: [Subscription], description: "active subscription"}
+      },
+      example: %{
+        message: "Subscription cancelled",
+        subscription: %{
+          id: "4296a052-e147-491b-84cf-9931e4776410",
+          provider_subscription_id: "sub_01jj2hnvs63hsbhea7qw6k7m0z",
+          provider_plan_id: "pri_01jj19s7ev25a4a1m3b6efbpgd",
+          status: "cancelled",
+          start_date: "2025-01-20T19:18:01Z",
+          end_date: "2025-02-20T19:18:01Z",
+          next_bill_date: "2025-02-20",
+          next_bill_amount: 467,
+          currency: "INR",
+          organisation_id: "a19aadca-7655-40e7-9647-0a2bd49d20cc",
+          subscriber_id: "b0c5cfc9-bdd4-4809-898f-d75e6b95e719",
+          plan_id: "5932900c-8d9a-4493-95f9-96375032cabc",
+          transaction_id: "txn_01jj2jd17gg4n3j1k71zm6eatv"
+        }
       }
     })
   end
@@ -201,29 +278,39 @@ defmodule WraftDocWeb.Schemas.Billing do
       type: :object,
       properties: %{
         id: %Schema{type: :string, description: "Transaction ID"},
-        user_id: %Schema{type: :string, description: "User ID"},
-        org_id: %Schema{type: :string, description: "Organization ID"},
-        amount: %Schema{type: :number, description: "Transaction amount"},
+        transaction_id: %Schema{type: :string, description: "Provider Transaction ID"},
+        invoice_number: %Schema{type: :string, description: "Invoice Number"},
+        invoice_id: %Schema{type: :string, description: "Invoice ID"},
+        date: %Schema{type: :string, description: "Transaction date"},
+        provider_subscription_id: %Schema{type: :string, description: "Provider Subscription ID"},
+        provider_plan_id: %Schema{type: :string, description: "Provider Plan ID"},
+        billing_period_start: %Schema{type: :string, description: "Billing Period Start"},
+        billing_period_end: %Schema{type: :string, description: "Billing Period End"},
+        subtotal_amount: %Schema{type: :number, description: "Subtotal Amount"},
+        discount_amount: %Schema{type: :number, description: "Discount Amount"},
+        tax: %Schema{type: :number, description: "Tax Amount"},
+        total_amount: %Schema{type: :number, description: "Total Amount"},
         currency: %Schema{type: :string, description: "Transaction currency"},
-        description: %Schema{type: :string, description: "Transaction description"},
-        created_at: %Schema{
-          type: :string,
-          description: "Transaction creation date. Format: ISO8601 datetime"
-        },
-        updated_at: %Schema{
-          type: :string,
-          description: "Transaction update date. Format: ISO8601 datetime"
-        },
-        status: %Schema{type: :string, description: "Transaction status"},
-        type: %Schema{type: :string, description: "Transaction type"},
-        payment_method: %Schema{
-          type: :string,
-          description: "Payment method used for the transaction"
-        },
-        payment_method_details: %Schema{
-          type: :string,
-          description: "Details about the payment method"
-        }
+        payment_method: %Schema{type: :string, description: "Payment Method"},
+        payment_method_details: %Schema{type: :string, description: "Payment Method Details"},
+        coupon_id: %Schema{type: :string, description: "Coupon ID"},
+        coupon: Coupon.Coupon,
+        subscriber_id: %Schema{type: :string, description: "User ID"},
+        subscriber: User.User,
+        organisation_id: %Schema{type: :string, description: "Organization ID"},
+        organisation: Organisation.Organisation,
+        plan_id: %Schema{type: :string, description: "Plan ID"},
+        plan: Plan.Plan
+      },
+      example: %{
+        id: "dabc3e2d-10a8-4f8a-a360-8b47f3934968",
+        transaction_id: "txn_01jj2jd17gg4n3j1k71zm6eatv",
+        invoice_number: "INV-123",
+        amount: 110.0,
+        currency: "USD",
+        status: "success",
+        payment_method: "card",
+        payment_method_details: "**** 4242"
       }
     })
   end
@@ -231,14 +318,27 @@ defmodule WraftDocWeb.Schemas.Billing do
   defmodule Transactions do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "Transaction",
-      description: "Transaction details",
+      title: "Transactions",
+      description: "List of transactions",
       type: :object,
       properties: %{
         transactions: %Schema{type: :array, items: Transaction},
         page_number: %Schema{type: :integer, description: "Page number"},
         total_pages: %Schema{type: :integer, description: "Total number of pages"},
         total_entries: %Schema{type: :integer, description: "Total number of contents"}
+      },
+      example: %{
+        transactions: [
+          %{
+            id: "dabc3e2d-10a8-4f8a-a360-8b47f3934968",
+            transaction_id: "txn_01jj2jd17gg4n3j1k71zm6eatv",
+            amount: 110.0,
+            currency: "USD"
+          }
+        ],
+        page_number: 1,
+        total_pages: 10,
+        total_entries: 100
       }
     })
   end
@@ -252,13 +352,6 @@ defmodule WraftDocWeb.Schemas.Billing do
       properties: %{
         id: %Schema{type: :string, description: "Subscription history ID"},
         provider_subscription_id: %Schema{type: :string, description: "Subscription ID"},
-        user_id: %Schema{type: :string, description: "User ID"},
-        organisation_id: %Schema{type: :string, description: "Organization ID"},
-        plan_id: %Schema{type: :string, description: "Plan ID"},
-        amount: %Schema{type: :string, description: "amount"},
-        plan_name: %Schema{type: :string, description: "plan name"},
-        event_type: %Schema{type: :string, description: "event type"},
-        transaction_id: %Schema{type: :string, description: "transaction id"},
         current_subscription_start: %Schema{
           type: :string,
           description: "Subscription creation date. Format: ISO8601 datetime"
@@ -266,7 +359,25 @@ defmodule WraftDocWeb.Schemas.Billing do
         current_subscription_end: %Schema{
           type: :string,
           description: "Subscription update date. Format: ISO8601 datetime"
-        }
+        },
+        amount: %Schema{type: :string, description: "amount"},
+        event_type: %Schema{type: :string, description: "event type"},
+        transaction_id: %Schema{type: :string, description: "transaction id"},
+        subscriber_id: %Schema{type: :string, description: "User ID"},
+        subscriber: User.User,
+        organisation_id: %Schema{type: :string, description: "Organization ID"},
+        organisation: Organisation.Organisation,
+        plan_id: %Schema{type: :string, description: "Plan ID"},
+        plan: Plan.Plan
+      },
+      example: %{
+        id: "dabc3e2d-10a8-4f8a-a360-8b47f3934968",
+        provider_subscription_id: "sub_01jj2hnvs63hsbhea7qw6k7m0z",
+        amount: "100.00",
+        event_type: "created",
+        transaction_id: "txn_123",
+        current_subscription_start: "2025-01-01T00:00:00Z",
+        current_subscription_end: "2025-02-01T00:00:00Z"
       }
     })
   end
@@ -274,14 +385,27 @@ defmodule WraftDocWeb.Schemas.Billing do
   defmodule SubscriptionHistories do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "Subscription History",
-      description: "Subscription history details",
+      title: "Subscription Histories",
+      description: "List of subscription histories",
       type: :object,
       properties: %{
-        subscription_history: %Schema{type: :array, items: SubscriptionHistory},
+        subscription_histories: %Schema{type: :array, items: SubscriptionHistory},
         page_number: %Schema{type: :integer, description: "Page number"},
         total_pages: %Schema{type: :integer, description: "Total number of pages"},
         total_entries: %Schema{type: :integer, description: "Total number of contents"}
+      },
+      example: %{
+        subscription_histories: [
+          %{
+            id: "dabc3e2d-10a8-4f8a-a360-8b47f3934968",
+            provider_subscription_id: "sub_01jj2hnvs63hsbhea7qw6k7m0z",
+            amount: "100.00",
+            event_type: "created"
+          }
+        ],
+        page_number: 1,
+        total_pages: 5,
+        total_entries: 50
       }
     })
   end
@@ -295,6 +419,14 @@ defmodule WraftDocWeb.Schemas.Billing do
       properties: %{
         message: %Schema{type: :string, description: "message of activate trial subscription"},
         subscription: %Schema{anyOf: [Subscription]}
+      },
+      example: %{
+        message: "Trial activated",
+        subscription: %{
+          id: "4296a052-e147-491b-84cf-9931e4776410",
+          provider_subscription_id: "sub_01jj2hnvs63hsbhea7qw6k7m0z",
+          status: "active"
+        }
       }
     })
   end
