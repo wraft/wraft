@@ -81,6 +81,7 @@ defmodule WraftDoc.Account.User do
     |> validate_format(:name, ~r/^[A-z ]+$/)
     |> validate_length(:name, min: 2)
     |> validate_length(:password, min: 8, max: 22)
+    |> validate_password_strength()
     |> unique_constraint(:email, message: "Email already taken.! Try another email.")
     |> generate_encrypted_password
   end
@@ -92,6 +93,7 @@ defmodule WraftDoc.Account.User do
     |> validate_format(:email, ~r/@/)
     |> validate_length(:name, min: 2)
     |> validate_length(:password, min: 8, max: 16)
+    |> validate_password_strength()
     |> unique_constraint(:email, message: "Email already taken.! Try another email.")
     |> generate_encrypted_password
   end
@@ -144,5 +146,15 @@ defmodule WraftDoc.Account.User do
     |> validate_format(:email, ~r/@/)
     |> unique_constraint(:email, message: "Email already taken.! Try another email.")
     |> generate_encrypted_password
+  end
+
+  defp validate_password_strength(changeset) do
+    validate_format(
+      changeset,
+      :password,
+      ~r/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/,
+      message:
+        "Password must include at least one uppercase letter, one number, and one special character"
+    )
   end
 end
