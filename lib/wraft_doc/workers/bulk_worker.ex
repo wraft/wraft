@@ -342,10 +342,9 @@ defmodule WraftDoc.Workers.BulkWorker do
   end
 
   defp handle_exceptions(
-         {:ok, %{trigger: trigger, failed_builds: failed_builds} = result},
+         {:ok, %{trigger: trigger, failed_builds: [_ | _] = failed_builds} = result},
          current_user
-       )
-       when is_list(failed_builds) and length(failed_builds) > 0 do
+       ) do
     state = TriggerHistory.states()[:partially_completed]
 
     all_instances = Map.get(result, :instances, [])

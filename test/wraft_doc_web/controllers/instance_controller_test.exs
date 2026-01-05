@@ -466,8 +466,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     conn = get(conn, Routes.v1_instance_path(conn, :change, instance.id, iv2.id))
 
-    assert length(json_response(conn, 200)["del"]) > 0
-    assert length(json_response(conn, 200)["ins"]) > 0
+    assert json_response(conn, 200)["del"] != []
+    assert json_response(conn, 200)["ins"] != []
   end
 
   describe "approve/2" do

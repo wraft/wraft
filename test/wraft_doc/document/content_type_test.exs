@@ -40,7 +40,7 @@ defmodule WraftDoc.ContentTypes.ContentTypeTest do
       for field <- required_fields do
         errors = errors_on(changeset, field)
 
-        if length(errors) > 0 do
+        if errors != [] do
           assert "can't be blank" in errors
         else
           :ok
@@ -163,7 +163,7 @@ defmodule WraftDoc.ContentTypes.ContentTypeTest do
       for field <- required_fields do
         errors = errors_on(changeset, field)
 
-        if length(errors) > 0 do
+        if errors != [] do
           assert "can't be blank" in errors
         else
           :ok

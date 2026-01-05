@@ -331,8 +331,7 @@ defmodule WraftDoc.Documents.Reminders do
     reminder
   end
 
-  defp get_recipients(%{recipients: recipients})
-       when is_list(recipients) and length(recipients) > 0 do
+  defp get_recipients(%{recipients: [_ | _] = recipients}) do
     recipients
     |> Enum.map(&Account.get_user/1)
     |> Enum.reject(&is_nil/1)
