@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Schemas.Frame do
   """
   require OpenApiSpex
   alias OpenApiSpex.Schema
+  alias WraftDocWeb.Schemas.Asset
 
   defmodule Frame do
     @moduledoc false
@@ -16,6 +17,14 @@ defmodule WraftDocWeb.Schemas.Frame do
         name: %Schema{type: :string, description: "Name of the frame"},
         type: %Schema{type: :string, description: "Type of the frame"},
         description: %Schema{type: :string, description: "Description of the frame"},
+        thumbnail: %Schema{type: :string, description: "URL of the frame thumbnail"},
+        asset: Asset.Asset,
+        fields: %Schema{
+          type: :array,
+          description: "Fields in the frame",
+          items: %Schema{type: :object}
+        },
+        meta: %Schema{type: :object, description: "Metadata (wraft_json)"},
         inserted_at: %Schema{
           type: :string,
           description: "Timestamp of frame creation",
@@ -29,57 +38,24 @@ defmodule WraftDocWeb.Schemas.Frame do
       },
       required: [:id, :name, :type],
       example: %{
-        id: "123e4567-e89b-12d3-a456-426614174000",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         name: "my-document-frame",
         description: "My document frame",
         type: "zip",
-        inserted_at: "2024-01-15T10:30:00Z",
-        updated_at: "2024-01-15T10:30:00Z"
-      }
-    })
-  end
-
-  defmodule UpdateFrame do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      title: "Update Frame",
-      description: "Updated Frame resource",
-      type: :object,
-      properties: %{
-        id: %Schema{type: :string, description: "Unique identifier for the frame"},
-        name: %Schema{type: :string, description: "Name of the frame"},
-        type: %Schema{type: :string, description: "Type of the frame"},
-        description: %Schema{type: :string, description: "Description of the frame"},
-        inserted_at: %Schema{
-          type: :string,
-          description: "Timestamp of frame creation",
-          format: "ISO-8601"
+        thumbnail: "https://example.com/thumbnail.jpg",
+        asset: %{
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          name: "Asset",
+          type: "frame",
+          file: "frame.zip",
+          updated_at: "2024-01-15T10:30:00Z",
+          inserted_at: "2024-01-15T10:30:00Z"
         },
-        updated_at: %Schema{
-          type: :string,
-          description: "Timestamp of last frame update",
-          format: "ISO-8601"
-        }
-      },
-      required: [:id, :name, :type],
-      example: %{
-        id: "123e4567-e89b-12d3-a456-426614174000",
-        name: "my-document-frame",
-        description: "My document frame",
-        type: "zip",
+        fields: [%{name: "field1", type: "text"}],
+        meta: %{width: 100, height: 200},
         inserted_at: "2024-01-15T10:30:00Z",
         updated_at: "2024-01-15T10:30:00Z"
       }
-    })
-  end
-
-  defmodule Frames do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      title: "All Frames",
-      description: "All frames created under current user's organisation",
-      type: :array,
-      items: UpdateFrame
     })
   end
 
@@ -93,12 +69,25 @@ defmodule WraftDocWeb.Schemas.Frame do
         frame: Frame
       },
       example: %{
-        id: "123e4567-e89b-12d3-a456-426614174000",
-        name: "my-document-frame",
-        description: "My document frame",
-        type: "typst",
-        inserted_at: "2024-01-15T10:30:00Z",
-        updated_at: "2024-01-15T10:30:00Z"
+        frame: %{
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          name: "my-document-frame",
+          description: "My document frame",
+          type: "typst",
+          thumbnail: "https://example.com/thumbnail.jpg",
+          asset: %{
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            name: "Asset",
+            type: "frame",
+            file: "frame.zip",
+            updated_at: "2024-01-15T10:30:00Z",
+            inserted_at: "2024-01-15T10:30:00Z"
+          },
+          fields: [%{name: "field1", type: "text"}],
+          meta: %{width: 100, height: 200},
+          inserted_at: "2024-01-15T10:30:00Z",
+          updated_at: "2024-01-15T10:30:00Z"
+        }
       }
     })
   end
@@ -109,7 +98,7 @@ defmodule WraftDocWeb.Schemas.Frame do
       title: "Frame Index",
       type: :object,
       properties: %{
-        frames: Frames,
+        frames: %Schema{type: :array, items: Frame},
         page_number: %Schema{type: :integer, description: "Current page number"},
         total_pages: %Schema{type: :integer, description: "Total number of pages"},
         total_entries: %Schema{type: :integer, description: "Total number of frame entries"}
@@ -117,10 +106,21 @@ defmodule WraftDocWeb.Schemas.Frame do
       example: %{
         frames: [
           %{
-            id: "123e4567-e89b-12d3-a456-426614174000",
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             name: "my-document-frame",
             description: "My document frame",
             type: "typst",
+            thumbnail: "https://example.com/thumbnail.jpg",
+            asset: %{
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              name: "Asset",
+              type: "frame",
+              file: "frame.zip",
+              updated_at: "2024-01-15T10:30:00Z",
+              inserted_at: "2024-01-15T10:30:00Z"
+            },
+            fields: [%{name: "field1", type: "text"}],
+            meta: %{width: 100, height: 200},
             inserted_at: "2024-01-15T10:30:00Z",
             updated_at: "2024-01-15T10:30:00Z"
           }

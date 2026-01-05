@@ -28,7 +28,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     parameters: [],
     request_body: {"Flow to be created", "application/json", FlowSchema.ControlledFlowRequest},
     responses: [
-      ok: {"Ok", "application/json", FlowSchema.ControlledFlow},
+      ok: {"Ok", "application/json", FlowSchema.FlowBase},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error}
     ]
@@ -90,7 +90,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
       id: [in: :path, type: :string, description: "flow id", required: true]
     ],
     responses: [
-      ok: {"Ok", "application/json", FlowSchema.FlowAndStates},
+      ok: {"Ok", "application/json", FlowSchema.FlowFull},
       unauthorized: {"Unauthorized", "application/json", Error}
     ]
   )
@@ -112,7 +112,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     ],
     request_body: {"Flow to be updated", "application/json", FlowSchema.FlowRequest},
     responses: [
-      ok: {"Ok", "application/json", FlowSchema.UpdateFlow},
+      ok: {"Ok", "application/json", FlowSchema.FlowWithCreator},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error},
       not_found: {"Not found", "application/json", Error}
@@ -139,7 +139,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     request_body:
       {"Flow and states to be updated", "application/json", FlowSchema.AlignStateRequest},
     responses: [
-      ok: {"Ok", "application/json", FlowSchema.FlowAndStates},
+      ok: {"Ok", "application/json", FlowSchema.FlowFull},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error},
       not_found: {"Not found", "application/json", Error}
@@ -162,7 +162,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
       id: [in: :path, type: :string, description: "flow id", required: true]
     ],
     responses: [
-      ok: {"Ok", "application/json", FlowSchema.Flow},
+      ok: {"Ok", "application/json", FlowSchema.FlowBase},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error},
       not_found: {"Not found", "application/json", Error}

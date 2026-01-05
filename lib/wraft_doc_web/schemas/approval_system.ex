@@ -99,7 +99,7 @@ defmodule WraftDocWeb.Schemas.ApprovalSystem do
         approval_system: ApprovalSystemObject,
         pre_state: State,
         post_state: State,
-        flow: Flow.Flow,
+        flow: Flow.FlowBase,
         approver: User.User,
         inserted_at: %Schema{
           type: :string,

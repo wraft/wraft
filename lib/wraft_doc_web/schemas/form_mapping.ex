@@ -13,17 +13,15 @@ defmodule WraftDocWeb.Schemas.FormMapping do
       type: :object,
       properties: %{
         destination: %Schema{type: :object, description: "Destination field info"},
-        source: %Schema{type: :object, description: "Source field info"},
-        id: %Schema{type: :string, description: "Mapping ID"}
+        source: %Schema{type: :object, description: "Source field info"}
       },
       example: %{
-        id: "e63d02aa-6ea6-4e10-87aa-61061e7557eb",
         destination: %{
           name: "E_name",
-          id: "992c50b2-c586-449f-b298-78d59d8ab81c"
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         },
         source: %{
-          id: "992c50b2-c586-449f-b298-78d59d8ab81c",
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           name: "Name"
         }
       }
@@ -38,6 +36,14 @@ defmodule WraftDocWeb.Schemas.FormMapping do
       type: :object,
       properties: %{
         mapping: %Schema{type: :array, description: "Mapping body", items: MappingItem}
+      },
+      example: %{
+        mapping: [
+          %{
+            destination: %{name: "E_name", id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"},
+            source: %{id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", name: "Name"}
+          }
+        ]
       }
     })
   end
@@ -49,6 +55,7 @@ defmodule WraftDocWeb.Schemas.FormMapping do
       description: "Form mapping response body",
       type: :object,
       properties: %{
+        id: %Schema{type: :string, description: "Form Mapping ID"},
         form_id: %Schema{type: :string, description: "Form id"},
         pipe_stage_id: %Schema{type: :string, description: "Pipe stage id"},
         mapping: %Schema{type: :array, items: MappingItem},
@@ -64,19 +71,19 @@ defmodule WraftDocWeb.Schemas.FormMapping do
         }
       },
       example: %{
-        form_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
-        pipe_stage_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        form_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        pipe_stage_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         inserted_at: "2023-08-21T14:00:00Z",
         updated_at: "2023-08-21T14:00:00Z",
         mapping: [
           %{
-            id: "e63d02aa-6ea6-4e10-87aa-61061e7557eb",
             destination: %{
               name: "E_name",
-              id: "992c50b2-c586-449f-b298-78d59d8ab81c"
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
             },
             source: %{
-              id: "992c50b2-c586-449f-b298-78d59d8ab81c",
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
               name: "Name"
             }
           }
@@ -98,15 +105,15 @@ defmodule WraftDocWeb.Schemas.FormMapping do
       },
       required: [:pipe_stage_id],
       example: %{
-        pipe_stage_id: "0043bde9-3903-4cb7-b898-cd4d7cbe99bb",
+        pipe_stage_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         mapping: [
           %{
             destination: %{
               name: "E_name",
-              destination_id: "992c50b2-c586-449f-b298-78d59d8ab81c"
+              destination_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
             },
             source: %{
-              id: "992c50b2-c586-449f-b298-78d59d8ab81c",
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
               name: "Name"
             }
           }

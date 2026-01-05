@@ -15,9 +15,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
     summary: "Create the content type role",
     description: "Content Type role creation api",
     request_body:
-      {"Content Type Role API", "application/json", ContentTypeRoleSchema.ContentTypeRole},
+      {"Content Type Role API", "application/json", ContentTypeRoleSchema.ContentTypeRoleRequest},
     responses: [
-      ok: {"Ok", "application/json", ContentTypeRoleSchema.ContentTypeRole},
+      ok: {"Ok", "application/json", ContentTypeRoleSchema.ContentTypeRoleResponse},
       unauthorized: {"Unauthorized", "application/json", Error},
       not_found: {"Not Found", "application/json", Error}
     ]

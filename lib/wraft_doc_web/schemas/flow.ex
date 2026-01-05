@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Schemas.Flow do
   """
   require OpenApiSpex
   alias OpenApiSpex.Schema
+  alias WraftDocWeb.Schemas.{ApprovalSystem, State, User}
 
   defmodule FlowRequest do
     @moduledoc false
@@ -52,46 +53,11 @@ defmodule WraftDocWeb.Schemas.Flow do
     })
   end
 
-  defmodule Flow do
+  defmodule FlowBase do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "Flow",
-      description: "Flows to be followed in an organisation",
-      type: :object,
-      properties: %{
-        id: %Schema{type: :string, description: "ID of the flow"},
-        name: %Schema{type: :string, description: "Name of the flow"},
-        controlled: %Schema{
-          type: :boolean,
-          description: "Specifying controlled or uncontrolled flows"
-        },
-        inserted_at: %Schema{
-          type: :string,
-          description: "When was the flow inserted",
-          format: "ISO-8601"
-        },
-        updated_at: %Schema{
-          type: :string,
-          description: "When was the flow last updated",
-          format: "ISO-8601"
-        }
-      },
-      required: [:controlled],
-      example: %{
-        id: "1232148nb3478",
-        name: "Flow 1",
-        controlled: true,
-        updated_at: "2020-01-21T14:00:00Z",
-        inserted_at: "2020-02-21T14:00:00Z"
-      }
-    })
-  end
-
-  defmodule ControlledFlow do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      title: "Controlled Flow",
-      description: "Flows to be followed in an organisation",
+      title: "Flow Base",
+      description: "Basic flow details",
       type: :object,
       properties: %{
         id: %Schema{type: :string, description: "ID of the flow"},
@@ -101,26 +67,17 @@ defmodule WraftDocWeb.Schemas.Flow do
           description: "Specifying controlled or uncontrolled flows"
         },
         control_data: %Schema{type: :object, description: "Approval system data"},
-        inserted_at: %Schema{
-          type: :string,
-          description: "When was the flow inserted",
-          format: "ISO-8601"
-        },
-        updated_at: %Schema{
-          type: :string,
-          description: "When was the flow last updated",
-          format: "ISO-8601"
-        }
+        inserted_at: %Schema{type: :string, format: "ISO-8601"},
+        updated_at: %Schema{type: :string, format: "ISO-8601"}
       },
-      required: [:controlled, :control_data],
       example: %{
-        id: "1232148nb3478",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         name: "Flow 1",
         controlled: true,
         control_data: %{
           pre_state: "review",
           post_state: "publish",
-          approver: "user_id"
+          approver: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         },
         updated_at: "2020-01-21T14:00:00Z",
         inserted_at: "2020-02-21T14:00:00Z"
@@ -128,85 +85,30 @@ defmodule WraftDocWeb.Schemas.Flow do
     })
   end
 
-  defmodule UpdateFlow do
+  defmodule FlowWithCreator do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "Show flow details",
-      description: "Show all details of a flow",
+      title: "Flow with Creator",
+      description: "Flow details with creator info",
       type: :object,
       properties: %{
-        flow: Flow,
-        creator: WraftDocWeb.Schemas.User.User
-      },
-      example: %{
-        flow: %{
-          id: "1232148nb3478",
-          name: "Flow 1",
-          updated_at: "2020-01-21T14:00:00Z",
-          inserted_at: "2020-02-21T14:00:00Z"
-        },
-        creator: %{
-          id: "1232148nb3478",
-          name: "John Doe",
-          email: "email@xyz.com",
-          email_verify: true,
-          updated_at: "2020-01-21T14:00:00Z",
-          inserted_at: "2020-02-21T14:00:00Z"
-        }
+        flow: FlowBase,
+        creator: User.User
       }
     })
   end
 
-  defmodule ShowFlows do
+  defmodule FlowFull do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "All flows and its details",
-      description: "All flows that have been created and their details",
-      type: :array,
-      items: UpdateFlow
-    })
-  end
-
-  defmodule FlowAndStates do
-    @moduledoc false
-    OpenApiSpex.schema(%{
-      title: "Show flow details and its states",
-      description: "Show all details of a flow including all the states undet the flow",
+      title: "Flow Full Details",
+      description: "Flow details with states and approval systems",
       type: :object,
       properties: %{
-        flow: Flow,
-        creator: WraftDocWeb.Schemas.User.User,
-        states: %Schema{type: :array, items: WraftDocWeb.Schemas.State.State}
-      },
-      example: %{
-        flow: %{
-          id: "1232148nb3478",
-          name: "Flow 1",
-          updated_at: "2020-01-21T14:00:00Z",
-          inserted_at: "2020-02-21T14:00:00Z"
-        },
-        creator: %{
-          id: "1232148nb3478",
-          name: "John Doe",
-          email: "email@xyz.com",
-          email_verify: true,
-          updated_at: "2020-01-21T14:00:00Z",
-          inserted_at: "2020-02-21T14:00:00Z"
-        },
-        states: [
-          %{
-            id: "1232148nb3478",
-            state: "published",
-            order: 1,
-            approvers: [
-              %{
-                id: "af2cf1c6-f342-4042-8425-6346e9fd6c44",
-                name: "Richard Hendricks",
-                profile_pic: "www.minio.com/users/johndoe.jpg"
-              }
-            ]
-          }
-        ]
+        flow: FlowBase,
+        creator: User.User,
+        states: %Schema{type: :array, items: State.State},
+        approval_systems: %Schema{type: :array, items: ApprovalSystem.ApprovalSystem}
       }
     })
   end
@@ -214,27 +116,12 @@ defmodule WraftDocWeb.Schemas.Flow do
   defmodule FlowAndStatesWithoutCreator do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "Show flow details and its states",
-      description: "Show all details of a flow including all the states undet the flow",
+      title: "Flow and States",
+      description: "Flow details with states",
       type: :object,
       properties: %{
-        flow: Flow,
-        states: %Schema{type: :array, items: WraftDocWeb.Schemas.State.State}
-      },
-      example: %{
-        flow: %{
-          id: "1232148nb3478",
-          name: "Flow 1",
-          updated_at: "2020-01-21T14:00:00Z",
-          inserted_at: "2020-02-21T14:00:00Z"
-        },
-        states: [
-          %{
-            id: "1232148nb3478",
-            state: "published",
-            order: 1
-          }
-        ]
+        flow: FlowBase,
+        states: %Schema{type: :array, items: State.State}
       }
     })
   end
@@ -242,22 +129,22 @@ defmodule WraftDocWeb.Schemas.Flow do
   defmodule AlignStateRequest do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "Show flow details and its states",
-      description: "Show all details of a flow including all the states undet the flow",
+      title: "Align State Request",
+      description: "Request to align states",
       type: :object,
       properties: %{
-        states: %Schema{type: :array, items: WraftDocWeb.Schemas.State.State}
+        states: %Schema{
+          type: :array,
+          items: %Schema{
+            type: :object,
+            properties: %{id: %Schema{type: :string}, order: %Schema{type: :integer}}
+          }
+        }
       },
       example: %{
         states: [
-          %{
-            id: "1232148nb3478",
-            order: 1
-          },
-          %{
-            id: "1232148nb3478",
-            order: 2
-          }
+          %{id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", order: 1},
+          %{id: "3fa85f64-5717-4562-b3fc-2c963f66afa7", order: 2}
         ]
       }
     })
@@ -270,33 +157,10 @@ defmodule WraftDocWeb.Schemas.Flow do
       description: "List of flows",
       type: :object,
       properties: %{
-        flows: ShowFlows,
-        page_number: %Schema{type: :integer, description: "Page number"},
-        total_pages: %Schema{type: :integer, description: "Total number of pages"},
-        total_entries: %Schema{type: :integer, description: "Total number of contents"}
-      },
-      example: %{
-        flows: [
-          %{
-            flow: %{
-              id: "1232148nb3478",
-              name: "Flow 1",
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            },
-            creator: %{
-              id: "1232148nb3478",
-              name: "John Doe",
-              email: "email@xyz.com",
-              email_verify: true,
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            }
-          }
-        ],
-        page_number: 1,
-        total_pages: 2,
-        total_entries: 15
+        flows: %Schema{type: :array, items: FlowWithCreator},
+        page_number: %Schema{type: :integer},
+        total_pages: %Schema{type: :integer},
+        total_entries: %Schema{type: :integer}
       }
     })
   end

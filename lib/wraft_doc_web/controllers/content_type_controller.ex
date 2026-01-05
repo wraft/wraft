@@ -37,7 +37,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     request_body:
       {"Content Type to be created", "application/json", ContentTypeSchema.ContentTypeRequest},
     responses: [
-      ok: {"Ok", "application/json", ContentTypeSchema.ContentTypeAndLayoutAndFlowAndTheme},
+      ok: {"Ok", "application/json", ContentTypeSchema.ContentTypeResponse},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error}
     ]
@@ -197,6 +197,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
          required: [:state_id, :d_temp_id, :file]
        }},
     responses: [
+      ok:
+        {"Ok", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{info: %OpenApiSpex.Schema{type: :string}}
+         }},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error}
     ]
@@ -224,7 +230,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
              mapping,
              current_user
            ) do
-      render(conn, "bulk_build.json")
+      render(conn, "bulk.json")
     end
   end
 
@@ -246,7 +252,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     current_user = conn.assigns[:current_user]
 
     with %ContentType{} = content_type <- ContentTypes.show_content_type(current_user, id) do
-      render(conn, "show_role.json", content_type: content_type)
+      render(conn, "role_content_type.json", content_type: content_type)
     end
   end
 
@@ -258,7 +264,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
       page: [in: :query, type: :string, description: "Page number"]
     ],
     responses: [
-      ok: {"Ok", "application/json", ContentTypeSchema.ContentTypeSearch},
+      ok: {"Ok", "application/json", ContentTypeSchema.ContentTypesIndex},
       unauthorized: {"Unauthorized", "application/json", Error}
     ]
   )

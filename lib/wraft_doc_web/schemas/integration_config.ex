@@ -58,7 +58,7 @@ defmodule WraftDocWeb.Schemas.IntegrationConfig do
         description: "Integrate with Slack for notifications and updates",
         icon: "slack-icon",
         enabled: true,
-        id: "123e4567-e89b-12d3-a456-426614174000",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         config_structure: %{
           bot_token: %{
             type: "string",
@@ -67,9 +67,7 @@ defmodule WraftDocWeb.Schemas.IntegrationConfig do
             required: true
           }
         },
-        available_events: [
-          %{id: "document.signed", name: "Document Signed"}
-        ],
+        available_events: ["document.signed"],
         selected_events: ["document.signed"]
       }
     })
@@ -81,7 +79,28 @@ defmodule WraftDocWeb.Schemas.IntegrationConfig do
       title: "Integration List",
       description: "List of all available integrations with their configuration status",
       type: :array,
-      items: Integration
+      items: Integration,
+      example: [
+        %{
+          provider: "slack",
+          name: "Slack",
+          category: "communication",
+          description: "Integrate with Slack for notifications and updates",
+          icon: "slack-icon",
+          enabled: true,
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          config_structure: %{
+            bot_token: %{
+              type: "string",
+              label: "Bot Token",
+              description: "Slack Bot User OAuth Token",
+              required: true
+            }
+          },
+          available_events: ["document.signed"],
+          selected_events: ["document.signed"]
+        }
+      ]
     })
   end
 
@@ -107,7 +126,18 @@ defmodule WraftDocWeb.Schemas.IntegrationConfig do
             provider: "slack",
             name: "Slack",
             description: "Integrate with Slack for notifications",
-            enabled: true
+            enabled: true,
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            config_structure: %{
+              bot_token: %{
+                type: "string",
+                label: "Bot Token",
+                description: "Slack Bot User OAuth Token",
+                required: true
+              }
+            },
+            available_events: ["document.signed"],
+            selected_events: ["document.signed"]
           }
         ]
       }
@@ -120,7 +150,31 @@ defmodule WraftDocWeb.Schemas.IntegrationConfig do
       title: "Integration Categories List",
       description: "List of integration categories with their associated integrations",
       type: :array,
-      items: Category
+      items: Category,
+      example: [
+        %{
+          category: "communication",
+          integrations: [
+            %{
+              provider: "slack",
+              name: "Slack",
+              description: "Integrate with Slack for notifications",
+              enabled: true,
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              config_structure: %{
+                bot_token: %{
+                  type: "string",
+                  label: "Bot Token",
+                  description: "Slack Bot User OAuth Token",
+                  required: true
+                }
+              },
+              available_events: ["document.signed"],
+              selected_events: ["document.signed"]
+            }
+          ]
+        }
+      ]
     })
   end
 
@@ -141,7 +195,19 @@ defmodule WraftDocWeb.Schemas.IntegrationConfig do
           description: "Structure and metadata for configuration fields"
         }
       },
-      required: [:provider, :config, :config_structure]
+      required: [:provider, :config, :config_structure],
+      example: %{
+        provider: "slack",
+        config: %{"bot_token" => "xoxb-1234567890-abcdefghij"},
+        config_structure: %{
+          bot_token: %{
+            type: "string",
+            label: "Bot Token",
+            description: "Slack Bot User OAuth Token",
+            required: true
+          }
+        }
+      }
     })
   end
 end

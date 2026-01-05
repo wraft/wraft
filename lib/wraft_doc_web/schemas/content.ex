@@ -264,7 +264,7 @@ defmodule WraftDocWeb.Schemas.Content do
       type: :object,
       properties: %{
         content: Content,
-        content_type: ContentType.ContentTypeAndLayout,
+        content_type: ContentType.ContentTypeFull,
         state: State.State,
         creator: User.User,
         profile_pic: %Schema{type: :string, nullable: true},
@@ -496,7 +496,7 @@ defmodule WraftDocWeb.Schemas.Content do
       type: :object,
       properties: %{
         content: Content,
-        content_type: ContentType.ContentTypeAndLayout,
+        content_type: ContentType.ContentTypeFull,
         state: State.State,
         creator: User.User,
         profile_pic: %Schema{type: :string, nullable: true},

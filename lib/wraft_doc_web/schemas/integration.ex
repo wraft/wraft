@@ -36,7 +36,7 @@ defmodule WraftDocWeb.Schemas.Integration do
       },
       required: [:provider, :name, :category, :enabled],
       example: %{
-        id: "123e4567-e89b-12d3-a456-426614174000",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         provider: "slack",
         name: "Slack",
         category: "communication",
@@ -57,6 +57,19 @@ defmodule WraftDocWeb.Schemas.Integration do
       type: :object,
       properties: %{
         data: Integration
+      },
+      example: %{
+        data: %{
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          provider: "slack",
+          name: "Slack",
+          category: "communication",
+          enabled: true,
+          events: ["document.created", "document.signed"],
+          metadata: %{},
+          inserted_at: "2023-01-01T12:00:00Z",
+          updated_at: "2023-01-01T12:30:00Z"
+        }
       }
     })
   end
@@ -67,7 +80,20 @@ defmodule WraftDocWeb.Schemas.Integration do
       title: "Integrations List Response",
       description: "Response containing a list of integrations",
       type: :array,
-      items: Integration
+      items: Integration,
+      example: [
+        %{
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          provider: "slack",
+          name: "Slack",
+          category: "communication",
+          enabled: true,
+          events: ["document.created", "document.signed"],
+          metadata: %{},
+          inserted_at: "2023-01-01T12:00:00Z",
+          updated_at: "2023-01-01T12:30:00Z"
+        }
+      ]
     })
   end
 
@@ -122,7 +148,14 @@ defmodule WraftDocWeb.Schemas.Integration do
           }
         }
       },
-      required: [:integration]
+      required: [:integration],
+      example: %{
+        integration: %{
+          name: "Slack Updated",
+          config: %{"bot_token" => "new_token"},
+          enabled: false
+        }
+      }
     })
   end
 

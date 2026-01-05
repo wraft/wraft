@@ -17,6 +17,10 @@ defmodule WraftDocWeb.Schemas.FieldType do
           type: [:string, :number, :boolean, :array],
           description: "Validation value"
         }
+      },
+      example: %{
+        rule: "required",
+        value: true
       }
     })
   end
@@ -44,7 +48,13 @@ defmodule WraftDocWeb.Schemas.FieldType do
       title: "Validation array",
       description: "List of validations",
       type: :array,
-      items: Validation
+      items: Validation,
+      example: [
+        %{
+          validation: %{rule: "required", value: true},
+          error_message: "can't be blank"
+        }
+      ]
     })
   end
 
@@ -96,7 +106,7 @@ defmodule WraftDocWeb.Schemas.FieldType do
       },
       required: [:id],
       example: %{
-        id: "bdf2a17d-c40a-4cd9-affc-d649709a0ed3",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         name: "Date",
         description: "A date field",
         meta: %{},
@@ -115,7 +125,20 @@ defmodule WraftDocWeb.Schemas.FieldType do
       title: "All field types",
       description: "All filed types that have been created so far",
       type: :array,
-      items: FieldType
+      items: FieldType,
+      example: [
+        %{
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          name: "Date",
+          description: "A date field",
+          meta: %{},
+          validations: [
+            %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
+          ],
+          updated_at: "2020-01-21T14:00:00Z",
+          inserted_at: "2020-02-21T14:00:00Z"
+        }
+      ]
     })
   end
 
@@ -131,7 +154,7 @@ defmodule WraftDocWeb.Schemas.FieldType do
       example: %{
         field_types: [
           %{
-            id: "1232148nb3478",
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             name: "Date",
             description: "A date field",
             updated_at: "2020-01-21T14:00:00Z",

@@ -28,7 +28,7 @@ defmodule WraftDocWeb.Schemas.Engine do
       },
       required: [:id, :name],
       example: %{
-        id: "1232148nb3478",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         name: "Pandoc",
         api_route: "",
         updated_at: "2020-01-21T14:00:00Z",
@@ -43,7 +43,16 @@ defmodule WraftDocWeb.Schemas.Engine do
       title: "Engines",
       description: "All engines that have been created",
       type: :array,
-      items: Engine
+      items: Engine,
+      example: [
+        %{
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          name: "Pandoc",
+          api_route: "",
+          updated_at: "2020-01-21T14:00:00Z",
+          inserted_at: "2020-02-21T14:00:00Z"
+        }
+      ]
     })
   end
 
@@ -62,7 +71,7 @@ defmodule WraftDocWeb.Schemas.Engine do
       example: %{
         engines: [
           %{
-            id: "1232148nb3478",
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             name: "Pandoc",
             api_route: "",
             updated_at: "2020-01-21T14:00:00Z",

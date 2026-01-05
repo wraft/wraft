@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Schemas.DataTemplate do
   """
   require OpenApiSpex
   alias OpenApiSpex.Schema
+  alias WraftDocWeb.Schemas.{ContentType, User}
 
   defmodule DataTemplateRequest do
     @moduledoc false
@@ -52,11 +53,15 @@ defmodule WraftDocWeb.Schemas.DataTemplate do
       },
       required: [:id, :title, :title_template],
       example: %{
-        id: "1232148nb3478",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         title: "Template 1",
         title_template: "Letter for [user]",
         data: "Hi [user]",
-        serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
+        serialized: %{
+          title: "Offer letter of [client]",
+          data:
+            "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"name: \"},]}]}]}"
+        },
         updated_at: "2020-01-21T14:00:00Z",
         inserted_at: "2020-02-21T14:00:00Z"
       }
@@ -85,11 +90,11 @@ defmodule WraftDocWeb.Schemas.DataTemplate do
           description: "When was the layout last updated",
           format: "ISO-8601"
         },
-        content_type: %Schema{anyOf: [WraftDocWeb.Schemas.ContentType.ContentTypeWithoutFields]}
+        content_type: ContentType.ContentTypeWithoutFields
       },
       required: [:id, :title, :title_template],
       example: %{
-        id: "1232148nb3478",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         title: "Template 1",
         title_template: "Letter for [user]",
         data: "Hi [user]",
@@ -97,7 +102,7 @@ defmodule WraftDocWeb.Schemas.DataTemplate do
         updated_at: "2020-01-21T14:00:00Z",
         inserted_at: "2020-02-21T14:00:00Z",
         content_type: %{
-          id: "1232148nb3478",
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           name: "Offer letter",
           description: "An offer letter",
           prefix: "OFFLET",
@@ -116,13 +121,13 @@ defmodule WraftDocWeb.Schemas.DataTemplate do
       description: "API to show a data template and all its details",
       type: :object,
       properties: %{
-        data_template: %Schema{anyOf: [DataTemplate]},
-        creator: %Schema{anyOf: [WraftDocWeb.Schemas.User.User]},
-        content_type: %Schema{anyOf: [WraftDocWeb.Schemas.ContentType.ContentTypeWithoutFields]}
+        data_template: DataTemplate,
+        creator: User.User,
+        content_type: ContentType.ContentTypeFull
       },
       example: %{
         data_template: %{
-          id: "1232148nb3478",
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           title: "Main Template",
           title_template: "Letter for [user]",
           data: "Hi [user]",
@@ -131,7 +136,7 @@ defmodule WraftDocWeb.Schemas.DataTemplate do
           inserted_at: "2020-02-21T14:00:00Z"
         },
         creator: %{
-          id: "1232148nb3478",
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           name: "John Doe",
           email: "email@xyz.com",
           email_verify: true,
@@ -139,7 +144,7 @@ defmodule WraftDocWeb.Schemas.DataTemplate do
           inserted_at: "2020-02-21T14:00:00Z"
         },
         content_type: %{
-          id: "1232148nb3478",
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           name: "Offer letter",
           description: "An offer letter",
           prefix: "OFFLET",
@@ -156,7 +161,18 @@ defmodule WraftDocWeb.Schemas.DataTemplate do
       title: "Data templates under a content type",
       description: "All data template that have been created under a content type",
       type: :array,
-      items: DataTemplate
+      items: DataTemplate,
+      example: [
+        %{
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          title: "Template 1",
+          title_template: "Letter for [user]",
+          data: "Hi [user]",
+          serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
+          updated_at: "2020-01-21T14:00:00Z",
+          inserted_at: "2020-02-21T14:00:00Z"
+        }
+      ]
     })
   end
 
@@ -174,7 +190,7 @@ defmodule WraftDocWeb.Schemas.DataTemplate do
       example: %{
         data_templates: [
           %{
-            id: "1232148nb3478",
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             title: "Main template",
             title_template: "Letter for [user]",
             data: "Hi [user]",
@@ -182,7 +198,7 @@ defmodule WraftDocWeb.Schemas.DataTemplate do
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z",
             content_type: %{
-              id: "1232148nb3478",
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
               name: "Offer letter",
               description: "An offer letter",
               prefix: "OFFLET",
@@ -194,6 +210,21 @@ defmodule WraftDocWeb.Schemas.DataTemplate do
         page_number: 1,
         total_pages: 2,
         total_entries: 15
+      }
+    })
+  end
+
+  defmodule BulkImportResponse do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      title: "Bulk Import Response",
+      description: "Response for bulk import",
+      type: :object,
+      properties: %{
+        info: %Schema{type: :string, description: "Info message"}
+      },
+      example: %{
+        info: "Data Template will be created soon"
       }
     })
   end

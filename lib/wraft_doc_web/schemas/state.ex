@@ -106,7 +106,7 @@ defmodule WraftDocWeb.Schemas.State do
       properties: %{
         state: State,
         creator: WraftDocWeb.Schemas.User.User,
-        flow: WraftDocWeb.Schemas.Flow.Flow
+        flow: WraftDocWeb.Schemas.Flow.FlowBase
       },
       example: %{
         state: %{

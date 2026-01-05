@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Schemas.Form do
   """
   require OpenApiSpex
   alias OpenApiSpex.Schema
+  alias WraftDocWeb.Schemas.FieldType
 
   defmodule FormFieldRequest do
     @moduledoc false
@@ -26,7 +27,7 @@ defmodule WraftDocWeb.Schemas.Form do
         validations: [
           %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
         ],
-        field_type_id: "992c50b2-c586-449f-b298-78d59d8ab81c"
+        field_type_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
       }
     })
   end
@@ -37,7 +38,18 @@ defmodule WraftDocWeb.Schemas.Form do
       title: "Field request array",
       description: "List of data to be send to add fields to a form.",
       type: :array,
-      items: FormFieldRequest
+      items: FormFieldRequest,
+      example: [
+        %{
+          name: "Photo",
+          meta: %{"src" => "/img/img.png", "alt" => "Image"},
+          description: "Upload your photo",
+          validations: [
+            %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
+          ],
+          field_type_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        }
+      ]
     })
   end
 
@@ -75,7 +87,7 @@ defmodule WraftDocWeb.Schemas.Form do
         fields: [
           %{
             name: "Photo",
-            field_type_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
+            field_type_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             meta: %{"src" => "/img/img.png", "alt" => "Image"},
             validations: [
               %{
@@ -91,7 +103,7 @@ defmodule WraftDocWeb.Schemas.Form do
           },
           %{
             name: "Name",
-            field_type_id: "06c28fc6-6a15-4966-9b68-5eeac942fd4f",
+            field_type_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             validations: [
               %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
             ],
@@ -100,8 +112,8 @@ defmodule WraftDocWeb.Schemas.Form do
           }
         ],
         pipeline_ids: [
-          "7af1ede3-a401-4f15-840a-cbeac07d68e4",
-          "77fe7bb9-0cf4-4ebe-8ed3-72b16b653677"
+          "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         ]
       }
     })
@@ -141,8 +153,8 @@ defmodule WraftDocWeb.Schemas.Form do
         fields: [
           %{
             name: "Photo",
-            field_id: "5e9bda8b-4c7e-44fe-8801-48ec6d8ff43a",
-            field_type_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
+            field_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            field_type_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             meta: %{"src" => "/img/img.png", "alt" => "Image"},
             validations: [
               %{
@@ -157,11 +169,11 @@ defmodule WraftDocWeb.Schemas.Form do
             description: "Upload your photo"
           },
           %{
-            "field_id" => "63e19b8c-e3dc-4f0c-9ee2-ce4ec3a2159b"
+            "field_id" => "3fa85f64-5717-4562-b3fc-2c963f66afa6"
           },
           %{
             name: "Name",
-            field_type_id: "06c28fc6-6a15-4966-9b68-5eeac942fd4f",
+            field_type_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             validations: [
               %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
             ],
@@ -170,8 +182,8 @@ defmodule WraftDocWeb.Schemas.Form do
           }
         ],
         pipeline_ids: [
-          "7af1ede3-a401-4f15-840a-cbeac07d68e4",
-          "77fe7bb9-0cf4-4ebe-8ed3-72b16b653677"
+          "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         ]
       }
     })
@@ -201,7 +213,7 @@ defmodule WraftDocWeb.Schemas.Form do
         }
       },
       example: %{
-        id: "00b2086f-2177-4262-96f1-c2609e020a8a",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         name: "Insurance Form",
         description:
           "Fill in the details to activate the corporate insurance offered to employees",
@@ -219,7 +231,18 @@ defmodule WraftDocWeb.Schemas.Form do
       title: "Form response array",
       description: "List of forms response.",
       type: :array,
-      items: SimpleForm
+      items: SimpleForm,
+      example: [
+        %{
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          name: "Insurance Form",
+          description: "Fill in the details",
+          prefix: "INSFORM",
+          status: "inactive",
+          inserted_at: "2023-08-21T14:00:00Z",
+          updated_at: "2023-08-21T14:00:00Z"
+        }
+      ]
     })
   end
 
@@ -240,7 +263,7 @@ defmodule WraftDocWeb.Schemas.Form do
           %{
             description:
               "Fill in the details to activate the corporate insurance offered to employees",
-            id: "eac20c0e-a13b-40c9-a89e-d3fa149f22ff",
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             inserted_at: "2023-09-05T09:11:52",
             name: "Insurance Form",
             prefix: "INSFORM2",
@@ -250,7 +273,7 @@ defmodule WraftDocWeb.Schemas.Form do
           %{
             description:
               "Fill in the details to activate the corporate insurance offered to employees",
-            id: "1125413e-a2a4-43ab-9077-c209f48bdb86",
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             inserted_at: "2023-09-05T08:19:55",
             name: "Insurance Form",
             prefix: "INSFORM1",
@@ -294,7 +317,7 @@ defmodule WraftDocWeb.Schemas.Form do
         description: %Schema{type: :string, description: "Field description"},
         validations: %Schema{type: :array, description: "Validations for the field"},
         field_type_id: %Schema{type: :string, description: "ID of the field type"},
-        field_type: WraftDocWeb.Schemas.FieldType.FieldType
+        field_type: FieldType.FieldType
       },
       example: %{
         name: "Photo",
@@ -310,9 +333,9 @@ defmodule WraftDocWeb.Schemas.Form do
             error_message: "can't be more than 2000 KB"
           }
         ],
-        field_type_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
+        field_type_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         field_type: %{
-          id: "688249c2-503b-4d00-820b-0046b4f6e17e",
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           name: "File",
           description: "A file upload field",
           meta: %{},
@@ -330,7 +353,25 @@ defmodule WraftDocWeb.Schemas.Form do
       title: "Field response array",
       description: "List of fields response.",
       type: :array,
-      items: Field
+      items: Field,
+      example: [
+        %{
+          name: "Photo",
+          meta: %{"src" => "/img/img.png", "alt" => "Image"},
+          description: "Upload your photo",
+          validations: [],
+          field_type_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          field_type: %{
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            name: "File",
+            description: "A file upload field",
+            meta: %{},
+            validations: [],
+            updated_at: "2023-01-21T14:00:00Z",
+            inserted_at: "2023-02-21T14:00:00Z"
+          }
+        }
+      ]
     })
   end
 
@@ -357,11 +398,10 @@ defmodule WraftDocWeb.Schemas.Form do
           format: "ISO-8601"
         },
         fields: Fields,
-        # Assuming pipelines structure is generic or defined elsewhere, using array for now or could reference if available. The original swagger referenced `Schema.ref(:Pipelines)` which implies it might be defined somewhere else or I missed it. Wait, I don't see Pipelines definition in the controller file I read. It might be in another file or I missed it. Let's assume array of objects for now.
         pipelines: %Schema{type: :array, description: "Pipelines associated with the form"}
       },
       example: %{
-        id: "00b2086f-2177-4262-96f1-c2609e020a8a",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         name: "Insurance Form",
         description:
           "Fill in the details to activate the corporate insurance offered to employees",
@@ -384,9 +424,9 @@ defmodule WraftDocWeb.Schemas.Form do
                 error_message: "can't be more than 2000 KB"
               }
             ],
-            field_type_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
+            field_type_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             field_type: %{
-              id: "688249c2-503b-4d00-820b-0046b4f6e17e",
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
               name: "File",
               description: "A file upload field",
               meta: %{},
@@ -402,9 +442,9 @@ defmodule WraftDocWeb.Schemas.Form do
             validations: [
               %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
             ],
-            field_type_id: "06c28fc6-6a15-4966-9b68-5eeac942fd4f",
+            field_type_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             field_type: %{
-              id: "bdf2a17d-c40a-4cd9-affc-d649709a0ed3",
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
               name: "String",
               description: "A String field",
               meta: %{},
@@ -416,7 +456,7 @@ defmodule WraftDocWeb.Schemas.Form do
         ],
         pipelines: [
           %{
-            id: "ddec6e97-cb69-40bc-9218-5a578c4f5a1f",
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             name: "Insurance Form Pipeline",
             api_route: "client.crm.com",
             updated_at: "2023-02-21T14:00:00Z",
@@ -438,7 +478,7 @@ defmodule WraftDocWeb.Schemas.Form do
         order: %Schema{type: :integer, description: "Order number of the field"}
       },
       example: %{
-        id: "da04ad43-03ca-486e-ad1e-88b811241944",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         order: 1
       }
     })
@@ -456,8 +496,8 @@ defmodule WraftDocWeb.Schemas.Form do
       },
       example: %{
         fields: %{
-          "da04ad43-03ca-486e-ad1e-88b811241944": 1,
-          "90935c7a-02b1-48d9-84d8-1bf00cf8ea90": 2
+          "3fa85f64-5717-4562-b3fc-2c963f66afa6": 1,
+          "3fa85f64-5717-4562-b3fc-2c963f66afa7": 2
         }
       }
     })
