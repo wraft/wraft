@@ -107,7 +107,7 @@ defmodule WraftDocWeb.Schemas.Content do
         state: State.State,
         instance_approval_systems: %Schema{
           type: :array,
-          items: InstanceApprovalSystem.InstanceApprovalSystem
+          items: InstanceApprovalSystem.InstanceApprovalSystemItem
         },
         profile_pic: %Schema{type: :string, nullable: true},
         creator: User.UserIdAndName
@@ -256,6 +256,41 @@ defmodule WraftDocWeb.Schemas.Content do
     })
   end
 
+  defmodule VersionComparison do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      title: "Version Comparison",
+      description: "Comparison between two document versions",
+      type: :object,
+      properties: %{
+        base_version: %Schema{
+          type: :object,
+          properties: %{
+            id: %Schema{type: :string, format: :uuid},
+            serialized: %Schema{type: :object}
+          }
+        },
+        target_version: %Schema{
+          type: :object,
+          properties: %{
+            id: %Schema{type: :string, format: :uuid},
+            serialized: %Schema{type: :object}
+          }
+        }
+      },
+      example: %{
+        base_version: %{
+          id: "123e4567-e89b-12d3-a456-426614174000",
+          serialized: %{title: "Version 1", body: "Content v1"}
+        },
+        target_version: %{
+          id: "987e6543-e21b-12d3-a456-426614174000",
+          serialized: %{title: "Version 2", body: "Content v2"}
+        }
+      }
+    })
+  end
+
   defmodule ShowContent do
     @moduledoc false
     OpenApiSpex.schema(%{
@@ -272,7 +307,7 @@ defmodule WraftDocWeb.Schemas.Content do
         versions: %Schema{type: :array, items: VersionResponse},
         instance_approval_systems: %Schema{
           type: :array,
-          items: InstanceApprovalSystem.InstanceApprovalSystem
+          items: InstanceApprovalSystem.InstanceApprovalSystemItem
         }
       }
     })

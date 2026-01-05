@@ -182,4 +182,17 @@ defmodule WraftDocWeb.Schemas.GlobalImport do
       }
     })
   end
+
+  defmodule GlobalImportResponse do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      title: "Global Import Response",
+      description:
+        "Response schema for a successful global file import (can be frame or template asset)",
+      oneOf: [
+        FrameImportResponse,
+        TemplateAssetImportResponse
+      ]
+    })
+  end
 end
