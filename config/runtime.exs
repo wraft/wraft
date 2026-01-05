@@ -194,6 +194,8 @@ if config_env() != :test do
   end
 end
 
+config :wraft_doc, WraftDocWeb.Mailer, adapter: Swoosh.Adapters.Local
+
 # Configure SMTP
 if smtp_host = System.get_env("SMTP_HOST") do
   smtp_port = String.to_integer(System.get_env("SMTP_PORT") || "587")
