@@ -722,6 +722,6 @@ defmodule WraftDocWeb.Router do
   scope "/spec" do
     pipe_through([:api, :openapi])
     get("/openapi", OpenApiSpex.Plug.RenderSpec, [])
-    get("/swagger", OpenApiSpex.Plug.SwaggerUI, path: "/spec/openapi")
+    get("/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/spec/openapi")
   end
 end
