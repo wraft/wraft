@@ -135,10 +135,10 @@ defmodule WraftDocWeb.WaitingListAdmin do
 
   # Generates a 12-character random password with lowercase, uppercase, number, and special char
   defp generate_valid_password do
-    lowercase = Enum.take_random(?a..?z, 2)
-    uppercase = Enum.take_random(?A..?Z, 2)
-    numbers = Enum.take_random(?0..?9, 2)
-    special_chars = Enum.take_random([?!, ?@, ?#, ?$, ?%, ?&, ?*], 2)
+    lowercase = Enum.take_random(?a..?z, 3)
+    uppercase = Enum.take_random(?A..?Z, 3)
+    numbers = Enum.take_random(?0..?9, 3)
+    special_chars = Enum.take_random([?!, ?@, ?#, ?$, ?%, ?&, ?*], 3)
 
     (lowercase ++ uppercase ++ numbers ++ special_chars)
     |> Enum.shuffle()

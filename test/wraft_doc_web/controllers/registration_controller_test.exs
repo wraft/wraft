@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
   @valid_attrs %{
     "name" => "wraft user",
     "email" => "user@wraftmail.com",
-    "password" => "encrypted"
+    "password" => "Password@1"
   }
   @invalid_attrs %{"name" => "wraft user", "email" => "email"}
 
