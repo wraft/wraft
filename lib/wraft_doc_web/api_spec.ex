@@ -69,7 +69,7 @@ defmodule WraftDocWeb.ApiSpec do
     |> Map.put(:"x-tagGroups", [
       %{
         name: "Instance",
-        tags: ["Instance", "Instance Approval", "Instance Approval System", "InstanceGuests"]
+        tags: ["Instance", "Instance Approval", "Instance Approval System", "Instance Guests"]
       }
     ])
     |> OpenApiSpex.resolve_schema_modules()
