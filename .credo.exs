@@ -178,7 +178,6 @@
         {Credo.Check.Readability.Specs, false},
         {Credo.Check.Readability.StrictModuleLayout, false},
         {Credo.Check.Readability.WithCustomTaggedTuple, false},
-        # {Credo.Check.Refactor.ABCSize, [excluded_functions: [:swagger_definitions, :up], files: %{excluded: ["priv/repo/migrations/*.exs"]}]},
         {Credo.Check.Refactor.AppendSingleItem, false},
         {Credo.Check.Refactor.DoubleBooleanNegation, false},
         {Credo.Check.Refactor.ModuleDependencies, false},

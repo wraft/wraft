@@ -196,7 +196,7 @@ $ source .env.dev && mix phx.server
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
-To get the API documentation, go [here](http://localhost:4000/api/swagger/index.html#/).
+To get the API documentation, go [here](http://localhost:4000/spec/swaggerui).
 
 ### 10 - Frontend
 
@@ -232,7 +232,7 @@ The easiest way to get started with Wraft is using Docker. The Docker setup incl
 
 ### Quick Start
 
-1. **Clone the repository and navigate into it**  
+1. **Clone the repository and navigate into it**
 
 ```shell
 git clone https://github.com/wraft/wraft.git
@@ -306,7 +306,7 @@ The Docker setup includes:
 Make sure to configure the following environment variables in your `.env.dev` file:
 
 - `SECRET_KEY_BASE`
-- `DEV_DB_USERNAME`, `DEV_DB_PASSWORD`, `DEV_DB_NAME` 
+- `DEV_DB_USERNAME`, `DEV_DB_PASSWORD`, `DEV_DB_NAME`
 - `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`
 - `TYPESENSE_API_KEY`
 - `CLOAK_KEY`
