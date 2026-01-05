@@ -118,7 +118,7 @@ defmodule WraftDocWeb.WaitingListAdmin do
   defp create_account(%WaitingList{email: email, first_name: first_name, last_name: last_name}) do
     case Repo.get_by(WraftDoc.Account.User, email: email) do
       nil ->
-        random_password = 8 |> :crypto.strong_rand_bytes() |> Base.encode16() |> binary_part(0, 8)
+        random_password = generate_valid_password()
         # New user → go through full registration pipeline
         params = %{
           "name" => "#{first_name} #{last_name}",
@@ -131,6 +131,18 @@ defmodule WraftDocWeb.WaitingListAdmin do
       _user ->
         {:error, "user already exists"}
     end
+  end
+
+  # Generates a 12-character random password with lowercase, uppercase, number, and special char
+  defp generate_valid_password do
+    lowercase = Enum.take_random(?a..?z, 2)
+    uppercase = Enum.take_random(?A..?Z, 2)
+    numbers = Enum.take_random(?0..?9, 2)
+    special_chars = Enum.take_random([?!, ?@, ?#, ?$, ?%, ?&, ?*], 2)
+
+    (lowercase ++ uppercase ++ numbers ++ special_chars)
+    |> Enum.shuffle()
+    |> List.to_string()
   end
 
   defp format_changeset_errors(changeset) do
