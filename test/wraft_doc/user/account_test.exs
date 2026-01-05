@@ -16,7 +16,7 @@ defmodule WraftDoc.AccountTest do
 
   @moduletag :account
   @valid_attrs %{
-    "password" => "Password",
+    "password" => "Password@1",
     "name" => "John Doe",
     "email" => "email@xyz.com"
   }
@@ -794,15 +794,16 @@ defmodule WraftDoc.AccountTest do
     test "update user password when valid token and password are given" do
       user = insert(:user)
       auth_token = AuthTokens.create_password_token(%{"email" => user.email})
-      params = %{"token" => auth_token.value, "password" => "newpassword"}
+      params = %{"token" => auth_token.value, "password" => "NewPassword@1"}
       updated_user = Account.reset_password(params)
-      assert Bcrypt.verify_pass("newpassword", updated_user.encrypted_password) == true
+      assert Bcrypt.verify_pass("NewPassword@1", updated_user.encrypted_password) == true
     end
 
     test "does not update user password when password is not valid" do
       user = insert(:user)
       auth_token = AuthTokens.create_password_token(%{"email" => user.email})
-      params = %{"token" => auth_token.value, "password" => "invalid"}
+      # Strong enough (uppercase/lowercase/number/special) but too short.
+      params = %{"token" => auth_token.value, "password" => "Aa1!"}
       {:error, changeset} = Account.reset_password(params)
       assert %{password: ["should be at least 8 character(s)"]} == errors_on(changeset)
     end
@@ -810,7 +811,7 @@ defmodule WraftDoc.AccountTest do
     test "return error when token is invalid" do
       value = WraftDoc.create_phx_token("invalid", "email")
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")
-      params = %{"token" => auth_token.value, "password" => "newpassword"}
+      params = %{"token" => auth_token.value, "password" => "NewPassword@1"}
       response = Account.reset_password(params)
       assert response == {:error, :fake}
     end
@@ -819,21 +820,22 @@ defmodule WraftDoc.AccountTest do
   describe "update_password/2" do
     test "updates password with valid attrs" do
       user = insert(:user)
-      params = %{"current_password" => "encrypt", "password" => "newpassword"}
+      params = %{"current_password" => "encrypt", "password" => "NewPassword@1"}
       updated_user = Account.update_password(user, params)
-      assert Bcrypt.verify_pass("newpassword", updated_user.encrypted_password) == true
+      assert Bcrypt.verify_pass("NewPassword@1", updated_user.encrypted_password) == true
     end
 
     test "does not update with invalid attrs" do
       user = insert(:user)
-      params = %{"current_password" => "encrypt", "password" => "invalid"}
+      # Strong enough (uppercase/lowercase/number/special) but too short.
+      params = %{"current_password" => "encrypt", "password" => "Aa1!"}
       {:error, changeset} = Account.update_password(user, params)
       assert %{password: ["should be at least 8 character(s)"]} == errors_on(changeset)
     end
 
     test "does not update with wrong current password" do
       user = insert(:user)
-      params = %{"current_password" => "wrongcurrentpassword", "password" => "123123123"}
+      params = %{"current_password" => "wrongcurrentpassword", "password" => "NewPassword@1"}
       response = Account.update_password(user, params)
       assert response == {:error, :invalid_password}
     end

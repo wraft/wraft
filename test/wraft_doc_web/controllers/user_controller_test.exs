@@ -226,7 +226,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     test "updates password with valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
 
-      attrs = %{current_password: "encrypt", password: "password"}
+      attrs = %{current_password: "encrypt", password: "NewPassword@1"}
       conn = put(conn, Routes.v1_user_path(conn, :update_password, attrs))
 
       assert json_response(conn, 200)["id"] == user.id
@@ -235,7 +235,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     end
 
     test "does not update password with invalid attrs", %{conn: conn} do
-      attrs = %{current_password: "encrypt", password: "invalid"}
+      # Strong enough (uppercase/lowercase/number/special) but too short.
+      attrs = %{current_password: "encrypt", password: "Aa1!"}
       conn = put(conn, Routes.v1_user_path(conn, :update_password, attrs))
 
       assert json_response(conn, 422)["errors"]["password"] == [

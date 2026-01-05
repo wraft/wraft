@@ -7,7 +7,7 @@ defmodule WraftDoc.Account.UserTest do
     # 2. Invalid data entry
     # 3. Name with less than 2 characters
     # 4. Passwords with less than 8 characters
-    # 5. Passwords with more than 16 characters
+    # 5. Passwords with more than 64 characters
     # 6. Invalid email address
     # 7. Special characters in name
     # 8. Special characters in lastname
@@ -20,7 +20,7 @@ defmodule WraftDoc.Account.UserTest do
     name: "User",
     lastname: "Name",
     email: "user@mail.com",
-    password: "123456789",
+    password: "Password@1",
     mobile: "918943650799",
     country: "IN"
   }
@@ -37,6 +37,43 @@ defmodule WraftDoc.Account.UserTest do
     refute changeset.valid?
   end
 
+  test "changeset accepts strong password with uppercase number and special character" do
+    attrs = Map.put(@valid_attrs, :password, "Strong@123")
+    changeset = User.changeset(%User{}, attrs)
+
+    assert changeset.valid?
+  end
+
+  test "changeset does not accept password without uppercase letter" do
+    attrs = Map.put(@valid_attrs, :password, "password@1")
+    changeset = User.changeset(%User{}, attrs)
+
+    assert "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character" in errors_on(
+             changeset,
+             :password
+           )
+  end
+
+  test "changeset does not accept password without number" do
+    attrs = Map.put(@valid_attrs, :password, "Password@")
+    changeset = User.changeset(%User{}, attrs)
+
+    assert "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character" in errors_on(
+             changeset,
+             :password
+           )
+  end
+
+  test "changeset does not accept password without special character" do
+    attrs = Map.put(@valid_attrs, :password, "Password1")
+    changeset = User.changeset(%User{}, attrs)
+
+    assert "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character" in errors_on(
+             changeset,
+             :password
+           )
+  end
+
   test "changeset does not accept short name" do
     attrs = Map.put(@valid_attrs, :name, "U")
     changeset = User.changeset(%User{}, attrs)
@@ -50,9 +87,10 @@ defmodule WraftDoc.Account.UserTest do
   end
 
   test "changeset does not accept long password" do
-    attrs = Map.put(@valid_attrs, :password, String.duplicate("q", 23))
+    # Keep password "strong" so the failure is specifically about length.
+    attrs = Map.put(@valid_attrs, :password, String.duplicate("Aa1!", 17))
     changeset = User.changeset(%User{}, attrs)
-    assert "should be at most 22 character(s)" in errors_on(changeset, :password)
+    assert "should be at most 64 character(s)" in errors_on(changeset, :password)
   end
 
   test "changeset does not accept invalid email address" do
