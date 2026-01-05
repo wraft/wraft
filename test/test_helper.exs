@@ -1,13 +1,5 @@
 # test/test_helper.exs
-ExUnit.start(formatters: [ExUnit.CLIFormatter, Bureaucrat.Formatter])
+ExUnit.start(formatters: [ExUnit.CLIFormatter])
 
 # Configure Ecto sandbox
 Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, :manual)
-
-# Bureaucrat setup
-Bureaucrat.start(
-  env_var: "DOC",
-  writer: Bureaucrat.SwaggerSlateMarkdownWriter,
-  default_path: "doc/source/index.html.md",
-  swagger: "priv/static/swagger.json" |> File.read!() |> Jason.decode!()
-)

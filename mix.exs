@@ -52,7 +52,6 @@ defmodule WraftDoc.Mixfile do
     [
       {:bcrypt_elixir, "~> 3.2"},
       {:briefly, "~> 0.5"},
-      {:bureaucrat, "~> 0.2"},
       {:bypass, "~> 2.1", only: :test},
       {:comeonin, "~> 5.3"},
       {:cors_plug, "~> 3.0"},
