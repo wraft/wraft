@@ -32,7 +32,7 @@ defmodule WraftDocWeb.Schemas.Profile do
         name: %Schema{type: :string, description: "Name of the user"},
         dob: %Schema{type: :string, description: "Date of birth", format: "date"},
         profile_pic: %Schema{type: :string, description: "path to profile pic"},
-        gender: %Schema{type: :string, description: "Users gender"}
+        gender: %Schema{type: :string, description: "User's gender"}
       },
       required: [:name],
       example: %{
@@ -53,7 +53,7 @@ defmodule WraftDocWeb.Schemas.Profile do
       properties: %{
         name: %Schema{type: :string, description: "Name of the user"},
         dob: %Schema{type: :string, description: "Date of birth", format: "date"},
-        gender: %Schema{type: :string, description: "Users gender"},
+        gender: %Schema{type: :string, description: "User's gender"},
         profile_pic: %Schema{type: :string, description: "path to profile pic"},
         inserted_at: %Schema{
           type: :string,

@@ -107,7 +107,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   operation(:show_image,
     summary: "Get image",
-    description: "Api to get image",
+    description: "API to get image",
     parameters: [
       id: [in: :path, type: :string, description: "Instance id", required: true],
       asset_id: [in: :query, type: :string, description: "Image Asset ID", required: true]

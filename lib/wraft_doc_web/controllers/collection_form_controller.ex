@@ -31,8 +31,8 @@ defmodule WraftDocWeb.Api.V1.CollectionFormController do
   end
 
   operation(:create,
-    summary: "Create an collection form api",
-    description: "Create an collection form api",
+    summary: "Create an collection form API",
+    description: "Create an collection form API",
     operation_id: "create_collection_forms",
     request_body:
       {"Collection Form to be created", "application/json",

@@ -9,8 +9,8 @@ defmodule WraftDocWeb.Schemas.BlockTemplate do
   defmodule BlockTemplateRequest do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "BlockTemplate Request",
-      description: "Create block_template request.",
+      title: "Block Template Request",
+      description: "Create block template request.",
       type: :object,
       properties: %{
         title: %Schema{type: :string, description: "The Title of the Block Template"},
@@ -29,8 +29,8 @@ defmodule WraftDocWeb.Schemas.BlockTemplate do
   defmodule BlockTemplate do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "BlockTemplate",
-      description: "A BlockTemplate",
+      title: "Block Template",
+      description: "A Block Template",
       type: :object,
       properties: %{
         id: %Schema{type: :string, description: "The ID of the block template"},
@@ -40,12 +40,12 @@ defmodule WraftDocWeb.Schemas.BlockTemplate do
         creator: User.UserIdAndName,
         inserted_at: %Schema{
           type: :string,
-          description: "When was the block_template inserted",
+          description: "When was the block template inserted",
           format: "ISO-8601"
         },
         updated_at: %Schema{
           type: :string,
-          description: "When was the block_template last updated",
+          description: "When was the block template last updated",
           format: "ISO-8601"
         }
       },
@@ -68,7 +68,7 @@ defmodule WraftDocWeb.Schemas.BlockTemplate do
   defmodule BlockTemplates do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "BlockTemplate list",
+      title: "Block Template list",
       type: :array,
       items: BlockTemplate,
       example: [
@@ -91,7 +91,7 @@ defmodule WraftDocWeb.Schemas.BlockTemplate do
   defmodule BlockTemplateIndex do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "BlockTemplate Index",
+      title: "Block Template Index",
       type: :object,
       properties: %{
         block_templates: BlockTemplates,

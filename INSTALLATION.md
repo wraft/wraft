@@ -28,7 +28,7 @@ $ cd wraft
 
 As these 2 are defined in the `.tool_versions`, `asdf` will install the right versions with the following set of commands:
 
-Please refer the given link for the installation of [asdf-version-manager](https://asdf-vm.com/#/core-manage-asdf-vm?id=install).
+Please refer to the given link for the installation of [asdf-version-manager](https://asdf-vm.com/#/core-manage-asdf-vm?id=install).
 
 Add the following plugins to your asdf for elixir and erlang:
 
@@ -62,7 +62,7 @@ $ sudo apt install inotify-tools
 
 ### 3 - **Postgres**
 
-Select your OS from the options [here](https://www.postgresql.org/download/) and follow the instruction to
+Select your OS from the options [here](https://www.postgresql.org/download/) and follow the instructions to
 install the latest version of postgres.
 Check your installation using:
 
@@ -112,8 +112,8 @@ $ sudo dpkg -i $DEB
 
 where `$DEB` is the path to the downloaded deb.
 
-These instructions are taken from [Official Pandoc Documentations](https://pandoc.org/installing.html).
-You may refer if the official documentation if you have any doubts.
+These instructions are taken from [Official Pandoc Documentation](https://pandoc.org/installing.html).
+You may refer to the official documentation if you have any doubts.
 
 ### 6 - **ImageMagick**
 
@@ -208,7 +208,7 @@ $ git clone https://github.com/wraft/wraft-frontend.git
 $ cd wraft-frontend
 ```
 
-Refer the README.md in the frontend repository for the setup.
+Refer to the README.md in the frontend repository for the setup.
 
 ### 11 - Default User
 

@@ -47,8 +47,8 @@ defmodule WraftDocWeb.Schemas.User do
       type: :object,
       properties: %{
         id: %Schema{type: :string, description: "The ID of the user"},
-        name: %Schema{type: :string, description: "Users name"},
-        email: %Schema{type: :string, description: "Users email"},
+        name: %Schema{type: :string, description: "User's name"},
+        email: %Schema{type: :string, description: "User's email"},
         email_verify: %Schema{type: :boolean, description: "Email verification status"},
         inserted_at: %Schema{
           type: :string,
@@ -81,8 +81,8 @@ defmodule WraftDocWeb.Schemas.User do
       type: :object,
       properties: %{
         id: %Schema{type: :string, description: "The ID of the user"},
-        name: %Schema{type: :string, description: "Users name"},
-        email: %Schema{type: :string, description: "Users email"},
+        name: %Schema{type: :string, description: "User's name"},
+        email: %Schema{type: :string, description: "User's email"},
         email_verify: %Schema{type: :boolean, description: "Email verification status"},
         profile_pic: %Schema{type: :string, description: "URL of the user's profile picture"},
         organisation_id: %Schema{type: :string, description: "User's current organisation ID"},
@@ -188,10 +188,10 @@ defmodule WraftDocWeb.Schemas.User do
       type: :object,
       properties: %{
         id: %Schema{type: :string, description: "The ID of the user"},
-        name: %Schema{type: :string, description: "Users name"},
-        email: %Schema{type: :string, description: "Users email"},
+        name: %Schema{type: :string, description: "User's name"},
+        email: %Schema{type: :string, description: "User's email"},
         email_verify: %Schema{type: :boolean, description: "Email verification status"},
-        organisation_id: %Schema{type: :string, description: "ID of the user's oranisation"},
+        organisation_id: %Schema{type: :string, description: "ID of the user's organisation"},
         profile_pic: %Schema{type: :string, description: "User's profile pic URL"},
         role: %Schema{
           type: :array,
@@ -240,14 +240,14 @@ defmodule WraftDocWeb.Schemas.User do
     @moduledoc false
     OpenApiSpex.schema(%{
       title: "Show Current User",
-      description: "Currently loged in user",
+      description: "Currently logged in user",
       type: :object,
       properties: %{
         id: %Schema{type: :string, description: "The ID of the user"},
-        name: %Schema{type: :string, description: "Users name"},
-        email: %Schema{type: :string, description: "Users email"},
+        name: %Schema{type: :string, description: "User's name"},
+        email: %Schema{type: :string, description: "User's email"},
         email_verify: %Schema{type: :boolean, description: "Email verification status"},
-        organisation_id: %Schema{type: :string, description: "ID of the user's oranisation"},
+        organisation_id: %Schema{type: :string, description: "ID of the user's organisation"},
         profile_pic: %Schema{type: :string, description: "User's profile pic URL"},
         role: %Schema{type: :string, description: "User's role"},
         inserted_at: %Schema{

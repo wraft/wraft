@@ -9,8 +9,8 @@ defmodule WraftDocWeb.Schemas.ApprovalSystem do
   defmodule ApprovalSystemRequest do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "ApprovalSystem Request",
-      description: "Create approval_system request.",
+      title: "Approval System Request",
+      description: "Create approval system request.",
       type: :object,
       required: [:flow_id, :pre_state_id, :post_state_id, :approver_id],
       properties: %{
@@ -92,8 +92,8 @@ defmodule WraftDocWeb.Schemas.ApprovalSystem do
   defmodule ApprovalSystem do
     @moduledoc false
     OpenApiSpex.schema(%{
-      title: "ApprovalSystem",
-      description: "A ApprovalSystem",
+      title: "Approval System",
+      description: "An Approval System",
       type: :object,
       properties: %{
         approval_system: ApprovalSystemObject,
@@ -103,12 +103,12 @@ defmodule WraftDocWeb.Schemas.ApprovalSystem do
         approver: User.User,
         inserted_at: %Schema{
           type: :string,
-          description: "When was the approval_system inserted",
+          description: "When was the approval system inserted",
           format: "ISO-8601"
         },
         updated_at: %Schema{
           type: :string,
-          description: "When was the approval_system last updated",
+          description: "When was the approval system last updated",
           format: "ISO-8601"
         }
       },

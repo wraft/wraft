@@ -68,7 +68,7 @@ defmodule WraftDocWeb.Schemas.State do
     @moduledoc false
     OpenApiSpex.schema(%{
       title: "State",
-      description: "State assigened to contents",
+      description: "State assigned to contents",
       type: :object,
       properties: %{
         id: %Schema{type: :string, description: "ID of the state"},

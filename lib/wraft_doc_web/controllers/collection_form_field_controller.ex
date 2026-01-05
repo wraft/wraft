@@ -42,8 +42,8 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
   end
 
   operation(:create,
-    summary: "Create an collection form fields api",
-    description: "Create an collection form fields api",
+    summary: "Create an collection form fields API",
+    description: "Create an collection form fields API",
     operation_id: "create_collection_forms_fields",
     parameters: [
       c_form_id: [in: :path, type: :string, description: "Collection Form ID", required: true]

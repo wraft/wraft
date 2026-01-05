@@ -91,7 +91,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
 
   operation(:index,
     summary: "list role groups",
-    description: "api to list all role groups",
+    description: "API to list all role groups",
     responses: [
       no_content: {"Deleted", "application/json", RoleGroupSchema.RoleGroupIndex},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},

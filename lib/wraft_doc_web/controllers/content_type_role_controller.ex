@@ -13,7 +13,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
 
   operation(:create,
     summary: "Create the content type role",
-    description: "Content Type role creation api",
+    description: "Content Type role creation API",
     request_body:
       {"Content Type Role API", "application/json", ContentTypeRoleSchema.ContentTypeRoleRequest},
     responses: [
@@ -31,7 +31,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
 
   operation(:delete,
     summary: "Delete the content type role",
-    description: "Delete Type role creation api",
+    description: "Delete Type role creation API",
     parameters: [
       id: [in: :path, type: :string, description: "content_type_role_id", required: true]
     ],

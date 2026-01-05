@@ -14,8 +14,8 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
   tags(["Approval System"])
 
   operation(:create,
-    summary: "Create approval_system",
-    description: "Create approval_system API",
+    summary: "Create approval system",
+    description: "Create approval system API",
     request_body:
       {"ApprovalSystem to be created", "application/json",
        ApprovalSystemSchema.ApprovalSystemRequest},
@@ -38,8 +38,8 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
   end
 
   operation(:show,
-    summary: "Show a approval_system",
-    description: "API to show details of a approval_system",
+    summary: "Show a approval system",
+    description: "API to show details of a approval system",
     parameters: [
       id: [in: :path, type: :string, description: "approval_system id", required: true]
     ],
@@ -60,10 +60,10 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
   end
 
   operation(:update,
-    summary: "Update a approval_system",
-    description: "API to update a approval_system",
+    summary: "Update a approval system",
+    description: "API to update a approval system",
     parameters: [
-      id: [in: :path, type: :string, description: "approval_system id", required: true]
+      id: [in: :path, type: :string, description: "approval system id", required: true]
     ],
     request_body:
       {"ApprovalSystem to be updated", "application/json",
@@ -89,10 +89,10 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
   end
 
   operation(:delete,
-    summary: "Delete a approval_system",
-    description: "API to delete a approval_system",
+    summary: "Delete a approval system",
+    description: "API to delete a approval system",
     parameters: [
-      id: [in: :path, type: :string, description: "approval_system id", required: true]
+      id: [in: :path, type: :string, description: "approval system id", required: true]
     ],
     responses: [
       ok: {"Ok", "application/json", ApprovalSystemSchema.ApprovalSystem},
