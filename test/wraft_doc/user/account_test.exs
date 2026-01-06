@@ -790,6 +790,72 @@ defmodule WraftDoc.AccountTest do
     end
   end
 
+  describe "send_password_set_mail/1" do
+    test "creates email background job for valid token" do
+      user = insert(:user)
+      auth_token = Repo.preload(AuthTokens.create_set_password_token(user), :user)
+
+      {:ok, job} = Account.send_password_set_mail(auth_token)
+
+      assert job.args == %{
+               email: auth_token.user.email,
+               name: auth_token.user.name,
+               token: auth_token.value
+             }
+
+      assert_enqueued(
+        worker: EmailWorker,
+        tags: ["set_password"],
+        args: %{email: job.args.email, token: job.args.token, name: job.args.name},
+        queue: :mailer
+      )
+    end
+  end
+
+  describe "update_last_signed_in_org/2" do
+    test "updates the last signed in organisation id for the user" do
+      user = insert(:user)
+      organisation = insert(:organisation)
+
+      {:ok, updated_user} = Account.update_last_signed_in_org(user, organisation.id)
+
+      assert updated_user.last_signed_in_org == organisation.id
+    end
+  end
+
+  describe "get_or_create_guest_user/1" do
+    test "returns existing user if email already exists" do
+      user = insert(:user)
+
+      returned_user = Account.get_or_create_guest_user(%{"email" => user.email})
+
+      assert returned_user.id == user.id
+    end
+
+    test "creates new guest user if email does not exist" do
+      email = "guest@example.com"
+
+      guest_user = Account.get_or_create_guest_user(%{"email" => email, "name" => "Guest User"})
+
+      assert guest_user.email == email
+      assert guest_user.is_guest == true
+      assert guest_user.email_verify == true
+    end
+  end
+
+  describe "create_guest_user/1" do
+    test "creates a guest user with random password and sets default flags" do
+      email = "guest@example.com"
+
+      guest_user = Account.create_guest_user(%{"email" => email, "name" => "Guest User"})
+
+      assert guest_user.email == email
+      assert guest_user.is_guest == true
+      assert guest_user.email_verify == true
+      assert String.length(guest_user.encrypted_password) > 0
+    end
+  end
+
   describe "reset_password/1" do
     test "update user password when valid token and password are given" do
       user = insert(:user)
@@ -845,6 +911,103 @@ defmodule WraftDoc.AccountTest do
       params = %{"current_password" => "encrypt", "password" => "encrypt"}
       response = Account.update_password(user, params)
       assert response == {:error, :same_password}
+    end
+  end
+
+  describe "set_password/2" do
+    test "sets password with valid token and matching passwords" do
+      user = insert(:user)
+      token = AuthTokens.create_set_password_token(user)
+
+      params = %{
+        "password" => "NewPassword@1",
+        "confirm_password" => "NewPassword@1",
+        "token" => token.value
+      }
+
+      updated_user = Account.set_password(user.email, params)
+      assert Bcrypt.verify_pass("NewPassword@1", updated_user.encrypted_password) == true
+      assert Repo.get_by(WraftDoc.AuthTokens.AuthToken, value: token.value) == nil
+    end
+
+    test "returns error with mismatched confirm password" do
+      user = insert(:user)
+      token = AuthTokens.create_set_password_token(user)
+
+      params = %{
+        "password" => "NewPassword@1",
+        "confirm_password" => "Different@1",
+        "token" => token.value
+      }
+
+      response = Account.set_password(user.email, params)
+      assert response == {:error, :invalid_password}
+    end
+
+    test "returns error with invalid password" do
+      user = insert(:user)
+      token = AuthTokens.create_set_password_token(user)
+      params = %{"password" => "short", "confirm_password" => "short", "token" => token.value}
+
+      {:error, changeset} = Account.set_password(user.email, params)
+
+      assert %{
+               password: [
+                 "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character",
+                 "should be at least 8 character(s)"
+               ]
+             } == errors_on(changeset)
+    end
+
+    test "returns error with invalid token" do
+      user = insert(:user)
+
+      params = %{
+        "password" => "NewPassword@1",
+        "confirm_password" => "NewPassword@1",
+        "token" => "invalid"
+      }
+
+      response = Account.set_password(user.email, params)
+      assert response == {:error, :invalid_token}
+    end
+  end
+
+  describe "update_email_status/1" do
+    test "updates email verification status to true" do
+      user = insert(:user, email_verify: false)
+
+      {:ok, updated_user} = Account.update_email_status(user)
+
+      assert updated_user.email_verify == true
+    end
+  end
+
+  describe "remove_user/2" do
+    test "removes user from organisation by setting deleted_at" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+      insert(:user_organisation, user: user, organisation: organisation)
+
+      removed_user = Account.remove_user(user, user.id)
+
+      assert removed_user.deleted_at != nil
+    end
+
+    test "updates last_signed_in_org to personal organisation if it was the removed org" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+      insert(:user_organisation, user: user, organisation: organisation)
+
+      personal_org = insert(:organisation, name: "Personal", creator: user)
+
+      Account.update_last_signed_in_org(user, organisation.id)
+
+      Account.remove_user(user, user.id)
+
+      updated_user = Repo.get(User, user.id)
+
+      assert updated_user.last_signed_in_org == personal_org.id
     end
   end
 end

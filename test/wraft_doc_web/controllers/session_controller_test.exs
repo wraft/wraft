@@ -1,8 +1,17 @@
 defmodule WraftDocWeb.SessionControllerTest do
+  # DO_ME
   use WraftDocWeb.ConnCase
 
   setup do
     %{conn: build_conn()}
+  end
+
+  describe "new/2" do
+    test "renders the login form", %{conn: conn} do
+      conn = get(conn, Routes.session_path(conn, :new))
+
+      assert html_response(conn, 200)
+    end
   end
 
   describe "create/2" do
@@ -18,7 +27,7 @@ defmodule WraftDocWeb.SessionControllerTest do
       assert get_session(conn, :admin_id) == user.id
     end
 
-    test "flashes an error message if the user is deactivated", %{conn: conn} do
+    test "flashes an info message if the user is deactivated", %{conn: conn} do
       user = insert(:internal_user, is_deactivated: true)
       params = %{session: %{email: user.email, password: user.password}}
 
@@ -26,27 +35,8 @@ defmodule WraftDocWeb.SessionControllerTest do
 
       assert redirected_to(conn) == Routes.session_path(conn, :new)
 
-      # Debug: Check what flash message is actually set
-      flash_message = Phoenix.Flash.get(conn.assigns.flash, :error)
-
-      # If the flash is nil, the controller might be handling deactivated users differently
-      # Let's make the test more flexible to handle different possible behaviors
-      assert flash_message in [
-               "Please provide the correct login credentials to login.",
-               "Your account has been deactivated.",
-               "Account deactivated. Please contact administrator.",
-               # If the controller doesn't set a specific message for deactivated users
-               nil
-             ]
-
-      # If no specific message is set for deactivated users, we might need to update the test expectation
-      # or fix the controller to provide a proper message
-      if flash_message == nil do
-        # Check if there's any other indication of the error
-        IO.puts(
-          "Warning: No flash message set for deactivated user. Controller might need updating."
-        )
-      end
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Your account has been deactivated, please contact support."
 
       assert get_session(conn, :admin_id) == nil
     end
@@ -68,6 +58,33 @@ defmodule WraftDocWeb.SessionControllerTest do
 
     test "flashes an error message with non-existent email", %{conn: conn} do
       params = %{session: %{email: "nonexistent@example.com", password: "incorrect"}}
+
+      conn = post(conn, Routes.session_path(conn, :create), params)
+
+      assert redirected_to(conn) == Routes.session_path(conn, :new)
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Please provide the correct login credentials to login."
+
+      assert get_session(conn, :admin_id) == nil
+    end
+
+    test "flashes an error message with missing email", %{conn: conn} do
+      params = %{session: %{password: "password"}}
+
+      conn = post(conn, Routes.session_path(conn, :create), params)
+
+      assert redirected_to(conn) == Routes.session_path(conn, :new)
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Please provide the correct login credentials to login."
+
+      assert get_session(conn, :admin_id) == nil
+    end
+
+    test "flashes an error message with missing password", %{conn: conn} do
+      user = insert(:internal_user)
+      params = %{session: %{email: user.email}}
 
       conn = post(conn, Routes.session_path(conn, :create), params)
 

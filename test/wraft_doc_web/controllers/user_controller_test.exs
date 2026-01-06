@@ -168,7 +168,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       token = WraftDoc.create_phx_token("reset", user.email)
 
       insert(:auth_token, value: token, token_type: "password_verify", user: user)
-      attrs = %{token: token, password: "123456789"}
+      attrs = %{token: token, password: "Password@1"}
       before_count = AuthToken |> Repo.all() |> length()
       conn = post(conn, Routes.v1_user_path(conn, :reset, attrs))
 
@@ -189,6 +189,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = post(conn, Routes.v1_user_path(conn, :reset, attrs))
 
       assert json_response(conn, 422)["errors"]["password"] == [
+               "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character",
                "should be at least 8 character(s)"
              ]
     end

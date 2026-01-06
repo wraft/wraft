@@ -1,4 +1,5 @@
 defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
+  # DO_ME
   import WraftDoc.Factory
   use WraftDocWeb.ConnCase
 
@@ -181,6 +182,43 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
         |> doc(operation_id: "create_user")
 
       assert json_response(conn, 401) == "Given email is not approved!"
+    end
+
+    test "returns error for expired invite token", %{conn: conn} do
+      organisation = insert(:organisation)
+      role = insert(:role, organisation: organisation)
+
+      token =
+        WraftDoc.create_phx_token(
+          "organisation_invite",
+          %{
+            organisation_id: organisation.id,
+            email: @valid_attrs["email"],
+            roles: [role.id]
+          },
+          signed_at: -900_001
+        )
+
+      insert(:auth_token, value: token, token_type: "invite")
+      params = Map.put(@valid_attrs, "token", token)
+
+      conn =
+        conn
+        |> post(Routes.v1_registration_path(conn, :create, params))
+        |> doc(operation_id: "create_user")
+
+      assert json_response(conn, 400)["errors"] == "Expired.!"
+    end
+
+    test "returns error for invalid invite token", %{conn: conn} do
+      params = Map.put(@valid_attrs, "token", "invalid_token")
+
+      conn =
+        conn
+        |> post(Routes.v1_registration_path(conn, :create, params))
+        |> doc(operation_id: "create_user")
+
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
   end
 end

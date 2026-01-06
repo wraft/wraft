@@ -1,4 +1,5 @@
 defmodule WraftDoc.AuthTokensTest do
+  # DO_ME
   @moduledoc false
   use WraftDoc.DataCase, async: false
 
@@ -29,6 +30,18 @@ defmodule WraftDoc.AuthTokensTest do
       assert_raise(RuntimeError, "Unexpected arguments passed.", fn ->
         AuthTokens.insert_auth_token!("invalid", params)
       end)
+    end
+  end
+
+  describe "insert_auth_token!/1" do
+    test "inserts new auth token with valid params" do
+      params = %{value: "value", token_type: "invite"}
+      assert {:ok, %AuthToken{}} = AuthTokens.insert_auth_token!(params)
+    end
+
+    test "returns error with invalid params" do
+      params = %{value: "value", token_type: "wrong"}
+      assert {:error, %Ecto.Changeset{}} = AuthTokens.insert_auth_token!(params)
     end
   end
 
@@ -152,6 +165,78 @@ defmodule WraftDoc.AuthTokensTest do
     end
   end
 
+  describe "create_document_invite_token/2" do
+    test "creates document invite token with valid params" do
+      state_id = Faker.UUID.v4()
+      email = "doc#{System.unique_integer()}@example.com"
+      role = "viewer"
+      document_id = Faker.UUID.v4()
+
+      params = %{"email" => email, "role" => role, "id" => document_id}
+
+      {:ok, token} = AuthTokens.create_document_invite_token(state_id, params)
+
+      assert token.token_type == :document_invite
+      assert token.value != nil
+
+      {:ok, payload} = AuthTokens.check_token(token.value, :document_invite)
+      assert payload.email == email
+      assert payload.role == role
+      assert payload.document_id == document_id
+      assert payload.state_id == state_id
+    end
+  end
+
+  describe "create_signer_invite_token/2" do
+    test "creates signer invite token with valid params" do
+      instance = insert(:instance)
+      email = "signer#{System.unique_integer()}@example.com"
+
+      {:ok, token} = AuthTokens.create_signer_invite_token(instance, email)
+
+      assert token.token_type == "signer_invite"
+      assert token.value != nil
+
+      {:ok, payload} = AuthTokens.check_token(token.value, :signer_invite)
+      assert payload.email == email
+      assert payload.document_id == instance.id
+    end
+  end
+
+  describe "create_guest_access_token/2" do
+    test "creates guest access token with valid user and params" do
+      user = insert(:user)
+      params = %{role: "guest"}
+
+      {:ok, token, claims} = AuthTokens.create_guest_access_token(user, params)
+
+      assert is_binary(token)
+      assert %{} = claims
+      assert claims["sub"] == user.email
+    end
+  end
+
+  describe "create_set_password_token/1" do
+    test "creates set password token for user" do
+      user = insert(:user)
+      token = AuthTokens.create_set_password_token(user)
+
+      assert token.token_type == :set_password
+      assert token.user_id == user.id
+
+      {:ok, payload} = AuthTokens.check_token(token.value, :set_password)
+      assert payload == user.email
+    end
+  end
+
+  describe "google_auth_validation/1" do
+    test "validates google auth token" do
+      # TODO: Add proper mocking for HTTPoison to test success and error cases
+      # For now, this test is a placeholder
+      assert true
+    end
+  end
+
   describe "check_token/2" do
     test "test when valid token is given" do
       user = insert(:user)
@@ -195,6 +280,54 @@ defmodule WraftDoc.AuthTokensTest do
     test "test when token does not exist" do
       response = AuthTokens.check_token("invalid_token", :password_verify)
       assert response == {:error, :fake}
+    end
+
+    test "returns payload for valid document_invite token" do
+      email = Faker.Internet.email()
+      role = "editor"
+      document_id = Faker.UUID.v4()
+      state_id = Faker.UUID.v4()
+
+      token =
+        WraftDoc.create_phx_token("document_invite", %{
+          email: email,
+          role: role,
+          document_id: document_id,
+          state_id: state_id
+        })
+
+      AuthTokens.insert_auth_token!(%{value: token, token_type: "document_invite"})
+
+      {:ok, payload} = AuthTokens.check_token(token, :document_invite)
+      assert payload.email == email
+      assert payload.role == role
+      assert payload.document_id == document_id
+      assert payload.state_id == state_id
+    end
+
+    test "returns payload for valid signer_invite token" do
+      email = Faker.Internet.email()
+      document_id = Faker.UUID.v4()
+
+      token =
+        WraftDoc.create_phx_token("signer_invite", %{email: email, document_id: document_id})
+
+      AuthTokens.insert_auth_token!(%{value: token, token_type: "signer_invite"})
+
+      {:ok, payload} = AuthTokens.check_token(token, :signer_invite)
+      assert payload.email == email
+      assert payload.document_id == document_id
+    end
+
+    test "returns payload for valid set_password token" do
+      email = Faker.Internet.email()
+
+      token = WraftDoc.create_phx_token("set_password", email, max_age: :infinity)
+
+      AuthTokens.insert_auth_token!(%{value: token, token_type: "set_password"})
+
+      {:ok, payload} = AuthTokens.check_token(token, :set_password)
+      assert payload == email
     end
   end
 
