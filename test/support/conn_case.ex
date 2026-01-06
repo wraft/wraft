@@ -24,6 +24,7 @@ defmodule WraftDocWeb.ConnCase do
       import Phoenix.ConnTest
       import WraftDocWeb.ConnCase
       alias WraftDocWeb.Router.Helpers, as: Routes
+      import Bureaucrat.Helpers
       import WraftDoc.Factory
 
       # The default endpoint for testing
