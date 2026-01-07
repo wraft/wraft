@@ -1348,7 +1348,7 @@ defmodule WraftDoc.Documents do
       |> Assets.find_asset_header_values(layout, instance)
       |> concat_strings("qrcode: #{qr_code} \n")
       |> concat_strings("path: #{mkdir}\n")
-      |> concat_strings("title: #{page_title}\n")
+      |> concat_strings("title: \"#{page_title}\"\n")
       |> concat_strings("organisation_name: #{organisation_name}\n")
       |> concat_strings("author_name: #{name}\n")
       |> concat_strings("author_email: #{email}\n")
@@ -1388,13 +1388,15 @@ defmodule WraftDoc.Documents do
     """
   end
 
-  defp format_title(title) do
-    Regex.replace(~r/\[([^\]]+)\]/, title, fn match ->
-      match
-      |> String.replace("[", "\\[")
-      |> String.replace("]", "\\]")
-    end)
+  defp format_title(nil), do: ""
+
+  defp format_title(title) when is_binary(title) do
+    title
+    |> String.replace("[", "\[")
+    |> String.replace("]", "\]")
   end
+
+  defp format_title(title), do: to_string(title)
 
   defp add_margin(header, nil), do: header
 
