@@ -176,11 +176,10 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
          %{
            "type" => "smartTableWrapper",
            "attrs" => %{"tableName" => table_name},
-           "content" => content
+           "content" => [_ | _] = content
          },
          opts
-       )
-       when is_list(content) and length(content) > 0 do
+       ) do
     case Enum.find(content, &(&1["type"] == "table")) do
       %{"type" => "table"} = table ->
         convert_node(table, opts)

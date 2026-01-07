@@ -66,7 +66,7 @@ cd wraft
    mix phx.server
    ```
 
-For more detailed instructions, please refer to our [Developer Document](https://docs.wraft.app/developers).
+For more detailed instructions, please refer to our [Developer Documentation](https://docs.wraft.app/developers).
 
 ### 4. Create a Branch
 

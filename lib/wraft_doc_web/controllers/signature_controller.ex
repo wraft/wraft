@@ -1,6 +1,8 @@
 defmodule WraftDocWeb.Api.V1.SignatureController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
+
+  alias WraftDocWeb.Schemas
 
   plug WraftDocWeb.Plug.AddActionLog
 
@@ -32,152 +34,26 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Signatures
 
-  def swagger_definitions do
-    %{
-      CounterPartyRequest:
-        swagger_schema do
-          title("Counter Party Request")
-          description("Request for a counter party to sign a document")
-
-          properties do
-            name(:string, "Name of the signatory", required: true)
-            email(:string, "Email of the signatory", required: true)
-            signature_image(:string, "Base64 encoded signature image")
-
-            signature_type(:string, "Type of signature",
-              enum: ["digital", "electronic", "handwritten"]
-            )
-
-            color_rgb(:map, "Color of the signature", required: true)
-          end
-
-          example(%{
-            name: "John Doe",
-            email: "john.doe@example.com",
-            signature_image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
-            signature_type: "handwritten",
-            color_rgb: %{"r" => 255, "g" => 255, "b" => 255}
-          })
-        end,
-      Signature:
-        swagger_schema do
-          title("Signature")
-          description("Digital signature information")
-
-          properties do
-            id(:string, "Signature ID", required: true)
-            signature_type(:string, "Type of signature")
-            signature_date(:string, "Date of signature")
-            is_valid(:boolean, "Is the signature valid")
-            verification_token(:string, "Token for signature verification")
-            instance(:map, "Document instance")
-            counterparty(:map, "Counterparty information")
-          end
-        end,
-      Signatures:
-        swagger_schema do
-          title("Signatures")
-          description("List of signatures")
-
-          properties do
-            data(
-              Schema.array(:object),
-              "List of signatures",
-              items: Schema.ref(:Signature)
-            )
-          end
-
-          example(%{
-            signatures: [
-              %{
-                id: "123e4567-e89b-12d3-a456-426614174000",
-                signature_type: "digital",
-                signature_date: "2023-01-01T00:00:00Z",
-                is_valid: true,
-                verification_token: "abc123",
-                instance: %{
-                  id: "123e4567-e89b-12d3-a456-426614174000",
-                  title: "Document Title"
-                },
-                counter_party: %{
-                  name: "John Doe",
-                  email: "john.doe@example.com"
-                }
-              }
-            ]
-          })
-        end,
-      SignatureProcess:
-        swagger_schema do
-          title("Process Signature")
-          description("Process a digital signature")
-
-          properties do
-            signature_data(:map, "Signature data (could be image data or other format)",
-              required: true
-            )
-
-            signature_position(:map, "Position in the document")
-            file(:string, "URL of the uploaded file")
-            token(:string, "Verification token", required: true)
-
-            signature_type(:string, "Type of signature",
-              required: true,
-              enum: ["digital", "electronic", "handwritten"]
-            )
-          end
-
-          example(%{
-            file: "/signature.pdf",
-            signature_type: "digital",
-            is_valid: true,
-            verification_token: "abc123",
-            signature_data: %{},
-            signature_position: %{
-              "x" => 100,
-              "y" => 200
-            }
-          })
-        end,
-      SignedPdfResponse:
-        swagger_schema do
-          title("Signed PDF Response")
-          description("Response with URL to the signed PDF")
-
-          properties do
-            signed_pdf_url(:string, "URL to the signed PDF", required: true)
-            message(:string, "Success message")
-          end
-
-          example(%{
-            signed_pdf_url: "https://example.com/signed_document.pdf",
-            message: "Visual signature applied successfully"
-          })
-        end
-    }
-  end
+  tags(["Signatures"])
 
   @doc """
   Request a signature for a document from a counterparty
   """
-  swagger_path :add_counterparty do
-    post("/contents/{id}/add_counterparty")
-    summary("Request document signature from counterparty")
-    description("API to request a signature for a document from a counterparty")
-
-    parameters do
-      id(:path, :string, "Document ID", required: true)
-
-      request(:body, Schema.ref(:CounterPartyRequest), "Signature request details",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:Signature))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:add_counterparty,
+    summary: "Request document signature from counterparty",
+    description: "API to request a signature for a document from a counterparty",
+    parameters: [
+      id: [in: :path, type: :string, description: "Document ID", required: true]
+    ],
+    request_body:
+      {"Signature request details", "application/json", Schemas.Signature.CounterPartyRequest},
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Signature.SignatureResponse},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec add_counterparty(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def add_counterparty(conn, %{"id" => document_id, "email" => _email} = params) do
@@ -200,19 +76,18 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @doc """
   List counterparties for a document
   """
-  swagger_path :list_counterparties do
-    get("/contents/{id}/counterparties")
-    summary("List document counterparties")
-    description("API to list all counterparties for a document")
-
-    parameters do
-      id(:path, :string, "Document ID", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:CounterPartiesList))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:list_counterparties,
+    summary: "List document counterparties",
+    description: "API to list all counterparties for a document",
+    parameters: [
+      id: [in: :path, type: :string, description: "Document ID", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Signature.CounterPartiesList},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec list_counterparties(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def list_counterparties(conn, %{"id" => document_id}) do
@@ -227,26 +102,25 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @doc """
   Request a signature for a document from a counterparty
   """
-  swagger_path :request_signature do
-    post("/contents/{id}/request_signature")
-    summary("Request document signature from counterparty by email")
-    description("API to request a signature for a document from a counterparty by email")
-
-    parameters do
-      id(:path, :string, "Document ID", required: true)
-
-      counterparty_id(
-        :query,
-        :string,
-        "Counter Party ID (optional). If not provided, sends to all pending counterparties."
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:Signature))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:request_signature,
+    summary: "Request document signature from counterparty by email",
+    description: "API to request a signature for a document from a counterparty by email",
+    parameters: [
+      id: [in: :path, type: :string, description: "Document ID", required: true],
+      counterparty_id: [
+        in: :query,
+        type: :string,
+        description:
+          "Counter Party ID (optional). If not provided, sends to all pending counterparties."
+      ]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Signature.SignatureResponse},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec request_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def request_signature(
@@ -285,20 +159,19 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @doc """
   Get a specific signature for a document
   """
-  swagger_path :get_signature do
-    get("/contents/{id}/signatures/{signature_id}")
-    summary("Get specific document signature")
-    description("API to get a specific signature by its ID for a document")
-
-    parameters do
-      id(:path, :string, "Document ID", required: true)
-      signature_id(:path, :string, "Signature ID", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Signature))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:get_signature,
+    summary: "Get specific document signature",
+    description: "API to get a specific signature by its ID for a document",
+    parameters: [
+      id: [in: :path, type: :string, description: "Document ID", required: true],
+      signature_id: [in: :path, type: :string, description: "Signature ID", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Signature.SignatureResponse},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec get_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def get_signature(conn, %{"id" => document_id, "signature_id" => signature_id}) do
@@ -313,27 +186,22 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @doc """
   Create a signature record for an existing counterparty
   """
-  swagger_path :create_signature do
-    post("/contents/{id}/signatures")
-    summary("Create signature record")
-
-    description(
-      "API to create a signature record for an existing counterparty on a document. This generates the verification token but does not send the email (use request_signature for that)."
-    )
-
-    parameters do
-      id(:path, :string, "Document ID", required: true)
-
-      signature_request(:body, Schema.ref(:CreateSignatureRequest), "Signature creation details",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:Signature))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:create_signature,
+    summary: "Create signature record",
+    description:
+      "API to create a signature record for an existing counterparty on a document. This generates the verification token but does not send the email (use request_signature for that).",
+    parameters: [
+      id: [in: :path, type: :string, description: "Document ID", required: true]
+    ],
+    request_body:
+      {"Signature creation details", "application/json", Schemas.Signature.CreateSignatureRequest},
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Signature.SignatureResponse},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec create_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create_signature(conn, %{"id" => document_id}) do
@@ -348,19 +216,18 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @doc """
   Get all signatures for a document
   """
-  swagger_path :get_document_signatures do
-    get("/contents/{id}/signatures")
-    summary("Get document signatures")
-    description("API to get all signatures for a document")
-
-    parameters do
-      id(:path, :string, "Document ID", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Signatures))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:get_document_signatures,
+    summary: "Get document signatures",
+    description: "API to get all signatures for a document",
+    parameters: [
+      id: [in: :path, type: :string, description: "Document ID", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Signature.SignaturesList},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec get_document_signatures(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def get_document_signatures(conn, %{"id" => document_id}) do
@@ -376,20 +243,24 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @doc """
   Revoke a signature request
   """
-  swagger_path :revoke_signature do
-    delete("/contents/{id}/signatures/{counter_party_id}")
-    summary("Revoke a signature request")
-    description("API to revoke a signature request")
-
-    parameters do
-      id(:path, :string, "Document ID", required: true)
-      counter_party_id(:path, :string, "Counter Party ID", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Signature))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:revoke_signature,
+    summary: "Revoke a signature request",
+    description: "API to revoke a signature request",
+    parameters: [
+      id: [in: :path, type: :string, description: "Document ID", required: true],
+      counter_party_id: [
+        in: :path,
+        type: :string,
+        description: "Counter Party ID",
+        required: true
+      ]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Signature.SignatureResponse},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec revoke_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def revoke_signature(
@@ -407,22 +278,22 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @doc """
-  Generate  a signature
+  Generate a signature
   """
-  swagger_path :generate_signature do
-    post("/contents/{id}/generate_signature")
-    summary("Generate a signature")
-    description("API to generate a signature")
-
-    parameters do
-      id(:path, :string, "Document ID", required: true)
-      signature(:body, Schema.ref(:SignatureProcess), "Signature process details", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Signature))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:generate_signature,
+    summary: "Generate a signature",
+    description: "API to generate a signature",
+    parameters: [
+      id: [in: :path, type: :string, description: "Document ID", required: true]
+    ],
+    request_body:
+      {"Signature process details", "application/json", Schemas.Signature.SignatureProcess},
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Signature.SignatureResponse},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec generate_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def generate_signature(conn, %{"id" => document_id}) do
@@ -443,22 +314,22 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @doc """
   Update a signature
   """
-  swagger_path :update_signature do
-    put("/contents/{id}/signatures/{signature_id}")
-    summary("Update a signature")
-    description("API to update a signature's details")
-
-    parameters do
-      id(:path, :string, "Document ID", required: true)
-      signature_id(:path, :string, "Signature ID", required: true)
-      signature(:body, Schema.ref(:SignatureProcess), "Updated signature details", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Signature))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:update_signature,
+    summary: "Update a signature",
+    description: "API to update a signature's details",
+    parameters: [
+      id: [in: :path, type: :string, description: "Document ID", required: true],
+      signature_id: [in: :path, type: :string, description: "Signature ID", required: true]
+    ],
+    request_body:
+      {"Updated signature details", "application/json", Schemas.Signature.SignatureProcess},
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Signature.SignatureResponse},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec update_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update_signature(conn, %{"id" => document_id, "signature_id" => signature_id} = params) do
@@ -475,22 +346,22 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @doc """
   Assign a counter party to a signature
   """
-  swagger_path :assign_counter_party do
-    post("/contents/{id}/signatures/{signature_id}/assign")
-    summary("Assign counter party to signature")
-    description("API to assign a counter party to an existing signature")
-
-    parameters do
-      id(:path, :string, "Document ID", required: true)
-      signature_id(:path, :string, "Signature ID", required: true)
-      counterparty_id(:body, :string, "Counter Party ID", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Signature))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:assign_counter_party,
+    summary: "Assign counter party to signature",
+    description: "API to assign a counter party to an existing signature",
+    parameters: [
+      id: [in: :path, type: :string, description: "Document ID", required: true],
+      signature_id: [in: :path, type: :string, description: "Signature ID", required: true]
+    ],
+    request_body:
+      {"Counter Party ID", "application/json", Schemas.Signature.AssignCounterPartyRequest},
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Signature.SignatureResponse},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec assign_counter_party(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def assign_counter_party(
@@ -516,22 +387,22 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @doc """
   Apply a visual signature to a PDF document
   """
-  swagger_path :apply_signature do
-    post("/contents/{id}/append_signature")
-    summary("Apply visual signature to PDF")
-    description("API to apply a visual signature to a PDF document")
-
-    parameters do
-      id(:path, :string, "Document ID", required: true)
-      signature_id(:path, :string, "Signature ID", required: true)
-      signature_image(:body, :file, "Signature image file", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:SignedPdfResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:apply_signature,
+    summary: "Apply visual signature to PDF",
+    description: "API to apply a visual signature to a PDF document",
+    parameters: [
+      id: [in: :path, type: :string, description: "Document ID", required: true],
+      signature_id: [in: :path, type: :string, description: "Signature ID", required: true]
+    ],
+    request_body:
+      {"Signature image file", "multipart/form-data", Schemas.Signature.SignatureProcess},
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Signature.SignedPdfResponse},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec apply_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def apply_signature(conn, %{"id" => document_id} = params) do

@@ -1,135 +1,33 @@
 defmodule WraftDocWeb.Api.V1.FrameController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.Frame, as: FrameSchema
 
-  def swagger_definitions do
-    %{
-      Frame:
-        swagger_schema do
-          title("Frame")
-          description("A Frame resource")
+  tags(["Frames"])
 
-          properties do
-            id(:string, "Unique identifier for the frame", required: true)
-            name(:string, "Name of the frame", required: true)
-            type(:string, "Type of the frame", required: true)
-            description(:string, "Description of the frame")
-            inserted_at(:string, "Timestamp of frame creation", format: "ISO-8601")
-            updated_at(:string, "Timestamp of last frame update", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "123e4567-e89b-12d3-a456-426614174000",
-            name: "my-document-frame",
-            description: "My document frame",
-            type: "zip",
-            inserted_at: "2024-01-15T10:30:00Z",
-            updated_at: "2024-01-15T10:30:00Z"
-          })
-        end,
-      UpdateFrame:
-        swagger_schema do
-          title("Update Frame")
-          description("Updated Frame resource")
-
-          properties do
-            id(:string, "Unique identifier for the frame", required: true)
-            name(:string, "Name of the frame", required: true)
-            type(:string, "Type of the frame", required: true)
-            description(:string, "Description of the frame")
-            inserted_at(:string, "Timestamp of frame creation", format: "ISO-8601")
-            updated_at(:string, "Timestamp of last frame update", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "123e4567-e89b-12d3-a456-426614174000",
-            name: "my-document-frame",
-            description: "My document frame",
-            type: "zip",
-            inserted_at: "2024-01-15T10:30:00Z",
-            updated_at: "2024-01-15T10:30:00Z"
-          })
-        end,
-      Frames:
-        swagger_schema do
-          title("All Frames")
-          description("All frames created under current user's organisation")
-
-          type(:array)
-          items(Schema.ref(:UpdateFrame))
-        end,
-      ShowFrame:
-        swagger_schema do
-          title("Show Frame")
-          description("Details of a specific frame")
-
-          properties do
-            frame(Schema.ref(:Frame))
-          end
-
-          example(%{
-            id: "123e4567-e89b-12d3-a456-426614174000",
-            name: "my-document-frame",
-            description: "My document frame",
-            type: "typst",
-            inserted_at: "2024-01-15T10:30:00Z",
-            updated_at: "2024-01-15T10:30:00Z"
-          })
-        end,
-      FrameIndex:
-        swagger_schema do
-          properties do
-            frames(Schema.ref(:Frames))
-            page_number(:integer, "Current page number")
-            total_pages(:integer, "Total number of pages")
-            total_entries(:integer, "Total number of frame entries")
-          end
-
-          example(%{
-            frames: [
-              %{
-                id: "123e4567-e89b-12d3-a456-426614174000",
-                name: "my-document-frame",
-                description: "My document frame",
-                type: "typst",
-                inserted_at: "2024-01-15T10:30:00Z",
-                updated_at: "2024-01-15T10:30:00Z"
-              }
-            ],
-            page_number: 1,
-            total_pages: 5,
-            total_entries: 25
-          })
-        end
-    }
-  end
-
-  @doc """
-  List frames for the current user's organisation
-  """
-  swagger_path :index do
-    get("/frames")
-    summary("Frame index")
-    description("Frame index API")
-
-    parameter(:page, :query, :string, "Page number")
-    parameter(:name, :query, :string, "Frame Name")
-
-    parameter(
-      :sort,
-      :query,
-      :string,
-      "Sort Keys => name, name_desc, inserted_at, inserted_at_desc"
-    )
-
-    response(200, "Ok", Schema.ref(:FrameIndex))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:index,
+    summary: "Frame index",
+    description: "Frame index API",
+    parameters: [
+      page: [in: :query, type: :string, description: "Page number"],
+      name: [in: :query, type: :string, description: "Frame Name"],
+      sort: [
+        in: :query,
+        type: :string,
+        description: "Sort Keys => name, name_desc, inserted_at, inserted_at_desc"
+      ]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", FrameSchema.FrameIndex},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   def index(conn, params) do
     current_user = conn.assigns[:current_user]
@@ -149,24 +47,32 @@ defmodule WraftDocWeb.Api.V1.FrameController do
     end
   end
 
-  @doc """
-  Create a new frame
-  """
-  swagger_path :create do
-    post("/frames")
-    summary("Create a new frame")
-    description("Create a new frame API")
-    consumes("multipart/form-data")
-
-    parameters do
-      file(:formData, :file, "Frame file to upload")
-      thumbnail(:formData, :file, "Frame thumbnail to upload")
-    end
-
-    response(200, "Created", Schema.ref(:Frame))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Create a new frame",
+    description: "Create a new frame API",
+    request_body:
+      {"Frame file and thumbnail to upload", "multipart/form-data",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           file: %OpenApiSpex.Schema{
+             type: :string,
+             format: :binary,
+             description: "Frame file to upload"
+           },
+           thumbnail: %OpenApiSpex.Schema{
+             type: :string,
+             format: :binary,
+             description: "Frame thumbnail to upload"
+           }
+         }
+       }},
+    responses: [
+      ok: {"Created", "application/json", FrameSchema.Frame},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
@@ -176,22 +82,18 @@ defmodule WraftDocWeb.Api.V1.FrameController do
     end
   end
 
-  @doc """
-  Show a specific frame
-  """
-  swagger_path :show do
-    get("/frames/{id}")
-    summary("Show a frame")
-    description("Show a frame API")
-
-    parameters do
-      id(:path, :string, "frame id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:ShowFrame))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Show a frame",
+    description: "Show a frame API",
+    parameters: [
+      id: [in: :path, type: :string, description: "frame id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", FrameSchema.ShowFrame},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      not_found: {"Not Found", "application/json", Error}
+    ]
+  )
 
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
@@ -201,22 +103,18 @@ defmodule WraftDocWeb.Api.V1.FrameController do
     end
   end
 
-  @doc """
-  Delete a frame
-  """
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/frames/{id}")
-    summary("Delete a frame")
-    description("API to delete a frame")
-
-    parameters do
-      id(:path, :string, "frame id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Frame))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:delete,
+    summary: "Delete a frame",
+    description: "API to delete a frame",
+    parameters: [
+      id: [in: :path, type: :string, description: "frame id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", FrameSchema.Frame},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   def delete(conn, %{"id" => uuid}) do
     current_user = conn.assigns[:current_user]

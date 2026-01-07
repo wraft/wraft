@@ -54,16 +54,6 @@ config :guardian, Guardian.DB,
   token_types: ["refresh"],
   sweep_interval: 60
 
-config :wraft_doc, :phoenix_swagger,
-  swagger_files: %{
-    "priv/static/swagger.json" => [
-      # phoenix routes will be converted to swagger paths
-      router: WraftDocWeb.Router,
-      # (optional) endpoint config used to set host, port and https schemes.
-      endpoint: WraftDocWeb.Endpoint
-    ]
-  }
-
 # By default, the Pruner plugin retains jobs for 60 seconds.
 # You can configure a longer retention period by providing a `max_age: 60`
 # in seconds to the Pruner plugin.

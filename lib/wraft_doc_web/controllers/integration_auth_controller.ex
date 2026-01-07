@@ -1,43 +1,23 @@
 defmodule WraftDocWeb.Api.V1.IntegrationAuthController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
+
   alias WraftDoc.Integrations.DocuSign
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.IntegrationAuth, as: IntegrationAuthSchema
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  def swagger_definitions do
-    %{
-      AuthUrlResponse:
-        swagger_schema do
-          title("Authorization URL Response")
-          description("Response containing the DocuSign authorization URL")
+  tags(["Integrations"])
 
-          properties do
-            status(:string, "Status of the request", required: true, example: "success")
-
-            redirect_url(:string, "URL to redirect the user for DocuSign authorization",
-              required: true
-            )
-          end
-
-          example(%{
-            status: "success",
-            redirect_url:
-              "https://account-d.docusign.com/oauth/auth?response_type=code&scope=signature&..."
-          })
-        end
-    }
-  end
-
-  swagger_path :auth do
-    get("/docusign/auth")
-    summary("Get DocuSign authorization URL")
-    description("Returns the authorization URL for initiating the DocuSign OAuth flow")
-    tag("Integrations")
-
-    response(200, "Success", Schema.ref(:AuthUrlResponse))
-    response(403, "Unauthorized")
-  end
+  operation(:auth,
+    summary: "Get DocuSign authorization URL",
+    description: "Returns the authorization URL for initiating the DocuSign OAuth flow",
+    responses: [
+      ok: {"Success", "application/json", IntegrationAuthSchema.AuthUrlResponse},
+      forbidden: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @doc """
   Returns the DocuSign authorization URL.
@@ -60,21 +40,23 @@ defmodule WraftDocWeb.Api.V1.IntegrationAuthController do
     })
   end
 
-  swagger_path :callback do
-    get("/docusign/callback")
-    summary("Handle DocuSign OAuth callback")
-    description("Processes the authorization code returned by DocuSign after user authorization")
-
-    parameters do
-      code(:query, :string, "Authorization code from DocuSign", required: true)
-    end
-
-    tag("Integrations")
-
-    response(302, "Redirect to homepage")
-    response(400, "Bad Request")
-    response(403, "Unauthorized")
-  end
+  operation(:callback,
+    summary: "Handle DocuSign OAuth callback",
+    description: "Processes the authorization code returned by DocuSign after user authorization",
+    parameters: [
+      code: [
+        in: :query,
+        type: :string,
+        description: "Authorization code from DocuSign",
+        required: true
+      ]
+    ],
+    responses: [
+      found: {"Redirect to homepage", "application/json", nil},
+      bad_request: {"Bad Request", "application/json", Error},
+      forbidden: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @doc """
   Handles the callback from DocuSign after user authorization.

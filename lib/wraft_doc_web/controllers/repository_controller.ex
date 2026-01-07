@@ -12,266 +12,22 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
   - Automatically setup for new users via `/api/repository/setup`
   """
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   alias WraftDoc.Storages
   alias WraftDoc.Storages.Repository
+  alias WraftDocWeb.Schemas
 
   plug WraftDocWeb.Plug.AddActionLog
   plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  def swagger_definitions do
-    %{
-      StorageItem:
-        swagger_schema do
-          title("Storage Item")
-          description("A file or folder in the storage system.")
+  tags(["Repositories"])
 
-          properties do
-            id(:string, "The ID of the storage item", required: true, format: "uuid")
-            name(:string, "Name of the item", required: true)
-            display_name(:string, "Display name of the item")
-            item_type(:string, "Type of item", enum: ["file", "folder"])
-            path(:string, "Path to the item")
-            mime_type(:string, "MIME type of the item")
-            size(:integer, "Size in bytes")
-            is_folder(:boolean, "Whether the item is a folder")
-            inserted_at(:string, "Creation timestamp", format: "ISO-8601")
-            updated_at(:string, "Last update timestamp", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "550e8400-e29b-41d4-a716-446655440000",
-            name: "contract.pdf",
-            display_name: "Contract Agreement",
-            item_type: "file",
-            path: "/Contracts/Q4",
-            mime_type: "application/pdf",
-            size: 1024,
-            is_folder: false,
-            inserted_at: "2023-01-10T14:00:00Z",
-            updated_at: "2023-01-12T09:15:00Z"
-          })
-        end,
-      Repository:
-        swagger_schema do
-          title("Repository")
-          description("A storage repository containing files and folders.")
-
-          properties do
-            id(:string, "The ID of the repository", required: true, format: "uuid")
-            name(:string, "Name of the repository", required: true)
-            description(:string, "Description of the repository")
-            status(:string, "Status of the repository", enum: ["active", "inactive"])
-            storage_limit(:integer, "Storage limit in bytes")
-            current_storage_used(:integer, "Current storage used in bytes")
-            item_count(:integer, "Number of items in the repository")
-            creator_id(:string, "ID of the user who created the repository", format: "uuid")
-
-            organisation_id(:string, "ID of the organisation this repository belongs to",
-              format: "uuid"
-            )
-
-            inserted_at(:string, "Creation timestamp", format: "ISO-8601")
-            updated_at(:string, "Last update timestamp", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "550e8400-e29b-41d4-a716-446655440000",
-            name: "My Documents",
-            description: "My personal storage repository",
-            status: "active",
-            storage_limit: 104_857_600,
-            current_storage_used: 52_428_800,
-            item_count: 100,
-            creator_id: "550e8400-e29b-41d4-a716-446655440000",
-            organisation_id: "550e8400-e29b-41d4-a716-446655440000",
-            inserted_at: "2023-01-10T14:00:00Z",
-            updated_at: "2023-01-12T09:15:00Z"
-          })
-        end,
-      RepositoryCreateParams:
-        swagger_schema do
-          title("Repository Create Parameters")
-
-          description("""
-          Parameters for creating a new repository.
-
-          Required fields:
-          - name: Must be unique within the organization
-          - storage_limit: In bytes (1GB = 1073741824 bytes)
-          """)
-
-          properties do
-            name(:string, "Name of the repository", required: true, example: "Legal Documents")
-            description(:string, "Description of the repository", example: "All legal contracts")
-            storage_limit(:integer, "Storage limit in bytes", example: 107_374_182_400)
-
-            status(:string, "Status of the repository",
-              enum: ["active", "inactive"],
-              default: "active",
-              example: "active"
-            )
-          end
-
-          example(%{
-            name: "Legal Documents",
-            description: "All legal contracts and agreements",
-            storage_limit: 107_374_182_400,
-            status: "active"
-          })
-        end,
-      RepositoryUpdateParams:
-        swagger_schema do
-          title("Repository Update Parameters")
-          description("Parameters for updating an existing repository")
-
-          properties do
-            name(:string, "Name of the repository")
-            description(:string, "Description of the repository")
-            storage_limit(:integer, "Storage limit in bytes")
-            status(:string, "Status of the repository", enum: ["active", "inactive"])
-          end
-
-          example(%{
-            name: "Updated Repository Name",
-            description: "Updated description",
-            storage_limit: 209_715_200,
-            status: "active"
-          })
-        end,
-      RepositoriesList:
-        swagger_schema do
-          title("Repositories List")
-          description("List of repositories")
-
-          properties do
-            data(:array, "List of repositories", items: Schema.ref(:Repository))
-          end
-
-          example(%{
-            data: [
-              %{
-                id: "550e8400-e29b-41d4-a716-446655440000",
-                name: "Company Documents",
-                description: "Official company documents",
-                status: "active",
-                storage_limit: 107_374_182_400,
-                current_storage_used: 32_212_254_720,
-                item_count: 1250,
-                creator_id: "550e8400-e29b-41d4-a716-446655440000",
-                organisation_id: "550e8400-e29b-41d4-a716-446655440000",
-                inserted_at: "2023-03-15T09:30:00Z",
-                updated_at: "2023-06-20T14:22:00Z"
-              }
-            ]
-          })
-        end,
-      CounterPartiesList:
-        swagger_schema do
-          title("Counter Parties List")
-          description("List of counter parties")
-
-          properties do
-            data(:array, "List of counter parties", items: Schema.ref(:CounterParty))
-            total(:integer, "Total number of counter parties")
-            page(:integer, "Current page number")
-            per_page(:integer, "Items per page")
-          end
-
-          example(%{
-            data: [
-              %{
-                id: "550e8400-e29b-41d4-a716-446655440000",
-                name: "ABC Corporation",
-                email: "contact@abc.com",
-                type: "organization"
-              }
-            ],
-            total: 1,
-            page: 1,
-            per_page: 10
-          })
-        end,
-      CounterParty:
-        swagger_schema do
-          title("Counter Party")
-          description("A counter party entity")
-
-          properties do
-            id(:string, "The ID of the counter party", required: true, format: "uuid")
-            name(:string, "Name of the counter party", required: true)
-            email(:string, "Email of the counter party")
-            type(:string, "Type of counter party", enum: ["individual", "organization"])
-            inserted_at(:string, "Creation timestamp", format: "ISO-8601")
-            updated_at(:string, "Last update timestamp", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "550e8400-e29b-41d4-a716-446655440000",
-            name: "ABC Corporation",
-            email: "contact@abc.com",
-            type: "organization",
-            inserted_at: "2023-01-10T14:00:00Z",
-            updated_at: "2023-01-12T09:15:00Z"
-          })
-        end,
-      CreateSignatureRequest:
-        swagger_schema do
-          title("Create Signature Request")
-          description("Parameters for creating a signature request")
-
-          properties do
-            document_id(:string, "ID of the document to be signed",
-              required: true,
-              format: "uuid"
-            )
-
-            signer_email(:string, "Email of the signer", required: true)
-            signer_name(:string, "Name of the signer", required: true)
-            message(:string, "Message to include with the signature request")
-            due_date(:string, "Due date for the signature", format: "ISO-8601")
-
-            signature_type(:string, "Type of signature",
-              enum: ["electronic", "digital"],
-              default: "electronic"
-            )
-          end
-
-          example(%{
-            document_id: "550e8400-e29b-41d4-a716-446655440000",
-            signer_email: "john.doe@example.com",
-            signer_name: "John Doe",
-            message: "Please sign this document",
-            due_date: "2023-12-31T23:59:59Z",
-            signature_type: "electronic"
-          })
-        end,
-      Error:
-        swagger_schema do
-          title("Error")
-          description("Error response")
-
-          properties do
-            error(:string, "Error message", required: true)
-            details(:string, "Additional error details")
-          end
-
-          example(%{
-            error: "Resource not found",
-            details: "The requested repository does not exist"
-          })
-        end
-    }
-  end
-
-  swagger_path :index do
-    get("/repositories")
-    summary("List repositories")
-
-    description("""
+  operation(:index,
+    summary: "List repositories",
+    description: """
     Returns a paginated list of repositories accessible to the current user.
 
     ### Filtering
@@ -281,41 +37,31 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     ### Sorting
     - Sort by name: `?sort=name`
     - Sort by storage used: `?sort=storage_used`
-    """)
-
-    operation_id("listRepositories")
-    produces("application/json")
-    tag("Repositories")
-
-    response(200, "OK", Schema.ref(:RepositoriesList))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+    """,
+    responses: [
+      ok: {"OK", "application/json", Schemas.Repository.RepositoriesList},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   def index(conn, _params) do
     repositories = Storages.list_repositories()
     render(conn, "index.json", repositories: repositories)
   end
 
-  swagger_path :create do
-    post("/repositories")
-    summary("Create a repository")
-    description("Creates a new storage repository")
-    operation_id("createRepository")
-    consumes("application/json")
-    produces("application/json")
-    tag("Repositories")
-
-    parameters do
-      repository(:body, Schema.ref(:RepositoryCreateParams), "Repository creation parameters",
-        required: true
-      )
-    end
-
-    response(201, "Created", Schema.ref(:Repository))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(403, "Unauthorized", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Create a repository",
+    description: "Creates a new storage repository",
+    request_body:
+      {"Repository creation parameters", "application/json",
+       Schemas.Repository.RepositoryCreateParams},
+    responses: [
+      created: {"Created", "application/json", Schemas.Repository.Repository},
+      bad_request: {"Bad Request", "application/json", Schemas.Error},
+      forbidden: {"Unauthorized", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   def create(conn, %{"repository" => repository_params}) do
     with {:ok, %Repository{} = repository} <- Storages.create_repository(repository_params) do
@@ -326,33 +72,27 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     end
   end
 
-  swagger_path :show do
-    get("/repositories/{id}")
-    summary("Get repository details")
-    description("Returns detailed information about a specific repository")
-    operation_id("getRepository")
-    produces("application/json")
-    tag("Repositories")
-
-    parameters do
-      id(:path, :string, "ID of the repository to fetch", required: true, format: "uuid")
-    end
-
-    response(200, "OK", Schema.ref(:Repository))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Get repository details",
+    description: "Returns detailed information about a specific repository",
+    parameters: [
+      id: [in: :path, type: :string, description: "ID of the repository to fetch", required: true]
+    ],
+    responses: [
+      ok: {"OK", "application/json", Schemas.Repository.Repository},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   def show(conn, %{"id" => id}) do
     repository = Storages.get_repository!(id)
     render(conn, :show, repository: repository)
   end
 
-  swagger_path :check_setup do
-    get("/repository/check")
-    summary("Check repository setup status")
-
-    description("""
+  operation(:check_setup,
+    summary: "Check repository setup status",
+    description: """
     Checks if the current user has any repositories in their organization.
 
     ### Typical Responses:
@@ -360,45 +100,12 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     - 200 with repositories: User has existing repositories
 
     Used during user onboarding to determine if default repository creation is needed.
-    """)
-
-    operation_id("checkRepositorySetup")
-    produces("application/json")
-    tag("Repositories")
-
-    response(200, "OK", Schema.ref(:RepositoriesList),
-      example: %{
-        data: [
-          %{
-            id: "550e8400-e29b-41d4-a716-446655440000",
-            name: "My Documents",
-            description: "Personal storage",
-            status: "active",
-            storage_limit: 10_737_418_240,
-            current_storage_used: 5_368_709_120,
-            item_count: 42,
-            creator_id: "550e8400-e29b-41d4-a716-446655440001",
-            organisation_id: "550e8400-e29b-41d4-a716-446655440002",
-            inserted_at: "2023-01-01T00:00:00Z",
-            updated_at: "2023-01-01T00:00:00Z"
-          }
-        ]
-      }
-    )
-
-    response(200, "No Repositories", Schema.ref(:RepositoriesList),
-      example: %{
-        data: []
-      }
-    )
-
-    response(401, "Unauthorized", Schema.ref(:Error),
-      example: %{
-        error: "Unauthorized",
-        details: "Authentication required"
-      }
-    )
-  end
+    """,
+    responses: [
+      ok: {"OK", "application/json", Schemas.Repository.RepositoriesList},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   def check_setup(conn, _params) do
     user_id = conn.assigns.current_user.id
@@ -409,23 +116,18 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     render(conn, :index, repositories: repositories)
   end
 
-  swagger_path :setup_repository do
-    put("/repository/setup")
-    summary("Setup default repository")
-
-    description("""
+  operation(:setup_repository,
+    summary: "Setup default repository",
+    description: """
     Creates a default repository for the current user in their current organization.
     The repository will have a randomly generated name and default storage limits.
-    """)
-
-    operation_id("setupDefaultRepository")
-    produces("application/json")
-    tag("Repositories")
-
-    response(201, "Created", Schema.ref(:Repository))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+    """,
+    responses: [
+      created: {"Created", "application/json", Schemas.Repository.Repository},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   def setup_repository(conn, _params) do
     user_id = conn.assigns.current_user.id
@@ -452,30 +154,28 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     end
   end
 
-  swagger_path :update do
-    patch("/repositories/{id}")
-    put("/api/repositories/{id}")
-    summary("Update repository")
-    description("Updates an existing repository")
-    operation_id("updateRepository")
-    consumes("application/json")
-    produces("application/json")
-    tag("Repositories")
-
-    parameters do
-      id(:path, :string, "ID of the repository to update", required: true, format: "uuid")
-
-      repository(:body, Schema.ref(:RepositoryUpdateParams), "Repository update parameters",
+  operation(:update,
+    summary: "Update repository",
+    description: "Updates an existing repository",
+    parameters: [
+      id: [
+        in: :path,
+        type: :string,
+        description: "ID of the repository to update",
         required: true
-      )
-    end
-
-    response(200, "OK", Schema.ref(:Repository))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+      ]
+    ],
+    request_body:
+      {"Repository update parameters", "application/json",
+       Schemas.Repository.RepositoryUpdateParams},
+    responses: [
+      ok: {"OK", "application/json", Schemas.Repository.Repository},
+      bad_request: {"Bad Request", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   def update(conn, %{"id" => id, "repository" => repository_params}) do
     repository = Storages.get_repository!(id)
@@ -486,22 +186,23 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     end
   end
 
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/repositories/{id}")
-    summary("Delete repository")
-    description("Permanently deletes a repository")
-    operation_id("deleteRepository")
-    produces("application/json")
-    tag("Repositories")
-
-    parameters do
-      id(:path, :string, "ID of the repository to delete", required: true, format: "uuid")
-    end
-
-    response(204, "No Content")
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:delete,
+    summary: "Delete repository",
+    description: "Permanently deletes a repository",
+    parameters: [
+      id: [
+        in: :path,
+        type: :string,
+        description: "ID of the repository to delete",
+        required: true
+      ]
+    ],
+    responses: [
+      no_content: {"No Content", "application/json", nil},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   def delete(conn, %{"id" => id}) do
     repository = Storages.get_repository!(id)
@@ -511,26 +212,22 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     end
   end
 
-  swagger_path :export do
-    post("/repositories/export")
-    summary("Export repository as ZIP")
-
-    description(
-      "Exports all files in the repository as a ZIP archive and returns it as a binary download"
-    )
-
-    operation_id("exportRepository")
-    produces("application/zip")
-    tag("Repositories")
-
-    parameters do
-      file_name(:body, :string, "Optional file name for the ZIP archive")
-    end
-
-    response(200, "ZIP file returned successfully", Schema.ref(:FileDownloadResponse))
-    response(403, "Unauthorized", Schema.ref(:Error))
-    response(404, "Repository not found", Schema.ref(:Error))
-  end
+  operation(:export,
+    summary: "Export repository as ZIP",
+    description:
+      "Exports all files in the repository as a ZIP archive and returns it as a binary download",
+    request_body:
+      {"Optional file name", "application/json",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{file_name: %OpenApiSpex.Schema{type: :string}}
+       }},
+    responses: [
+      ok: {"ZIP file returned successfully", "application/zip", nil},
+      forbidden: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Repository not found", "application/json", Schemas.Error}
+    ]
+  )
 
   def export(conn, params) do
     current_user = conn.assigns[:current_user]

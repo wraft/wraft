@@ -8,7 +8,7 @@ defmodule WraftDoc.Mixfile do
       version: "0.6.4",
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: Mix.compilers() ++ [:phoenix_swagger],
+      compilers: Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
@@ -52,7 +52,6 @@ defmodule WraftDoc.Mixfile do
     [
       {:bcrypt_elixir, "~> 3.2"},
       {:briefly, "~> 0.5"},
-      {:bureaucrat, "~> 0.2"},
       {:bypass, "~> 2.1", only: :test},
       {:comeonin, "~> 5.3"},
       {:cors_plug, "~> 3.0"},
@@ -100,7 +99,6 @@ defmodule WraftDoc.Mixfile do
       {:phoenix_live_dashboard, "~> 0.8.6", override: true},
       {:phoenix_live_reload, "~> 1.5", only: :dev},
       {:phoenix_pubsub, "~> 2.2"},
-      {:phoenix_swagger, "~> 0.8"},
       {:phoenix_view, "~> 2.0"},
       {:plug_cowboy, "~> 2.7"},
       {:poison, "~> 6.0", override: true},
@@ -127,7 +125,9 @@ defmodule WraftDoc.Mixfile do
       {:jido, "~> 1.1.0-rc.2"},
       {:jido_ai, github: "wraft/jido_ai", override: true},
       {:instructor, github: "thmsmlr/instructor_ex", override: true},
-      {:cloak_ecto, "~> 1.3.0"}
+      {:cloak_ecto, "~> 1.3.0"},
+      {:open_api_spex, "~> 3.21"},
+      {:bureaucrat, "~> 0.2"}
     ]
   end
 
@@ -145,7 +145,6 @@ defmodule WraftDoc.Mixfile do
       "ecto.start": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "wraft.bucket", "ecto.setup"],
       test: ["ecto.create --quiet", "wraft.bucket", "ecto.migrate", "test"],
-      swagger: ["phx.swagger.generate priv/static/swagger.json"],
       "assets.deploy": ["esbuild default --minify", "phx.digest"],
       quality: [
         "format",

@@ -329,7 +329,49 @@ defmodule WraftDoc.PipelineRunner do
       end)
 
     zip_file =
-      if length(successful_instances) > 0 do
+      case successful_instances do
+        [_ | _] ->
+          org_id = List.first(successful_instances).content_type.organisation_id
+
+          builds =
+            successful_instances
+            |> Stream.map(fn x -> x |> Documents.get_built_document() |> Map.get(:build) end)
+            |> Stream.filter(fn x -> x != nil end)
+            |> Enum.map(&String.to_charlist/1)
+
+          time = DateTime.to_iso8601(Timex.now())
+          zip_name = "builds-#{time}.zip"
+          dest_path = "organisations/#{org_id}/pipe_builds/#{zip_name}"
+          :zip.create(zip_name, builds)
+          File.mkdir_p!("organisations/#{org_id}/pipe_builds/")
+          System.cmd("cp", [zip_name, dest_path])
+          Minio.upload_file(dest_path)
+          File.rm(zip_name)
+
+          Enum.each(
+            successful_instances,
+            &(&1.instance_id |> content_dir(org_id) |> File.rm_rf())
+          )
+
+          zip_name
+
+        [] ->
+          nil
+      end
+
+    Map.put(input, :zip_file, zip_file)
+  end
+
+  def zip_builds(%{instances: instances} = input) do
+    successful_instances =
+      Enum.filter(instances, fn
+        %{failed: true} -> false
+        x when is_struct(x) -> true
+        _ -> false
+      end)
+
+    case successful_instances do
+      [_ | _] ->
         org_id = List.first(successful_instances).content_type.organisation_id
 
         builds =
@@ -347,43 +389,10 @@ defmodule WraftDoc.PipelineRunner do
         Minio.upload_file(dest_path)
         File.rm(zip_name)
         Enum.each(successful_instances, &(&1.instance_id |> content_dir(org_id) |> File.rm_rf()))
-        zip_name
-      else
-        nil
-      end
+        Map.put(input, :zip_file, zip_name)
 
-    Map.put(input, :zip_file, zip_file)
-  end
-
-  def zip_builds(%{instances: instances} = input) do
-    successful_instances =
-      Enum.filter(instances, fn
-        %{failed: true} -> false
-        x when is_struct(x) -> true
-        _ -> false
-      end)
-
-    if length(successful_instances) > 0 do
-      org_id = List.first(successful_instances).content_type.organisation_id
-
-      builds =
-        successful_instances
-        |> Stream.map(fn x -> x |> Documents.get_built_document() |> Map.get(:build) end)
-        |> Stream.filter(fn x -> x != nil end)
-        |> Enum.map(&String.to_charlist/1)
-
-      time = DateTime.to_iso8601(Timex.now())
-      zip_name = "builds-#{time}.zip"
-      dest_path = "organisations/#{org_id}/pipe_builds/#{zip_name}"
-      :zip.create(zip_name, builds)
-      File.mkdir_p!("organisations/#{org_id}/pipe_builds/")
-      System.cmd("cp", [zip_name, dest_path])
-      Minio.upload_file(dest_path)
-      File.rm(zip_name)
-      Enum.each(successful_instances, &(&1.instance_id |> content_dir(org_id) |> File.rm_rf()))
-      Map.put(input, :zip_file, zip_name)
-    else
-      Map.put(input, :zip_file, nil)
+      [] ->
+        Map.put(input, :zip_file, nil)
     end
   end
 

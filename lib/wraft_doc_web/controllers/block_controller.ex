@@ -1,6 +1,8 @@
 defmodule WraftDocWeb.Api.V1.BlockController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
+
+  alias WraftDocWeb.Schemas
 
   plug(WraftDocWeb.Plug.AddActionLog)
 
@@ -17,158 +19,34 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   alias WraftDoc.Documents
   alias WraftDoc.Search.TypesenseServer, as: Typesense
 
-  def swagger_definitions do
-    %{
-      BlockRequest:
-        swagger_schema do
-          title("Block Request")
-          description("A block to Be created to add to instances")
-
-          properties do
-            name(:string, "Block name", required: true)
-            btype(:string, "Block type", required: true)
-            dataset(:map, "Dataset for creating charts", required: true)
-            api_route(:string, "Api route to generate chart")
-            endpoint(:string, "name of the endpoint going to choose")
-          end
-
-          example(%{
-            name: "Farming",
-            btype: "pie",
-            api_route: "http://localhost:8080/chart",
-            endpoint: "blocks_api",
-            dataset: %{
-              data: [
-                %{
-                  value: 10,
-                  label: "January"
-                },
-                %{
-                  value: 20,
-                  label: "February"
-                },
-                %{
-                  value: 5,
-                  label: "March"
-                },
-                %{
-                  value: 60,
-                  label: "April"
-                },
-                %{
-                  value: 80,
-                  label: "May"
-                },
-                %{
-                  value: 70,
-                  label: "June"
-                },
-                %{
-                  value: 90,
-                  label: "Julay"
-                }
-              ],
-              width: 512,
-              height: 512,
-              backgroundColor: "transparent",
-              format: "svg",
-              type: "pie"
-            }
-          })
-        end,
-      Block:
-        swagger_schema do
-          title("Block")
-          description("A Block")
-
-          properties do
-            name(:string, "Block name", required: true)
-            btype(:string, "Block type", required: true)
-            dataset(:map, "Dataset for creating charts", required: true)
-            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
-            updated_at(:string, "When was the user last updated", format: "ISO-8601")
-            api_route(:string, "Api route to generate chart")
-            endpoint(:string, "name of the endpoint going to choose")
-            input(:string, "Input file url")
-            tex_chart(:string, "Latex code of the pie chart")
-          end
-
-          example(%{
-            name: "Farming",
-            description: "Description about block",
-            btype: "pie",
-            api_route: "http://localhost:8080/chart",
-            endpoint: "blocks_api",
-            file_url:
-              "/home/sadique/Documents/org.functionary/go/src/blocks_api/002dc916-4444-4072-a8aa-85a32c5a65ea.svg",
-            tex_chart: "\pie [rotate=180]{80/january}",
-            input: "organisations/7df19bba-9196-4e9e-b1b6-8651f4566ff0/block_input/name.csv",
-            dataset: %{
-              data: [
-                %{
-                  value: 10,
-                  label: "January"
-                },
-                %{
-                  value: 20,
-                  label: "February"
-                },
-                %{
-                  value: 5,
-                  label: "March"
-                },
-                %{
-                  value: 60,
-                  label: "April"
-                },
-                %{
-                  value: 80,
-                  label: "May"
-                },
-                %{
-                  value: 70,
-                  label: "June"
-                },
-                %{
-                  value: 90,
-                  label: "Julay"
-                }
-              ],
-              width: 512,
-              height: 512,
-              backgroundColor: "transparent",
-              format: "svg",
-              type: "pie"
-            },
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z"
-          })
-        end
-    }
-  end
+  tags(["Blocks"])
 
   @doc """
   Create New one
   """
-  swagger_path :create do
-    post("/blocks")
-    summary("Generate blocks")
-    description("Create a block")
-    operation_id("create_block")
-    consumes("multipart/form-data")
-
-    parameter(:name, :formData, :string, "Block name", required: true)
-    parameter(:btype, :formData, :string, "Block type", required: true)
-    parameter(:description, :formData, :string, "Description about Block")
-    parameter(:dataset, :formData, :map, "Dataset for creating charts")
-    parameter(:api_route, :formData, :string, "Api route to generate chart")
-    parameter(:endpoint, :formData, :string, "name of the endpoint going to choose")
-    parameter(:input, :formData, :file, "Input file to upload")
-
-    response(201, "Created", Schema.ref(:Block))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Generate blocks",
+    description: "Create a block",
+    request_body:
+      {"Block data", "multipart/form-data",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           name: %OpenApiSpex.Schema{type: :string},
+           btype: %OpenApiSpex.Schema{type: :string},
+           description: %OpenApiSpex.Schema{type: :string},
+           dataset: %OpenApiSpex.Schema{type: :object},
+           api_route: %OpenApiSpex.Schema{type: :string},
+           endpoint: %OpenApiSpex.Schema{type: :string},
+           input: %OpenApiSpex.Schema{type: :string, format: :binary}
+         }
+       }},
+    responses: [
+      created: {"Created", "application/json", Schemas.Block.Block},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
 
@@ -198,22 +76,20 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     end
   end
 
-  swagger_path :update do
-    put("/blocks/{id}")
-    summary("Update blocks")
-    description("Update a block")
-    operation_id("update_block")
-
-    parameters do
-      id(:path, :string, "block id", required: true)
-      block(:body, Schema.ref(:BlockRequest), "Block to update", required: true)
-    end
-
-    response(201, "Accepted", Schema.ref(:Block))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:update,
+    summary: "Update blocks",
+    description: "Update a block",
+    parameters: [
+      id: [in: :path, type: :string, description: "block id", required: true]
+    ],
+    request_body: {"Block to update", "application/json", Schemas.Block.BlockRequest},
+    responses: [
+      created: {"Accepted", "application/json", Schemas.Block.Block},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => id} = params) do
@@ -239,20 +115,18 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     end
   end
 
-  swagger_path :show do
-    get("/blocks/{id}")
-    summary("Show a block")
-    description("Show a block details")
-    operation_id("show_block")
-
-    parameters do
-      id(:path, :string, "Block id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Block))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Show a block",
+    description: "Show a block details",
+    parameters: [
+      id: [in: :path, type: :string, description: "Block id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Block.Block},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
@@ -262,20 +136,18 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     end
   end
 
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/blocks/{id}")
-    summary("Delete a block")
-    description("Delete a block from database")
-    operation_id("delete_block")
-
-    parameters do
-      id(:path, :string, "Block id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Block))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:delete,
+    summary: "Delete a block",
+    description: "Delete a block from database",
+    parameters: [
+      id: [in: :path, type: :string, description: "Block id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Block.Block},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user

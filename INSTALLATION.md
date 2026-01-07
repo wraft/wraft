@@ -28,7 +28,7 @@ $ cd wraft
 
 As these 2 are defined in the `.tool_versions`, `asdf` will install the right versions with the following set of commands:
 
-Please refer the given link for the installation of [asdf-version-manager](https://asdf-vm.com/#/core-manage-asdf-vm?id=install).
+Please refer to the given link for the installation of [asdf-version-manager](https://asdf-vm.com/#/core-manage-asdf-vm?id=install).
 
 Add the following plugins to your asdf for elixir and erlang:
 
@@ -62,7 +62,7 @@ $ sudo apt install inotify-tools
 
 ### 3 - **Postgres**
 
-Select your OS from the options [here](https://www.postgresql.org/download/) and follow the instruction to
+Select your OS from the options [here](https://www.postgresql.org/download/) and follow the instructions to
 install the latest version of postgres.
 Check your installation using:
 
@@ -112,8 +112,8 @@ $ sudo dpkg -i $DEB
 
 where `$DEB` is the path to the downloaded deb.
 
-These instructions are taken from [Official Pandoc Documentations](https://pandoc.org/installing.html).
-You may refer if the official documentation if you have any doubts.
+These instructions are taken from [Official Pandoc Documentation](https://pandoc.org/installing.html).
+You may refer to the official documentation if you have any doubts.
 
 ### 6 - **ImageMagick**
 
@@ -196,7 +196,7 @@ $ source .env.dev && mix phx.server
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
-To get the API documentation, go [here](http://localhost:4000/api/swagger/index.html#/).
+To get the API documentation, go [here](http://localhost:4000/spec/swaggerui).
 
 ### 10 - Frontend
 
@@ -208,7 +208,7 @@ $ git clone https://github.com/wraft/wraft-frontend.git
 $ cd wraft-frontend
 ```
 
-Refer the README.md in the frontend repository for the setup.
+Refer to the README.md in the frontend repository for the setup.
 
 ### 11 - Default User
 
@@ -232,7 +232,7 @@ The easiest way to get started with Wraft is using Docker. The Docker setup incl
 
 ### Quick Start
 
-1. **Clone the repository and navigate into it**  
+1. **Clone the repository and navigate into it**
 
 ```shell
 git clone https://github.com/wraft/wraft.git
@@ -306,7 +306,7 @@ The Docker setup includes:
 Make sure to configure the following environment variables in your `.env.dev` file:
 
 - `SECRET_KEY_BASE`
-- `DEV_DB_USERNAME`, `DEV_DB_PASSWORD`, `DEV_DB_NAME` 
+- `DEV_DB_USERNAME`, `DEV_DB_PASSWORD`, `DEV_DB_NAME`
 - `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`
 - `TYPESENSE_API_KEY`
 - `CLOAK_KEY`

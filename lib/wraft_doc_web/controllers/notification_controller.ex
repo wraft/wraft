@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.NotificationController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.AddActionLog
 
@@ -11,235 +11,21 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
   alias WraftDoc.Notifications.Settings
   alias WraftDoc.Notifications.Template
   alias WraftDoc.Notifications.UserNotification
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.Notification, as: NotificationSchema
 
-  def swagger_definitions do
-    %{
-      NotificationRequest:
-        swagger_schema do
-          title("Notification Request")
-          description("Notification Request")
+  tags(["Notifications"])
 
-          properties do
-            type(:string, "Type", required: true)
-            message(:string, "Message", required: true)
-            is_global(:boolean, "Is global")
-            action(:map, "Action")
-          end
-
-          example(%{
-            type: "reminder",
-            message: "This is a sample notification message",
-            is_global: false,
-            action: %{
-              label: "View Details",
-              url: "/notifications/123"
-            }
-          })
-        end,
-      Notification:
-        swagger_schema do
-          title("Notification")
-          description("Notification")
-
-          properties do
-            type(:string, "Type")
-            message(:string, "Message")
-            is_global(:boolean, "Is global")
-            action_id(:string, "Action id")
-            action(:map, "Action")
-            inserted_at(:string, "Inserted at")
-            updated_at(:string, "Updated at")
-          end
-
-          example(%{
-            type: "reminder",
-            message: "This is a sample notification message",
-            is_global: false,
-            inserted_at: "2023-02-20T14:30:00Z",
-            updated_at: "2023-02-20T14:30:00Z",
-            action: %{
-              label: "View Details",
-              url: "/notifications/123"
-            }
-          })
-        end,
-      UserNotification:
-        swagger_schema do
-          title("User Notification")
-          description("User Notification")
-
-          properties do
-            id(:string, "id")
-            recipient_id(:string, "Recipient id")
-            actor_id(:string, "Actor id")
-            status(:string, "Status")
-            seen_at(:string, "Seen at")
-            updated_at(:string, "Updated at")
-            inserted_at(:string, "Inserted at")
-            notification(Schema.ref(:Notification))
-          end
-
-          example(%{
-            id: "78dee356-6d31-4a8d-8489-688bc369477c",
-            organisation_id: "4085f5cf-752f-471f-a02e-156befae09f8e",
-            recipient_id: "4085f5cf-752f-471f-a02e-156badas09f8e",
-            status: "unread",
-            seen_at: "2020-01-21T14:00:00Z",
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z",
-            notification: %{
-              type: "reminder",
-              message: "This is a sample notification message",
-              is_global: false,
-              action: %{
-                label: "View Details",
-                url: "/notifications/123"
-              },
-              actor_id: "4085f5cf-752f-471f-a02e-156badas09f8e",
-              inserted_at: "2023-02-20T14:30:00Z",
-              updated_at: "2023-02-20T14:30:00Z"
-            }
-          })
-        end,
-      NotificationIndexResponse:
-        swagger_schema do
-          properties do
-            notifications(Schema.ref(:UserNotification))
-            page_number(:integer, "Page number")
-            total_pages(:integer, "Total number of pages")
-            total_entries(:integer, "Total number of entries")
-          end
-
-          example(%{
-            notifications: [
-              %{
-                id: "78dee356-6d31-4a8d-8489-688bc369477c",
-                organisation_id: "4085f5cf-752f-471f-a02e-156befae09f8e",
-                recipient_id: "4085f5cf-752f-471f-a02e-156badas09f8e",
-                status: "unread",
-                seen_at: "2020-01-21T14:00:00Z",
-                updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z",
-                notification: %{
-                  type: "reminder",
-                  message: "This is a sample notification message",
-                  is_global: false,
-                  action: %{
-                    label: "View Details",
-                    url: "/notifications/123"
-                  },
-                  actor_id: "4085f5cf-752f-471f-a02e-156badas09f8e",
-                  inserted_at: "2023-02-20T14:30:00Z",
-                  updated_at: "2023-02-20T14:30:00Z"
-                }
-              }
-            ],
-            page_number: 1,
-            total_pages: 1,
-            total_entries: 1
-          })
-        end,
-      NotificationSuccessResponse:
-        swagger_schema do
-          title("Notification Success Info")
-          description("Response for notification read successfully")
-
-          properties do
-            info(:string, "Info")
-          end
-
-          example(%{
-            info: "Success"
-          })
-        end,
-      NotificationCountResponse:
-        swagger_schema do
-          title("Notification Count Info")
-          description("Response for notification count")
-
-          properties do
-            count(:integer, "Count")
-          end
-
-          example(%{
-            count: 1
-          })
-        end,
-      NotificationSettingsResponse:
-        swagger_schema do
-          title("Notification Settings Info")
-          description("Response for notification settings")
-
-          properties do
-            settings(:array, "Notification settings")
-          end
-
-          example([
-            "pipeline.instance_failed",
-            "pipeline.not_found",
-            "pipeline.form_mapping_not_complete"
-          ])
-        end,
-      NotificationEventsRequest:
-        swagger_schema do
-          title("Notification Events Request")
-          description("Request body for updating notification settings")
-
-          properties do
-            events(:array, "List of notification events to enable", items: %{type: :string})
-          end
-
-          example(%{
-            events: [
-              "document.reminder",
-              "document.add_comment",
-              "document.pending_approvals",
-              "document.state_update",
-              "organisation.unassign_role",
-              "organisation.assign_role",
-              "organisation.join_organisation",
-              "registration.user_joins_wraft"
-            ]
-          })
-        end,
-      NotificationEventsResponse:
-        swagger_schema do
-          title("Notification Events Info")
-          description("Response for notification events")
-
-          properties do
-            events(:array, "Notification events")
-          end
-
-          example([
-            %{
-              description: "Get notified when documents require your approval or review",
-              event: "document.pending_approvals"
-            },
-            %{
-              description:
-                "Stay updated when documents progress through approval workflow states",
-              event: "document.state_update"
-            }
-          ])
-        end
-    }
-  end
-
-  swagger_path :create do
-    post("/notifications")
-    summary("create notification")
-
-    parameters do
-      notification(:body, Schema.ref(:NotificationRequest), "Notification to be created",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:Notification))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "create notification",
+    request_body:
+      {"Notification to be created", "application/json", NotificationSchema.NotificationRequest},
+    responses: [
+      ok: {"Ok", "application/json", NotificationSchema.Notification},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
@@ -248,17 +34,14 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
     render(conn, "notification.json", notification: notification)
   end
 
-  @doc """
-  list notifications for a user within the organisation
-  """
-  swagger_path :index do
-    get("/notifications")
-    summary("List notifications")
-    description("list notifications for a user within the organisation")
-
-    response(200, "Ok", Schema.ref(:NotificationIndexResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:index,
+    summary: "List notifications",
+    description: "list notifications for a user within the organisation",
+    responses: [
+      ok: {"Ok", "application/json", NotificationSchema.NotificationIndexResponse},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
@@ -279,21 +62,17 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
     end
   end
 
-  @doc """
-  mark notification as read
-  """
-  swagger_path :read do
-    put("/notifications/read/{id}")
-    summary("mark notification as read")
-    description("mark notification as read")
-
-    parameters do
-      id(:path, :string, "id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:NotificationSuccessResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:read,
+    summary: "mark notification as read",
+    description: "mark notification as read",
+    parameters: [
+      id: [in: :path, type: :string, description: "id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", NotificationSchema.NotificationSuccessResponse},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec read(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def read(conn, %{"id" => id} = _params) do
@@ -306,16 +85,14 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
     end
   end
 
-  @doc """
-  mark all notifications as read
-  """
-  swagger_path :read_all do
-    put("/notifications/read_all")
-    summary("mark all notifications as read")
-    description("mark all notifications as read")
-    response(200, "Ok", Schema.ref(:NotificationSuccessResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:read_all,
+    summary: "mark all notifications as read",
+    description: "mark all notifications as read",
+    responses: [
+      ok: {"Ok", "application/json", NotificationSchema.NotificationSuccessResponse},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec read_all(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def read_all(conn, _params) do
@@ -330,16 +107,14 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
     end
   end
 
-  @doc """
-  count notifications
-  """
-  swagger_path :count do
-    get("/notifications/count")
-    summary("count notifications")
-    description("count notifications")
-    response(200, "Ok", Schema.ref(:NotificationCountResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:count,
+    summary: "count notifications",
+    description: "count notifications",
+    responses: [
+      ok: {"Ok", "application/json", NotificationSchema.NotificationCountResponse},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def count(conn, _params) do
@@ -348,16 +123,14 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
     render(conn, "count.json", count: count)
   end
 
-  @doc """
-  get settings
-  """
-  swagger_path :get_settings do
-    get("/notifications/settings")
-    summary("get settings")
-    description("get settings")
-    response(200, "Ok", Schema.ref(:NotificationSettingsResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:get_settings,
+    summary: "get settings",
+    description: "get settings",
+    responses: [
+      ok: {"Ok", "application/json", NotificationSchema.NotificationSettingsResponse},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec get_settings(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def get_settings(conn, _params) do
@@ -368,23 +141,17 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
     end
   end
 
-  @doc """
-  update settings
-  """
-  swagger_path :update_settings do
-    put("/notifications/settings")
-    summary("update settings")
-    description("update settings")
-
-    parameters do
-      body(:body, Schema.ref(:NotificationEventsRequest), "Notification events request",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:NotificationSettingsResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:update_settings,
+    summary: "update settings",
+    description: "update settings",
+    request_body:
+      {"Notification events request", "application/json",
+       NotificationSchema.NotificationEventsRequest},
+    responses: [
+      ok: {"Ok", "application/json", NotificationSchema.NotificationSettingsResponse},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec update_settings(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update_settings(conn, params) do
@@ -396,16 +163,14 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
     end
   end
 
-  @doc """
-  get events
-  """
-  swagger_path :get_events do
-    get("/notifications/events")
-    summary("get events")
-    description("get events")
-    response(200, "Ok", Schema.ref(:NotificationEventsResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:get_events,
+    summary: "get events",
+    description: "get events",
+    responses: [
+      ok: {"Ok", "application/json", NotificationSchema.NotificationEventsResponse},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   @spec get_events(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def get_events(conn, _params) do

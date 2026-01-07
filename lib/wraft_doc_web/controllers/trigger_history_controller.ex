@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   TriggerHistory model.
   """
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.AddActionLog
 
@@ -19,153 +19,27 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   alias WraftDoc.Pipelines.Pipeline
   alias WraftDoc.Pipelines.TriggerHistories
   alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
+  alias WraftDocWeb.Schemas
 
-  def swagger_definitions do
-    %{
-      GeneralResponse:
-        swagger_schema do
-          title("General response")
-          description("Response for pipeline trigger and bulk jobs.")
-
-          properties do
-            info(:string, "Response message")
-            pipeline_id(:string, "Pipeline ID")
-            trigger_id(:string, "Trigger ID")
-          end
-
-          example(%{
-            info: "Trigger accepted.",
-            pipeline_id: "1232148nb3478",
-            trigger_id: "147832148nb3478"
-          })
-        end,
-      TriggerData:
-        swagger_schema do
-          title("Data of trigger message")
-          description("Data of a trigger message")
-
-          properties do
-            data(:map, "Data of a trigger message", required: true)
-          end
-
-          example(%{data: %{name: "John Doe", position: "HR Manager"}})
-        end,
-      TriggerHistory:
-        swagger_schema do
-          title("A trigger history object")
-          description("A trigger history object")
-
-          properties do
-            id(:string, "ID of the trigger history", required: true)
-            data(:map, "Input data of the the trigger history", required: true)
-            response(:map, "Response data of the the trigger history")
-            state(:state, "State of the trigger history", required: true)
-            start_time(:start_time, "Start time of the trigger history", required: true)
-            end_time(:end_time, "End time of the trigger history", required: true)
-            duration(:duration, "Duration of execution of the trigger history", required: true)
-            zip_file(:zip_file, "Zip file of the trigger history", required: true)
-            inserted_at(:string, "Trigger history created time", format: "ISO-8601")
-            updated_at(:string, "Trigger history last updated time", format: "ISO-8601")
-            user(Schema.ref(:User))
-          end
-
-          example(%{
-            id: "jhdiuh23y498sjdbda",
-            data: %{name: "John Doe"},
-            state: "success",
-            response: %{
-              documents: [%{id: "123", instance_id: "CTR001", title: "Document Title"}],
-              documents_count: 1,
-              status: "completed",
-              state: "executing",
-              pipeline_id: "a9cc343b-857e-4e8a-8262-fc7badaebdfs",
-              trigger_history_id: "jhdiuh23y498sjdbda",
-              input_data: %{
-                "0eef6b6b-c201-4e82-9464-d66d1659f822" => "23-03-2025",
-                "0eef6b6b-c201-4e82-9464-d66d1659f823" => "John Doe"
-              }
-            },
-            start_time: "2020-01-21 14:00:00",
-            end_time: "2020-01-21 14:12:00",
-            duration: 720,
-            zip_file: "builds-2020-01-21T14:11:58.565745Z.zip",
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z",
-            creator: %{
-              id: "1232148nb3478",
-              name: "John Doe",
-              email: "email@xyz.com",
-              email_verify: true,
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            }
-          })
-        end,
-      TriggerHistories:
-        swagger_schema do
-          title("Trigger History list")
-          description("Trigger histories created so far")
-          type(:array)
-          items(Schema.ref(:TriggerHistory))
-        end,
-      TriggerHistoryIndex:
-        swagger_schema do
-          properties do
-            trigger_history(Schema.ref(:TriggerHistories))
-            page_number(:integer, "Page number")
-            total_pages(:integer, "Total number of pages")
-            total_entries(:integer, "Total number of contents")
-          end
-
-          example(%{
-            triggers: [
-              %{
-                id: "jhdiuh23y498sjdbda",
-                data: %{name: "John Doe"},
-                error: %{},
-                state: "success",
-                start_time: "2020-01-21 14:00:00",
-                end_time: "2020-01-21 14:12:00",
-                duration: 720,
-                zip_file: "builds-2020-01-21T14:11:58.565745Z.zip",
-                updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z",
-                creator: %{
-                  id: "1232148nb3478",
-                  name: "John Doe",
-                  email: "email@xyz.com",
-                  email_verify: true,
-                  updated_at: "2020-01-21T14:00:00Z",
-                  inserted_at: "2020-02-21T14:00:00Z"
-                }
-              }
-            ],
-            page_number: 1,
-            total_pages: 2,
-            total_entries: 15
-          })
-        end
-    }
-  end
+  tags(["Trigger History"])
 
   @doc """
   Create a trigger history.
   """
-  swagger_path :create do
-    post("/pipelines/{pipeline_id}/triggers")
-    summary("Pipeline trigger")
-    description("API to trigger a pipeline")
-
-    parameters do
-      pipeline_id(:path, :string, "pipeline id", required: true)
-      data(:body, Schema.ref(:TriggerData), "Data of a trigger", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:GeneralResponse))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Pipeline trigger",
+    description: "API to trigger a pipeline",
+    parameters: [
+      pipeline_id: [in: :path, type: :string, description: "pipeline id", required: true]
+    ],
+    request_body: {"Data of a trigger", "application/json", Schemas.TriggerHistory.TriggerData},
+    responses: [
+      ok: {"OK", "application/json", Schemas.TriggerHistory.GeneralResponse},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, %{"pipeline_id" => p_uuid, "data" => data}) do
@@ -183,21 +57,20 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   Trigger history index of a pipeline.
   """
   # TODO - write tests
-  swagger_path :index_by_pipeline do
-    get("/pipelines/{pipeline_id}/triggers")
-    summary("Pipeline trigger index")
-    description("API to get the list of trigger histories of a pipeline")
-
-    parameters do
-      pipeline_id(:path, :string, "pipeline id")
-      page(:query, :string, "Page number")
-    end
-
-    response(200, "OK", Schema.ref(:TriggerHistoryIndex))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:index_by_pipeline,
+    summary: "Pipeline trigger index",
+    description: "API to get the list of trigger histories of a pipeline",
+    parameters: [
+      pipeline_id: [in: :path, type: :string, description: "pipeline id"],
+      page: [in: :query, type: :string, description: "Page number"]
+    ],
+    responses: [
+      ok: {"OK", "application/json", Schemas.TriggerHistory.IndexResponse},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec index_by_pipeline(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index_by_pipeline(conn, %{"pipeline_id" => p_uuid} = params) do
@@ -222,33 +95,32 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   @doc """
   Trigger history index.
   """
-  swagger_path :index do
-    get("/triggers")
-    summary("Pipeline trigger history index")
-    description("API to get the list of trigger histories within an organisation")
-
-    parameters do
-      page(:query, :string, "Page number")
-      pipeline_name(:query, :string, "Pipeline Name")
-
-      status(
-        :query,
-        :integer,
-        "Allowed Status Codes => [enqued: 1, executing: 2, pending: 3, partially_completed: 4, success: 5, failed: 6]"
-      )
-
-      sort(
-        :query,
-        :string,
-        "Sort Keys => pipeline_name, pipeline_name_desc, status, status_desc, inserted_at, inserted_at_desc"
-      )
-    end
-
-    response(200, "OK", Schema.ref(:TriggerHistoryIndex))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:index,
+    summary: "Pipeline trigger history index",
+    description: "API to get the list of trigger histories within an organisation",
+    parameters: [
+      page: [in: :query, type: :string, description: "Page number"],
+      pipeline_name: [in: :query, type: :string, description: "Pipeline Name"],
+      status: [
+        in: :query,
+        type: :integer,
+        description:
+          "Allowed Status Codes => [enqued: 1, executing: 2, pending: 3, partially_completed: 4, success: 5, failed: 6]"
+      ],
+      sort: [
+        in: :query,
+        type: :string,
+        description:
+          "Sort Keys => pipeline_name, pipeline_name_desc, status, status_desc, inserted_at, inserted_at_desc"
+      ]
+    ],
+    responses: [
+      ok: {"OK", "application/json", Schemas.TriggerHistory.IndexResponse},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error}
+    ]
+  )
 
   # TODO Add tests for this
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
@@ -273,19 +145,18 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   @doc """
   Show a trigger history.
   """
-  swagger_path :show do
-    get("/triggers/{id}")
-    summary("Show trigger history")
-    description("API to get a trigger history by ID")
-
-    parameters do
-      id(:path, :string, "Trigger History ID", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:TriggerHistory))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Show trigger history",
+    description: "API to get a trigger history by ID",
+    parameters: [
+      id: [in: :path, type: :string, description: "Trigger History ID", required: true]
+    ],
+    responses: [
+      ok: {"OK", "application/json", Schemas.TriggerHistory.Item},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not found", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do

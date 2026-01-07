@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
   Controller for managing organization-based feature flags.
   """
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.Authorized,
     index: "organisation:show",
@@ -15,56 +15,19 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
 
   alias WraftDoc.Enterprise
   alias WraftDoc.FeatureFlags
+  alias WraftDocWeb.Schemas.Error
+  alias WraftDocWeb.Schemas.FeatureFlag, as: FeatureFlagSchema
 
-  def swagger_definitions do
-    %{
-      FeatureFlag:
-        swagger_schema do
-          title("Feature Flag")
-          description("A feature flag status")
+  tags(["Feature Flags"])
 
-          properties do
-            feature(:string, "Feature name", required: true)
-            enabled(:boolean, "Whether the feature is enabled", required: true)
-          end
-
-          example(%{
-            feature: "ai_features",
-            enabled: true
-          })
-        end,
-      FeatureFlagsList:
-        swagger_schema do
-          title("Feature Flags List")
-          description("List of feature flags and their status")
-
-          properties do
-            features(:object, "Map of feature names to their enabled status")
-            available_features(:array, "List of all available features")
-          end
-
-          example(%{
-            features: %{
-              ai_features: false,
-              google_drive_integration: false,
-              advanced_analytics: true
-            },
-            available_features: ["ai_features", "google_drive_integration", "advanced_analytics"]
-          })
-        end
-    }
-  end
-
-  @doc """
-  List available features and their status for the current organization.
-  """
-  swagger_path :index do
-    get("/organisations/features")
-    summary("List organization feature flags")
-    description("Get all feature flags and their status for the current organization")
-    response(200, "OK", Schema.ref(:FeatureFlagsList))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:index,
+    summary: "List organization feature flags",
+    description: "Get all feature flags and their status for the current organization",
+    responses: [
+      ok: {"OK", "application/json", FeatureFlagSchema.FeatureFlagsList},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   def index(conn, _params) do
     current_user = conn.assigns.current_user
@@ -80,22 +43,18 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
     })
   end
 
-  @doc """
-  Show specific feature status for the current organization.
-  """
-  swagger_path :show do
-    get("/organisations/features/{feature}")
-    summary("Get specific feature flag")
-    description("Get the status of a specific feature flag for the current organization")
-
-    parameters do
-      feature(:path, :string, "Feature name", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:FeatureFlag))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Get specific feature flag",
+    description: "Get the status of a specific feature flag for the current organization",
+    parameters: [
+      feature: [in: :path, type: :string, description: "Feature name", required: true]
+    ],
+    responses: [
+      ok: {"OK", "application/json", FeatureFlagSchema.FeatureFlag},
+      not_found: {"Not Found", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
 
   def show(conn, %{"feature" => feature_name}) do
     current_user = conn.assigns.current_user
@@ -124,24 +83,21 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
       |> json(%{error: "Invalid feature name"})
   end
 
-  @doc """
-  Update a specific feature flag for the current organization.
-  """
-  swagger_path :update do
-    put("/organisations/features/{feature}")
-    summary("Update feature flag")
-    description("Enable or disable a specific feature flag for the current organization")
-
-    parameters do
-      feature(:path, :string, "Feature name", required: true)
-      body(:body, :object, "Feature flag update", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:FeatureFlag))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:update,
+    summary: "Update feature flag",
+    description: "Enable or disable a specific feature flag for the current organization",
+    parameters: [
+      feature: [in: :path, type: :string, description: "Feature name", required: true]
+    ],
+    request_body:
+      {"Feature flag update", "application/json", FeatureFlagSchema.FeatureFlagUpdateRequest},
+    responses: [
+      ok: {"OK", "application/json", FeatureFlagSchema.FeatureFlag},
+      not_found: {"Not Found", "application/json", Error},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Error}
+    ]
+  )
 
   def update(conn, %{"feature" => feature_name, "enabled" => enabled}) do
     current_user = conn.assigns.current_user
@@ -190,22 +146,18 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
       |> json(%{error: "Invalid feature name"})
   end
 
-  @doc """
-  Bulk update multiple feature flags for the current organization.
-  """
-  swagger_path :bulk_update do
-    put("/organisations/features")
-    summary("Bulk update feature flags")
-    description("Update multiple feature flags for the current organization")
-
-    parameters do
-      body(:body, :object, "Feature flags bulk update", required: true)
-    end
-
-    response(200, "OK")
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
+  operation(:bulk_update,
+    summary: "Bulk update feature flags",
+    description: "Update multiple feature flags for the current organization",
+    request_body:
+      {"Feature flags bulk update", "application/json",
+       FeatureFlagSchema.BulkFeatureFlagUpdateRequest},
+    responses: [
+      ok: {"OK", "application/json", FeatureFlagSchema.BulkFeatureFlagUpdateResponse},
+      unauthorized: {"Unauthorized", "application/json", Error},
+      bad_request: {"Bad Request", "application/json", Error}
+    ]
+  )
 
   def bulk_update(conn, %{"features" => features_map}) when is_map(features_map) do
     current_user = conn.assigns.current_user

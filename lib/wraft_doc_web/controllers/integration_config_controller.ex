@@ -9,7 +9,7 @@ defmodule WraftDocWeb.Api.V1.IntegrationConfigController do
   - List integrations by category
   """
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.FeatureFlags
@@ -17,144 +17,23 @@ defmodule WraftDocWeb.Api.V1.IntegrationConfigController do
   alias WraftDoc.Integrations.Integration
   alias WraftDoc.Integrations.IntegrationConfig
   alias WraftDoc.Repo
+  alias WraftDocWeb.Schemas
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  def swagger_definitions do
-    %{
-      IntegrationList:
-        swagger_schema do
-          title("Integration List")
-          description("List of all available integrations with their configuration status")
-          type(:array)
-          items(Schema.ref(:Integration))
-        end,
-      Integration:
-        swagger_schema do
-          title("Integration")
-          description("Details about an integration and its configuration")
+  tags(["Integrations"])
 
-          properties do
-            provider(:string, "Unique identifier for the integration provider", required: true)
-            name(:string, "Display name of the integration", required: true)
-            category(:string, "Category the integration belongs to", required: true)
-            description(:string, "Description of the integration's functionality", required: true)
-            icon(:string, "Icon identifier for the integration", required: true)
-
-            enabled(:boolean, "Whether the integration is enabled for the organization",
-              required: true
-            )
-
-            id(:string, "ID of the enabled integration configuration (null if not enabled)")
-            config_structure(:object, "Structure of configuration fields for the integration")
-            available_events(:array, "List of events the integration can subscribe to")
-            selected_events(:array, "List of events the organization has subscribed to")
-            config(:object, "Current configuration values (with sensitive data masked)")
-          end
-
-          example(%{
-            provider: "slack",
-            name: "Slack",
-            category: "communication",
-            description: "Integrate with Slack for notifications and updates",
-            icon: "slack-icon",
-            enabled: true,
-            id: "123e4567-e89b-12d3-a456-426614174000",
-            config_structure: %{
-              bot_token: %{
-                type: "string",
-                label: "Bot Token",
-                description: "Slack Bot User OAuth Token",
-                required: true
-              }
-            },
-            available_events: [
-              %{id: "document.signed", name: "Document Signed"}
-            ],
-            selected_events: ["document.signed"]
-          })
-        end,
-      CategoryList:
-        swagger_schema do
-          title("Integration Categories List")
-          description("List of integration categories with their associated integrations")
-          type(:array)
-          items(Schema.ref(:Category))
-        end,
-      Category:
-        swagger_schema do
-          title("Integration Category")
-          description("Category of integrations with the list of integrations in that category")
-
-          properties do
-            category(:string, "Name of the category", required: true)
-
-            integrations(:array, "List of integrations in this category",
-              required: true,
-              items: Schema.ref(:Integration)
-            )
-          end
-
-          example(%{
-            category: "communication",
-            integrations: [
-              %{
-                provider: "slack",
-                name: "Slack",
-                description: "Integrate with Slack for notifications",
-                enabled: true
-              }
-            ]
-          })
-        end,
-      ConfigDetails:
-        swagger_schema do
-          title("Integration Configuration Details")
-          description("Detailed configuration for a specific integration")
-
-          properties do
-            provider(:string, "Integration provider identifier", required: true)
-
-            config(:object, "Current configuration values (with sensitive data masked)",
-              required: true
-            )
-
-            config_structure(:object, "Structure and metadata for configuration fields",
-              required: true
-            )
-          end
-        end,
-      Error:
-        swagger_schema do
-          title("Error")
-          description("Error response")
-
-          properties do
-            error(:string, "Error message describing what went wrong", required: true)
-          end
-
-          example(%{
-            error: "Integration provider not found"
-          })
-        end
-    }
-  end
-
-  swagger_path :index do
-    get("/configs")
-    summary("List all integrations")
-
-    description(
-      "Returns a list of all available integrations with their configuration status for the current organization"
-    )
-
-    tag("Integrations")
-
-    response(200, "Success", Schema.ref(:IntegrationList))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(403, "Unauthorized", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:index,
+    summary: "List all integrations",
+    description:
+      "Returns a list of all available integrations with their configuration status for the current organization",
+    responses: [
+      ok: {"Success", "application/json", Schemas.IntegrationConfig.IntegrationList},
+      bad_request: {"Bad Request", "application/json", Schemas.Error},
+      forbidden: {"Unauthorized", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Lists all available integrations with their configuration status.
@@ -211,23 +90,25 @@ defmodule WraftDocWeb.Api.V1.IntegrationConfigController do
     render(conn, "index.json", integrations: integrations_with_status)
   end
 
-  swagger_path :show do
-    get("/configs/{id}")
-    summary("Get integration details")
-    description("Returns details about a specific integration and its configuration status")
-
-    parameters do
-      id(:path, :string, "Integration provider identifier", required: true)
-    end
-
-    tag("Integrations")
-
-    response(200, "Success", Schema.ref(:Integration))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(403, "Unauthorized", Schema.ref(:Error))
-    response(404, "Integration provider not found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Get integration details",
+    description: "Returns details about a specific integration and its configuration status",
+    parameters: [
+      id: [
+        in: :path,
+        type: :string,
+        description: "Integration provider identifier",
+        required: true
+      ]
+    ],
+    responses: [
+      ok: {"Success", "application/json", Schemas.IntegrationConfig.Integration},
+      bad_request: {"Bad Request", "application/json", Schemas.Error},
+      forbidden: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Integration provider not found", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Shows details for a specific integration.
@@ -275,18 +156,16 @@ defmodule WraftDocWeb.Api.V1.IntegrationConfigController do
     end
   end
 
-  swagger_path :categories do
-    get("/configs/categories")
-    summary("List integration categories")
-    description("Returns all integration categories with their associated integrations")
-
-    tag("Integrations")
-
-    response(200, "Success", Schema.ref(:CategoryList))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(403, "Unauthorized", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  operation(:categories,
+    summary: "List integration categories",
+    description: "Returns all integration categories with their associated integrations",
+    responses: [
+      ok: {"Success", "application/json", Schemas.IntegrationConfig.CategoryList},
+      bad_request: {"Bad Request", "application/json", Schemas.Error},
+      forbidden: {"Unauthorized", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Lists all integration categories with their associated integrations.
@@ -326,23 +205,24 @@ defmodule WraftDocWeb.Api.V1.IntegrationConfigController do
     render(conn, "categories.json", categories: categories_with_status)
   end
 
-  swagger_path :config do
-    get("/{provider}/config")
-    summary("Get integration configuration details")
-    description("Returns the detailed configuration for a specific integration")
-
-    parameters do
-      provider(:path, :string, "Integration provider identifier", required: true)
-    end
-
-    tag("Integrations")
-
-    response(200, "Success", Schema.ref(:ConfigDetails))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(404, "Integration provider not found", Schema.ref(:Error))
-    response(404, "Integration not configured for this organization", Schema.ref(:Error))
-    response(403, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:config,
+    summary: "Get integration configuration details",
+    description: "Returns the detailed configuration for a specific integration",
+    parameters: [
+      provider: [
+        in: :path,
+        type: :string,
+        description: "Integration provider identifier",
+        required: true
+      ]
+    ],
+    responses: [
+      ok: {"Success", "application/json", Schemas.IntegrationConfig.ConfigDetails},
+      bad_request: {"Bad Request", "application/json", Schemas.Error},
+      not_found: {"Integration provider not found", "application/json", Schemas.Error},
+      forbidden: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Gets detailed configuration for a specific integration.

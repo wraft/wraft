@@ -140,7 +140,7 @@
 - Field type and content type fields
 - Activity stream
 - Bulk build
-- Keep build hitory
+- Keep build history
 - Versioning of instances
 - Commenting on data templates and instances
 - Block templates
@@ -224,7 +224,7 @@
 ### Added
 
 - Create, update, list, delete and show flows
-- Create, updare, list and delete states
+- Create, update, list and delete states
 - Create unique ID for instances
 - Create theme
 
@@ -269,7 +269,7 @@
 
 ### Added
 
-- User registraion
+- User registration
 - User login
 - Role, admin user, and engine seeds
 - Create layout
@@ -279,13 +279,13 @@
 
 ### Fixed
 
-- Heroku delpoy fix
+- Heroku deploy fix
 
 ## v0.0.1.1_0 - 2020-02-24
 
 ### Fixed
 
-- Heroku delpoy fix
+- Heroku deploy fix
 
 ## v0.0.1.1 - 2020-02-24
 

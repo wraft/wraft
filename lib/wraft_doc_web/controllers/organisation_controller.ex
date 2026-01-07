@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.OrganisationController do
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   plug WraftDocWeb.Plug.AddActionLog
 
@@ -23,298 +23,40 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   alias WraftDoc.InvitedUsers
   alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDocWeb.Guardian
+  alias WraftDocWeb.Schemas
 
-  def swagger_definitions do
-    %{
-      OrganisationRequest:
-        swagger_schema do
-          title("Organisation Request")
-          description("An organisation to be register for enterprice operation")
-
-          properties do
-            name(:string, "Organisation name", required: true)
-            legal_name(:string, "Legal name of organisation", required: true)
-            address(:string, "Address of organisation")
-            gstin(:string, "Goods and service tax invoice numger")
-            email(:string, "Official email")
-            phone(:string, "Offical Phone number")
-          end
-
-          example(%{
-            name: "ABC enterprises",
-            legal_name: "ABC enterprises LLC",
-            address: "#24, XV Building, TS DEB Layout ",
-            gstin: "32AA65FF56545353",
-            email: "abcent@gmail.com",
-            phone: "865623232"
-          })
-        end,
-      Organisation:
-        swagger_schema do
-          title("Organisation")
-          description("An Organisation")
-
-          properties do
-            id(:string, "The id of an organisation", required: true)
-            name(:string, "Name of the organisation", required: true)
-            legal_name(:string, "Legal Name of the organisation", required: true)
-            address(:string, "Address of the organisation")
-            name_of_ceo(:string, "Organisation CEO's Name")
-            name_of_cto(:string, "Organisation CTO's Name")
-            gstin(:string, "GSTIN of organisation")
-            corporate_id(:string, "Corporate id of organisation")
-            members_count(:integer, "Number of members")
-            phone(:strign, "Phone number of organisation")
-            email(:string, "Email of organisation")
-            logo(:string, "Logo of organisation")
-            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
-            updated_at(:string, "When was the user last updated", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "mnbjhb23488n23e",
-            name: "ABC enterprises",
-            legal_name: "ABC enterprises LLC",
-            address: "#24, XV Building, TS DEB Layout ",
-            name_of_ceo: "John Doe",
-            name_of_cto: "Foo Doo",
-            gstin: "32AA65FF56545353",
-            corporate_id: "BNIJSN1234NGT",
-            members_count: 6,
-            email: "abcent@gmail.com",
-            logo: "/logo.jpg",
-            phone: "865623232",
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z"
-          })
-        end,
-      InvitedResponse:
-        swagger_schema do
-          title("Invite user response")
-          description("Invite user response")
-
-          properties do
-            info(:string, "Info", required: true)
-          end
-
-          example(%{info: "Invited successfully.!"})
-        end,
-      RevokedResponse:
-        swagger_schema do
-          title("Revoke invite user response")
-          description("Revoke Invite user response")
-
-          properties do
-            info(:string, "Info", required: true)
-          end
-
-          example(%{info: "Invited successfully.!"})
-        end,
-      InviteTokenStatusResponse:
-        swagger_schema do
-          title("Invite Token Status")
-          description("Invite Token Status")
-
-          properties do
-            isNewUser(:boolean, "Invite token status", required: true)
-            email(:string, "Email of the user", required: true)
-          end
-
-          example(%{
-            isNewUser: true,
-            email: "abcent@gmail.com"
-          })
-        end,
-      ListOfOrganisations:
-        swagger_schema do
-          title("Organisations array")
-          description("List of existing Organisations")
-          type(:array)
-          items(Schema.ref(:Organisation))
-        end,
-      Index:
-        swagger_schema do
-          title("Organisation index")
-
-          properties do
-            organisations(Schema.ref(:ListOfOrganisations))
-            page_number(:integer, "Page number")
-            total_pages(:integer, "Total number of pages")
-            toal_entries(:integer, "Total number of contents")
-          end
-
-          example(%{
-            organisations: [
-              %{
-                id: "mnbjhb23488n23e",
-                name: "ABC enterprices",
-                legal_name: "ABC enterprices LLC",
-                address: "#24, XV Building, TS DEB Layout ",
-                name_of_ceo: "John Doe",
-                name_of_cto: "Foo Doo",
-                gstin: "32AA65FF56545353",
-                corporate_id: "BNIJSN1234NGT",
-                email: "abcent@gmail.com",
-                logo: "/logo.jpg",
-                phone: "865623232",
-                updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z"
-              }
-            ],
-            page_number: 1,
-            total_pages: 1,
-            total_entries: 1
-          })
-        end,
-      Members:
-        swagger_schema do
-          title("Members array")
-          description("List of Users/members of an organisation.")
-          type(:array)
-          items(Schema.ref(:ShowCurrentUser))
-        end,
-      MembersIndex:
-        swagger_schema do
-          title("Members index")
-
-          properties do
-            members(Schema.ref(:Members))
-            page_number(:integer, "Page number")
-            total_pages(:integer, "Total number of pages")
-            total_entries(:integer, "Total number of contents")
-          end
-        end,
-      RemoveUser:
-        swagger_schema do
-          title("Remove User")
-          description("Removes the user from the organisation")
-
-          properties do
-            info(:string, "Info", required: true)
-          end
-
-          example(%{info: "User removed from the organisation.!"})
-        end,
-      DeleteOrganisationRequest:
-        swagger_schema do
-          title("Delete Confirmation Token")
-          description("Request body to delete an organisation")
-
-          properties do
-            token(:string, "Token", required: true)
-          end
-
-          example(%{
-            code: "123456"
-          })
-        end,
-      PermissionsResponse:
-        swagger_schema do
-          title("Current User Permissions")
-          description("Current user permissions of current organisation")
-          type(:map)
-
-          example(%{
-            permissions: %{
-              asset: [
-                "show",
-                "manage",
-                "delete"
-              ],
-              block: [
-                "show",
-                "manage",
-                "delete"
-              ]
-            }
-          })
-        end,
-      DeletionRequestResponse:
-        swagger_schema do
-          title("Delete Confirmation Code")
-          description("Delete Confirmation Code Response")
-
-          properties do
-            info(:string, "Response Info")
-          end
-
-          example(%{
-            info: "Delete token email sent!"
-          })
-        end,
-      VerifyOrganisationInviteTokenResponse:
-        swagger_schema do
-          title("Verify Organisation invite token")
-
-          description(
-            "Verifies Organisation invite token and returns organisation details and user's details"
-          )
-
-          properties do
-            organisation(Schema.ref(:Organisation))
-          end
-        end,
-      InviteRequest:
-        swagger_schema do
-          title("Invite user")
-          description("Request body to invite a user to an organisation")
-
-          properties do
-            email(:string, "Email of the user", required: true)
-            role_ids(:array, "IDs of roles for the user", required: true)
-          end
-
-          example(%{
-            email: "abcent@gmail.com",
-            role_ids: ["756f1fa1-9657-4166-b372-21e8135aeaf1"]
-          })
-        end,
-      InvitedUser:
-        swagger_schema do
-          title("InvitedUser")
-          description("An invited user")
-
-          properties do
-            id(:string, "User ID", required: true)
-            email(:string, "Email address", required: true)
-            status(:string, "Invitation status", required: true)
-          end
-        end,
-      InvitedUsersResponse:
-        swagger_schema do
-          title("InvitedUsersResponse")
-          description("A list of invited users")
-          type(:array)
-          items(Schema.ref(:InvitedUser))
-        end
-    }
-  end
+  tags(["Organisation"])
 
   @doc """
   New registration
   """
-  swagger_path :create do
-    post("/organisations")
-    summary("Register organisation")
-    description("Create Organisation API")
-    operation_id("create_organisation")
-    tag("Organisation")
-    consumes("multipart/form-data")
-    parameter(:name, :formData, :string, "Organisation name", required: true)
-    parameter(:legal_name, :formData, :string, "Legal name of organisation")
-    parameter(:address, :formData, :string, "address of organisation")
-    parameter(:name_of_ceo, :formData, :string, "name of ceo of organisation")
-    parameter(:name_of_cto, :formData, :string, "name of cto of organisation")
-    parameter(:gstin, :formData, :string, "gstin of organisation")
-    parameter(:corporate_id, :formData, :string, "Corporate id of organisation")
-    parameter(:email, :formData, :string, "Official email")
-    parameter(:logo, :formData, :file, "Logo of organisation")
-    parameter(:phone, :formData, :string, "Official ph number")
-    parameter(:url, :formData, :string, "URL of organisation")
-    response(201, "Created", Schema.ref(:Organisation))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:create,
+    summary: "Register organisation",
+    description: "Create Organisation API",
+    request_body:
+      {"Organisation data", "multipart/form-data",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           name: %OpenApiSpex.Schema{type: :string},
+           legal_name: %OpenApiSpex.Schema{type: :string},
+           address: %OpenApiSpex.Schema{type: :string},
+           name_of_ceo: %OpenApiSpex.Schema{type: :string},
+           name_of_cto: %OpenApiSpex.Schema{type: :string},
+           gstin: %OpenApiSpex.Schema{type: :string},
+           corporate_id: %OpenApiSpex.Schema{type: :string},
+           email: %OpenApiSpex.Schema{type: :string},
+           logo: %OpenApiSpex.Schema{type: :string, format: :binary},
+           phone: %OpenApiSpex.Schema{type: :string},
+           url: %OpenApiSpex.Schema{type: :string}
+         }
+       }},
+    responses: [
+      created: {"Created", "application/json", Schemas.Organisation.Organisation},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Creates a new organisation
@@ -354,29 +96,37 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @doc """
   Update an organisation
   """
-  swagger_path :update do
-    put("/organisations/{id}")
-    summary("Update an organisation")
-    consumes("multipart/form-data")
-    description("API to update an organisation")
-    parameter(:id, :path, :string, "organisation id", required: true)
-    parameter(:name, :formData, :string, "Organisation name", required: true)
-    parameter(:legal_name, :formData, :string, "Legal name of organisation")
-    parameter(:addres, :formData, :string, "address of organisation")
-    parameter(:name_of_ceo, :formData, :string, "name of ceo of organisation")
-    parameter(:name_of_cto, :formData, :string, "name of cto of organisation")
-    parameter(:gstin, :formData, :string, "gstin of organisation")
-    parameter(:corporate_id, :formData, :string, "Corporate id of organisation")
-    parameter(:email, :formData, :string, "Official email")
-    parameter(:logo, :formData, :file, "Logo of organisation")
-    parameter(:phone, :formData, :string, "Official ph number")
-    parameter(:url, :formData, :string, "URL of organisation")
-
-    response(201, "Accepted", Schema.ref(:Organisation))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:update,
+    summary: "Update an organisation",
+    description: "API to update an organisation",
+    parameters: [
+      id: [in: :path, type: :string, description: "organisation id", required: true]
+    ],
+    request_body:
+      {"Organisation data", "multipart/form-data",
+       %OpenApiSpex.Schema{
+         type: :object,
+         properties: %{
+           name: %OpenApiSpex.Schema{type: :string},
+           legal_name: %OpenApiSpex.Schema{type: :string},
+           address: %OpenApiSpex.Schema{type: :string},
+           name_of_ceo: %OpenApiSpex.Schema{type: :string},
+           name_of_cto: %OpenApiSpex.Schema{type: :string},
+           gstin: %OpenApiSpex.Schema{type: :string},
+           corporate_id: %OpenApiSpex.Schema{type: :string},
+           email: %OpenApiSpex.Schema{type: :string},
+           logo: %OpenApiSpex.Schema{type: :string, format: :binary},
+           phone: %OpenApiSpex.Schema{type: :string},
+           url: %OpenApiSpex.Schema{type: :string}
+         }
+       }},
+    responses: [
+      created: {"Accepted", "application/json", Schemas.Organisation.Organisation},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, params) do
@@ -393,19 +143,18 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @doc """
   Get an organisation by id
   """
-  swagger_path :show do
-    get("/organisations/{id}")
-    summary("Show an Organisation")
-    description("API to show details of an organisation")
-
-    parameters do
-      id(:path, :string, "Organisation id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Organisation))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:show,
+    summary: "Show an Organisation",
+    description: "API to show details of an organisation",
+    parameters: [
+      id: [in: :path, type: :string, description: "Organisation id", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Organisation.Organisation},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
@@ -419,27 +168,19 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @doc """
   Delete an organisation
   """
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/organisations")
-    summary("Delete an organisation")
-    description("Delete Organisation API")
-    operation_id("delete_organisation")
-    tag("Organisation")
-
-    parameters do
-      delete_token(
-        :body,
-        Schema.ref(:DeleteOrganisationRequest),
-        "Deletion Confirmation code",
-        required: true
-      )
-    end
-
-    response(200, "Ok", Schema.ref(:Organisation))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:delete,
+    summary: "Delete an organisation",
+    description: "Delete Organisation API",
+    request_body:
+      {"Deletion Confirmation code", "application/json",
+       Schemas.Organisation.DeleteOrganisationRequest},
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Organisation.Organisation},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, params) do
@@ -476,18 +217,16 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @doc """
     Confirmation code to delete an organisation
   """
-  swagger_path :request_deletion do
-    post("/organisations/request_deletion")
-    summary("Organisation Deletion Code")
-    description("Request Organisation Deletion Code")
-    operation_id("request_organisation_deletion")
-    tag("Organisation")
-
-    response(200, "Ok", Schema.ref(:DeletionRequestResponse))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:request_deletion,
+    summary: "Organisation Deletion Code",
+    description: "Request Organisation Deletion Code",
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Organisation.DeletionRequestResponse},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec request_deletion(Plug.Conn.t(), map) :: Plug.Conn.t()
   def request_deletion(conn, _params) do
@@ -525,20 +264,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @doc """
   Invite new member.
   """
-  swagger_path :invite do
-    post("/organisations/users/invite")
-    summary("Invite new member to the organisation")
-    description("Invite new member to the organisation")
-
-    parameters do
-      invite(:body, Schema.ref(:InviteRequest), "Invite request", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:InvitedResponse))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:invite,
+    summary: "Invite new member to the organisation",
+    description: "Invite new member to the organisation",
+    request_body: {"Invite request", "application/json", Schemas.Organisation.InviteRequest},
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Organisation.InvitedResponse},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   def invite(conn, params) do
     current_user = conn.assigns[:current_user]
@@ -583,19 +319,23 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   Resends organisation invite.
   """
 
-  swagger_path :resend_invite do
-    post("/organisations/users/invite/{id}/resend")
-    summary("Resend organisation invite")
-    description("Resends an organisation invite email to a previously invited user")
-
-    parameter(:id, :path, :string, "Invited User ID",
-      required: true,
-      example: "d19e10fc-4b36-46ab-a9cb-7fa52d7a289e"
-    )
-
-    response(200, "Invite resent", Schema.ref(:InvitedResponse))
-    response(404, "Invited user not found")
-  end
+  operation(:resend_invite,
+    summary: "Resend organisation invite",
+    description: "Resends an organisation invite email to a previously invited user",
+    parameters: [
+      id: [
+        in: :path,
+        type: :string,
+        description: "Invited User ID",
+        required: true,
+        example: "d19e10fc-4b36-46ab-a9cb-7fa52d7a289e"
+      ]
+    ],
+    responses: [
+      ok: {"Invite resent", "application/json", Schemas.Organisation.InvitedResponse},
+      not_found: {"Invited user not found", "application/json", Schemas.Error}
+    ]
+  )
 
   def resend_invite(conn, %{"id" => invited_user_id} = _params) do
     current_user = conn.assigns[:current_user]
@@ -612,19 +352,23 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   Revoke organisation invite.
   """
 
-  swagger_path :revoke_invite do
-    put("/organisations/users/invite/{id}/revoke")
-    summary("Revoke organisation invite")
-    description("Revokes a previously sent organisation invite")
-
-    parameter(:id, :path, :string, "Invited User ID",
-      required: true,
-      example: "d19e10fc-4b36-46ab-a9cb-7fa52d7a289e"
-    )
-
-    response(200, "Revoked successfully.!", Schema.ref(:RevokedResponse))
-    response(404, "Invited user not found")
-  end
+  operation(:revoke_invite,
+    summary: "Revoke organisation invite",
+    description: "Revokes a previously sent organisation invite",
+    parameters: [
+      id: [
+        in: :path,
+        type: :string,
+        description: "Invited User ID",
+        required: true,
+        example: "d19e10fc-4b36-46ab-a9cb-7fa52d7a289e"
+      ]
+    ],
+    responses: [
+      ok: {"Revoked successfully.!", "application/json", Schemas.Organisation.RevokedResponse},
+      not_found: {"Invited user not found", "application/json", Schemas.Error}
+    ]
+  )
 
   def revoke_invite(conn, %{"id" => invited_user_id} = _params) do
     with %InvitedUser{} = invited_user <- InvitedUsers.get_invited_user_by_id(invited_user_id),
@@ -637,24 +381,27 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   List all members of a organisation
   """
 
-  swagger_path :members do
-    get("/organisations/{id}/members")
-    summary("Members of an organisation")
-    description("All members of an organisation")
-
-    parameters do
-      id(:path, :string, "ID of the organisation")
-      page(:query, :string, "Page number")
-      name(:query, :string, "Name of the user")
-      role(:query, :string, "Name of the role")
-      sort(:query, :string, "Sort Keys => name, name_desc, joined_at, joined_at_desc")
-    end
-
-    response(200, "Ok", Schema.ref(:MembersIndex))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:members,
+    summary: "Members of an organisation",
+    description: "All members of an organisation",
+    parameters: [
+      id: [in: :path, type: :string, description: "ID of the organisation"],
+      page: [in: :query, type: :string, description: "Page number"],
+      name: [in: :query, type: :string, description: "Name of the user"],
+      role: [in: :query, type: :string, description: "Name of the role"],
+      sort: [
+        in: :query,
+        type: :string,
+        description: "Sort Keys => name, name_desc, joined_at, joined_at_desc"
+      ]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Organisation.MembersIndex},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   def members(conn, params) do
     current_user = conn.assigns[:current_user]
@@ -674,21 +421,20 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     end
   end
 
-  swagger_path :index do
-    get("/organisations")
-    summary("List of all organisations")
-    description("All organisation that we have")
-
-    parameters do
-      name(:query, :string, "Organisations name")
-      page(:query, :string, "Page number")
-    end
-
-    response(200, "Ok", Schema.ref(:Index))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:index,
+    summary: "List of all organisations",
+    description: "All organisation that we have",
+    parameters: [
+      name: [in: :query, type: :string, description: "Organisations name"],
+      page: [in: :query, type: :string, description: "Page number"]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Organisation.Index},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   def index(conn, params) do
     with %{
@@ -706,20 +452,19 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     end
   end
 
-  swagger_path :remove_user do
-    post("/organisations/remove_user/{id}")
-    summary("Api to remove a user from the given organisation")
-    description("Api to remove a user from an organisation")
-
-    parameters do
-      id(:path, :string, "User id")
-    end
-
-    response(200, "ok", Schema.ref(:RemoveUser))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:remove_user,
+    summary: "Api to remove a user from the given organisation",
+    description: "Api to remove a user from an organisation",
+    parameters: [
+      id: [in: :path, type: :string, description: "User id"]
+    ],
+    responses: [
+      ok: {"ok", "application/json", Schemas.Organisation.RemoveUser},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
     Remove a user from the organisation
@@ -744,19 +489,18 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     end
   end
 
-  swagger_path :transfer_ownership do
-    post("/organisations/transfer_ownership/{id}")
-    summary("Transfer organisation ownership")
-    description("Transfers organisation ownership to a specified user")
-
-    parameters do
-      id(:path, :string, "New owner's user ID", required: true)
-    end
-
-    response(200, "Success", Schema.ref(:Organisation))
-    response(404, "User or Organisation Not Found", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:transfer_ownership,
+    summary: "Transfer organisation ownership",
+    description: "Transfers organisation ownership to a specified user",
+    parameters: [
+      id: [in: :path, type: :string, description: "New owner's user ID", required: true]
+    ],
+    responses: [
+      ok: {"Success", "application/json", Schemas.Organisation.Organisation},
+      not_found: {"User or Organisation Not Found", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
     Transfer Organisation into a new user
@@ -784,19 +528,18 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     end
   end
 
-  swagger_path :verify_invite_token do
-    get("/organisations/verify_invite_token/{token}")
-    summary("Verify invite token")
-    description("Api to verify organisation invite token")
-
-    parameters do
-      token(:path, :string, "Invite token")
-    end
-
-    response(200, "Ok", Schema.ref(:VerifyOrganisationInviteTokenResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:verify_invite_token,
+    summary: "Verify invite token",
+    description: "Api to verify organisation invite token",
+    parameters: [
+      token: [in: :path, type: :string, description: "Invite token"]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Organisation.VerifyOrganisationInviteTokenResponse},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
     Verify organisation invite token
@@ -818,18 +561,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     end
   end
 
-  swagger_path :invite_token_status do
-    get("/organisations/invite_token_status/{token}")
-    summary("Invite token status")
-    description("API to get invite token status")
-
-    parameters do
-      token(:path, :string, "Invite token")
-    end
-
-    response(200, "Ok", Schema.ref(:InviteTokenStatusResponse))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
+  operation(:invite_token_status,
+    summary: "Invite token status",
+    description: "API to get invite token status",
+    parameters: [
+      token: [in: :path, type: :string, description: "Invite token"]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Organisation.InviteTokenStatusResponse},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
     organisation invite token user status.
@@ -857,14 +599,14 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @doc """
     Get the permissions list of the user in current organisation
   """
-  swagger_path :permissions do
-    get("/organisations/users/permissions")
-    summary("user's permissions list")
-    description("Api to get the permissions list of the user in current organisation")
-
-    response(200, "Ok", Schema.ref(:PermissionsResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  operation(:permissions,
+    summary: "user's permissions list",
+    description: "Api to get the permissions list of the user in current organisation",
+    responses: [
+      ok: {"Ok", "application/json", Schemas.Organisation.PermissionsResponse},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   # TODO Write tests
   @spec permissions(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -878,15 +620,14 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   Returns a list of users invited by the current user.
   """
 
-  swagger_path :list_invited do
-    get("/organisations/invite")
-    summary("List Invited Users")
-    description("Returns a list of users invited by the current user.")
-    produces("application/json")
-
-    response(200, "OK", Schema.ref(:InvitedUsersResponse))
-    response(401, "Unauthorized")
-  end
+  operation(:list_invited,
+    summary: "List Invited Users",
+    description: "Returns a list of users invited by the current user.",
+    responses: [
+      ok: {"OK", "application/json", Schemas.Organisation.InvitedUsersResponse},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @spec list_invited(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def list_invited(conn, _params) do

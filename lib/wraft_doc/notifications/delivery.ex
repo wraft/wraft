@@ -6,11 +6,12 @@ defmodule WraftDoc.Notifications.Delivery do
   import Ecto.Query
   require Logger
 
+  alias WraftDoc.Account
   alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Notifications
   alias WraftDoc.Notifications.Template
-  alias WraftDoc.{Account, Repo}
+  alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.NotificationChannel
 

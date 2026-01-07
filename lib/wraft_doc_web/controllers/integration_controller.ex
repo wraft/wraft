@@ -6,10 +6,11 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
   enabling/disabling integrations and updating their event subscriptions.
   """
   use WraftDocWeb, :controller
-  use PhoenixSwagger
+  use OpenApiSpex.ControllerSpecs
 
   alias WraftDoc.Integrations
   alias WraftDoc.Integrations.Integration
+  alias WraftDocWeb.Schemas
 
   plug WraftDocWeb.Plug.AddActionLog
   plug WraftDocWeb.Plug.FeatureFlagCheck, feature: :repository
@@ -26,135 +27,16 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  def swagger_definitions do
-    %{
-      Integration:
-        swagger_schema do
-          title("Integration")
-          description("An integration with an external service")
+  tags(["Integrations"])
 
-          properties do
-            id(:string, "Integration identifier", format: "uuid")
-            provider(:string, "Integration provider name", required: true)
-            name(:string, "Display name of the integration", required: true)
-            category(:string, "Category the integration belongs to", required: true)
-            enabled(:boolean, "Whether the integration is enabled", required: true)
-            events(:array, "List of events this integration subscribes to")
-            metadata(:object, "Additional metadata about the integration")
-            inserted_at(:string, "When the integration was created", format: "date-time")
-            updated_at(:string, "When the integration was last updated", format: "date-time")
-          end
-
-          example(%{
-            id: "123e4567-e89b-12d3-a456-426614174000",
-            provider: "slack",
-            name: "Slack",
-            category: "communication",
-            enabled: true,
-            events: ["document.created", "document.signed"],
-            metadata: %{},
-            inserted_at: "2023-01-01T12:00:00Z",
-            updated_at: "2023-01-01T12:30:00Z"
-          })
-        end,
-      IntegrationResponse:
-        swagger_schema do
-          title("Integration Response")
-          description("Response containing a single integration")
-
-          properties do
-            data(Schema.ref(:Integration), "The integration")
-          end
-        end,
-      IntegrationsResponse:
-        swagger_schema do
-          title("Integrations List Response")
-          description("Response containing a list of integrations")
-          type(:array)
-          items(Schema.ref(:Integration))
-        end,
-      IntegrationCreateParams:
-        swagger_schema do
-          title("Integration Create Parameters")
-          description("Parameters for creating a new integration")
-
-          properties do
-            provider(:string, "Integration provider identifier", required: true)
-            name(:string, "Display name for the integration", required: true)
-            category(:string, "Category the integration belongs to", required: true)
-            config(:object, "Configuration parameters for the integration", required: true)
-            events(:array, "List of events to subscribe to", items: %{type: :string})
-          end
-
-          example(%{
-            provider: "slack",
-            name: "Team Slack",
-            category: "communication",
-            config: %{
-              "bot_token" => "xoxb-1234567890-abcdefghij",
-              "signing_secret" => "abcdef1234567890"
-            },
-            events: ["document.created", "document.signed"]
-          })
-        end,
-      IntegrationUpdateParams:
-        swagger_schema do
-          title("Integration Update Parameters")
-          description("Parameters for updating an existing integration")
-
-          properties do
-            integration(:object, "Integration parameters to update",
-              required: true,
-              properties: %{
-                name: %{type: :string, description: "Display name for the integration"},
-                config: %{type: :object, description: "Configuration parameters"},
-                enabled: %{type: :boolean, description: "Whether the integration is enabled"}
-              }
-            )
-          end
-        end,
-      EventUpdateParams:
-        swagger_schema do
-          title("Events Update Parameters")
-          description("Parameters for updating integration event subscriptions")
-
-          properties do
-            events(:array, "List of events to subscribe to",
-              required: true,
-              items: %{type: :string}
-            )
-          end
-
-          example(%{
-            events: ["document.created", "document.signed"]
-          })
-        end,
-      Error:
-        swagger_schema do
-          title("Error Response")
-          description("Error response when something goes wrong")
-
-          properties do
-            error(:string, "Error message")
-          end
-
-          example(%{
-            error: "Integration does not belong to current organization"
-          })
-        end
-    }
-  end
-
-  swagger_path :index do
-    get("/integrations")
-    summary("List integrations")
-    description("Returns a list of all integrations for the current organization")
-
-    tag("Integrations")
-
-    response(200, "OK", Schema.ref(:IntegrationsResponse))
-    response(403, "Unauthorized")
-  end
+  operation(:index,
+    summary: "List integrations",
+    description: "Returns a list of all integrations for the current organization",
+    responses: [
+      ok: {"OK", "application/json", Schemas.Integration.IntegrationsResponse},
+      forbidden: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Lists all integrations for the current organization.
@@ -170,22 +52,18 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
     render(conn, "index.json", integrations: integrations)
   end
 
-  swagger_path :create do
-    post("/integrations/new")
-    summary("Create integration")
-    description("Creates a new integration configuration for the current organization")
-
-    parameters do
-      body(:body, Schema.ref(:IntegrationCreateParams), "Integration parameters", required: true)
-    end
-
-    tag("Integrations")
-
-    response(201, "Created", Schema.ref(:IntegrationResponse))
-    response(400, "Bad Request")
-    response(403, "Unauthorized")
-    response(422, "Unprocessable Entity")
-  end
+  operation(:create,
+    summary: "Create integration",
+    description: "Creates a new integration configuration for the current organization",
+    request_body:
+      {"Integration parameters", "application/json", Schemas.Integration.IntegrationCreateParams},
+    responses: [
+      created: {"Created", "application/json", Schemas.Integration.IntegrationResponse},
+      bad_request: {"Bad Request", "application/json", Schemas.Error},
+      forbidden: {"Unauthorized", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Creates a new integration for the current organization.
@@ -206,22 +84,18 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
     end
   end
 
-  swagger_path :show do
-    get("/integrations/{id}")
-    summary("Get integration")
-    description("Returns details of a specific integration by ID")
-
-    parameters do
-      id(:path, :string, "Integration ID", required: true)
-    end
-
-    tag("Integrations")
-
-    response(200, "OK", Schema.ref(:IntegrationResponse))
-    response(403, "Unauthorized")
-    response(403, "Forbidden", Schema.ref(:Error))
-    response(404, "Not Found")
-  end
+  operation(:show,
+    summary: "Get integration",
+    description: "Returns details of a specific integration by ID",
+    parameters: [
+      id: [in: :path, type: :string, description: "Integration ID", required: true]
+    ],
+    responses: [
+      ok: {"OK", "application/json", Schemas.Integration.IntegrationResponse},
+      forbidden: {"Forbidden", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Shows details of a specific integration.
@@ -248,28 +122,23 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
     end
   end
 
-  swagger_path :update do
-    put("/integrations/{id}")
-    summary("Update integration")
-    description("Updates an existing integration configuration")
-
-    parameters do
-      id(:path, :string, "Integration ID", required: true)
-
-      body(:body, Schema.ref(:IntegrationUpdateParams), "Integration parameters to update",
-        required: true
-      )
-    end
-
-    tag("Integrations")
-
-    response(200, "OK", Schema.ref(:IntegrationResponse))
-    response(400, "Bad Request")
-    response(403, "Unauthorized")
-    response(403, "Forbidden", Schema.ref(:Error))
-    response(404, "Not Found")
-    response(422, "Unprocessable Entity")
-  end
+  operation(:update,
+    summary: "Update integration",
+    description: "Updates an existing integration configuration",
+    parameters: [
+      id: [in: :path, type: :string, description: "Integration ID", required: true]
+    ],
+    request_body:
+      {"Integration parameters to update", "application/json",
+       Schemas.Integration.IntegrationUpdateParams},
+    responses: [
+      ok: {"OK", "application/json", Schemas.Integration.IntegrationResponse},
+      bad_request: {"Bad Request", "application/json", Schemas.Error},
+      forbidden: {"Forbidden", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Updates an existing integration.
@@ -298,22 +167,18 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
     end
   end
 
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/integrations/{id}")
-    summary("Delete integration")
-    description("Deletes an integration configuration")
-
-    parameters do
-      id(:path, :string, "Integration ID", required: true)
-    end
-
-    tag("Integrations")
-
-    response(204, "No Content")
-    response(403, "Unauthorized")
-    response(403, "Forbidden", Schema.ref(:Error))
-    response(404, "Not Found")
-  end
+  operation(:delete,
+    summary: "Delete integration",
+    description: "Deletes an integration configuration",
+    parameters: [
+      id: [in: :path, type: :string, description: "Integration ID", required: true]
+    ],
+    responses: [
+      no_content: {"No Content", "application/json", nil},
+      forbidden: {"Forbidden", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Deletes an integration.
@@ -341,22 +206,18 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
     end
   end
 
-  swagger_path :enable do
-    put("/integrations/{id}/enable")
-    summary("Enable integration")
-    description("Enables a previously disabled integration")
-
-    parameters do
-      id(:path, :string, "Integration ID", required: true)
-    end
-
-    tag("Integrations")
-
-    response(200, "OK", Schema.ref(:IntegrationResponse))
-    response(403, "Unauthorized")
-    response(403, "Forbidden", Schema.ref(:Error))
-    response(404, "Not Found")
-  end
+  operation(:enable,
+    summary: "Enable integration",
+    description: "Enables a previously disabled integration",
+    parameters: [
+      id: [in: :path, type: :string, description: "Integration ID", required: true]
+    ],
+    responses: [
+      ok: {"OK", "application/json", Schemas.Integration.IntegrationResponse},
+      forbidden: {"Forbidden", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Enables an integration.
@@ -385,22 +246,18 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
     end
   end
 
-  swagger_path :disable do
-    put("/integrations/{id}/disable")
-    summary("Disable integration")
-    description("Disables an enabled integration")
-
-    parameters do
-      id(:path, :string, "Integration ID", required: true)
-    end
-
-    tag("Integrations")
-
-    response(200, "OK", Schema.ref(:IntegrationResponse))
-    response(403, "Unauthorized")
-    response(403, "Forbidden", Schema.ref(:Error))
-    response(404, "Not Found")
-  end
+  operation(:disable,
+    summary: "Disable integration",
+    description: "Disables an enabled integration",
+    parameters: [
+      id: [in: :path, type: :string, description: "Integration ID", required: true]
+    ],
+    responses: [
+      ok: {"OK", "application/json", Schemas.Integration.IntegrationResponse},
+      forbidden: {"Forbidden", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Disables an integration.
@@ -429,24 +286,21 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
     end
   end
 
-  swagger_path :update_events do
-    put("/integrations/{id}/events")
-    summary("Update integration events")
-    description("Updates the event subscriptions for an integration")
-
-    parameters do
-      id(:path, :string, "Integration ID", required: true)
-      body(:body, Schema.ref(:EventUpdateParams), "Event subscriptions to update", required: true)
-    end
-
-    tag("Integrations")
-
-    response(200, "OK", Schema.ref(:IntegrationResponse))
-    response(403, "Unauthorized")
-    response(403, "Forbidden", Schema.ref(:Error))
-    response(404, "Not Found")
-    response(422, "Unprocessable Entity")
-  end
+  operation(:update_events,
+    summary: "Update integration events",
+    description: "Updates the event subscriptions for an integration",
+    parameters: [
+      id: [in: :path, type: :string, description: "Integration ID", required: true]
+    ],
+    request_body:
+      {"Event subscriptions to update", "application/json", Schemas.Integration.EventUpdateParams},
+    responses: [
+      ok: {"OK", "application/json", Schemas.Integration.IntegrationResponse},
+      forbidden: {"Forbidden", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Updates the event subscriptions for an integration.
@@ -476,32 +330,30 @@ defmodule WraftDocWeb.Api.V1.IntegrationController do
     end
   end
 
-  swagger_path :update_config do
-    put("/integrations/{id}/config")
-    summary("Update integration configuration")
-    description("Updates the configuration parameters of an existing integration")
-
-    parameters do
-      id(:path, :string, "Integration ID", required: true)
-
-      config(:body, :object, "New configuration values to update",
-        required: true,
-        example: %{
-          "client_id" => "new-client-id-value",
-          "client_secret" => "new-client-secret",
-          "webhook_url" => "https://new-webhook-url.example.com"
-        }
-      )
-    end
-
-    tag("Integrations")
-
-    response(200, "OK", Schema.ref(:IntegrationResponse))
-    response(400, "Bad Request")
-    response(403, "Forbidden", Schema.ref(:Error))
-    response(404, "Not Found")
-    response(422, "Unprocessable Entity")
-  end
+  operation(:update_config,
+    summary: "Update integration configuration",
+    description: "Updates the configuration parameters of an existing integration",
+    parameters: [
+      id: [in: :path, type: :string, description: "Integration ID", required: true]
+    ],
+    request_body:
+      {"New configuration values to update", "application/json",
+       %OpenApiSpex.Schema{
+         type: :object,
+         example: %{
+           "client_id" => "new-client-id-value",
+           "client_secret" => "new-client-secret",
+           "webhook_url" => "https://new-webhook-url.example.com"
+         }
+       }},
+    responses: [
+      ok: {"OK", "application/json", Schemas.Integration.IntegrationResponse},
+      bad_request: {"Bad Request", "application/json", Schemas.Error},
+      forbidden: {"Forbidden", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error}
+    ]
+  )
 
   @doc """
   Updates the configuration of an integration if it belongs to the current user's organization.

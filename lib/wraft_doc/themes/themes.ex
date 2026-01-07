@@ -189,7 +189,7 @@ defmodule WraftDoc.Themes do
         get_font_details(theme, mkdir)
       )
 
-  defp get_font_details(%Theme{assets: assets} = theme, mkdir) when length(assets) > 0 do
+  defp get_font_details(%Theme{assets: [_ | _] = assets} = theme, mkdir) do
     fonts_dir = Path.join(mkdir, "fonts")
     File.mkdir_p!(fonts_dir)
 
