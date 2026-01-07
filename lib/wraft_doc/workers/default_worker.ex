@@ -216,7 +216,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
 
   defp create_wraft_layout_assets(layout, organisation_id) do
     asset_params =
-      Map.update!(@wraft_layout_asset_args, :file, fn upload ->
+      Map.update!(@wraft_layout_asset_args, :file, fn %Plug.Upload{} = upload ->
         %Plug.Upload{upload | path: @layout_file_path}
       end)
 

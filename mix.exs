@@ -6,12 +6,13 @@ defmodule WraftDoc.Mixfile do
     [
       app: :wraft_doc,
       version: "0.6.6",
-      elixir: "~> 1.18",
+      elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      cli: cli(),
       # Coveralls
       test_coverage: [tool: ExCoveralls],
       releases: [
@@ -20,8 +21,13 @@ defmodule WraftDoc.Mixfile do
           applications: [wraft_doc: :permanent],
           steps: [:assemble, :tar]
         ]
-      ],
-      preferred_cli_env: [
+      ]
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
@@ -57,7 +63,6 @@ defmodule WraftDoc.Mixfile do
       {:cors_plug, "~> 3.0"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:csv, "~> 3.2"},
-      {:distillery, "~> 2.1.1"},
       {:ecto_enum, "~> 1.4"},
       {:ecto_sql, "~> 3.13"},
       {:eqrcode, "~> 0.2.1"},

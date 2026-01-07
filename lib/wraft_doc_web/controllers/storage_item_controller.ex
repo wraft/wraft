@@ -231,7 +231,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
            StorageItems.create_storage_item(params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", "/api/storage_items/#{storage_item}")
+      |> put_resp_header("location", "/api/storage_items/#{storage_item.id}")
       |> render("show.json", storage_item: storage_item)
     end
   end

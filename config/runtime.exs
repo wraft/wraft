@@ -219,5 +219,4 @@ end
 
 # Do not print debug messages in production
 config :logger,
-  level: :info,
-  backends: [:console, Sentry.LoggerBackend]
+  level: :info

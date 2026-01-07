@@ -143,7 +143,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
            StorageAssets.create_storage_asset(storage_asset_params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", "/api/storage_assets/#{storage_asset}")
+      |> put_resp_header("location", "/api/storage_assets/#{storage_asset.id}")
       |> render(:show, storage_asset: storage_asset)
     end
   end

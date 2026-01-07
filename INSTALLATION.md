@@ -2,7 +2,7 @@
 
 #### Pre-requisite
 
-- Elixir 1.18.4
+- Elixir 1.19.2
 - Erlang/OTP 27.0.1
 - Postgres
 - Minio - S3 compatible object storage
@@ -284,7 +284,7 @@ password: demo@1234
 
 The Docker setup includes:
 
-- **Backend**: Elixir 1.18.4 with Erlang 27.0.1
+- **Backend**: Elixir 1.19.2 with Erlang 27.0.1
 - **Frontend**: React application
 - **Database**: PostgreSQL 14
 - **Object Storage**: MinIO (S3-compatible)

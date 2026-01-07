@@ -36,8 +36,7 @@ config :sentry,
 
 # Do not print debug messages in production
 config :logger,
-  level: :info,
-  backends: [:console, Sentry.LoggerBackend]
+  level: :info
 
 config :wraft_doc,
   permissions_file: "repo/data/rbac/permissions.csv",

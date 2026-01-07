@@ -49,7 +49,7 @@ defmodule WraftDocWeb.Api.V1.StorageSyncJobController do
     with {:ok, %SyncJob{} = sync_job} <- Storages.create_sync_job(sync_job_params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", "/api/storage_sync_jobs/#{sync_job}")
+      |> put_resp_header("location", "/api/storage_sync_jobs/#{sync_job.id}")
       |> render(:show, sync_job: sync_job)
     end
   end
