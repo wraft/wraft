@@ -1341,7 +1341,7 @@ defmodule WraftDoc.Documents do
          task
        ) do
     qr_code = Task.await(task)
-    page_title = instance.serialized["title"]
+    page_title = format_title(instance.serialized["title"])
 
     header =
       header
@@ -1386,6 +1386,14 @@ defmodule WraftDoc.Documents do
     #{header}
     #{raw}
     """
+  end
+
+  defp format_title(title) do
+    Regex.replace(~r/\[([^\]]+)\]/, title, fn match ->
+      match
+      |> String.replace("[", "\\[")
+      |> String.replace("]", "\\]")
+    end)
   end
 
   defp add_margin(header, nil), do: header
