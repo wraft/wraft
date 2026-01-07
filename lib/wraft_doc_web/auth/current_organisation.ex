@@ -36,8 +36,19 @@ defmodule WraftDocWeb.CurrentOrganisation do
   end
 
   defp process_jwt_org(conn) do
-    %{"organisation_id" => org_id} = current_claims(conn)
+    case current_claims(conn) do
+      nil ->
+        conn
 
+      %{"organisation_id" => org_id} ->
+        load_organisation_and_roles(conn, org_id)
+
+      _claims ->
+        conn
+    end
+  end
+
+  defp load_organisation_and_roles(conn, org_id) do
     case Repo.get(Organisation, org_id) do
       nil ->
         AuthErrorHandler.auth_error(conn, {:error, :no_org})

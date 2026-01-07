@@ -73,13 +73,11 @@ defmodule WraftDocWeb.Auth.CurrentOrganisationTest do
         |> CurrentOrganisation.call([])
 
       assert conn.assigns[:current_user].current_org_id == user.current_org_id
-      # Permissions should be unique and aggregated
       assert length(conn.assigns[:current_user].permissions) == 4
       assert "layout:index" in conn.assigns[:current_user].permissions
       assert "layout:show" in conn.assigns[:current_user].permissions
       assert "layout:create" in conn.assigns[:current_user].permissions
       assert "layout:update" in conn.assigns[:current_user].permissions
-      # Role names should include both roles
       assert length(conn.assigns[:current_user].role_names) == 2
       assert role1.name in conn.assigns[:current_user].role_names
       assert role2.name in conn.assigns[:current_user].role_names
@@ -126,7 +124,6 @@ defmodule WraftDocWeb.Auth.CurrentOrganisationTest do
       {:ok, token, _claims} =
         Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})
 
-      # Pre-assign user with org_id
       user_with_org = Map.put(user, :current_org_id, organisation.id)
 
       conn =
@@ -135,7 +132,6 @@ defmodule WraftDocWeb.Auth.CurrentOrganisationTest do
         |> assign(:current_user, user_with_org)
         |> CurrentOrganisation.call([])
 
-      # Should keep the existing org_id and not process JWT
       assert conn.assigns[:current_user].current_org_id == organisation.id
       refute conn.halted
     end
@@ -187,12 +183,58 @@ defmodule WraftDocWeb.Auth.CurrentOrganisationTest do
         |> conn_init()
         |> CurrentOrganisation.call([])
 
-      # Should only have role from organisation1
       assert conn.assigns[:current_user].current_org_id == organisation1.id
       assert conn.assigns[:current_user].role_names == [role1.name]
       assert conn.assigns[:current_user].permissions == ["layout:index"]
       refute role2.name in conn.assigns[:current_user].role_names
       refute "layout:show" in conn.assigns[:current_user].permissions
+      refute conn.halted
+    end
+
+    test "does not halt when no JWT token is provided" do
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> put_resp_content_type("application/json")
+        |> Map.put(:params, %{})
+        |> CurrentOrganisation.call([])
+
+      refute conn.halted
+    end
+
+    test "does not halt when claims are nil" do
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> put_resp_content_type("application/json")
+        |> Map.put(:params, %{})
+        |> Plug.put_current_claims(nil)
+        |> CurrentOrganisation.call([])
+
+      refute conn.halted
+    end
+
+    test "does not halt when claims don't have organisation_id" do
+      user = insert(:user_with_organisation)
+
+      {:ok, token, _claims} =
+        Guardian.encode_and_sign(user, %{some_other_key: "value"})
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer " <> token)
+        |> put_resp_content_type("application/json")
+        |> Map.put(:params, %{})
+        |> then(fn conn ->
+          {:ok, claims} = Guardian.decode_and_verify(token)
+
+          conn
+          |> Plug.put_current_claims(claims)
+          |> Plug.put_current_resource(claims["sub"])
+          |> CurrentUser.call([])
+        end)
+        |> CurrentOrganisation.call([])
+
       refute conn.halted
     end
   end

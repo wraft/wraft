@@ -1341,14 +1341,14 @@ defmodule WraftDoc.Documents do
          task
        ) do
     qr_code = Task.await(task)
-    page_title = instance.serialized["title"]
+    page_title = format_title(instance.serialized["title"])
 
     header =
       header
       |> Assets.find_asset_header_values(layout, instance)
       |> concat_strings("qrcode: #{qr_code} \n")
       |> concat_strings("path: #{mkdir}\n")
-      |> concat_strings("title: #{page_title}\n")
+      |> concat_strings("title: \"#{page_title}\"\n")
       |> concat_strings("organisation_name: #{organisation_name}\n")
       |> concat_strings("author_name: #{name}\n")
       |> concat_strings("author_email: #{email}\n")
@@ -1387,6 +1387,16 @@ defmodule WraftDoc.Documents do
     #{raw}
     """
   end
+
+  defp format_title(nil), do: ""
+
+  defp format_title(title) when is_binary(title) do
+    title
+    |> String.replace("[", "\[")
+    |> String.replace("]", "\]")
+  end
+
+  defp format_title(title), do: to_string(title)
 
   defp add_margin(header, nil), do: header
 
@@ -2184,7 +2194,10 @@ defmodule WraftDoc.Documents do
     Repo.paginate(query, params)
   end
 
-  def list_pending_approvals(%User{id: user_id, current_org_id: org_id} = _current_user, params) do
+  def list_pending_approvals(
+        %User{id: user_id, current_org_id: org_id} = _current_user,
+        params
+      ) do
     next_state_query =
       from(s in State,
         where:
@@ -2201,6 +2214,7 @@ defmodule WraftDoc.Documents do
 
     Instance
     |> where([i], i.approval_status == false)
+    |> maybe_filter_by_title(params)
     |> join(:inner, [i], s in State,
       on: s.id == i.state_id and s.organisation_id == ^org_id,
       as: :state
@@ -2219,6 +2233,21 @@ defmodule WraftDoc.Documents do
     ])
     |> Repo.paginate(params)
   end
+
+  defp maybe_filter_by_title(query, %{"name" => name})
+       when is_binary(name) and name != "" do
+    where(
+      query,
+      [i],
+      fragment(
+        "LOWER(?->>'title') LIKE LOWER(?)",
+        i.serialized,
+        ^"%#{name}%"
+      )
+    )
+  end
+
+  defp maybe_filter_by_title(query, _params), do: query
 
   @doc """
   Retrieves dashboard statistics for the current organization.

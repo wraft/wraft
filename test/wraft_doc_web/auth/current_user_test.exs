@@ -111,6 +111,32 @@ defmodule WraftDocWeb.Auth.CurrentUserTest do
       assert conn.assigns[:current_user].id == user.id
       refute conn.halted
     end
+
+    test "does not halt when no JWT token is provided" do
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> put_resp_content_type("application/json")
+        |> Map.put(:params, %{})
+        |> CurrentUser.call([])
+
+      refute Map.has_key?(conn.assigns, :current_user)
+      refute conn.halted
+    end
+
+    test "does not halt when claims are nil" do
+      conn =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> put_resp_content_type("application/json")
+        |> Map.put(:params, %{})
+        |> Plug.put_current_claims(nil)
+        |> Plug.put_current_resource(nil)
+        |> CurrentUser.call([])
+
+      refute Map.has_key?(conn.assigns, :current_user)
+      refute conn.halted
+    end
   end
 
   # Private
