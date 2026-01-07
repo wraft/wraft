@@ -27,9 +27,10 @@ defmodule WraftDocWeb.CurrentUser do
   end
 
   defp maybe_add_auth_type(%{params: params} = conn) do
-    conn
-    |> current_claims()
-    |> add_type_to_params(conn, params)
+    case current_claims(conn) do
+      nil -> conn
+      claims -> add_type_to_params(claims, conn, params)
+    end
   end
 
   defp add_type_to_params(%{"type" => type}, conn, params),
@@ -39,16 +40,15 @@ defmodule WraftDocWeb.CurrentUser do
     do: conn
 
   defp add_current_user(conn) do
-    conn
-    |> current_resource()
-    |> case do
-      nil -> AuthErrorHandler.auth_error(conn, {:error, :no_user})
-      email -> get_user(email)
-    end
-    |> case do
-      %Plug.Conn{} = conn -> conn
-      nil -> AuthErrorHandler.auth_error(conn, {:error, :no_user})
-      user -> assign(conn, :current_user, preload_user_data(user))
+    case current_resource(conn) do
+      nil ->
+        conn
+
+      email ->
+        case get_user(email) do
+          nil -> AuthErrorHandler.auth_error(conn, {:error, :no_user})
+          user -> assign(conn, :current_user, preload_user_data(user))
+        end
     end
   end
 
