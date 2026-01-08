@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.19.0-erlang-26.2.2-debian-bookworm-20251117
+FROM hexpm/elixir:1.19.2-erlang-27.1.2-debian-bookworm-20251020
 
 # Install dependencies
 RUN apt-get update && apt-get install -y --fix-missing \
