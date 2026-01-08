@@ -1,6 +1,6 @@
-ARG ELIXIR_VERSION=1.19.2
-ARG OTP_VERSION=27.3.2
-ARG DEBIAN_VERSION=bookworm-20251229
+ARG ELIXIR_VERSION=1.19.0
+ARG OTP_VERSION=26.2.2
+ARG DEBIAN_VERSION=bookworm-20251117
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -10,6 +10,8 @@ FROM ${BUILDER_IMAGE} AS builder
 # install build dependencies
 RUN apt-get update -y \
     && apt-get install -y curl build-essential git openjdk-17-jdk \
+       ca-certificates libssl-dev openssl \
+    && update-ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -100,11 +102,17 @@ RUN ARCH=$(dpkg --print-architecture) && \
     dpkg -i ${PANDOC_DEB} && \
     rm -f ${PANDOC_DEB}
 
-# Install Typst
-RUN wget -q https://github.com/typst/typst/releases/download/v0.13.0/typst-x86_64-unknown-linux-musl.tar.xz && \
-    tar -xf typst-x86_64-unknown-linux-musl.tar.xz && \
-    mv typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst && \
-    rm -rf typst-x86_64-unknown-linux-musl typst-x86_64-unknown-linux-musl.tar.xz
+# Install Typst (architecture-aware)
+RUN ARCH=$(dpkg --print-architecture) && \
+    case "$ARCH" in \
+        amd64) TYPST_ARCH=x86_64-unknown-linux-musl ;; \
+        arm64) TYPST_ARCH=aarch64-unknown-linux-musl ;; \
+        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    wget -q https://github.com/typst/typst/releases/download/v0.13.0/typst-${TYPST_ARCH}.tar.xz && \
+    tar -xf typst-${TYPST_ARCH}.tar.xz && \
+    mv typst-${TYPST_ARCH}/typst /usr/local/bin/typst && \
+    rm -rf typst-${TYPST_ARCH} typst-${TYPST_ARCH}.tar.xz
 
 # Set locale
 RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
