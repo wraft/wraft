@@ -122,6 +122,8 @@ $endif$
   }
 }
 
+#set text(fill: secondary_color)
+
 #show figure: set block(breakable: true)
 
 #show: conf.with(
