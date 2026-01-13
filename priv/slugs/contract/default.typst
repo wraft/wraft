@@ -29,8 +29,38 @@ $endif$$endif$$endif$$endif$
 
 $if(letterhead)$
   #set page(
-    background: muchpdf(read("$letterhead$", encoding: none),
-    width: 100%, height: 100%, fit: "contain")
+    background: {
+      place(
+        top + left,
+        rect(
+          width: 100%,
+          height: 100%,
+          fill: body_color,
+          stroke: none
+        )
+      )
+      place(
+        top + left,
+        muchpdf(
+          read("$letterhead$", encoding: none),
+          width: 100%,
+          height: 100%,
+          fit: "contain"
+        )
+      )
+    }
+  )
+$else$
+  #set page(
+    background: place(
+      top + left,
+      rect(
+        width: 100%,
+        height: 100%,
+        fill: body_color,
+        stroke: none
+      )
+    )
   )
 $endif$
 
@@ -62,21 +92,18 @@ $endif$
 
 #let bold-text(body) = text(
   font: bold_font,
-  weight: "bold",
-  fill: blue
+  weight: "bold"
 )[#body]
 
 #let italic-text(body) = text(
   font: italic_font,
-  style: "italic",
-  fill: green
+  style: "italic"
 )[#body]
 
 #let bold-italic-text(body) = text(
   font: bold_italic_font,
   weight: "bold",
-  style: "italic",
-  fill: yellow
+  style: "italic"
 )[#body]
 
 #show strong: it => {
@@ -94,6 +121,8 @@ $endif$
     italic-text(it.body)
   }
 }
+
+#set text(fill: secondary_color)
 
 #show figure: set block(breakable: true)
 

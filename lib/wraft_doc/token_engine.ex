@@ -9,7 +9,7 @@ defmodule WraftDoc.TokenEngine do
   @doc """
   Replaces tokens in the given input using the specified adapter.
 
-  ## Arguments 
+  ## Arguments
 
   * `input` - The document content (String for Markdown, Map for ProseMirror).
   * `adapter` - The adapter module to use (e.g., `:markdown`).

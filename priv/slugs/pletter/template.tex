@@ -5,30 +5,6 @@ $if(colorlinks)$
 $endif$
 \documentclass[$if(fontsize)$$fontsize$,$endif$$if(lang)$$babel-lang$,$endif$$if(papersize)$$papersize$paper,$endif$$for(classoption)$$classoption$$sep$,$endfor$]{letter}
 
-% replaces pandoc heading sectioning
-\makeatletter
-\newcommand\section{\@startsection{section}{1}{\z@}%
-  {-3.5ex \@plus -1ex \@minus -.2ex}%
-  {2.3ex \@plus.2ex}%
-  {\normalfont\Large\bfseries}}
-\newcommand\subsection{\@startsection{subsection}{2}{\z@}%
-  {-3.25ex\@plus -1ex \@minus -.2ex}%
-  {1.5ex \@plus .2ex}%
-  {\normalfont\large\bfseries}}
-\newcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
-  {-3.25ex\@plus -1ex \@minus -.2ex}%
-  {1.5ex \@plus .2ex}%
-  {\normalfont\normalsize\bfseries}}
-\newcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
-  {3.25ex \@plus1ex \@minus.2ex}%
-  {-1em}%
-  {\normalfont\normalsize\bfseries}}
-\newcommand\subparagraph{\@startsection{subparagraph}{5}{\parindent}%
-  {3.25ex \@plus1ex \@minus .2ex}%
-  {-1em}%
-  {\normalfont\normalsize\bfseries}}
-\makeatother
-
 \PassOptionsToPackage{setpagesize=false,
                       unicode=false,
                       colorlinks=true,
@@ -128,9 +104,6 @@ $else$
 $endif$
 $if(verbatim-in-note)$
 \usepackage{fancyvrb}
-$endif$
-$if(colorlinks)$
-\usepackage{xcolor}
 $endif$
 \usepackage{hyperref}
 \hypersetup{
@@ -323,6 +296,62 @@ $if(letterhead)$
     position=current page.center % Center the background image
 }
 $endif$
+\usepackage{xcolor}
+\usepackage{xstring} % for \StrGobbleLeft
+
+% Body background color
+$if(body_color)$
+  \StrGobbleLeft{$body_color$}{1}[\BodyColorHex]
+  \definecolor{BodyColor}{HTML}{\BodyColorHex}
+  \pagecolor{BodyColor}
+$else$
+  \definecolor{BodyColor}{HTML}{FF8FFF}
+  \pagecolor{BodyColor}
+$endif$
+
+$if(primary_color)$
+  \StrGobbleLeft{$primary_color$}{1}[\PrimaryColorHex]
+  \definecolor{PrimaryColor}{HTML}{\PrimaryColorHex}
+$else$
+  \definecolor{PrimaryColor}{HTML}{000000}
+$endif$
+
+$if(secondary_color)$
+  \StrGobbleLeft{$secondary_color$}{1}[\SecondaryColorHex]
+  \definecolor{SecondaryColor}{HTML}{\SecondaryColorHex}
+  \color{SecondaryColor}
+$else$
+  \definecolor{SecondaryColor}{HTML}{000000}
+  \color{SecondaryColor}
+$endif$
+
+% replaces pandoc heading sectioning
+\makeatletter
+\newcommand\section{\@startsection{section}{1}{\z@}%
+  {-3.5ex \@plus -1ex \@minus -.2ex}%
+  {2.3ex \@plus.2ex}%
+  {\normalfont\Large\bfseries\color{PrimaryColor}}}
+
+\newcommand\subsection{\@startsection{subsection}{2}{\z@}%
+  {-3.25ex\@plus -1ex \@minus -.2ex}%
+  {1.5ex \@plus .2ex}%
+  {\normalfont\large\bfseries\color{PrimaryColor}}}
+
+\newcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
+  {-3.25ex\@plus -1ex \@minus -.2ex}%
+  {1.5ex \@plus .2ex}%
+  {\normalfont\normalsize\bfseries\color{PrimaryColor}}}
+
+\newcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
+  {3.25ex \@plus1ex \@minus.2ex}%
+  {-1em}%
+  {\normalfont\normalsize\bfseries\color{PrimaryColor}}}
+
+\newcommand\subparagraph{\@startsection{subparagraph}{5}{\parindent}%
+  {3.25ex \@plus1ex \@minus .2ex}%
+  {-1em}%
+  {\normalfont\normalsize\bfseries\color{PrimaryColor}}}
+\makeatother
 
 \begin{document}
 
