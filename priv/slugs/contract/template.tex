@@ -194,9 +194,11 @@ $if(margin_top)$$if(margin_left)$$if(margin_bottom)$$if(margin_right)$
 			\newgeometry{top=$margin_top$cm, left=$margin_left$cm, bottom=$margin_bottom$cm, right=$margin_right$cm}
 		$endif$$endif$$endif$$endif$
 
+$if(default_cover)$
 $if(path)$
 		\input{$path$/cover}
 	$endif$
+$endif$
 
 		% chapter: 0, section: 1, subsection: 2 etc
 	$if(toc)$

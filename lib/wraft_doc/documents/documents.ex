@@ -1325,7 +1325,7 @@ defmodule WraftDoc.Documents do
 
   defp prepare_markdown(
          %{
-           id: instance_id,
+           instance_id: instance_id,
            doc_settings: document_settings,
            creator: %User{name: name, email: email}
          } = instance,
