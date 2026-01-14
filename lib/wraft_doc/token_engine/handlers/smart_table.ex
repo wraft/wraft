@@ -15,7 +15,7 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
 
     We'll assume context IS the smart_tables map for simplicity, or we check for a key.
     Let's support both for flexibility.
-    
+
     Now also checks for machineName first, then falls back to tableName for lookup.
   """
   def resolve(token, context) do
@@ -58,16 +58,13 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
     {:ok, "\n" <> table_str <> "\n"}
   end
 
-  def render(%{data: "", original_node: node}, :prosemirror, _options) do
-    {:ok, node}
-  end
+  def render(%{data: "", original_node: node}, :prosemirror, _options), do: {:ok, node}
 
-  def render(%{data: nil, original_node: node}, :prosemirror, _options) do
-    {:ok, node}
-  end
+  def render(%{data: nil, original_node: node}, :prosemirror, _options), do: {:ok, node}
 
   def render(%{data: data, original_node: node}, :prosemirror, _options) when is_map(data) do
-    table_node = build_prosemirror_table(data)
+    colwidths = extract_colwidths(node)
+    table_node = build_prosemirror_table(data, colwidths)
 
     {:ok, Map.put(node, "content", [table_node])}
   end
@@ -75,23 +72,26 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
   @impl true
   def render(_data, _format, _options), do: {:error, :unsupported_format}
 
-  defp build_prosemirror_table(%{"headers" => headers, "rows" => rows} = data) do
+  defp build_prosemirror_table(%{"headers" => headers, "rows" => rows} = data, colwidths) do
     footer = Map.get(data, "footer", nil)
 
     header_row = [
       %{
         "type" => "tableRow",
-        "content" => Enum.map(headers, &pm_smart_header_cell/1)
+        "content" =>
+          headers
+          |> Enum.with_index()
+          |> Enum.map(fn {text, idx} -> pm_smart_header_cell(text, Enum.at(colwidths, idx)) end)
       }
     ]
 
-    rows_pm = Enum.map(rows, &pm_smart_row/1)
+    rows_pm = Enum.map(rows, fn row -> pm_smart_row(row, colwidths) end)
 
     footer_pm =
       case footer do
         nil -> []
         [] -> []
-        values -> [pm_smart_row(values)]
+        values -> [pm_smart_row(values, colwidths)]
       end
 
     %{
@@ -100,10 +100,10 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
     }
   end
 
-  defp pm_smart_header_cell(text) do
+  defp pm_smart_header_cell(text, colwidth) do
     %{
       "type" => "tableCell",
-      "attrs" => %{"alignment" => nil, "colspan" => 1, "colwidth" => nil, "rowspan" => 1},
+      "attrs" => %{"alignment" => nil, "colspan" => 1, "colwidth" => colwidth, "rowspan" => 1},
       "content" => [
         %{
           "type" => "paragraph",
@@ -119,14 +119,21 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
     }
   end
 
-  defp pm_smart_row(cells) do
+  defp pm_smart_row(cells, colwidths) do
     %{
       "type" => "tableRow",
       "content" =>
-        Enum.map(cells, fn cell_text ->
+        cells
+        |> Enum.with_index()
+        |> Enum.map(fn {cell_text, idx} ->
           %{
             "type" => "tableCell",
-            "attrs" => %{"alignment" => nil, "colspan" => 1, "colwidth" => nil, "rowspan" => 1},
+            "attrs" => %{
+              "alignment" => nil,
+              "colspan" => 1,
+              "colwidth" => Enum.at(colwidths, idx),
+              "rowspan" => 1
+            },
             "content" => [
               %{
                 "type" => "paragraph",
@@ -138,10 +145,23 @@ defmodule WraftDoc.TokenEngine.Handlers.SmartTable do
     }
   end
 
-  defp validate_table_map(%{"type" => "table", "rows" => _rows} = data)
-       when is_map(data) do
-    data
+  defp extract_colwidths(%{"content" => content}) when is_list(content) do
+    with %{"content" => rows} when is_list(rows) <-
+           Enum.find(content, fn node -> node["type"] == "table" end),
+         %{"content" => cells} when is_list(cells) <-
+           Enum.find(rows, fn node -> node["type"] == "tableRow" end) do
+      Enum.map(cells, fn cell ->
+        get_in(cell, ["attrs", "colwidth"])
+      end)
+    else
+      _ -> []
+    end
   end
+
+  defp extract_colwidths(_), do: []
+
+  defp validate_table_map(%{"type" => "table", "rows" => _rows} = data)
+       when is_map(data), do: data
 
   defp validate_table_map(_), do: nil
 end
