@@ -48,4 +48,4 @@ mod atoms {
     }
 }
 
-rustler::init!("Elixir.WraftDoc.PdfAnalyzer", [analyze_pdf_nif]);
+rustler::init!("Elixir.WraftDoc.PdfAnalyzer");

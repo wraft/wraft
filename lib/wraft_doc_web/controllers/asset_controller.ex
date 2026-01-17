@@ -9,7 +9,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   alias WraftDoc.Assets
   alias WraftDoc.Assets.Asset
 
-  alias WraftDocWeb.Schemas.Asset
+  alias WraftDocWeb.Schemas.Asset, as: AssetSchema
   alias WraftDocWeb.Schemas.Content
   alias WraftDocWeb.Schemas.Error
 
@@ -38,7 +38,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
          required: [:name]
        }},
     responses: [
-      ok: {"Ok", "application/json", Asset.Asset},
+      ok: {"Ok", "application/json", AssetSchema.Asset},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error}
     ]
@@ -48,7 +48,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, %Asset.Asset{} = asset} <- Assets.create_asset(current_user, params) do
+    with {:ok, %Asset{} = asset} <- Assets.create_asset(current_user, params) do
       render(conn, :asset, asset: asset)
     end
   end
@@ -60,7 +60,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
       page: [in: :query, type: :string, description: "Page number"]
     ],
     responses: [
-      ok: {"Ok", "application/json", Asset.AssetsIndex},
+      ok: {"Ok", "application/json", AssetSchema.AssetsIndex},
       unauthorized: {"Unauthorized", "application/json", Error}
     ]
   )
@@ -91,7 +91,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
       id: [in: :path, type: :string, description: "ID of the asset", required: true]
     ],
     responses: [
-      ok: {"Ok", "application/json", Asset.ShowAsset},
+      ok: {"Ok", "application/json", AssetSchema.ShowAsset},
       unauthorized: {"Unauthorized", "application/json", Error}
     ]
   )
@@ -100,7 +100,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   def show(conn, %{"id" => asset_id}) do
     current_user = conn.assigns.current_user
 
-    with %Asset.Asset{} = asset <- Assets.show_asset(asset_id, current_user) do
+    with %Asset{} = asset <- Assets.show_asset(asset_id, current_user) do
       render(conn, "show.json", asset: asset)
     end
   end
@@ -121,7 +121,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   @spec show_image(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show_image(conn, %{"id" => asset_id}) do
-    with %Asset.Asset{} = asset <- Assets.get_asset(asset_id) do
+    with %Asset{} = asset <- Assets.get_asset(asset_id) do
       redirect(conn, external: Assets.get_image_url(asset))
     end
   end
@@ -147,7 +147,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
          required: [:name]
        }},
     responses: [
-      ok: {"Ok", "application/json", Asset.Asset},
+      ok: {"Ok", "application/json", AssetSchema.Asset},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error},
       not_found: {"Not found", "application/json", Error}
@@ -158,7 +158,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset.Asset{} = asset <- Assets.get_asset(id, current_user),
+    with %Asset{} = asset <- Assets.get_asset(id, current_user),
          {:ok, asset} <- Assets.update_asset(asset, params) do
       render(conn, "asset.json", asset: asset)
     end
@@ -171,7 +171,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
       id: [in: :path, type: :string, description: "asset id", required: true]
     ],
     responses: [
-      ok: {"Ok", "application/json", Asset.Asset},
+      ok: {"Ok", "application/json", AssetSchema.Asset},
       unprocessable_entity: {"Unprocessable Entity", "application/json", Error},
       unauthorized: {"Unauthorized", "application/json", Error},
       not_found: {"Not found", "application/json", Error}
@@ -182,8 +182,8 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset.Asset{} = asset <- Assets.get_asset(id, current_user),
-         {:ok, %Asset.Asset{}} <- Assets.delete_asset(asset) do
+    with %Asset{} = asset <- Assets.get_asset(id, current_user),
+         {:ok, %Asset{}} <- Assets.delete_asset(asset) do
       render(conn, "asset.json", asset: asset)
     end
   end

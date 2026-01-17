@@ -1930,7 +1930,7 @@ defmodule WraftDoc.Documents do
   @spec bulk_build(User.t(), Instance.t(), Layout.t()) :: tuple
   def bulk_build(current_user, instance, layout) do
     start_time = Timex.now()
-    {result, exit_code} = build_doc(instance, layout)
+    {result, exit_code} = build_doc(instance, Assets.preload_asset(layout))
     end_time = Timex.now()
 
     add_build_history(current_user, instance, %{
@@ -1948,7 +1948,7 @@ defmodule WraftDoc.Documents do
   @spec bulk_build(Instance.t(), Layout.t()) :: {Collectable.t(), non_neg_integer()}
   def bulk_build(instance, layout) do
     start_time = Timex.now()
-    {result, exit_code} = build_doc(instance, layout)
+    {result, exit_code} = build_doc(instance, Assets.preload_asset(layout))
 
     add_build_history(instance, %{
       start_time: start_time,

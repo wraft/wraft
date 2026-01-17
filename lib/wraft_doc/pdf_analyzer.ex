@@ -9,8 +9,7 @@ defmodule WraftDoc.PdfAnalyzer do
   use Rustler,
     otp_app: :wraft_doc,
     crate: "pdf_analyzer",
-    mode: :release,
-    load_from: {:wraft_doc, "priv/native/libpdf_analyzer"}
+    mode: :release
 
   @doc """
   Analyzes a PDF file and returns information about rectangles in the document.

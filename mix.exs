@@ -108,7 +108,7 @@ defmodule WraftDoc.Mixfile do
       {:plug_cowboy, "~> 2.7"},
       {:poison, "~> 6.0", override: true},
       {:postgrex, ">= 0.0.0"},
-      {:rustler, "~> 0.34", runtime: true},
+      {:rustler, "~> 0.37", runtime: true},
       {:oauth2, "~> 2.0"},
       {:scrivener_ecto, "~> 3.1"},
       {:scrivener_list, "~> 2.1"},
