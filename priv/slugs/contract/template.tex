@@ -46,10 +46,44 @@
 \usepackage{amsmath}
 \usepackage{setspace}
 \usepackage{listings}
+\usepackage{xstring}
 
-\sectionfont{\color{cyan}}
-\definecolor{foo}{HTML}{2c41ac}
-\sectionfont{\color{foo}}
+
+$if(body_color)$
+  \StrGobbleLeft{$body_color$}{1}[\BodyColorHex]
+  \definecolor{BodyColor}{HTML}{\BodyColorHex}
+  \pagecolor{BodyColor}
+$else$
+  \definecolor{BodyColor}{HTML}{FFFFFF}
+  \pagecolor{BodyColor}
+$endif$
+
+\newcommand{\setAllHeadingColors}[1]{
+  \sectionfont{\color{#1}}
+  \subsectionfont{\color{#1}}
+  \subsubsectionfont{\color{#1}}
+  \paragraphfont{\color{#1}}
+  \subparagraphfont{\color{#1}}
+}
+
+$if(primary_color)$
+  \StrGobbleLeft{$primary_color$}{1}[\PrimaryColorHex]
+  \definecolor{PrimaryColor}{HTML}{\PrimaryColorHex}
+  \setAllHeadingColors{PrimaryColor}
+$else$
+  \definecolor{foo}{HTML}{2c41ac}
+  \setAllHeadingColors{foo}
+$endif$
+
+$if(secondary_color)$
+  \StrGobbleLeft{$secondary_color$}{1}[\SecondaryColorHex]
+  \definecolor{SecondaryColor}{HTML}{\SecondaryColorHex}
+  \color{SecondaryColor}
+$else$
+  \definecolor{SecondaryColor}{HTML}{000000}
+  \color{SecondaryColor}
+$endif$
+
 
 $if(mainfont)$
 \setmainfont[
@@ -73,7 +107,7 @@ $endif$
 \renewcommand{\baselinestretch}{1.25}
 
 $if(title)$
-\newcommand{\newCommandProposalTitle}{$title$}
+\newcommand{\newCommandProposalTitle}{\textcolor{PrimaryColor}{$title$}}
 $endif$
 
 $if(id)$
@@ -142,8 +176,13 @@ $highlighting-macros$
 \setlength{\tabcolsep}{0.8em} % for the horizontal padding
 \renewcommand{\arraystretch}{1.7}% for the vertical padding
 
+$if(toc)$
+\usepackage{tocloft}
+$endif$
+
 $if(letterhead)$
 \usepackage{wallpaper}
+\ClearWallPaper
 \ULCornerWallPaper{1}{$letterhead$}
 $endif$
 
@@ -155,18 +194,22 @@ $if(margin_top)$$if(margin_left)$$if(margin_bottom)$$if(margin_right)$
 			\newgeometry{top=$margin_top$cm, left=$margin_left$cm, bottom=$margin_bottom$cm, right=$margin_right$cm}
 		$endif$$endif$$endif$$endif$
 
+$if(default_cover)$
 $if(path)$
 		\input{$path$/cover}
 	$endif$
+$endif$
 
 		% chapter: 0, section: 1, subsection: 2 etc
 	$if(toc)$
 		{
+				\color{$if(toccolor)$$toccolor$$else$black$endif$}
 				$if(colorlinks)$
 				\hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
 				$endif$
 				\setcounter{secnumdepth}{3}
 				\setcounter{tocdepth}{$toc_depth$}
+
 				\tableofcontents
 			}
 	$endif$
