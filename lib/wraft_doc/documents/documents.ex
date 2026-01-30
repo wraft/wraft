@@ -1346,6 +1346,7 @@ defmodule WraftDoc.Documents do
     header =
       header
       |> Assets.find_asset_header_values(layout, instance)
+      |> Assets.find_cover_header_values(layout, instance)
       |> concat_strings("qrcode: #{qr_code} \n")
       |> concat_strings("path: #{mkdir}\n")
       |> concat_strings("title: \"#{page_title}\"\n")
@@ -1424,7 +1425,7 @@ defmodule WraftDoc.Documents do
     |> concat_strings("toc: #{is_toc?}\n")
     |> concat_strings("toc_depth: #{toc_depth}\n")
     |> concat_strings("qr: #{is_qr?}\n")
-    |> concat_strings("default_cover: #{is_default_cover?}\n")
+    |> concat_strings("cover: #{is_default_cover?}\n")
   end
 
   defp document_option_header(header, _, _), do: header

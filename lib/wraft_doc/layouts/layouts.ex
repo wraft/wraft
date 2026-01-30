@@ -28,11 +28,13 @@ defmodule WraftDoc.Layouts do
       ) do
     Multi.new()
     |> layout_asset_multi(current_user, params)
-    |> Multi.run(:layout, fn _repo, %{asset: %{id: asset_id}} ->
+    |> layout_cover_asset_multi(current_user, params)
+    |> Multi.run(:layout, fn _repo, %{asset: %{id: asset_id}, cover: %{id: cover_id}} ->
       params =
         Map.merge(params, %{
           "engine_id" => engine_id,
           "asset_id" => asset_id,
+          "cover_id" => cover_id,
           "organisation_id" => org_id
         })
 
@@ -64,6 +66,7 @@ defmodule WraftDoc.Layouts do
            :engine,
            :creator,
            :asset,
+           :cover,
            frame: [:asset, fields: [:field_type]]
          ])}
 
@@ -91,6 +94,30 @@ defmodule WraftDoc.Layouts do
   end
 
   defp layout_asset_multi(multi, _, _) do
+    Multi.run(multi, :asset, fn _repo, _changes ->
+      {:ok, %{id: nil}}
+    end)
+  end
+
+  defp layout_cover_asset_multi(
+         multi,
+         %{current_org_id: org_id} = current_user,
+         %{"cover" => file, "type" => type, "asset_name" => asset_name} = _params
+       )
+       when not is_nil(file) do
+    Multi.run(multi, :cover, fn _repo, _changes ->
+      asset_params = %{
+        "organisation_id" => org_id,
+        "name" => asset_name,
+        "type" => type,
+        "file" => file
+      }
+
+      Assets.create_asset(current_user, asset_params)
+    end)
+  end
+
+  defp layout_cover_asset_multi(multi, _, _) do
     Multi.run(multi, :asset, fn _repo, _changes ->
       {:ok, %{id: nil}}
     end)
@@ -134,7 +161,7 @@ defmodule WraftDoc.Layouts do
         where: l.organisation_id == ^org_id,
         where: ^layout_index_filter_by_name(params),
         order_by: ^layout_index_sort(params),
-        preload: [:engine, :asset, frame: [:asset]]
+        preload: [:engine, :asset, :cover, frame: [:asset]]
       )
 
     Repo.paginate(query, params)

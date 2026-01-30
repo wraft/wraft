@@ -153,32 +153,46 @@ $endif$
   cell
 }
 
-$if(default_cover)$
-#align(center)[
-  #text(12pt)[$organisation_name$]
-  #v(0.1cm)
-  #text(12pt)[$id$]
+$if(cover)$
+  $if(cover_pdf)$
+    #include("$cover_pdf$")
+    #pagebreak()
+  $else$
+    #align(center)[
+      #text(12pt)[$organisation_name$]
+      #v(0.1cm)
+      #text(12pt)[$id$]
 
-  #box(line(length: 100%, stroke: 1pt))
-  #v(0.4cm)
+      #box(line(length: 100%, stroke: 1pt))
+      #v(0.4cm)
 
-  #text(20pt, weight: "bold", fill: primary_color)[$title$]
-  #v(0.4cm)
-  #box(line(length: 100%, stroke: 1pt))
-  #v(1.5cm)
+      #text(
+        20pt,
+        weight: "bold",
+        fill: primary_color
+      )[$title$]
 
-  #align(center)[
-    *Prepared By*
-    #v(0.2cm)
-    $author_name$
-    #v(0.2cm)
-    $author_email$
-  ]
-  #v(1cm)
+      #v(0.4cm)
+      #box(line(length: 100%, stroke: 1pt))
+      #v(1.5cm)
 
-  #text(12pt)[#datetime.today().display("[month repr:long] [day], [year]")]
-  ]
-#pagebreak()
+      #align(center)[
+        *Prepared By*
+        #v(0.2cm)
+        $author_name$
+        #v(0.2cm)
+        $author_email$
+      ]
+
+      #v(1cm)
+      #text(12pt)[
+        #datetime.today().display(
+          "[month repr:long] [day], [year]"
+        )
+      ]
+    ]
+    #pagebreak()
+  $endif$
 $endif$
 
 $if(toc)$

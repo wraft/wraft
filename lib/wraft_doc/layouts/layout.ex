@@ -17,12 +17,13 @@ defmodule WraftDoc.Layouts.Layout do
     field(:unit, :string)
     field(:slug, :string)
     field(:screenshot, WraftDocWeb.LayoutScreenShotUploader.Type)
-
+    field(:metadata, :map)
     embeds_one(:margin, Margin, on_replace: :update)
 
     belongs_to(:engine, WraftDoc.Documents.Engine)
     belongs_to(:frame, WraftDoc.Frames.Frame)
     belongs_to(:asset, WraftDoc.Assets.Asset)
+    belongs_to(:cover, WraftDoc.Assets.Asset)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
@@ -42,6 +43,8 @@ defmodule WraftDoc.Layouts.Layout do
       :slug,
       :frame_id,
       :asset_id,
+      :cover_id,
+      :metadata,
       :organisation_id,
       :engine_id
     ])

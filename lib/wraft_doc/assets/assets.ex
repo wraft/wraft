@@ -195,6 +195,7 @@ defmodule WraftDoc.Assets do
   def preload_asset(%Layout{} = layout) do
     Repo.preload(layout, [
       :asset,
+      :cover,
       :creator,
       :organisation,
       :engine,
@@ -284,6 +285,36 @@ defmodule WraftDoc.Assets do
   end
 
   def find_asset_header_values(header, %Layout{}, _), do: header
+
+  def find_cover_header_values(
+        acc,
+        %Layout{
+          cover: %Asset{id: cover_id, file: cover_file, organisation_id: cover_org_id}
+        },
+        %Instance{
+          instance_id: instance_id
+        }
+      ) do
+    cover_file_name =
+      cover_file.file_name
+      |> String.replace(~r/[^A-Za-z0-9._-]+/, "-")
+      |> String.trim("-")
+
+    cover_binary =
+      Minio.download("organisations/#{cover_org_id}/assets/#{cover_id}/#{cover_file_name}")
+
+    cover_file_path =
+      Path.join(
+        File.cwd!(),
+        "organisations/#{cover_org_id}/contents/#{instance_id}/#{cover_file_name}"
+      )
+
+    File.write!(cover_file_path, cover_binary)
+
+    Documents.concat_strings(acc, "cover_pdf: #{cover_file_path} \n")
+  end
+
+  def find_cover_header_values(header, %Layout{}, _), do: header
 
   # TODO update preview.
   @doc """

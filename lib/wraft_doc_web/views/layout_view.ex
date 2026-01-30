@@ -22,7 +22,8 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       inserted_at: layout.inserted_at,
       update_at: layout.updated_at,
       engine: render_one(layout.engine, EngineView, "create.json", as: :engine),
-      asset: render_one(layout.asset, AssetView, "asset.json", as: :asset)
+      asset: render_one(layout.asset, AssetView, "asset.json", as: :asset),
+      cover: render_one(layout.cover, AssetView, "asset.json", as: :asset)
     }
   end
 

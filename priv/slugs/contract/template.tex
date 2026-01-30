@@ -47,6 +47,7 @@
 \usepackage{setspace}
 \usepackage{listings}
 \usepackage{xstring}
+\usepackage{pdfpages}
 
 
 $if(body_color)$
@@ -194,12 +195,18 @@ $if(margin_top)$$if(margin_left)$$if(margin_bottom)$$if(margin_right)$
 			\newgeometry{top=$margin_top$cm, left=$margin_left$cm, bottom=$margin_bottom$cm, right=$margin_right$cm}
 		$endif$$endif$$endif$$endif$
 
-$if(default_cover)$
 $if(path)$
+$if(cover)$
+$if(cover_pdf)$
+		\includepdf[
+			pages=1,
+			pagecommand={\thispagestyle{empty}}
+		]{$cover_pdf$}
+	$else$
 		\input{$path$/cover}
 	$endif$
 $endif$
-
+$endif$
 		% chapter: 0, section: 1, subsection: 2 etc
 	$if(toc)$
 		{
