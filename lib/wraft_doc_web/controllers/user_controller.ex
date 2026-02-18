@@ -330,6 +330,57 @@ defmodule WraftDocWeb.Api.V1.UserController do
   end
 
   @doc """
+    Confirmation code to delete user account
+  """
+  operation(:request_deletion,
+    summary: "User Deletion Code",
+    description: "Request User Deletion Code",
+    responses: [
+      ok: {"Ok", "application/json", Schemas.User.UserDeletionRequestResponse},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error}
+    ]
+  )
+
+  @spec request_deletion(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def request_deletion(conn, _params) do
+    current_user = conn.assigns.current_user
+
+    with {:ok, %Oban.Job{}} <-
+           AuthTokens.generate_delete_user_token_and_send_email(current_user) do
+      conn
+      |> put_resp_content_type("application/json")
+      |> send_resp(200, Jason.encode!(%{info: "Delete token email sent!"}))
+    end
+  end
+
+  @doc """
+    Delete user account
+  """
+  operation(:delete,
+    summary: "Delete user account",
+    description: "Delete User Account API",
+    request_body:
+      {"Deletion Confirmation code", "application/json", Schemas.User.DeleteUserRequest},
+    responses: [
+      ok: {"Ok", "application/json", Schemas.User.User},
+      unprocessable_entity: {"Unprocessable Entity", "application/json", Schemas.Error},
+      unauthorized: {"Unauthorized", "application/json", Schemas.Error},
+      not_found: {"Not Found", "application/json", Schemas.Error}
+    ]
+  )
+
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete(conn, params) do
+    current_user = conn.assigns.current_user
+
+    with %AuthToken{} = _token <- AuthTokens.verify_delete_user_token(current_user, params),
+         {:ok, %User{} = user} <- Account.delete_user_account(current_user) do
+      render(conn, "delete.json", user: user)
+    end
+  end
+
+  @doc """
     Resend email token from expired token sent to mail
   """
   operation(:resend_email_token,

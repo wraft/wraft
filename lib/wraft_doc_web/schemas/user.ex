@@ -584,4 +584,35 @@ defmodule WraftDocWeb.Schemas.User do
       }
     })
   end
+
+  defmodule UserDeletionRequestResponse do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      title: "Delete Confirmation Code",
+      description: "User Deletion Confirmation Code Response",
+      type: :object,
+      properties: %{
+        info: %Schema{type: :string, description: "Response Info"}
+      },
+      example: %{
+        info: "Delete token email sent!"
+      }
+    })
+  end
+
+  defmodule DeleteUserRequest do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      title: "Delete User Confirmation Code",
+      description: "Request body to delete user account",
+      type: :object,
+      properties: %{
+        code: %Schema{type: :string, description: "Confirmation code"}
+      },
+      required: [:code],
+      example: %{
+        code: "123456"
+      }
+    })
+  end
 end

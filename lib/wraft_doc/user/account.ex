@@ -629,7 +629,9 @@ defmodule WraftDoc.Account do
   # Get the user struct from given email
   @spec get_user_by_email(binary) :: User.t() | nil
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
+    User
+    |> where([u], u.email == ^email and is_nil(u.deleted_at))
+    |> Repo.one()
   end
 
   def get_user_by_email(_email), do: nil
@@ -831,6 +833,18 @@ defmodule WraftDoc.Account do
       end
     end
   end
+
+  @doc """
+  Delete user account permanently (self-deletion)
+  """
+  @spec delete_user_account(User.t()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  def delete_user_account(%User{} = user) do
+    user
+    |> User.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
+    |> Repo.update()
+  end
+
+  def delete_user_account(_), do: {:error, :invalid_user}
 
   # Update the password if the new one is not same as the previous one.
   @spec check_and_update_password(User.t(), map) ::

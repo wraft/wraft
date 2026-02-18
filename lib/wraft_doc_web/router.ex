@@ -196,6 +196,10 @@ defmodule WraftDocWeb.Router do
       get("/profiles", ProfileController, :show_current_profile)
       # Update user password
       put("/user/password", UserController, :update_password)
+      # Request user account deletion
+      post("/users/request_deletion", UserController, :request_deletion)
+      # Delete user account
+      delete("/users", UserController, :delete)
       # Dashboard Stats
       get("/dashboard_stats", DashboardController, :dashboard_stats)
       # Documents by content type

@@ -230,12 +230,64 @@ defmodule WraftDoc.AuthTokens do
 
   def generate_delete_token_and_send_email(_, _), do: {:error, :fake}
 
+  @doc """
+  Verify Delete User Token
+  """
+  @spec verify_delete_user_token(User.t(), map()) ::
+          AuthToken.t() | {:error, :fake} | {:error, :expired}
+  def verify_delete_user_token(user, %{"code" => code}) do
+    case get_auth_token("#{user.id}:#{code}", :delete_user, %{
+           "user_id" => user.id
+         }) do
+      %AuthToken{} = token ->
+        delete_auth_token!(token)
+
+      _ ->
+        {:error, :fake}
+    end
+  end
+
+  def verify_delete_user_token(_, _), do: {:error, :fake}
+
+  @doc """
+  Generate Delete User Token
+  """
+  @spec generate_delete_user_token_and_send_email(User.t()) :: {:ok, Oban.Job.t()}
+  def generate_delete_user_token_and_send_email(%User{} = user) do
+    params = build_user_deletion_params(user.id)
+
+    delete_auth_token(user.id, "delete_user")
+    insert_auth_token!(user, params)
+
+    delete_code = params.value |> String.split(":") |> List.last()
+
+    %{
+      email: user.email,
+      delete_code: delete_code,
+      user_name: user.name
+    }
+    |> EmailWorker.new(queue: "mailer", tags: ["user_delete_code"])
+    |> Oban.insert()
+  end
+
+  def generate_delete_user_token_and_send_email(_), do: {:error, :fake}
+
   defp build_params(organisation_id) do
     delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
 
     %{
       value: "#{organisation_id}:#{delete_code}",
       token_type: "delete_organisation",
+      expiry_datetime: NaiveDateTime.add(NaiveDateTime.utc_now(), 10 * 60, :second)
+    }
+  end
+
+  defp build_user_deletion_params(user_id) do
+    delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
+
+    %{
+      value: "#{user_id}:#{delete_code}",
+      token_type: "delete_user",
       expiry_datetime: NaiveDateTime.add(NaiveDateTime.utc_now(), 10 * 60, :second)
     }
   end

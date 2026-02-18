@@ -133,6 +133,22 @@ defmodule WraftDocWeb.Mailer.Email do
   end
 
   @doc """
+  User delete code.
+  """
+  def user_delete_code(email, delete_code, user_name) do
+    body = %{
+      delete_code: delete_code,
+      user_name: user_name
+    }
+
+    new()
+    |> to(email)
+    |> from({"Wraft", sender_email()})
+    |> subject("Wraft - Delete User")
+    |> html_body(MJML.UserDeleteCode.render(body))
+  end
+
+  @doc """
     Document Reminder
   """
   def document_reminder(recipient_email, recipient_name, document_title, instance_id, document_id) do
