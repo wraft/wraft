@@ -29,9 +29,9 @@ defmodule WraftDoc.Workers.DefaultWorker do
   @wraft_theme_args %{
     name: "Wraft Frame",
     font: "Roboto ",
-    body_color: "#111",
-    primary_color: "#000",
-    secondary_color: "#333"
+    body_color: "#ffffff",
+    primary_color: "#000000",
+    secondary_color: "#333333"
   }
 
   @layout_file_path Application.compile_env!(:wraft_doc, [:layout_file])
