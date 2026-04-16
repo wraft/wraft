@@ -181,9 +181,9 @@ defmodule WraftDoc.Themes do
     do:
       Map.merge(
         %{
-          body_color: theme.body_color,
-          primary_color: theme.primary_color,
-          secondary_color: theme.secondary_color,
+          body_color: normalize_hex(theme.body_color),
+          primary_color: normalize_hex(theme.primary_color),
+          secondary_color: normalize_hex(theme.secondary_color),
           typescale: Jason.encode!(theme.typescale)
         },
         get_font_details(theme, mkdir)
@@ -218,6 +218,33 @@ defmodule WraftDoc.Themes do
       ]
     }
   end
+
+  defp normalize_hex(hex) do
+    hex
+    |> String.trim()
+    |> String.trim_leading("#")
+    |> expand_hex()
+    |> then(&"##{&1}")
+  end
+
+  defp expand_hex(hex) when byte_size(hex) == 3 do
+    hex
+    |> String.graphemes()
+    |> Enum.map_join(fn c -> c <> c end)
+  end
+
+  defp expand_hex(hex) when byte_size(hex) == 4 do
+    hex
+    |> String.graphemes()
+    |> Enum.take(3)
+    |> Enum.map_join(fn c -> c <> c end)
+  end
+
+  defp expand_hex(hex) when byte_size(hex) == 6, do: hex
+
+  defp expand_hex(hex) when byte_size(hex) == 8, do: String.slice(hex, 0, 6)
+
+  defp expand_hex(_), do: "000000"
 
   defp process_font_assets(assets, organisation_id, fonts_dir) do
     Enum.reduce(assets, %{}, fn asset, acc ->
