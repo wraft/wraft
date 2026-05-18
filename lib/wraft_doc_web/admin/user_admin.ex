@@ -5,6 +5,7 @@ defmodule WraftDocWeb.UserAdmin do
   import Ecto.Query
   alias WraftDoc.Account
   alias WraftDoc.Account.User
+  alias WraftDoc.AdminWebhooks.AdminEventTrigger
   alias WraftDoc.AuthTokens
   alias WraftDoc.Enterprise
   alias WraftDoc.Repo
@@ -135,4 +136,24 @@ defmodule WraftDocWeb.UserAdmin do
     Repo.delete(personal_org)
     Repo.delete(user)
   end
+
+  def after_insert(conn, %User{} = user) do
+    AdminEventTrigger.trigger_user_created(user, actor(conn))
+    {:ok, user}
+  end
+
+  def after_update(conn, %User{} = user) do
+    AdminEventTrigger.trigger_user_updated(user, actor(conn))
+    {:ok, user}
+  end
+
+  def after_delete(conn, %User{} = user) do
+    AdminEventTrigger.trigger_user_deleted(user, actor(conn))
+    {:ok, user}
+  end
+
+  defp actor(%{assigns: %{admin_session: %{id: id, email: email}}}),
+    do: %{id: id, email: email}
+
+  defp actor(_), do: nil
 end

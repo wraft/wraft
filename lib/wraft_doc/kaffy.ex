@@ -36,6 +36,15 @@ defmodule WraftDoc.Kaffy.Config do
           ]
         ]
       ],
+      admin_webhooks: [
+        name: "Admin Webhooks",
+        resources: [
+          admin_webhook: [
+            schema: WraftDoc.AdminWebhooks.AdminWebhook,
+            admin: WraftDocWeb.AdminWebhookAdmin
+          ]
+        ]
+      ],
       custom: [
         name: "Custom",
         resources: [

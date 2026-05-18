@@ -5,6 +5,7 @@ defmodule WraftDocWeb.WaitingListAdmin do
   import Ecto.Query
 
   alias WraftDoc.Account
+  alias WraftDoc.AdminWebhooks.AdminEventTrigger
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Kaffy.CustomDataAdmin
@@ -85,8 +86,13 @@ defmodule WraftDocWeb.WaitingListAdmin do
     |> then(&WaitingLists.update_waiting_list(waiting_list, &1))
   end
 
+  def after_insert(conn, %WaitingList{} = waiting_list) do
+    AdminEventTrigger.trigger_waiting_list_created(waiting_list, actor(conn))
+    {:ok, waiting_list}
+  end
+
   def after_update(
-        _conn,
+        conn,
         %WaitingList{
           status: :approved,
           email: email,
@@ -103,8 +109,14 @@ defmodule WraftDocWeb.WaitingListAdmin do
       |> EmailWorker.new(queue: "mailer", tags: ["waiting_list_acceptance"])
       |> Oban.insert()
 
+      AdminEventTrigger.trigger_waiting_list_updated(waiting_list, actor(conn))
+      AdminEventTrigger.trigger_waiting_list_approved(waiting_list, actor(conn))
+
       {:ok, waiting_list}
     else
+      # Returning {:error, _, _} causes Kaffy to roll back the entire update
+      # transaction (see Kaffy.ResourceCallbacks.update_callbacks/4), so the
+      # status change does not persist and no admin event needs to fire here.
       {:error, %Ecto.Changeset{} = changeset} ->
         {:error, waiting_list, format_changeset_errors(changeset)}
 
@@ -113,7 +125,20 @@ defmodule WraftDocWeb.WaitingListAdmin do
     end
   end
 
-  def after_update(_conn, waiting_list), do: {:ok, waiting_list}
+  def after_update(conn, waiting_list) do
+    AdminEventTrigger.trigger_waiting_list_updated(waiting_list, actor(conn))
+    {:ok, waiting_list}
+  end
+
+  def after_delete(conn, %WaitingList{} = waiting_list) do
+    AdminEventTrigger.trigger_waiting_list_deleted(waiting_list, actor(conn))
+    {:ok, waiting_list}
+  end
+
+  defp actor(%{assigns: %{admin_session: %{id: id, email: email}}}),
+    do: %{id: id, email: email}
+
+  defp actor(_), do: nil
 
   defp create_account(%WaitingList{email: email, first_name: first_name, last_name: last_name}) do
     case Repo.get_by(WraftDoc.Account.User, email: email) do

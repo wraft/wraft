@@ -6,6 +6,7 @@ defmodule WraftDocWeb.OrganisationAdmin do
 
   alias Ecto.Multi
   alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.AdminWebhooks.AdminEventTrigger
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Repo
 
@@ -87,6 +88,26 @@ defmodule WraftDocWeb.OrganisationAdmin do
         {:error, reason}
     end
   end
+
+  def after_insert(conn, %Organisation{} = organisation) do
+    AdminEventTrigger.trigger_organisation_created(organisation, actor(conn))
+    {:ok, organisation}
+  end
+
+  def after_update(conn, %Organisation{} = organisation) do
+    AdminEventTrigger.trigger_organisation_updated(organisation, actor(conn))
+    {:ok, organisation}
+  end
+
+  def after_delete(conn, %Organisation{} = organisation) do
+    AdminEventTrigger.trigger_organisation_deleted(organisation, actor(conn))
+    {:ok, organisation}
+  end
+
+  defp actor(%{assigns: %{admin_session: %{id: id, email: email}}}),
+    do: %{id: id, email: email}
+
+  defp actor(_), do: nil
 
   defp deleted_at(%Organisation{users_organisations: [%UserOrganisation{deleted_at: nil}]}),
     do: false

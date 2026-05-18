@@ -6,6 +6,7 @@ defmodule WraftDoc.Factory do
 
   alias WraftDoc.Account.Activity
   alias WraftDoc.Account.Country
+  alias WraftDoc.AdminWebhooks.AdminWebhook
   alias WraftDoc.Account.Profile
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.RoleGroup
@@ -706,6 +707,21 @@ defmodule WraftDoc.Factory do
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       is_deactivated: false
+    }
+  end
+
+  def admin_webhook_factory do
+    %AdminWebhook{
+      name: sequence(:admin_webhook_name, &"admin-webhook-#{&1}"),
+      url: "https://example.com/admin-webhook",
+      secret: "test-secret",
+      events: ["admin.user.updated", "admin.test"],
+      is_active: true,
+      headers: %{},
+      retry_count: 3,
+      timeout_seconds: 30,
+      failure_count: 0,
+      creator: build(:internal_user)
     }
   end
 
