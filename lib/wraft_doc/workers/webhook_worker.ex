@@ -11,11 +11,11 @@ defmodule WraftDoc.Workers.WebhookWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{
+        attempt: attempt,
         args: %{
           "webhook_id" => webhook_id,
           "event" => event,
-          "payload" => payload,
-          "attempt" => attempt
+          "payload" => payload
         }
       }) do
     Logger.info("Processing webhook trigger #{webhook_id} event #{event} attempt #{attempt}")
@@ -30,7 +30,7 @@ defmodule WraftDoc.Workers.WebhookWorker do
         :ok
 
       webhook ->
-        send_webhook(webhook, payload)
+        send_webhook(webhook, payload, attempt)
     end
   end
 
@@ -40,13 +40,14 @@ defmodule WraftDoc.Workers.WebhookWorker do
     {:error, :invalid_args}
   end
 
-  defp send_webhook(%Webhook{} = webhook, payload) do
+  defp send_webhook(%Webhook{} = webhook, payload, attempt_number) do
     event = payload["event"] || "unknown"
-    attempt_number = payload["attempt"] || 1
     triggered_at = DateTime.truncate(DateTime.utc_now(), :second)
 
-    headers = build_headers(webhook, payload)
-    request_body = Jason.encode!(payload)
+    # Decide the wire body + headers BEFORE writing the log row, so the audit
+    # log accurately reflects what was actually sent (Discord deliveries use a
+    # different body shape and a minimal header set).
+    {request_body, headers} = build_request(webhook, payload)
 
     # Create initial webhook log entry
     {:ok, webhook_log} =
@@ -65,7 +66,7 @@ defmodule WraftDoc.Workers.WebhookWorker do
     # Measure execution time
     start_time = System.monotonic_time(:millisecond)
 
-    case make_http_request(webhook.url, payload, headers, webhook.timeout_seconds) do
+    case make_http_request(webhook.url, request_body, headers, webhook.timeout_seconds) do
       {:ok, %{status_code: status_code, headers: response_headers, body: response_body}}
       when status_code >= 200 and status_code < 300 ->
         execution_time = System.monotonic_time(:millisecond) - start_time
@@ -129,7 +130,21 @@ defmodule WraftDoc.Workers.WebhookWorker do
     end
   end
 
-  defp build_headers(webhook, payload) do
+  @doc false
+  # Public for direct testing. Returns `{body, headers}` to send on the wire.
+  # Discord URLs get the Discord-shaped body and a minimal header set (HMAC
+  # signing is skipped because Discord can't verify it).
+  def build_request(%Webhook{} = webhook, payload) do
+    if discord_webhook?(webhook.url) do
+      body = Jason.encode!(format_discord_payload(payload))
+      {body, [{"Content-Type", "application/json"}]}
+    else
+      body = Jason.encode!(payload)
+      {body, build_signed_headers(webhook, body)}
+    end
+  end
+
+  defp build_signed_headers(webhook, request_body) do
     base_headers = [
       {"Content-Type", "application/json"},
       {"User-Agent", "WraftDoc-Webhook/1.0"}
@@ -140,8 +155,7 @@ defmodule WraftDoc.Workers.WebhookWorker do
 
     signature_header =
       if webhook.secret do
-        signature = generate_signature(payload, webhook.secret)
-        [{"X-WraftDoc-Signature", signature}]
+        [{"X-WraftDoc-Signature", generate_signature(request_body, webhook.secret)}]
       else
         []
       end
@@ -149,24 +163,15 @@ defmodule WraftDoc.Workers.WebhookWorker do
     base_headers ++ custom_headers ++ signature_header
   end
 
-  defp generate_signature(payload, secret) do
-    payload_json = Jason.encode!(payload)
-    signature = :crypto.mac(:hmac, :sha256, secret, payload_json)
+  @doc false
+  # Public for direct testing — not part of the worker's external API.
+  def generate_signature(request_body, secret) when is_binary(request_body) do
+    signature = :crypto.mac(:hmac, :sha256, secret, request_body)
     "sha256=" <> Base.encode16(signature, case: :lower)
   end
 
-  defp make_http_request(url, payload, headers, timeout_seconds) do
-    # Check if this is a Discord webhook and format accordingly
-    formatted_payload =
-      if discord_webhook?(url) do
-        format_discord_payload(payload)
-      else
-        payload
-      end
-
-    body = Jason.encode!(formatted_payload)
+  defp make_http_request(url, body, headers, timeout_seconds) do
     timeout_ms = timeout_seconds * 1000
-
     HTTPoison.post(url, body, headers, recv_timeout: timeout_ms, timeout: timeout_ms)
   end
 
@@ -196,10 +201,13 @@ defmodule WraftDoc.Workers.WebhookWorker do
       fields: build_discord_fields(payload, data)
     }
 
-    # Return Discord-formatted payload
+    # Return Discord-formatted payload. `allowed_mentions: %{parse: []}` disables
+    # ALL mention processing — prevents `@everyone`/`@here` in user-controlled
+    # content fields from pinging the entire Discord server.
     %{
       content: "",
-      embeds: [embed]
+      embeds: [embed],
+      allowed_mentions: %{parse: []}
     }
   end
 
@@ -308,22 +316,18 @@ defmodule WraftDoc.Workers.WebhookWorker do
   defp headers_to_map(headers), do: headers || %{}
 
   # Truncate response body to prevent huge log entries
-  defp truncate_response_body(body, max_length \\ 10_000) do
-    case body do
-      nil ->
-        nil
+  defp truncate_response_body(body, max_length \\ 10_000)
+  defp truncate_response_body(nil, _max_length), do: nil
 
-      body when is_binary(body) ->
-        if String.length(body) > max_length do
-          String.slice(body, 0, max_length) <> "... [truncated]"
-        else
-          body
-        end
-
-      _ ->
-        inspect(body)
+  defp truncate_response_body(body, max_length) when is_binary(body) do
+    if byte_size(body) > max_length do
+      binary_part(body, 0, max_length) <> "... [truncated]"
+    else
+      body
     end
   end
+
+  defp truncate_response_body(body, _max_length), do: inspect(body)
 
   # Format error message for logging
   defp format_error_message(reason) do

@@ -3,10 +3,12 @@ defmodule WraftDocWeb.Api.V1.WaitingListControllerTest do
      Test module for waitlist controller
   """
   use WraftDocWeb.ConnCase
+  use Oban.Testing, repo: WraftDoc.Repo
   @moduletag :controller
 
   alias WraftDoc.Repo
   alias WraftDoc.WaitingLists.WaitingList
+  alias WraftDoc.Workers.AdminWebhookWorker
 
   @valid_params %{
     "first_name" => "first name",
@@ -50,6 +52,42 @@ defmodule WraftDocWeb.Api.V1.WaitingListControllerTest do
       conn = post(conn, Routes.v1_waiting_list_path(conn, :create), @valid_params)
 
       assert json_response(conn, 400)["errors"] == "already a member of wraft"
+    end
+
+    test "triggers admin.waiting_list.created for subscribed admin webhooks", %{conn: conn} do
+      insert(:admin_webhook, events: ["admin.waiting_list.created"])
+
+      conn = post(conn, Routes.v1_waiting_list_path(conn, :create), @valid_params)
+
+      assert response(conn, 200) =~ "Success"
+
+      assert_enqueued(
+        worker: AdminWebhookWorker,
+        args: %{"event" => "admin.waiting_list.created"}
+      )
+    end
+
+    test "triggers admin.waiting_list.confirmation_email_sent for subscribed admin webhooks",
+         %{conn: conn} do
+      insert(:admin_webhook, events: ["admin.waiting_list.confirmation_email_sent"])
+
+      conn = post(conn, Routes.v1_waiting_list_path(conn, :create), @valid_params)
+
+      assert response(conn, 200) =~ "Success"
+
+      assert_enqueued(
+        worker: AdminWebhookWorker,
+        args: %{"event" => "admin.waiting_list.confirmation_email_sent"}
+      )
+    end
+
+    test "does not enqueue admin webhook jobs on validation failure", %{conn: conn} do
+      insert(:admin_webhook, events: ["admin.waiting_list.created"])
+      insert(:admin_webhook, events: ["admin.waiting_list.confirmation_email_sent"])
+
+      post(conn, Routes.v1_waiting_list_path(conn, :create), @invalid_params)
+
+      assert [] = all_enqueued(worker: AdminWebhookWorker)
     end
   end
 end

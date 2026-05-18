@@ -98,7 +98,10 @@ defmodule WraftDocWeb.AdminWebhookAdmin do
   end
 
   def insert(
-        %{assigns: %{admin_session: %{id: internal_user_id}}, params: %{"admin_webhook" => params}},
+        %{
+          assigns: %{admin_session: %{id: internal_user_id}},
+          params: %{"admin_webhook" => params}
+        },
         _changeset
       ) do
     AdminWebhooks.create_admin_webhook(internal_user_id, normalize_params(params))
@@ -134,23 +137,33 @@ defmodule WraftDocWeb.AdminWebhookAdmin do
 
   defp normalize_json_field(%{} = params, key, valid_fun) do
     case Map.get(params, key) do
-      value when is_binary(value) ->
-        case String.trim(value) do
-          "" ->
-            params
+      raw when is_binary(raw) -> Map.put(params, key, parse_json(raw, valid_fun, raw))
+      _ -> params
+    end
+  end
 
-          trimmed ->
-            case Jason.decode(trimmed) do
-              {:ok, decoded} ->
-                if valid_fun.(decoded), do: Map.put(params, key, decoded), else: params
+  defp parse_json(raw, valid_fun, fallback) do
+    case String.trim(raw) do
+      "" -> empty_value(valid_fun)
+      trimmed -> decode_or_fallback(trimmed, valid_fun, fallback)
+    end
+  end
 
-              {:error, _} ->
-                params
-            end
-        end
+  defp decode_or_fallback(trimmed, valid_fun, fallback) do
+    case Jason.decode(trimmed) do
+      {:ok, decoded} -> if valid_fun.(decoded), do: decoded, else: fallback
+      {:error, _} -> fallback
+    end
+  end
 
-      _ ->
-        params
+  # Empty form input becomes the schema's identity value for the field type
+  # (`[]` for array fields, `%{}` for map fields). Anything else falls through
+  # to Ecto's cast.
+  defp empty_value(valid_fun) do
+    cond do
+      valid_fun.([]) -> []
+      valid_fun.(%{}) -> %{}
+      true -> nil
     end
   end
 end

@@ -90,6 +90,7 @@ defmodule WraftDoc.AdminWebhooks.AdminWebhookTest do
       assert "admin.user.created" in events
       assert "admin.organisation.deleted" in events
       assert "admin.waiting_list.approved" in events
+      assert "admin.waiting_list.confirmation_email_sent" in events
       assert "admin.test" in events
     end
   end

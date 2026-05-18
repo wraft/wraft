@@ -61,6 +61,15 @@ defmodule WraftDoc.AdminWebhooks.AdminEventTrigger do
   def trigger_waiting_list_deleted(%WaitingList{} = wl, actor \\ nil),
     do: dispatch("admin.waiting_list.deleted", waiting_list_data(wl, "deleted"), actor)
 
+  @spec trigger_waiting_list_confirmation_email_sent(WaitingList.t(), actor) :: :ok
+  def trigger_waiting_list_confirmation_email_sent(%WaitingList{} = wl, actor \\ nil),
+    do:
+      dispatch(
+        "admin.waiting_list.confirmation_email_sent",
+        waiting_list_data(wl, "confirmation_email_sent"),
+        actor
+      )
+
   # === Test event ===
 
   @spec trigger_test(actor) :: :ok

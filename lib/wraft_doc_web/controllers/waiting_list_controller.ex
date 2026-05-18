@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Api.V1.WaitingListController do
 
   alias WraftDoc.Account
   alias WraftDoc.Account.User
+  alias WraftDoc.AdminWebhooks.AdminEventTrigger
   alias WraftDoc.WaitingLists
   alias WraftDoc.WaitingLists.WaitingList
   alias WraftDocWeb.Schemas.Error
@@ -30,6 +31,11 @@ defmodule WraftDocWeb.Api.V1.WaitingListController do
          true <- is_nil(user) or user.is_guest,
          {:ok, %WaitingList{} = waiting_list} <- WaitingLists.join_waiting_list(params) do
       WaitingLists.waitlist_confirmation_email(waiting_list)
+
+      # Public/unauthenticated endpoint, so no actor — admins subscribed to
+      # `admin.waiting_list.*` still get notified.
+      AdminEventTrigger.trigger_waiting_list_created(waiting_list, nil)
+      AdminEventTrigger.trigger_waiting_list_confirmation_email_sent(waiting_list, nil)
 
       conn
       |> put_resp_header("content-type", "application/json")

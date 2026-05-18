@@ -16,6 +16,7 @@ defmodule WraftDoc.AdminWebhooks.AdminWebhook do
     "admin.waiting_list.updated",
     "admin.waiting_list.deleted",
     "admin.waiting_list.approved",
+    "admin.waiting_list.confirmation_email_sent",
     "admin.test"
   ]
 

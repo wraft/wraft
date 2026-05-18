@@ -6,7 +6,6 @@ defmodule WraftDoc.Factory do
 
   alias WraftDoc.Account.Activity
   alias WraftDoc.Account.Country
-  alias WraftDoc.AdminWebhooks.AdminWebhook
   alias WraftDoc.Account.Profile
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.RoleGroup
@@ -14,6 +13,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Account.User.Audience
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
+  alias WraftDoc.AdminWebhooks.AdminWebhook
   alias WraftDoc.ApiKeys.ApiKey
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Authorization.Permission
@@ -60,6 +60,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Themes.ThemeAsset
   alias WraftDoc.WaitingLists.WaitingList
+  alias WraftDoc.Webhooks.Webhook
 
   # Helper function to generate unique email addresses for tests
   defp unique_email(domain \\ "wmail.com") do
@@ -707,6 +708,22 @@ defmodule WraftDoc.Factory do
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       is_deactivated: false
+    }
+  end
+
+  def webhook_factory do
+    %Webhook{
+      name: sequence(:webhook_name, &"webhook-#{&1}"),
+      url: "https://example.com/webhook",
+      secret: "test-secret",
+      events: ["document.created", "test"],
+      is_active: true,
+      headers: %{},
+      retry_count: 3,
+      timeout_seconds: 30,
+      failure_count: 0,
+      organisation: build(:organisation),
+      creator: build(:user)
     }
   end
 

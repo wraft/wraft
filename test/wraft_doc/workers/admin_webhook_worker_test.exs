@@ -110,6 +110,26 @@ defmodule WraftDoc.Workers.AdminWebhookWorkerTest do
       assert embed.description == "**Cara Z** (cara@x) joined the waiting list."
     end
 
+    test "renders waiting_list.confirmation_email_sent with envelope emoji" do
+      payload = %{
+        "event" => "admin.waiting_list.confirmation_email_sent",
+        "data" => %{
+          "waiting_list" => %{
+            "id" => "w3",
+            "first_name" => "Dee",
+            "last_name" => "Q",
+            "email" => "dee@x",
+            "status" => "pending"
+          },
+          "action" => "confirmation_email_sent"
+        }
+      }
+
+      assert %{embeds: [embed]} = AdminWebhookWorker.format_discord_payload(payload)
+      assert embed.title == "✉️ Waiting list confirmation email sent"
+      assert embed.description == "Confirmation email queued for **Dee Q** (dee@x)."
+    end
+
     test "falls back to the message field for the test event" do
       payload = %{
         "event" => "admin.test",

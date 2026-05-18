@@ -221,6 +221,7 @@ defmodule WraftDoc.Workers.AdminWebhookWorker do
   defp discord_emoji(event) do
     cond do
       String.ends_with?(event, ".approved") -> "🎉"
+      String.ends_with?(event, ".confirmation_email_sent") -> "✉️"
       String.contains?(event, ".user.") -> "👤"
       String.contains?(event, ".organisation.") -> "🏢"
       String.contains?(event, ".waiting_list.") -> "📋"
@@ -229,22 +230,23 @@ defmodule WraftDoc.Workers.AdminWebhookWorker do
     end
   end
 
-  defp discord_title(event) do
-    case event do
-      "admin.user.created" -> "New user registered"
-      "admin.user.updated" -> "User updated"
-      "admin.user.deleted" -> "User deleted"
-      "admin.organisation.created" -> "New organisation created"
-      "admin.organisation.updated" -> "Organisation updated"
-      "admin.organisation.deleted" -> "Organisation deleted"
-      "admin.waiting_list.created" -> "Joined the waiting list"
-      "admin.waiting_list.updated" -> "Waiting list entry updated"
-      "admin.waiting_list.approved" -> "Waiting list entry approved"
-      "admin.waiting_list.deleted" -> "Waiting list entry deleted"
-      "admin.test" -> "Test event"
-      other -> humanize_event(other)
-    end
-  end
+  @discord_titles %{
+    "admin.user.created" => "New user registered",
+    "admin.user.updated" => "User updated",
+    "admin.user.deleted" => "User deleted",
+    "admin.organisation.created" => "New organisation created",
+    "admin.organisation.updated" => "Organisation updated",
+    "admin.organisation.deleted" => "Organisation deleted",
+    "admin.waiting_list.created" => "Joined the waiting list",
+    "admin.waiting_list.updated" => "Waiting list entry updated",
+    "admin.waiting_list.approved" => "Waiting list entry approved",
+    "admin.waiting_list.deleted" => "Waiting list entry deleted",
+    "admin.waiting_list.confirmation_email_sent" => "Waiting list confirmation email sent",
+    "admin.test" => "Test event"
+  }
+
+  defp discord_title(event),
+    do: Map.get_lazy(@discord_titles, event, fn -> humanize_event(event) end)
 
   defp humanize_event(event) do
     event
@@ -257,39 +259,43 @@ defmodule WraftDoc.Workers.AdminWebhookWorker do
     actor_text = discord_actor_text(actor)
 
     cond do
-      user = data["user"] ->
-        name = user["name"] || user["email"] || "User"
-        verb = past_tense(event)
-        "**#{name}** (#{user["email"]}) was #{verb}#{actor_text}."
+      user = data["user"] -> describe_user(user, event, actor_text)
+      org = data["organisation"] -> describe_organisation(org, event, data, actor_text)
+      wl = data["waiting_list"] -> describe_waiting_list(wl, event, actor_text)
+      msg = data["message"] -> msg
+      true -> "Admin event `#{event}` was triggered#{actor_text}."
+    end
+  end
 
-      org = data["organisation"] ->
-        verb =
-          if data["soft_deleted"], do: "soft-deleted", else: past_tense(event)
+  defp describe_user(user, event, actor_text) do
+    name = user["name"] || user["email"] || "User"
+    "**#{name}** (#{user["email"]}) was #{past_tense(event)}#{actor_text}."
+  end
 
-        "Organisation **#{org["name"]}** was #{verb}#{actor_text}."
+  defp describe_organisation(org, event, data, actor_text) do
+    verb = if data["soft_deleted"], do: "soft-deleted", else: past_tense(event)
+    "Organisation **#{org["name"]}** was #{verb}#{actor_text}."
+  end
 
-      wl = data["waiting_list"] ->
-        name = waiting_list_display_name(wl)
+  defp describe_waiting_list(wl, event, actor_text) do
+    name = waiting_list_display_name(wl)
+    email = wl["email"]
 
-        case event do
-          "admin.waiting_list.created" ->
-            "**#{name}** (#{wl["email"]}) joined the waiting list."
+    case event do
+      "admin.waiting_list.created" ->
+        "**#{name}** (#{email}) joined the waiting list."
 
-          "admin.waiting_list.approved" ->
-            "**#{name}** (#{wl["email"]}) was approved#{actor_text}. They'll receive a set-password email shortly."
+      "admin.waiting_list.approved" ->
+        "**#{name}** (#{email}) was approved#{actor_text}. They'll receive a set-password email shortly."
 
-          "admin.waiting_list.deleted" ->
-            "**#{name}** (#{wl["email"]}) was removed from the waiting list#{actor_text}."
+      "admin.waiting_list.deleted" ->
+        "**#{name}** (#{email}) was removed from the waiting list#{actor_text}."
 
-          _ ->
-            "**#{name}** (#{wl["email"]}) — status: `#{wl["status"]}`#{actor_text}."
-        end
+      "admin.waiting_list.confirmation_email_sent" ->
+        "Confirmation email queued for **#{name}** (#{email})."
 
-      msg = data["message"] ->
-        msg
-
-      true ->
-        "Admin event `#{event}` was triggered#{actor_text}."
+      _ ->
+        "**#{name}** (#{email}) — status: `#{wl["status"]}`#{actor_text}."
     end
   end
 
@@ -309,7 +315,7 @@ defmodule WraftDoc.Workers.AdminWebhookWorker do
   end
 
   defp waiting_list_display_name(wl) do
-    full = "#{wl["first_name"] || ""} #{wl["last_name"] || ""}" |> String.trim()
+    full = String.trim("#{wl["first_name"] || ""} #{wl["last_name"] || ""}")
     if full == "", do: wl["email"] || "Anonymous", else: full
   end
 
