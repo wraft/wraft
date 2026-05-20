@@ -161,6 +161,21 @@ defmodule WraftDoc.Admin.Metrics do
   end
 
   @doc """
+  Last `limit` users who signed in, newest first. Users who have never
+  signed in are excluded.
+  """
+  @spec recent_logins(non_neg_integer()) :: [User.t()]
+  def recent_logins(limit \\ 10) do
+    Repo.all(
+      from(u in User,
+        where: not is_nil(u.signed_in_at),
+        order_by: [desc: u.signed_in_at],
+        limit: ^limit
+      )
+    )
+  end
+
+  @doc """
   Plan distribution — counts of active Plan rows grouped by `:type` enum
   (free / regular / enterprise). Useful for the bottom-right panel of the
   dashboard.

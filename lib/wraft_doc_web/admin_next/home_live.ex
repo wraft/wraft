@@ -41,7 +41,7 @@ defmodule WraftDocWeb.AdminNext.HomeLive do
     |> assign(:waiting_signups, Metrics.daily_waiting_list_signups(days))
     |> assign(:trend, Metrics.signup_trend(7))
     |> assign(:recent, Metrics.recent_waiting_list(8))
-    |> assign(:failures, Metrics.recent_webhook_failures(5))
+    |> assign(:recent_logins, Metrics.recent_logins(5))
     |> assign(:plan_dist, Metrics.plan_distribution())
   end
 
@@ -192,35 +192,31 @@ defmodule WraftDocWeb.AdminNext.HomeLive do
         <%!-- Activity row --%>
         <section class="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <.card
-            title="Recent webhook failures"
+            title="Recent logins"
           >
             <:header_actions>
-              <.button variant="ghost" size="sm" navigate="/admin/admin-webhooks">
-                Manage →
+              <.button variant="ghost" size="sm" navigate="/admin/users">
+                View all →
               </.button>
             </:header_actions>
 
-            <%= if @failures == [] do %>
+            <%= if @recent_logins == [] do %>
               <.empty_state
-                icon="hero-shield-check"
-                title="No recent failures"
-                description="Webhook deliveries are healthy in the last 24 hours."
+                icon="hero-user-circle"
+                title="No recent logins"
+                description="Users who sign in will appear here, most recent first."
               />
             <% else %>
               <.data_table>
-                <:col label="Webhook" />
-                <:col label="Event" />
-                <:col label="Status" />
-                <:col label="When" align="right" />
+                <:col label="User" />
+                <:col label="Email" />
+                <:col label="Last login" align="right" />
                 <:row>
-                  <tr :for={log <- @failures}>
-                    <td class="font-medium text-base-content">
-                      {log.webhook && log.webhook.name}
-                    </td>
-                    <td class="font-mono text-xs">{log.event}</td>
-                    <td><.badge variant="error">{log.response_status || "ERR"}</.badge></td>
+                  <tr :for={user <- @recent_logins}>
+                    <td class="font-medium text-base-content">{user.name}</td>
+                    <td class="font-mono text-xs text-base-content/70">{user.email}</td>
                     <td class="text-right text-xs text-base-content/60">
-                      {Tokens.format_datetime(log.triggered_at)}
+                      {Tokens.format_datetime(user.signed_in_at)}
                     </td>
                   </tr>
                 </:row>
