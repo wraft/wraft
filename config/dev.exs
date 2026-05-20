@@ -14,7 +14,9 @@ config :wraft_doc, WraftDocWeb.Endpoint,
   secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE"),
   watchers: [
     # Start the esbuild watcher by calling Esbuild.install_and_run(:default, args)
-    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]}
+    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
+    admin_esbuild: {Esbuild, :install_and_run, [:admin, ~w(--sourcemap=inline --watch)]},
+    admin_tailwind: {Tailwind, :install_and_run, [:admin, ~w(--watch)]}
   ]
 
 # ## SSL Support

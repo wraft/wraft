@@ -9,7 +9,10 @@ defmodule WraftDocWeb.SessionController do
 
   def new(conn, _params) do
     changeset = InternalUsers.change_internal_user()
-    render(conn, changeset: changeset)
+
+    conn
+    |> put_layout(false)
+    |> render(:new, changeset: changeset)
   end
 
   def create(conn, %{"session" => params}) do
@@ -19,7 +22,7 @@ defmodule WraftDocWeb.SessionController do
       conn
       |> put_session(:admin_id, user.id)
       |> put_flash(:info, "Signed in successfully.")
-      |> redirect(to: kaffy_home_path(conn, :index))
+      |> redirect(to: "/admin")
     else
       %InternalUser{is_deactivated: true} ->
         conn

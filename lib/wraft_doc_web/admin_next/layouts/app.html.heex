@@ -1,0 +1,163 @@
+<Backpex.HTML.Layout.app_shell fluid={assigns[:fluid?] || false}>
+  <:topbar class="bg-base-100 border-b border-base-300 md:ml-64! md:w-[calc(100%-16rem)]!">
+    <%!-- Breadcrumbs --%>
+    <nav class="flex items-center gap-1.5 text-sm text-base-content/70">
+      <Backpex.HTML.CoreComponents.icon name="hero-squares-2x2" class="size-4" />
+      <%= for {{label, path}, i} <- Enum.with_index(breadcrumbs(assigns[:current_url])) do %>
+        <Backpex.HTML.CoreComponents.icon
+          :if={i > 0}
+          name="hero-chevron-right"
+          class="size-3 text-base-content/30"
+        />
+        <%= if path do %>
+          <.link navigate={path} class="hover:text-base-content">{label}</.link>
+        <% else %>
+          <span class="text-base-content font-medium">{label}</span>
+        <% end %>
+      <% end %>
+    </nav>
+  </:topbar>
+
+  <:sidebar class="bg-[#0c1412] border-r border-white/5 text-zinc-300 px-0! py-0! pb-0! pt-0! md:mt-0! overflow-hidden! [&>ul]:flex [&>ul]:flex-col [&>ul]:h-full">
+    <%!-- Org switcher --%>
+    <li class="list-none border-b border-white/5 px-2 py-3">
+      <button class="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-white/5">
+        <div class="bg-primary text-primary-content grid size-6 shrink-0 place-items-center rounded-md text-[11px] font-bold">
+          W
+        </div>
+        <div class="min-w-0 flex-1 text-left">
+          <p class="truncate text-sm font-semibold text-white leading-tight">Wraft</p>
+          <p class="truncate text-[11px] text-zinc-400">Wraft Backoffice</p>
+        </div>
+      </button>
+    </li>
+
+    <%!-- Sections --%>
+    <li>
+      <.nav_section icon="hero-squares-2x2" label="Overview">
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin"
+          icon="hero-squares-2x2"
+          label="Dashboard"
+        />
+      </.nav_section>
+
+      <.nav_section icon="hero-user-circle" label="Workspace">
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/organisations"
+          icon="hero-building-office-2"
+          label="Organisations"
+        />
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/users"
+          icon="hero-users"
+          label="Users"
+        />
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/user-roles"
+          icon="hero-user-group"
+          label="Roles & Permissions"
+        />
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/internal-users"
+          icon="hero-shield-check"
+          label="Internal Users"
+        />
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/waiting-list"
+          icon="hero-clock"
+          label="Access Requests"
+        />
+      </.nav_section>
+
+      <.nav_section icon="hero-document-text" label="Contract Platform">
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/template-assets"
+          icon="hero-document-duplicate"
+          label="Templates"
+        />
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/frames"
+          icon="hero-rectangle-stack"
+          label="Frames"
+        />
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/field-types"
+          icon="hero-cog-6-tooth"
+          label="Field Types"
+        />
+      </.nav_section>
+
+      <.nav_section
+        :if={not WraftDoc.Enterprise.self_hosted?()}
+        icon="hero-credit-card"
+        label="Subscription & Billing"
+      >
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/plans"
+          icon="hero-credit-card"
+          label="Plans"
+        />
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/enterprise-plans"
+          icon="hero-rocket-launch"
+          label="Enterprise Plans"
+        />
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/coupons"
+          icon="hero-ticket"
+          label="Coupons"
+        />
+      </.nav_section>
+
+      <.nav_section icon="hero-bolt" label="Automation & Integrations">
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/admin-webhooks"
+          icon="hero-bolt"
+          label="Webhooks"
+        />
+      </.nav_section>
+    </li>
+
+    <%!-- User footer --%>
+    <li class="list-none border-t border-white/5 px-2 py-3 mt-auto">
+      <.link
+        href="/admin/sign-out"
+        method="delete"
+        class="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-white/5"
+      >
+        <.avatar email={assigns[:current_admin] && assigns[:current_admin].email} />
+        <div class="min-w-0 flex-1 text-left">
+          <p class="truncate text-sm font-medium text-white leading-tight">
+            {assigns[:current_admin] && assigns[:current_admin].email}
+          </p>
+          <p class="truncate text-[11px] text-zinc-400">Workspace Admin · Sign out</p>
+        </div>
+        <Backpex.HTML.CoreComponents.icon
+          name="hero-arrow-right-on-rectangle"
+          class="size-4 text-zinc-500"
+        />
+      </.link>
+    </li>
+  </:sidebar>
+
+  <:footer></:footer>
+
+  <Backpex.HTML.Layout.flash_messages flash={@flash} />
+  <div class="pb-16">
+    {render_slot(@inner_block)}
+  </div>
+</Backpex.HTML.Layout.app_shell>

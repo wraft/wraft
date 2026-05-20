@@ -1,0 +1,10 @@
+{
+  "name": "wraft-admin-assets",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Admin-only asset deps (daisyUI for the Backpex /admin-next shell). Not used by the public app.",
+  "dependencies": {
+    "daisyui": "^5.0.0",
+    "tailwindcss": "^4.0.0"
+  }
+}

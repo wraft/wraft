@@ -1,26 +1,95 @@
-<div class="bg-gy-lighter height-full flex item-center -mt-8">
-  <div class="login container">
-      <div class="login-container">
-          <h4 class="text-center mb-1">Login to your account</h4>
-          <%= form_for @conn, Routes.session_path(@conn, :create), [as: :session, class: "bg-white mb-8"], fn f -> %>
-            <div class="mb-4">
-              <label class="block label mb-2" for="username">
-                Email
-              </label>
-              <%= text_input f, :email, placeholder: "Enter Email", class: "input-text w-full", required: "true"%>
-            </div>
-            <div class="mb-6">
-              <div class="flex justify-between item-center ">
-                <label class="block label mb-2" for="password">
-                  Password
-                </label>
-              </div>
-              <%= password_input f, :password, placeholder: "Enter Password", class: "input-text w-full", required: "true"%>
-            </div>
-            <div class="flex items-center justify-between">
-              <%= submit "Login", class: "btn-pry w-full"%>
-            </div>
-          <% end %>
-      </div>
+<main class="relative min-h-screen flex items-center justify-center px-4 py-12 bg-base-100 overflow-hidden">
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+    <div class="absolute left-1/2 top-[-14rem] size-[36rem] -translate-x-1/2 rounded-full bg-primary/8 blur-3xl"></div>
+    <div class="absolute left-1/2 bottom-[-10rem] size-[30rem] -translate-x-1/2 rounded-full bg-base-200/70 blur-3xl"></div>
   </div>
-</div>
+
+  <div class="relative w-full max-w-[380px]">
+    <div class="flex flex-col items-center mb-7">
+      <div class="bg-primary text-primary-content grid size-10 place-items-center rounded-xl text-base font-bold shadow-sm shadow-primary/30 ring-1 ring-primary/20">
+        W
+      </div>
+      <p class="mt-3 text-base font-semibold tracking-tight text-base-content">Wraft</p>
+      <p class="text-xs text-base-content/55">Backoffice console</p>
+    </div>
+
+    <div class="rounded-2xl border border-base-200 bg-base-100 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-8px_rgba(0,0,0,0.08)]">
+      <div class="px-7 pt-7 pb-1">
+        <h1 class="text-lg font-semibold tracking-tight text-base-content">Sign in</h1>
+        <p class="mt-1 text-sm text-base-content/55">Use your internal staff credentials.</p>
+      </div>
+
+      <%= if msg = Phoenix.Flash.get(@flash, :error) do %>
+        <div class="mx-7 mt-4 flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error">
+          <Backpex.HTML.CoreComponents.icon name="hero-exclamation-triangle" class="size-4 mt-0.5 shrink-0" />
+          <p><%= msg %></p>
+        </div>
+      <% end %>
+
+      <%= if msg = Phoenix.Flash.get(@flash, :info) do %>
+        <div class="mx-7 mt-4 flex items-start gap-2 rounded-lg border border-base-300 bg-base-200/60 px-3 py-2 text-sm text-base-content/80">
+          <Backpex.HTML.CoreComponents.icon name="hero-information-circle" class="size-4 mt-0.5 shrink-0" />
+          <p><%= msg %></p>
+        </div>
+      <% end %>
+
+      <%= form_for @conn, Routes.session_path(@conn, :create), [as: :session, class: "px-7 pt-5 pb-7 space-y-3.5"], fn f -> %>
+        <div class="space-y-1.5">
+          <label for="session_email" class="block text-xs font-medium text-base-content/75">Email</label>
+          <div class="relative">
+            <Backpex.HTML.CoreComponents.icon name="hero-envelope" class="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none" />
+            <%= text_input f, :email,
+                  placeholder: "you@wraft.co",
+                  required: "true",
+                  autocomplete: "email",
+                  autofocus: "true",
+                  class: "w-full rounded-lg border border-base-300 bg-base-100 pl-9 pr-3 py-2 text-sm text-base-content placeholder:text-base-content/40 transition focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" %>
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="session_password" class="block text-xs font-medium text-base-content/75">Password</label>
+          <div class="relative">
+            <Backpex.HTML.CoreComponents.icon name="hero-lock-closed" class="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 pointer-events-none" />
+            <%= password_input f, :password,
+                  placeholder: "Enter password",
+                  required: "true",
+                  autocomplete: "current-password",
+                  class: "w-full rounded-lg border border-base-300 bg-base-100 pl-9 pr-10 py-2 text-sm text-base-content placeholder:text-base-content/40 transition focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" %>
+            <button
+              type="button"
+              data-toggle-password="session_password"
+              aria-label="Show password"
+              class="absolute right-2 top-1/2 -translate-y-1/2 grid size-7 place-items-center rounded-md text-base-content/45 hover:text-base-content hover:bg-base-200 transition"
+            >
+              <Backpex.HTML.CoreComponents.icon name="hero-eye" class="size-4 eye-on" />
+              <Backpex.HTML.CoreComponents.icon name="hero-eye-slash" class="size-4 eye-off hidden" />
+            </button>
+          </div>
+        </div>
+
+        <%= submit "Sign in",
+              class: "w-full mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary text-primary-content text-sm font-medium px-3 py-2.5 shadow-sm shadow-primary/20 transition hover:bg-primary/90 hover:shadow-md hover:shadow-primary/25 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-base-100" %>
+      <% end %>
+    </div>
+
+    <p class="mt-6 text-center text-[11px] text-base-content/45">
+      Trouble signing in? Contact your administrator.
+    </p>
+  </div>
+
+  <script>
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest && e.target.closest("[data-toggle-password]");
+      if (!btn) return;
+      var input = document.getElementById(btn.getAttribute("data-toggle-password"));
+      if (!input) return;
+      var revealed = input.type === "text";
+      input.type = revealed ? "password" : "text";
+      btn.querySelectorAll(".eye-on, .eye-off").forEach(function (el) {
+        el.classList.toggle("hidden");
+      });
+      btn.setAttribute("aria-label", revealed ? "Show password" : "Hide password");
+    });
+  </script>
+</main>

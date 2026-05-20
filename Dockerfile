@@ -1,6 +1,6 @@
-ARG ELIXIR_VERSION=1.19.2
-ARG OTP_VERSION=27.1.2
-ARG DEBIAN_VERSION=bookworm-20251020
+ARG ELIXIR_VERSION=1.19.5
+ARG OTP_VERSION=27.3.4.8
+ARG DEBIAN_VERSION=bookworm-20260505
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -19,6 +19,13 @@ RUN apt-get update -y \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+# Install Node.js (required by `mix assets.deploy` to npm install daisyUI for the
+# Backpex /admin-next admin shell — see assets/package.json).
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # Set Java environment
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:$PATH"
@@ -36,7 +43,21 @@ ENV PORT=4000
 
 COPY mix.exs mix.lock ./
 RUN mix deps.clean jido_ai --unlock || true
-RUN HEX_HTTP_CONCURRENCY=1 HEX_HTTP_TIMEOUT=120 mix deps.get --only $MIX_ENV
+RUN for i in 1 2 3; do \
+        echo "Attempt $i to fetch dependencies..."; \
+        if HEX_HTTP_CONCURRENCY=1 HEX_HTTP_TIMEOUT=120 mix deps.get --only $MIX_ENV; then \
+            echo "Dependencies fetched successfully on attempt $i"; \
+            break; \
+        else \
+            echo "Attempt $i failed, cleaning and retrying..."; \
+            rm -rf deps _build; \
+            if [ $i -eq 3 ]; then \
+                echo "All attempts failed. Exiting."; \
+                exit 1; \
+            fi; \
+            sleep 10; \
+        fi; \
+    done
 RUN mkdir config
 
 COPY config/config.exs config/${MIX_ENV}.exs config/
@@ -94,11 +115,11 @@ RUN sed -i 's/<policy domain="coder" rights="none" pattern="PDF" \/>/<policy dom
 # Install Pandoc
 RUN ARCH=$(dpkg --print-architecture) && \
     case "$ARCH" in \
-    amd64) PANDOC_DEB=pandoc-3.6.3-1-amd64.deb ;; \
-    arm64) PANDOC_DEB=pandoc-3.6.3-1-arm64.deb ;; \
+    amd64) PANDOC_DEB=pandoc-3.9.0.2-1-amd64.deb ;; \
+    arm64) PANDOC_DEB=pandoc-3.9.0.2-1-arm64.deb ;; \
     *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
     esac && \
-    wget -q https://github.com/jgm/pandoc/releases/download/3.6.3/${PANDOC_DEB} && \
+    wget -q https://github.com/jgm/pandoc/releases/download/3.9.0.2/${PANDOC_DEB} && \
     dpkg -i ${PANDOC_DEB} && \
     rm -f ${PANDOC_DEB}
 
@@ -109,7 +130,7 @@ RUN ARCH=$(dpkg --print-architecture) && \
         arm64) TYPST_ARCH=aarch64-unknown-linux-musl ;; \
         *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
     esac && \
-    wget -q https://github.com/typst/typst/releases/download/v0.13.0/typst-${TYPST_ARCH}.tar.xz && \
+    wget -q https://github.com/typst/typst/releases/download/v0.14.2/typst-${TYPST_ARCH}.tar.xz && \
     tar -xf typst-${TYPST_ARCH}.tar.xz && \
     mv typst-${TYPST_ARCH}/typst /usr/local/bin/typst && \
     rm -rf typst-${TYPST_ARCH} typst-${TYPST_ARCH}.tar.xz

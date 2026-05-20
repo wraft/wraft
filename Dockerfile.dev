@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.19.2-erlang-27.1.2-debian-bookworm-20251020
+FROM hexpm/elixir:1.19.5-erlang-27.3.4.8-debian-bookworm-20260505
 
 # Install dependencies
 RUN apt-get update && apt-get install -y --fix-missing \
@@ -38,16 +38,16 @@ ENV PATH="$JAVA_HOME/bin:$PATH"
 # Install Pandoc
 RUN ARCH=$(dpkg --print-architecture) && \
     case "$ARCH" in \
-        amd64) PANDOC_DEB=pandoc-3.6.3-1-amd64.deb ;; \
-        arm64) PANDOC_DEB=pandoc-3.6.3-1-arm64.deb ;; \
+        amd64) PANDOC_DEB=pandoc-3.9.0.2-1-amd64.deb ;; \
+        arm64) PANDOC_DEB=pandoc-3.9.0.2-1-arm64.deb ;; \
         *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
     esac && \
-    wget -q https://github.com/jgm/pandoc/releases/download/3.6.3/${PANDOC_DEB} && \
+    wget -q https://github.com/jgm/pandoc/releases/download/3.9.0.2/${PANDOC_DEB} && \
     dpkg -i ${PANDOC_DEB} && \
     rm -f ${PANDOC_DEB}
 
 # Install Typst
-RUN wget -q https://github.com/typst/typst/releases/download/v0.13.0/typst-x86_64-unknown-linux-musl.tar.xz && \
+RUN wget -q https://github.com/typst/typst/releases/download/v0.14.2/typst-x86_64-unknown-linux-musl.tar.xz && \
     tar -xf typst-x86_64-unknown-linux-musl.tar.xz && \
     mv typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst && \
     rm -rf typst-x86_64-unknown-linux-musl typst-x86_64-unknown-linux-musl.tar.xz

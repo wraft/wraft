@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Router do
   use WraftDocWeb, :router
+  import Backpex.Router
   import Oban.Web.Router
   import Phoenix.LiveDashboard.Router
 
@@ -50,8 +51,14 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.CurrentAdmin)
   end
 
-  pipeline :enterprise_plan_params do
-    plug WraftDocWeb.Plugs.KaffyAdminPlug
+  pipeline :admin_browser do
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_root_layout, html: {WraftDocWeb.AdminNext.Layouts, :root})
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(Backpex.ThemeSelectorPlug)
   end
 
   if Mix.env() == :dev do
@@ -64,14 +71,12 @@ defmodule WraftDocWeb.Router do
     get("/", PageController, :index)
   end
 
-  scope "/", WraftDocWeb do
-    pipe_through(:browser)
+  scope "/admin", WraftDocWeb do
+    pipe_through(:admin_browser)
 
-    scope "/admin" do
-      # Admin login
-      get("/signin", SessionController, :new)
-      post("/signin", SessionController, :create)
-    end
+    # Admin login
+    get("/signin", SessionController, :new)
+    post("/signin", SessionController, :create)
   end
 
   # Separate scope with admin authentication
@@ -703,15 +708,43 @@ defmodule WraftDocWeb.Router do
     end
   end
 
-  if Enterprise.self_hosted?() do
-    use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin]
-  else
-    use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin, :enterprise_plan_params]
+  scope "/admin", WraftDocWeb do
+    pipe_through([:admin_browser, :current_admin])
+    delete("/sign-out", SessionController, :delete)
   end
 
-  scope "/admin", WraftDocWeb do
-    pipe_through([:kaffy_browser, :current_admin])
-    delete("/sign-out", SessionController, :delete)
+  scope "/admin", WraftDocWeb.AdminNext do
+    pipe_through([:admin_browser, :current_admin])
+
+    backpex_routes()
+
+    live_session :admin,
+      on_mount: [
+        {WraftDocWeb.AdminNext.AdminAuth, :ensure_admin},
+        Backpex.InitAssigns
+      ] do
+      # Layout is owned per-LiveView (HomeLive inlines its own shell;
+      # Backpex LiveResources go through the `layout/1` callback to
+      # `{WraftDocWeb.AdminNext.Layouts, :app}`).
+      live "/", HomeLive, :index
+      live_resources "/users", UserLive
+      live_resources "/user-roles", UserRoleLive
+      live_resources "/internal-users", InternalUserLive
+      live_resources "/organisations", OrganisationLive
+      live_resources "/field-types", FieldTypeLive
+      live_resources "/admin-webhooks", AdminWebhookLive
+      live_resources "/waiting-list", WaitingListLive
+      live "/template-assets/import", TemplateAssetImportLive, :import
+      live_resources "/template-assets", TemplateAssetLive
+      live "/frames/import", FrameImportLive, :import
+      live_resources "/frames", FrameLive
+
+      if not Enterprise.self_hosted?() do
+        live_resources "/plans", PlanLive
+        live_resources "/enterprise-plans", EnterprisePlanLive
+        live_resources "/coupons", CouponLive
+      end
+    end
   end
 
   scope path: "/flags" do

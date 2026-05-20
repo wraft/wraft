@@ -18,6 +18,14 @@ config :wraft_doc, WraftDocWeb.Endpoint,
 
 config :wraft_doc, :deployment, is_self_hosted: System.get_env("SELF_HOSTED", "true") == "true"
 
+# Custom MIME registrations so Phoenix LiveView `allow_upload`'s `accept:`
+# can use these extensions. Requires a `:mime` rebuild — already done in this
+# project (see `mix deps.clean mime --build && mix deps.compile`).
+config :mime, :types, %{
+  "application/x-tex" => ["tex"],
+  "application/vnd.typst" => ["typ"]
+}
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.15.3",
@@ -26,7 +34,30 @@ config :esbuild,
       ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ],
+  admin: [
+    args:
+      ~w(js/admin.js --bundle --target=es2020 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]
+
+# Configure tailwind (admin profile only — Backpex CSS is scoped to /admin)
+config :tailwind,
+  version: "4.1.12",
+  admin: [
+    args: ~w(
+      --input=css/admin.css
+      --output=../priv/static/assets/admin.css
+    ),
+    cd: Path.expand("../assets", __DIR__)
+  ]
+
+config :backpex, :pubsub_server, WraftDoc.PubSub
+
+config :backpex,
+  translator_function: {WraftDocWeb.AdminNext.Translator, :translate},
+  error_translator_function: {WraftDocWeb.AdminNext.Translator, :translate_error}
 
 # Configures Elixir's Logger
 config :logger, :console,
@@ -145,20 +176,6 @@ config :wraft_doc, WraftDoc.Client.Razorpay, base_url: "https://api.razorpay.com
 
 config :pdf_generator,
   raise_on_missing_wkhtmltopdf_binary: false
-
-config :kaffy,
-  otp_app: :wraft_doc,
-  admin_title: "Wraft Backoffice",
-  admin_logo: "/images/WidthFull.svg",
-  admin_logo_mini: "/images/WidthShort.svg",
-  ecto_repo: WraftDoc.Repo,
-  router: WraftDocWeb.Router,
-  hide_dashboard: false,
-  home_page: [kaffy: :dashboard],
-  resources: &WraftDoc.Kaffy.Config.create_resources/1,
-  extensions: [
-    WraftDoc.Kaffy.Extension
-  ]
 
 config :fun_with_flags, :persistence,
   adapter: FunWithFlags.Store.Persistent.Ecto,

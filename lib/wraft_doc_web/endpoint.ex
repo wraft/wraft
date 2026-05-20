@@ -29,7 +29,7 @@ defmodule WraftDocWeb.Endpoint do
     at: "/",
     from: :wraft_doc,
     gzip: false,
-    only: ~w(kaffy assets fonts images favicon.ico robots.txt)
+    only: ~w(assets fonts images favicon.ico robots.txt)
   )
 
   plug(
@@ -57,13 +57,6 @@ defmodule WraftDocWeb.Endpoint do
   )
 
   plug Sentry.PlugContext
-
-  plug(Plug.Static,
-    at: "/kaffy",
-    from: :kaffy,
-    gzip: false,
-    only: ~w(assets)
-  )
 
   plug(Plug.MethodOverride)
   plug(Plug.Head)

@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+@source "../../deps/backpex/**/*.*ex";
+@source "../../deps/backpex/assets/js/**/*.*js";
+@source "../../lib/wraft_doc_web/admin_next/**/*.*ex";
+@source "../../lib/wraft_doc_web/templates/session/**/*.*heex";
+
+@plugin "../tailwind_heroicons.js";
+
+@plugin "daisyui" {
+  themes: light, dark;
+}
+
+/* Wraft brand primary — overrides daisyUI's default per-theme primary. */
+[data-theme="light"],
+[data-theme="dark"] {
+  --color-primary: #043038;
+  --color-primary-content: #ffffff;
+}
+
+/* =========================================================================
+   Wraft Admin — Design System
+   -------------------------------------------------------------------------
+   Single source of truth for the visual language of /admin. Components in
+   `WraftDocWeb.AdminNext.UI` reference these tokens via `ds-*` classes so
+   the look-and-feel can be tuned in one place. Built on top of daisyUI's
+   semantic colors (`primary`, `success`, `warning`, `error`, `base-*`).
+   ========================================================================= */
+
+@layer components {
+  /* ---- Typography scale ---- */
+  .ds-eyebrow {
+    @apply text-[11px] font-medium uppercase tracking-[0.14em] text-base-content/50;
+  }
+  .ds-page-title {
+    @apply text-2xl font-semibold tracking-tight text-base-content;
+  }
+  .ds-page-description {
+    @apply max-w-prose text-sm text-base-content/60;
+  }
+  .ds-section-title {
+    @apply text-base font-semibold tracking-tight text-base-content;
+  }
+  .ds-caption {
+    @apply text-xs text-base-content/55;
+  }
+  .ds-metric-value {
+    @apply text-3xl font-semibold tabular-nums tracking-tight text-base-content;
+  }
+  .ds-metric-value-sm {
+    @apply text-xl font-semibold tabular-nums leading-none text-base-content;
+  }
+  .ds-metric-label {
+    @apply text-[11px] font-medium uppercase tracking-wider text-base-content/55;
+  }
+
+  /* ---- Card surface ---- */
+  .ds-card {
+    @apply rounded-xl border border-base-200 bg-base-100;
+    box-shadow:
+      0 1px 1px 0 rgb(0 0 0 / 0.02),
+      0 1px 3px 0 rgb(0 0 0 / 0.03);
+  }
+  .ds-card-header {
+    @apply flex items-start justify-between gap-3 border-b border-base-200 px-5 py-3.5;
+  }
+  .ds-card-body {
+    @apply p-5;
+  }
+  .ds-card-body-tight {
+    @apply p-4;
+  }
+  .ds-card-footer {
+    @apply border-t border-base-200 px-5 py-3 text-xs text-base-content/60;
+  }
+
+  /* ---- Badge ---- */
+  .ds-badge {
+    @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium tabular-nums leading-none;
+  }
+  .ds-badge-primary  { @apply bg-primary/10 text-primary; }
+  .ds-badge-success  { @apply bg-success/15 text-success; }
+  .ds-badge-warning  { @apply bg-warning/15 text-warning; }
+  .ds-badge-error    { @apply bg-error/15 text-error; }
+  .ds-badge-neutral  { @apply bg-base-200 text-base-content/70; }
+  .ds-badge-ghost    { @apply border border-base-300 text-base-content/60; }
+
+  /* ---- Status pill (badge + leading dot) ---- */
+  .ds-status-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium;
+  }
+  .ds-status-pill .ds-dot {
+    @apply size-1.5 rounded-full;
+  }
+  .ds-status-primary { @apply bg-primary/10 text-primary; }
+  .ds-status-success { @apply bg-success/15 text-success; }
+  .ds-status-warning { @apply bg-warning/15 text-warning; }
+  .ds-status-error   { @apply bg-error/15 text-error; }
+  .ds-status-neutral { @apply bg-base-200 text-base-content/70; }
+  .ds-status-primary .ds-dot,
+  .ds-status-success .ds-dot,
+  .ds-status-warning .ds-dot,
+  .ds-status-error   .ds-dot,
+  .ds-status-neutral .ds-dot { @apply bg-current; }
+
+  /* ---- Buttons ---- */
+  .ds-btn {
+    @apply inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium leading-none transition;
+  }
+  .ds-btn:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
+  .ds-btn-primary {
+    @apply bg-primary text-primary-content hover:bg-primary/90;
+  }
+  .ds-btn-neutral {
+    @apply border border-base-300 bg-base-100 text-base-content hover:bg-base-200/70;
+  }
+  .ds-btn-ghost {
+    @apply text-base-content/70 hover:bg-base-200 hover:text-base-content;
+  }
+  .ds-btn-danger {
+    @apply bg-error text-error-content hover:bg-error/90;
+  }
+  .ds-btn-sm {
+    @apply px-2.5 py-1 text-xs;
+  }
+
+  /* ---- Segmented control ---- */
+  .ds-segmented {
+    @apply inline-flex items-center gap-0.5 rounded-lg bg-base-200/70 p-0.5;
+  }
+  .ds-segmented-option {
+    @apply rounded-md px-2.5 py-1 text-xs font-medium text-base-content/60 transition;
+  }
+  .ds-segmented-option:hover {
+    @apply text-base-content;
+  }
+  .ds-segmented-option.is-active {
+    @apply bg-base-100 text-base-content shadow-xs;
+  }
+
+  /* ---- Progress (linear) ---- */
+  .ds-progress-track {
+    @apply h-1.5 w-full overflow-hidden rounded-full bg-base-200;
+  }
+  .ds-progress-fill {
+    @apply h-full rounded-full transition-all;
+  }
+  .ds-progress-fill-primary { @apply bg-primary; }
+  .ds-progress-fill-success { @apply bg-success; }
+  .ds-progress-fill-warning { @apply bg-warning; }
+  .ds-progress-fill-error   { @apply bg-error; }
+  .ds-progress-fill-neutral { @apply bg-base-content/40; }
+
+  /* ---- Data table ---- */
+  .ds-table {
+    @apply w-full text-sm;
+  }
+  .ds-table thead th {
+    @apply border-b border-base-200 px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-base-content/55;
+  }
+  .ds-table tbody td {
+    @apply border-b border-base-200/60 px-3 py-2.5 text-sm text-base-content/80;
+  }
+  .ds-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  /* ---- Activity list ---- */
+  .ds-activity-list {
+    @apply divide-y divide-base-200;
+  }
+  .ds-activity-row {
+    @apply flex items-center justify-between gap-3 py-2.5 text-sm;
+  }
+
+  /* ---- Empty state ---- */
+  .ds-empty {
+    @apply flex flex-col items-center justify-center gap-2 py-8 text-center;
+  }
+  .ds-empty-icon {
+    @apply grid size-10 place-items-center rounded-full bg-base-200 text-base-content/40;
+  }
+  .ds-empty-title {
+    @apply text-sm font-medium text-base-content;
+  }
+  .ds-empty-description {
+    @apply max-w-sm text-xs text-base-content/55;
+  }
+}
