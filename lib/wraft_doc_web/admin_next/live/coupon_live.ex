@@ -23,7 +23,8 @@ defmodule WraftDocWeb.AdminNext.CouponLive do
     init_order: %{by: :inserted_at, direction: :desc}
 
   use WraftDocWeb.AdminNext.LiveResourcePage,
-    subtitle: "Discount codes applied to billing plans. Edits persist locally; sync to Paddle via the API."
+    subtitle:
+      "Discount codes applied to billing plans. Edits persist locally; sync to Paddle via the API."
 
   alias WraftDoc.Billing.Coupon
 

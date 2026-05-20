@@ -106,9 +106,7 @@ defmodule WraftDocWeb.AdminNext.UserLive do
   @impl Backpex.LiveResource
   def item_actions(default_actions) do
     # Replace the default delete with our cascading delete; keep show/edit.
-    actions =
-      default_actions
-      |> Keyword.delete(:delete)
+    actions = Keyword.delete(default_actions, :delete)
 
     actions ++
       [
@@ -168,7 +166,11 @@ defmodule WraftDocWeb.AdminNext.UserLive do
     def options(_assigns) do
       [
         %{label: "Verified", key: "verified", predicate: dynamic([u], u.email_verify == true)},
-        %{label: "Not Verified", key: "not_verified", predicate: dynamic([u], u.email_verify == false)}
+        %{
+          label: "Not Verified",
+          key: "not_verified",
+          predicate: dynamic([u], u.email_verify == false)
+        }
       ]
     end
   end
@@ -316,9 +318,8 @@ defmodule WraftDocWeb.AdminNext.UserLive do
     defp delete_user_and_personal_org(%UserSchema{} = user) do
       case Enterprise.get_personal_organisation_and_role(user) do
         %{user: user, organisation: personal_org} when not is_nil(personal_org) ->
-          with {:ok, _} <- Repo.delete(personal_org),
-               {:ok, deleted_user} <- Repo.delete(user) do
-            {:ok, deleted_user}
+          with {:ok, _} <- Repo.delete(personal_org) do
+            Repo.delete(user)
           end
 
         _ ->

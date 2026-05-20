@@ -62,6 +62,27 @@ defmodule WraftDoc.Admin.AuditLogs do
   end
 
   @doc """
+  Fetches a single audit log entry by its integer id, with the actor
+  user preloaded. Returns `nil` if not found or the id can't be parsed.
+  """
+  @spec get(integer() | String.t() | nil) :: Version.t() | nil
+  def get(nil), do: nil
+  def get(""), do: nil
+
+  def get(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {int, ""} -> get(int)
+      _ -> nil
+    end
+  end
+
+  def get(id) when is_integer(id) do
+    Version
+    |> Repo.get(id)
+    |> Repo.preload(:user)
+  end
+
+  @doc """
   Counts of audit events grouped by action across the full table. Useful
   for surfacing summary stat cards above the table.
   """
@@ -167,7 +188,7 @@ defmodule WraftDoc.Admin.AuditLogs do
   defp action_atom(_), do: nil
 
   defp schema_atom(string) do
-    Enum.find(tracked_schemas(), fn mod -> Atom.to_string(mod) == "Elixir." <> string end)
+    Enum.find(tracked_schemas(), fn mod -> Atom.to_string(mod) == string end)
   end
 
   defp humanize_segment(segment) do

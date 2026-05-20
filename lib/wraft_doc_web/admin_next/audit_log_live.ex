@@ -19,6 +19,7 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
 
   alias Backpex.HTML.CoreComponents
   alias WraftDoc.Admin.AuditLogs
+  alias WraftDoc.Admin.AuditLogs.Diff
   alias WraftDocWeb.AdminNext.UI.Tokens
 
   @page_size 25
@@ -35,7 +36,14 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
      |> assign(:search, "")
      |> assign(:counts, AuditLogs.counts())
      |> assign(:schema_options, schema_options())
+     |> assign(:selected, nil)
+     |> assign(:diff_rows, [])
      |> load_page()}
+  end
+
+  @impl true
+  def handle_params(params, _url, socket) do
+    {:noreply, assign_selected(socket, params["id"])}
   end
 
   @impl true
@@ -68,6 +76,14 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
     {:noreply, socket |> assign(:page, min(page + 1, max(page_count, 1))) |> load_page()}
   end
 
+  def handle_event("show_detail", %{"id" => id}, socket) do
+    {:noreply, push_patch(socket, to: "/admin/audit-logs?id=#{URI.encode(to_string(id))}")}
+  end
+
+  def handle_event("close_detail", _params, socket) do
+    {:noreply, push_patch(socket, to: "/admin/audit-logs")}
+  end
+
   # ---------------------------------------------------------------------------
   # Data loading
   # ---------------------------------------------------------------------------
@@ -97,6 +113,16 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
     AuditLogs.tracked_schemas()
     |> Enum.map(fn module -> {AuditLogs.schema_label(module), Atom.to_string(module)} end)
     |> Enum.sort_by(fn {label, _} -> label end)
+  end
+
+  defp assign_selected(socket, nil), do: assign(socket, selected: nil, diff_rows: [])
+  defp assign_selected(socket, ""), do: assign(socket, selected: nil, diff_rows: [])
+
+  defp assign_selected(socket, id) when is_binary(id) do
+    case AuditLogs.get(id) do
+      nil -> assign(socket, selected: nil, diff_rows: [])
+      entry -> assign(socket, selected: entry, diff_rows: Diff.flatten(entry.patch))
+    end
   end
 
   # ---------------------------------------------------------------------------
@@ -190,7 +216,12 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
               <:col label="Changed by" />
               <:col label="Recorded" align="right" />
               <:row>
-                <tr :for={entry <- @result.entries}>
+                <tr
+                  :for={entry <- @result.entries}
+                  phx-click="show_detail"
+                  phx-value-id={entry.id}
+                  class="cursor-pointer hover:bg-base-200/60"
+                >
                   <td>
                     <.badge variant={action_variant(entry.action)}>
                       <CoreComponents.icon
@@ -258,7 +289,125 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
           <% end %>
         </.card>
       </div>
+
+      <.detail_modal :if={@selected} entry={@selected} diff_rows={@diff_rows} />
     </WraftDocWeb.AdminNext.Layouts.app>
+    """
+  end
+
+  # ---------------------------------------------------------------------------
+  # Detail modal
+  # ---------------------------------------------------------------------------
+
+  attr :entry, :map, required: true
+  attr :diff_rows, :list, required: true
+
+  defp detail_modal(assigns) do
+    ~H"""
+    <div
+      class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-8"
+      phx-window-keydown="close_detail"
+      phx-key="escape"
+    >
+      <div
+        class="absolute inset-0"
+        phx-click="close_detail"
+        aria-label="Close detail"
+      >
+      </div>
+
+      <section class="relative z-10 w-full max-w-3xl rounded-lg bg-base-100 shadow-2xl">
+        <header class="flex items-start justify-between gap-4 border-b border-base-200 px-5 py-4">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <.badge variant={action_variant(@entry.action)}>
+                <CoreComponents.icon name={action_icon(@entry.action)} class="size-3" />
+                <span class="ml-1">{action_label(@entry.action)}</span>
+              </.badge>
+              <span
+                :if={@entry.rollback}
+                class="text-[10px] uppercase tracking-wide text-base-content/50"
+              >
+                rollback
+              </span>
+            </div>
+            <h2 class="mt-2 ds-section-title">
+              {AuditLogs.schema_label(@entry.entity_schema)}
+            </h2>
+            <p class="mt-0.5 font-mono text-xs text-base-content/55">
+              {@entry.entity_id}
+            </p>
+          </div>
+          <button
+            type="button"
+            phx-click="close_detail"
+            class="ds-btn ds-btn-ghost ds-btn-sm"
+            aria-label="Close"
+          >
+            <CoreComponents.icon name="hero-x-mark" class="size-4" />
+          </button>
+        </header>
+
+        <dl class="grid grid-cols-1 gap-y-3 border-b border-base-200 px-5 py-4 text-sm sm:grid-cols-2">
+          <div>
+            <dt class="ds-caption">Changed by</dt>
+            <dd class="mt-0.5">
+              <%= if @entry.user do %>
+                <p class="font-medium text-base-content">{@entry.user.name}</p>
+                <p class="font-mono text-xs text-base-content/55">{@entry.user.email}</p>
+              <% else %>
+                <span class="text-xs text-base-content/50">System</span>
+              <% end %>
+            </dd>
+          </div>
+          <div>
+            <dt class="ds-caption">Recorded</dt>
+            <dd class="mt-0.5 text-base-content">
+              {Tokens.format_datetime(@entry.recorded_at)}
+            </dd>
+          </div>
+        </dl>
+
+        <div class="px-5 py-4">
+          <h3 class="ds-section-title">Changes</h3>
+          <%= if @diff_rows == [] do %>
+            <p class="mt-2 ds-caption">No field-level changes recorded.</p>
+          <% else %>
+            <ul class="mt-3 space-y-2 text-xs">
+              <li
+                :for={row <- @diff_rows}
+                class="rounded border border-base-200 bg-base-200/30 p-3"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <p class="font-mono font-medium text-base-content">{row.path}</p>
+                  <.badge variant={diff_variant(row.kind)}>{diff_label(row.kind)}</.badge>
+                </div>
+
+                <%= case row.kind do %>
+                  <% :added -> %>
+                    <p class="mt-2 break-words font-mono text-success">
+                      + {Diff.format_value(row.new)}
+                    </p>
+                  <% :removed -> %>
+                    <p class="mt-2 break-words font-mono text-error line-through">
+                      − {Diff.format_value(row.old)}
+                    </p>
+                  <% :changed -> %>
+                    <div class="mt-2 space-y-1">
+                      <p class="break-words font-mono text-error line-through">
+                        − {Diff.format_value(row.old)}
+                      </p>
+                      <p class="break-words font-mono text-success">
+                        + {Diff.format_value(row.new)}
+                      </p>
+                    </div>
+                <% end %>
+              </li>
+            </ul>
+          <% end %>
+        </div>
+      </section>
+    </div>
     """
   end
 
@@ -280,6 +429,14 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
   defp action_label(:updated), do: "Updated"
   defp action_label(:deleted), do: "Deleted"
   defp action_label(other), do: Phoenix.Naming.humanize(other)
+
+  defp diff_variant(:added), do: "success"
+  defp diff_variant(:removed), do: "error"
+  defp diff_variant(:changed), do: "primary"
+
+  defp diff_label(:added), do: "Added"
+  defp diff_label(:removed), do: "Removed"
+  defp diff_label(:changed), do: "Changed"
 
   defp short_id(nil), do: "—"
 

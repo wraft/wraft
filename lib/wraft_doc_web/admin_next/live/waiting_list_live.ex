@@ -24,7 +24,8 @@ defmodule WraftDocWeb.AdminNext.WaitingListLive do
     init_order: %{by: :inserted_at, direction: :desc}
 
   use WraftDocWeb.AdminNext.LiveResourcePage,
-    subtitle: "People requesting early access. Approve to register an account and send a set-password email."
+    subtitle:
+      "People requesting early access. Approve to register an account and send a set-password email."
 
   import Ecto.Query
 
@@ -92,11 +93,19 @@ defmodule WraftDocWeb.AdminNext.WaitingListLive do
       :ok ->
         AdminEventTrigger.trigger_waiting_list_updated(item, actor(socket))
         AdminEventTrigger.trigger_waiting_list_approved(item, actor(socket))
-        Phoenix.LiveView.put_flash(socket, :info, "Approved #{item.email} and queued password email.")
+
+        Phoenix.LiveView.put_flash(
+          socket,
+          :info,
+          "Approved #{item.email} and queued password email."
+        )
 
       {:error, reason} ->
         AdminEventTrigger.trigger_waiting_list_updated(item, actor(socket))
-        Logger.error("WaitingList approval side-effects failed for #{item.email}: #{inspect(reason)}")
+
+        Logger.error(
+          "WaitingList approval side-effects failed for #{item.email}: #{inspect(reason)}"
+        )
 
         Phoenix.LiveView.put_flash(
           socket,
@@ -145,11 +154,13 @@ defmodule WraftDocWeb.AdminNext.WaitingListLive do
     end
   end
 
-  defp register_account_and_enqueue_email(%WaitingList{
-         email: email,
-         first_name: first_name,
-         last_name: last_name
-       } = waiting_list) do
+  defp register_account_and_enqueue_email(
+         %WaitingList{
+           email: email,
+           first_name: first_name,
+           last_name: last_name
+         } = waiting_list
+       ) do
     FunWithFlags.enable(:waiting_list_registration_control, for_actor: %{email: email})
     FunWithFlags.enable(:waiting_list_organisation_create_control, for_actor: %{email: email})
 

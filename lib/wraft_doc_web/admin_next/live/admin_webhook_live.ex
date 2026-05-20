@@ -25,7 +25,8 @@ defmodule WraftDocWeb.AdminNext.AdminWebhookLive do
     init_order: %{by: :inserted_at, direction: :desc}
 
   use WraftDocWeb.AdminNext.LiveResourcePage,
-    subtitle: "Outbound webhooks fired on admin events. Configure URL, secret, and which events trigger a POST."
+    subtitle:
+      "Outbound webhooks fired on admin events. Configure URL, secret, and which events trigger a POST."
 
   alias WraftDoc.AdminWebhooks.AdminWebhook
 
@@ -179,11 +180,14 @@ defmodule WraftDocWeb.AdminNext.AdminWebhookLive do
   defp parse_json(raw, valid_fun, fallback) do
     case String.trim(raw) do
       "" -> empty_value(valid_fun)
-      trimmed ->
-        case Jason.decode(trimmed) do
-          {:ok, decoded} -> if valid_fun.(decoded), do: decoded, else: fallback
-          {:error, _} -> fallback
-        end
+      trimmed -> decode_and_validate(trimmed, valid_fun, fallback)
+    end
+  end
+
+  defp decode_and_validate(trimmed, valid_fun, fallback) do
+    case Jason.decode(trimmed) do
+      {:ok, decoded} -> if valid_fun.(decoded), do: decoded, else: fallback
+      {:error, _} -> fallback
     end
   end
 
@@ -237,8 +241,12 @@ defmodule WraftDocWeb.AdminNext.AdminWebhookLive do
 
       msg =
         case {length(sent), length(skipped)} do
-          {sent_count, 0} -> "Test event sent to #{sent_count} webhook(s)."
-          {0, _} -> "No selected webhook subscribes to admin.test."
+          {sent_count, 0} ->
+            "Test event sent to #{sent_count} webhook(s)."
+
+          {0, _} ->
+            "No selected webhook subscribes to admin.test."
+
           {sent_count, skipped_count} ->
             "Sent to #{sent_count}; #{skipped_count} not subscribed to admin.test."
         end

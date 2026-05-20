@@ -52,20 +52,22 @@ defmodule WraftDocWeb.AdminNext.FeatureFlagLive do
 
   @impl true
   def handle_event("toggle_global", %{"feature" => feature}, socket) do
-    with {:ok, feature} <- parse_feature(feature) do
-      currently_on? = FeatureFlags.enabled_globally?(feature)
+    case parse_feature(feature) do
+      {:ok, feature} ->
+        currently_on? = FeatureFlags.enabled_globally?(feature)
 
-      result =
-        if currently_on?,
-          do: FeatureFlags.disable_globally(feature),
-          else: FeatureFlags.enable_globally(feature)
+        result =
+          if currently_on?,
+            do: FeatureFlags.disable_globally(feature),
+            else: FeatureFlags.enable_globally(feature)
 
-      {:noreply,
-       socket
-       |> put_toggle_flash(result, feature, !currently_on?, scope: :global)
-       |> load_data()}
-    else
-      :error -> {:noreply, put_flash(socket, :error, "Unknown feature: #{inspect(feature)}")}
+        {:noreply,
+         socket
+         |> put_toggle_flash(result, feature, !currently_on?, scope: :global)
+         |> load_data()}
+
+      :error ->
+        {:noreply, put_flash(socket, :error, "Unknown feature: #{inspect(feature)}")}
     end
   end
 
@@ -84,8 +86,11 @@ defmodule WraftDocWeb.AdminNext.FeatureFlagLive do
        |> put_toggle_flash(result, feature, !currently_on?, scope: {:org, org.name})
        |> load_data()}
     else
-      :error -> {:noreply, put_flash(socket, :error, "Unknown feature: #{inspect(feature)}")}
-      :not_found -> {:noreply, put_flash(socket, :error, "Organisation not found in current view.")}
+      :error ->
+        {:noreply, put_flash(socket, :error, "Unknown feature: #{inspect(feature)}")}
+
+      :not_found ->
+        {:noreply, put_flash(socket, :error, "Organisation not found in current view.")}
     end
   end
 
@@ -120,10 +125,13 @@ defmodule WraftDocWeb.AdminNext.FeatureFlagLive do
   # A bare map would hit the `for: Map` impl in waiting_list.ex, whose
   # email-first clause yields a different actor key than the write path.
   defp list_orgs(search) do
-    from(o in Organisation,
-      order_by: [asc: o.name],
-      limit: ^@org_page_size
-    )
+    query =
+      from(o in Organisation,
+        order_by: [asc: o.name],
+        limit: ^@org_page_size
+      )
+
+    query
     |> apply_search(search)
     |> Repo.all()
   end

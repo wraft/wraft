@@ -47,7 +47,7 @@ defmodule WraftDocWeb.AdminNext.LiveResourcePage do
 
       @impl Backpex.LiveResource
       def render_resource_slot(var!(assigns), :index, :page_title) do
-        WraftDocWeb.AdminNext.LiveResourcePage.index_page_title(
+        unquote(__MODULE__).index_page_title(
           var!(assigns),
           plural_name(),
           subtitle(),
@@ -57,7 +57,7 @@ defmodule WraftDocWeb.AdminNext.LiveResourcePage do
 
       @impl Backpex.LiveResource
       def render_resource_slot(var!(assigns), :show, :page_title) do
-        WraftDocWeb.AdminNext.LiveResourcePage.show_page_title(
+        unquote(__MODULE__).show_page_title(
           var!(assigns),
           singular_name(),
           subtitle()

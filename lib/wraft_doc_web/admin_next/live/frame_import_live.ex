@@ -180,7 +180,7 @@ defmodule WraftDocWeb.AdminNext.FrameImportLive do
   end
 
   def handle_event("import", params, socket) do
-    name = Map.get(params, "name", "") |> String.trim()
+    name = params |> Map.get("name", "") |> String.trim()
     description = Map.get(params, "description", "")
     organisation_id = Map.get(params, "organisation_id")
 
@@ -214,13 +214,17 @@ defmodule WraftDocWeb.AdminNext.FrameImportLive do
     end
   end
 
-  defp require_present(label, value) when value in [nil, ""], do: {:error, "#{label} is required."}
+  defp require_present(label, value) when value in [nil, ""],
+    do: {:error, "#{label} is required."}
+
   defp require_present(_label, _value), do: :ok
 
   defp consume_required(socket, upload_name) do
     case consume_uploaded_entries(socket, upload_name, fn meta, entry ->
            dest = persist_to_temp(meta.path, entry.client_name)
-           {:ok, %Plug.Upload{path: dest, filename: entry.client_name, content_type: entry.client_type}}
+
+           {:ok,
+            %Plug.Upload{path: dest, filename: entry.client_name, content_type: entry.client_type}}
          end) do
       [%Plug.Upload{} = upload] -> {:ok, upload}
       [] -> {:error, "Please attach a #{upload_name} file."}
@@ -230,7 +234,9 @@ defmodule WraftDocWeb.AdminNext.FrameImportLive do
   defp consume_optional(socket, upload_name) do
     case consume_uploaded_entries(socket, upload_name, fn meta, entry ->
            dest = persist_to_temp(meta.path, entry.client_name)
-           {:ok, %Plug.Upload{path: dest, filename: entry.client_name, content_type: entry.client_type}}
+
+           {:ok,
+            %Plug.Upload{path: dest, filename: entry.client_name, content_type: entry.client_type}}
          end) do
       [%Plug.Upload{} = upload] -> {:ok, upload}
       [] -> {:ok, nil}
@@ -238,7 +244,12 @@ defmodule WraftDocWeb.AdminNext.FrameImportLive do
   end
 
   defp persist_to_temp(src_path, client_name) do
-    dest = Path.join(System.tmp_dir!(), "wraft-frame-#{System.unique_integer([:positive])}-#{client_name}")
+    dest =
+      Path.join(
+        System.tmp_dir!(),
+        "wraft-frame-#{System.unique_integer([:positive])}-#{client_name}"
+      )
+
     File.cp!(src_path, dest)
     dest
   end

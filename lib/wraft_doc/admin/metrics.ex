@@ -63,12 +63,15 @@ defmodule WraftDoc.Admin.Metrics do
 
     {:ok, from_naive} = NaiveDateTime.new(from_date, ~T[00:00:00])
 
-    grouped =
+    query =
       from(w in WaitingList,
         where: w.inserted_at >= ^from_naive,
         group_by: fragment("date(?)", w.inserted_at),
         select: {fragment("date(?)::text", w.inserted_at), count(w.id)}
       )
+
+    grouped =
+      query
       |> Repo.all()
       |> Map.new(fn {date_str, count} -> {Date.from_iso8601!(date_str), count} end)
 
@@ -119,7 +122,7 @@ defmodule WraftDoc.Admin.Metrics do
           success_rate: float()
         }
   def webhook_health(hours_back \\ 24) do
-    since = DateTime.utc_now() |> DateTime.add(-hours_back * 3600, :second)
+    since = DateTime.add(DateTime.utc_now(), -hours_back * 3600, :second)
 
     total =
       Repo.aggregate(from(l in AdminWebhookLog, where: l.triggered_at >= ^since), :count, :id)
@@ -182,11 +185,14 @@ defmodule WraftDoc.Admin.Metrics do
   """
   @spec plan_distribution() :: %{type: atom(), count: integer()}
   def plan_distribution do
-    from(p in Plan,
-      where: p.is_active? == true,
-      group_by: p.type,
-      select: {p.type, count(p.id)}
-    )
+    query =
+      from(p in Plan,
+        where: p.is_active? == true,
+        group_by: p.type,
+        select: {p.type, count(p.id)}
+      )
+
+    query
     |> Repo.all()
     |> Enum.map(fn {type, count} -> %{type: type, count: count} end)
     |> Enum.sort_by(& &1.count, :desc)
@@ -244,12 +250,15 @@ defmodule WraftDoc.Admin.Metrics do
 
     {:ok, from_naive} = NaiveDateTime.new(from_date, ~T[00:00:00])
 
-    grouped =
+    query =
       from(u in User,
         where: u.inserted_at >= ^from_naive,
         group_by: fragment("date(?)", u.inserted_at),
         select: {fragment("date(?)::text", u.inserted_at), count(u.id)}
       )
+
+    grouped =
+      query
       |> Repo.all()
       |> Map.new(fn {date_str, count} -> {Date.from_iso8601!(date_str), count} end)
 

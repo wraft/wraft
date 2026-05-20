@@ -23,8 +23,7 @@ defmodule WraftDocWeb.AdminNext.FeatureFlagLiveTest do
     admin = insert(:internal_user)
 
     conn =
-      Phoenix.ConnTest.build_conn()
-      |> Plug.Test.init_test_session(%{"admin_id" => admin.id})
+      Plug.Test.init_test_session(Phoenix.ConnTest.build_conn(), %{"admin_id" => admin.id})
 
     {:ok, conn: conn, admin: admin}
   end
@@ -47,8 +46,8 @@ defmodule WraftDocWeb.AdminNext.FeatureFlagLiveTest do
 
       {:ok, _view, html} = live(conn, @path)
 
-      alpha_pos = :binary.match(html, "Alpha Inc") |> elem(0)
-      zeta_pos = :binary.match(html, "Zeta Corp") |> elem(0)
+      alpha_pos = elem(:binary.match(html, "Alpha Inc"), 0)
+      zeta_pos = elem(:binary.match(html, "Zeta Corp"), 0)
       assert alpha_pos < zeta_pos
     end
   end
@@ -64,7 +63,9 @@ defmodule WraftDocWeb.AdminNext.FeatureFlagLiveTest do
       {:ok, view, _html} = live(conn, @path)
 
       view
-      |> element(~s|button[phx-click="toggle_org"][phx-value-feature="ai_features"][phx-value-org="#{org.id}"]|)
+      |> element(
+        ~s|button[phx-click="toggle_org"][phx-value-feature="ai_features"][phx-value-org="#{org.id}"]|
+      )
       |> render_click()
 
       assert FeatureFlags.enabled?(:ai_features, org)
@@ -90,7 +91,11 @@ defmodule WraftDocWeb.AdminNext.FeatureFlagLiveTest do
       insert(:organisation)
       {:ok, view, _html} = live(conn, @path)
 
-      html = render_hook(view, "toggle_org", %{"feature" => "bogus_feature", "org" => Ecto.UUID.generate()})
+      html =
+        render_hook(view, "toggle_org", %{
+          "feature" => "bogus_feature",
+          "org" => Ecto.UUID.generate()
+        })
 
       assert html =~ "Unknown feature"
       # LiveView is still alive

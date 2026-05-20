@@ -20,7 +20,8 @@ defmodule WraftDocWeb.AdminNext.FrameLive do
     init_order: %{by: :inserted_at, direction: :desc}
 
   use WraftDocWeb.AdminNext.LiveResourcePage,
-    subtitle: "LaTeX/Typst frames used as document templates. Create new frames via Import; edit metadata here."
+    subtitle:
+      "LaTeX/Typst frames used as document templates. Create new frames via Import; edit metadata here."
 
   import Ecto.Query
 

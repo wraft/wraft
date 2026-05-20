@@ -168,7 +168,9 @@ defmodule WraftDocWeb.AdminNext.PlanLive do
           |> Ecto.Changeset.change(%{is_active?: false})
           |> Repo.update()
           |> case do
-            {:ok, p} -> [p]
+            {:ok, p} ->
+              [p]
+
             {:error, reason} ->
               Logger.error("PlanLive deactivate failed for #{plan.id}: #{inspect(reason)}")
               []

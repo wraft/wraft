@@ -196,9 +196,14 @@ defmodule WraftDocWeb.AdminNext.OrganisationLive do
       deleted =
         Enum.flat_map(items, fn %OrgSchema{} = org ->
           case soft_delete(org, admin_id) do
-            {:ok, updated} -> [updated]
+            {:ok, updated} ->
+              [updated]
+
             {:error, reason} ->
-              Logger.error("OrganisationLive soft-delete failed for #{org.id}: #{inspect(reason)}")
+              Logger.error(
+                "OrganisationLive soft-delete failed for #{org.id}: #{inspect(reason)}"
+              )
+
               []
           end
         end)
