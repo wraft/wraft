@@ -734,6 +734,8 @@ defmodule WraftDocWeb.Router do
       live_resources "/field-types", FieldTypeLive
       live_resources "/admin-webhooks", AdminWebhookLive
       live "/feature-flags", FeatureFlagLive, :index
+      live "/queue-monitoring", QueueMonitoringLive, :index
+      live "/queue-monitoring/:id", QueueMonitoringLive, :show
       live "/audit-logs", AuditLogLive, :index
       live "/audit-logs/:id", AuditLogLive, :show
       live_resources "/waiting-list", WaitingListLive

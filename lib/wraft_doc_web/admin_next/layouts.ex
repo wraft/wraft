@@ -42,6 +42,7 @@ defmodule WraftDocWeb.AdminNext.Layouts do
   # Pretty leaf for nested routes like /admin/audit-logs/<uuid> — show a
   # readable label per resource, otherwise fall back to humanizing the slug.
   defp leaf_label("audit-logs", _id), do: "Event detail"
+  defp leaf_label("queue-monitoring", _id), do: "Job detail"
   defp leaf_label(_resource, slug), do: humanize(slug)
 
   defp maybe_add_section(crumbs, nil), do: crumbs
@@ -59,7 +60,9 @@ defmodule WraftDocWeb.AdminNext.Layouts do
        do: "Contract Platform"
 
   defp section_for(resource) when resource in ["waiting-list"], do: "Marketing"
-  defp section_for(resource) when resource in ["admin-webhooks"], do: "Automation & Integrations"
+  defp section_for(resource) when resource in ["admin-webhooks", "feature-flags", "queue-monitoring"],
+    do: "Automation & Integrations"
+
   defp section_for(resource) when resource in ["audit-logs"], do: "Security"
   defp section_for(_), do: nil
 
