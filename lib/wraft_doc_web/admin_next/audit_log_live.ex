@@ -4,9 +4,11 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
 
   Surfaces rows from the `ex_audit_version` table — every create / update /
   delete on a tracked schema (configured in `config/config.exs` under
-  `:ex_audit, :tracked_schemas`). The page is read-only and supports
-  filtering by action and entity type, search by user name/email, and
-  cursor-style pagination.
+  `:ex_audit, :tracked_schemas`). Two views share this module:
+
+  - `:index` — filterable, paginated table of recent events.
+  - `:show`  — detail page for a single event with metadata + diff table,
+    mirroring the Backpex resource flow (dedicated route, not a modal).
 
   Why a custom LiveView instead of a Backpex `LiveResource`: audit rows
   are immutable, the entity_schema is a custom Ecto type that doesn't
@@ -28,22 +30,33 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:page_title, "Audit Logs")
      |> assign(:page_size, @page_size)
      |> assign(:page, 1)
      |> assign(:action_filter, "")
      |> assign(:schema_filter, "")
      |> assign(:search, "")
-     |> assign(:counts, AuditLogs.counts())
      |> assign(:schema_options, schema_options())
+     |> assign(:counts, AuditLogs.counts())
+     |> assign(:result, empty_result())
      |> assign(:selected, nil)
-     |> assign(:diff_rows, [])
-     |> load_page()}
+     |> assign(:diff_rows, [])}
   end
 
   @impl true
-  def handle_params(params, _url, socket) do
-    {:noreply, assign_selected(socket, params["id"])}
+  def handle_params(params, _url, %{assigns: %{live_action: :show}} = socket) do
+    {:noreply,
+     socket
+     |> assign(:page_title, "Audit Event")
+     |> assign_selected(params["id"])}
+  end
+
+  def handle_params(_params, _url, socket) do
+    {:noreply,
+     socket
+     |> assign(:page_title, "Audit Logs")
+     |> assign(:selected, nil)
+     |> assign(:diff_rows, [])
+     |> load_page()}
   end
 
   @impl true
@@ -77,11 +90,7 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
   end
 
   def handle_event("show_detail", %{"id" => id}, socket) do
-    {:noreply, push_patch(socket, to: "/admin/audit-logs?id=#{URI.encode(to_string(id))}")}
-  end
-
-  def handle_event("close_detail", _params, socket) do
-    {:noreply, push_patch(socket, to: "/admin/audit-logs")}
+    {:noreply, push_navigate(socket, to: "/admin/audit-logs/#{URI.encode(to_string(id))}")}
   end
 
   # ---------------------------------------------------------------------------
@@ -125,12 +134,19 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
     end
   end
 
+  defp empty_result do
+    %{entries: [], page: 1, page_count: 1, page_size: @page_size, total: 0}
+  end
+
   # ---------------------------------------------------------------------------
   # Render
   # ---------------------------------------------------------------------------
 
   @impl true
-  def render(assigns) do
+  def render(%{live_action: :show} = assigns), do: show_view(assigns)
+  def render(assigns), do: index_view(assigns)
+
+  defp index_view(assigns) do
     ~H"""
     <WraftDocWeb.AdminNext.Layouts.app {assigns}>
       <div class="space-y-6">
@@ -289,125 +305,168 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
           <% end %>
         </.card>
       </div>
-
-      <.detail_modal :if={@selected} entry={@selected} diff_rows={@diff_rows} />
     </WraftDocWeb.AdminNext.Layouts.app>
     """
   end
 
   # ---------------------------------------------------------------------------
-  # Detail modal
+  # Show view (per-event detail)
   # ---------------------------------------------------------------------------
 
-  attr :entry, :map, required: true
-  attr :diff_rows, :list, required: true
-
-  defp detail_modal(assigns) do
+  defp show_view(%{selected: nil} = assigns) do
     ~H"""
-    <div
-      class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-8"
-      phx-window-keydown="close_detail"
-      phx-key="escape"
-    >
-      <div
-        class="absolute inset-0"
-        phx-click="close_detail"
-        aria-label="Close detail"
-      >
+    <WraftDocWeb.AdminNext.Layouts.app {assigns}>
+      <div class="space-y-6">
+        <.page_header title="Audit event not found" description="This event no longer exists or the link is malformed.">
+          <:eyebrow>Security</:eyebrow>
+          <:actions>
+            <.button variant="neutral" icon="hero-arrow-left" navigate="/admin/audit-logs">
+              Back to audit logs
+            </.button>
+          </:actions>
+        </.page_header>
+
+        <.card>
+          <.empty_state
+            icon="hero-document-magnifying-glass"
+            title="No matching audit event"
+            description="The event may have been pruned, or the URL was edited. Return to the activity list to browse recent events."
+          />
+        </.card>
       </div>
+    </WraftDocWeb.AdminNext.Layouts.app>
+    """
+  end
 
-      <section class="relative z-10 w-full max-w-3xl rounded-lg bg-base-100 shadow-2xl">
-        <header class="flex items-start justify-between gap-4 border-b border-base-200 px-5 py-4">
-          <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <.badge variant={action_variant(@entry.action)}>
-                <CoreComponents.icon name={action_icon(@entry.action)} class="size-3" />
-                <span class="ml-1">{action_label(@entry.action)}</span>
-              </.badge>
-              <span
-                :if={@entry.rollback}
-                class="text-[10px] uppercase tracking-wide text-base-content/50"
-              >
-                rollback
-              </span>
+  defp show_view(assigns) do
+    ~H"""
+    <WraftDocWeb.AdminNext.Layouts.app {assigns}>
+      <div class="space-y-6">
+        <.page_header
+          title={AuditLogs.schema_label(@selected.entity_schema)}
+          description={"Audit event for #{@selected.entity_id}"}
+        >
+          <:eyebrow>Security · Audit Log</:eyebrow>
+          <:status>
+            <.badge variant={action_variant(@selected.action)}>
+              <CoreComponents.icon name={action_icon(@selected.action)} class="size-3" />
+              <span class="ml-1">{action_label(@selected.action)}</span>
+            </.badge>
+            <.badge :if={@selected.rollback} variant="warning">Rollback</.badge>
+          </:status>
+          <:actions>
+            <.button variant="neutral" icon="hero-arrow-left" navigate="/admin/audit-logs">
+              Back to audit logs
+            </.button>
+          </:actions>
+        </.page_header>
+
+        <.card title="Event details">
+          <dl class="grid grid-cols-1 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <dt class="ds-caption">Action</dt>
+              <dd class="mt-1">
+                <.badge variant={action_variant(@selected.action)}>
+                  <CoreComponents.icon name={action_icon(@selected.action)} class="size-3" />
+                  <span class="ml-1">{action_label(@selected.action)}</span>
+                </.badge>
+              </dd>
             </div>
-            <h2 class="mt-2 ds-section-title">
-              {AuditLogs.schema_label(@entry.entity_schema)}
-            </h2>
-            <p class="mt-0.5 font-mono text-xs text-base-content/55">
-              {@entry.entity_id}
-            </p>
-          </div>
-          <button
-            type="button"
-            phx-click="close_detail"
-            class="ds-btn ds-btn-ghost ds-btn-sm"
-            aria-label="Close"
-          >
-            <CoreComponents.icon name="hero-x-mark" class="size-4" />
-          </button>
-        </header>
-
-        <dl class="grid grid-cols-1 gap-y-3 border-b border-base-200 px-5 py-4 text-sm sm:grid-cols-2">
-          <div>
-            <dt class="ds-caption">Changed by</dt>
-            <dd class="mt-0.5">
-              <%= if @entry.user do %>
-                <p class="font-medium text-base-content">{@entry.user.name}</p>
-                <p class="font-mono text-xs text-base-content/55">{@entry.user.email}</p>
-              <% else %>
-                <span class="text-xs text-base-content/50">System</span>
-              <% end %>
-            </dd>
-          </div>
-          <div>
-            <dt class="ds-caption">Recorded</dt>
-            <dd class="mt-0.5 text-base-content">
-              {Tokens.format_datetime(@entry.recorded_at)}
-            </dd>
-          </div>
-        </dl>
-
-        <div class="px-5 py-4">
-          <h3 class="ds-section-title">Changes</h3>
-          <%= if @diff_rows == [] do %>
-            <p class="mt-2 ds-caption">No field-level changes recorded.</p>
-          <% else %>
-            <ul class="mt-3 space-y-2 text-xs">
-              <li
-                :for={row <- @diff_rows}
-                class="rounded border border-base-200 bg-base-200/30 p-3"
-              >
-                <div class="flex items-center justify-between gap-2">
-                  <p class="font-mono font-medium text-base-content">{row.path}</p>
-                  <.badge variant={diff_variant(row.kind)}>{diff_label(row.kind)}</.badge>
-                </div>
-
-                <%= case row.kind do %>
-                  <% :added -> %>
-                    <p class="mt-2 break-words font-mono text-success">
-                      + {Diff.format_value(row.new)}
-                    </p>
-                  <% :removed -> %>
-                    <p class="mt-2 break-words font-mono text-error line-through">
-                      − {Diff.format_value(row.old)}
-                    </p>
-                  <% :changed -> %>
-                    <div class="mt-2 space-y-1">
-                      <p class="break-words font-mono text-error line-through">
-                        − {Diff.format_value(row.old)}
-                      </p>
-                      <p class="break-words font-mono text-success">
-                        + {Diff.format_value(row.new)}
-                      </p>
-                    </div>
+            <div>
+              <dt class="ds-caption">Entity</dt>
+              <dd class="mt-1 font-medium text-base-content">
+                {AuditLogs.schema_label(@selected.entity_schema)}
+              </dd>
+            </div>
+            <div class="sm:col-span-2">
+              <dt class="ds-caption">Entity ID</dt>
+              <dd class="mt-1 font-mono text-xs text-base-content/70">
+                {@selected.entity_id}
+              </dd>
+            </div>
+            <div>
+              <dt class="ds-caption">Changed by</dt>
+              <dd class="mt-1">
+                <%= if @selected.user do %>
+                  <p class="font-medium text-base-content">{@selected.user.name}</p>
+                  <p class="font-mono text-xs text-base-content/55">{@selected.user.email}</p>
+                <% else %>
+                  <span class="text-xs text-base-content/50">System</span>
                 <% end %>
-              </li>
-            </ul>
+              </dd>
+            </div>
+            <div>
+              <dt class="ds-caption">Recorded</dt>
+              <dd class="mt-1 text-base-content">
+                {Tokens.format_datetime(@selected.recorded_at)}
+              </dd>
+            </div>
+            <div>
+              <dt class="ds-caption">Rollback</dt>
+              <dd class="mt-1 text-base-content">
+                {if @selected.rollback, do: "Yes", else: "No"}
+              </dd>
+            </div>
+            <div>
+              <dt class="ds-caption">Event ID</dt>
+              <dd class="mt-1 font-mono text-xs text-base-content/70">
+                {@selected.id}
+              </dd>
+            </div>
+          </dl>
+        </.card>
+
+        <.card
+          title="Changes"
+          caption={changes_caption(@diff_rows)}
+        >
+          <%= if @diff_rows == [] do %>
+            <.empty_state
+              icon="hero-document"
+              title="No field-level changes recorded"
+              description="This event has no diff payload — typically a metadata-only create or delete."
+            />
+          <% else %>
+            <.data_table>
+              <:col label="Field" />
+              <:col label="Change" />
+              <:col label="Previous" />
+              <:col label="Current" />
+              <:row>
+                <tr :for={row <- @diff_rows} class="align-top">
+                  <td class="font-mono text-xs font-medium text-base-content">
+                    {row.path}
+                  </td>
+                  <td>
+                    <.badge variant={diff_variant(row.kind)}>{diff_label(row.kind)}</.badge>
+                  </td>
+                  <td class="break-words font-mono text-xs">
+                    <%= case row.kind do %>
+                      <% :added -> %>
+                        <span class="text-base-content/40">—</span>
+                      <% kind when kind in [:removed, :changed] -> %>
+                        <span class="text-error line-through">
+                          {Diff.format_value(row.old)}
+                        </span>
+                    <% end %>
+                  </td>
+                  <td class="break-words font-mono text-xs">
+                    <%= case row.kind do %>
+                      <% :removed -> %>
+                        <span class="text-base-content/40">—</span>
+                      <% kind when kind in [:added, :changed] -> %>
+                        <span class="text-success">
+                          {Diff.format_value(row.new)}
+                        </span>
+                    <% end %>
+                  </td>
+                </tr>
+              </:row>
+            </.data_table>
           <% end %>
-        </div>
-      </section>
-    </div>
+        </.card>
+      </div>
+    </WraftDocWeb.AdminNext.Layouts.app>
     """
   end
 
@@ -464,5 +523,14 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
     if filters_active?(assigns),
       do: "Try clearing the filters or broadening your search.",
       else: "Once tracked entities change, those events will appear here."
+  end
+
+  defp changes_caption([]), do: nil
+
+  defp changes_caption(rows) do
+    case length(rows) do
+      1 -> "1 field changed"
+      n -> "#{n} fields changed"
+    end
   end
 end

@@ -19,18 +19,30 @@ defmodule WraftDocWeb.AdminNext.Layouts do
       ["admin"] ->
         [{"Admin", nil}]
 
-      ["admin", resource | rest] ->
+      ["admin", resource] ->
         section = section_for(resource)
-        last = humanize(List.last([resource | rest]))
 
         [{"Admin", "/admin"}]
         |> maybe_add_section(section)
-        |> Kernel.++([{last, nil}])
+        |> Kernel.++([{humanize(resource), nil}])
+
+      ["admin", resource | rest] ->
+        section = section_for(resource)
+        leaf = leaf_label(resource, List.last(rest))
+
+        [{"Admin", "/admin"}]
+        |> maybe_add_section(section)
+        |> Kernel.++([{humanize(resource), "/admin/#{resource}"}, {leaf, nil}])
 
       _ ->
         [{"Admin", "/admin"}]
     end
   end
+
+  # Pretty leaf for nested routes like /admin/audit-logs/<uuid> — show a
+  # readable label per resource, otherwise fall back to humanizing the slug.
+  defp leaf_label("audit-logs", _id), do: "Event detail"
+  defp leaf_label(_resource, slug), do: humanize(slug)
 
   defp maybe_add_section(crumbs, nil), do: crumbs
   defp maybe_add_section(crumbs, section), do: crumbs ++ [{section, nil}]
