@@ -733,6 +733,7 @@ defmodule WraftDocWeb.Router do
       live_resources "/organisations", OrganisationLive
       live_resources "/field-types", FieldTypeLive
       live_resources "/admin-webhooks", AdminWebhookLive
+      live "/feature-flags", FeatureFlagLive, :index
       live_resources "/waiting-list", WaitingListLive
       live "/template-assets/import", TemplateAssetImportLive, :import
       live_resources "/template-assets", TemplateAssetLive

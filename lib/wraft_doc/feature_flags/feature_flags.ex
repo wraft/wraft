@@ -33,7 +33,7 @@ defmodule WraftDoc.FeatureFlags do
   @doc """
   Enable a feature for a specific organization.
   """
-  @spec enable(atom(), Organisation.t() | map()) :: :ok | {:error, any()}
+  @spec enable(atom(), Organisation.t() | map()) :: {:ok, boolean()} | {:error, any()}
   def enable(feature, organization) when feature in @available_features do
     FunWithFlags.enable(feature, for_actor: organization)
   end
@@ -43,7 +43,7 @@ defmodule WraftDoc.FeatureFlags do
   @doc """
   Disable a feature for a specific organization.
   """
-  @spec disable(atom(), Organisation.t() | map()) :: :ok | {:error, any()}
+  @spec disable(atom(), Organisation.t() | map()) :: {:ok, boolean()} | {:error, any()}
   def disable(feature, organization) when feature in @available_features do
     FunWithFlags.disable(feature, for_actor: organization)
   end
@@ -117,7 +117,7 @@ defmodule WraftDoc.FeatureFlags do
   Enable a feature globally (for all organizations).
   This should be used carefully and only for system-wide features.
   """
-  @spec enable_globally(atom()) :: :ok | {:error, any()}
+  @spec enable_globally(atom()) :: {:ok, boolean()} | {:error, any()}
   def enable_globally(feature) when feature in @available_features do
     FunWithFlags.enable(feature)
   end
@@ -127,7 +127,7 @@ defmodule WraftDoc.FeatureFlags do
   @doc """
   Disable a feature globally.
   """
-  @spec disable_globally(atom()) :: :ok | {:error, any()}
+  @spec disable_globally(atom()) :: {:ok, boolean()} | {:error, any()}
   def disable_globally(feature) when feature in @available_features do
     FunWithFlags.disable(feature)
   end
@@ -148,7 +148,7 @@ defmodule WraftDoc.FeatureFlags do
   Validates and updates a feature flag for the given organization.
   """
   @spec validate_and_update_feature(atom(), boolean(), Organisation.t()) ::
-          {atom(), :ok | {:error, any()}}
+          {atom(), {:ok, boolean()} | {:error, any()}}
   def validate_and_update_feature(feature, enabled, organization) do
     case feature in available_features() do
       true ->

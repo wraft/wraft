@@ -121,13 +121,6 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
               organization: organization
             })
 
-          :ok ->
-            render(conn, "update.json", %{
-              feature: feature,
-              enabled: enabled,
-              organization: organization
-            })
-
           {:error, reason} ->
             conn
             |> put_status(:unprocessable_entity)
@@ -176,9 +169,7 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
       end)
 
     {successful, failed} =
-      Enum.split_with(results, fn {_, result} ->
-        result == :ok or match?({:ok, _}, result)
-      end)
+      Enum.split_with(results, fn {_, result} -> match?({:ok, _}, result) end)
 
     failed_map =
       Enum.into(failed, %{}, fn {feature, error_tuple} ->

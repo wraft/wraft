@@ -78,6 +78,7 @@ defmodule WraftDoc.Mixfile do
       {:faker, "~> 0.18"},
       {:file_type, "~> 0.1"},
       {:floki, "~> 0.36"},
+      {:lazy_html, "~> 0.1", only: :test},
       {:fun_with_flags, "~> 1.11", runtime: false},
       {:fun_with_flags_ui, "~> 0.8"},
       {:gettext, "~> 0.26"},
