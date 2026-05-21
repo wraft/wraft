@@ -736,6 +736,10 @@ defmodule WraftDocWeb.Router do
       live "/feature-flags", FeatureFlagLive, :index
       live "/queue-monitoring", QueueMonitoringLive, :index
       live "/queue-monitoring/:id", QueueMonitoringLive, :show
+      live "/build-metrics", BuildMetricsLive, :index
+      live "/build-metrics/:id", BuildMetricsLive, :show
+      live "/pipeline-metrics", PipelineMetricsLive, :index
+      live "/pipeline-metrics/:id", PipelineMetricsLive, :show
       live "/audit-logs", AuditLogLive, :index
       live "/audit-logs/:id", AuditLogLive, :show
       live_resources "/waiting-list", WaitingListLive

@@ -43,6 +43,8 @@ defmodule WraftDocWeb.AdminNext.Layouts do
   # readable label per resource, otherwise fall back to humanizing the slug.
   defp leaf_label("audit-logs", _id), do: "Event detail"
   defp leaf_label("queue-monitoring", _id), do: "Job detail"
+  defp leaf_label("build-metrics", _id), do: "Build detail"
+  defp leaf_label("pipeline-metrics", _id), do: "Pipeline run detail"
   defp leaf_label(_resource, slug), do: humanize(slug)
 
   defp maybe_add_section(crumbs, nil), do: crumbs
@@ -63,7 +65,13 @@ defmodule WraftDocWeb.AdminNext.Layouts do
   defp section_for(resource) when resource in ["waiting-list"], do: "Marketing"
 
   defp section_for(resource)
-       when resource in ["admin-webhooks", "feature-flags", "queue-monitoring"],
+       when resource in [
+              "admin-webhooks",
+              "feature-flags",
+              "queue-monitoring",
+              "build-metrics",
+              "pipeline-metrics"
+            ],
        do: "Automation & Integrations"
 
   defp section_for(resource) when resource in ["audit-logs"], do: "Security"

@@ -354,14 +354,15 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       %Instance{content_type: %{layout: layout} = content_type} = instance ->
         with %Layout{} = layout <- Assets.preload_asset(layout),
              :ok <- Frames.check_frame_mapping(content_type),
-             {_error, exit_code} = build_response <- Documents.build_doc(instance, layout) do
+             {result, exit_code} = build_response <- Documents.build_doc(instance, layout) do
           end_time = Timex.now()
 
           Task.start_link(fn ->
             Documents.add_build_history(current_user, instance, %{
               start_time: start_time,
               end_time: end_time,
-              exit_code: exit_code
+              exit_code: exit_code,
+              error_log: Documents.build_error_log(result, exit_code)
             })
           end)
 

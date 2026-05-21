@@ -1598,6 +1598,33 @@ defmodule WraftDoc.Documents do
   end
 
   @doc """
+  Normalises the output of `build_doc/2` into a value safe to store in
+  `build_history.error_log`. Returns `nil` on success or when the output
+  is empty; otherwise a string truncated to 8 KB so a runaway pandoc
+  stack can't bloat the row.
+  """
+  @error_log_limit 8_000
+  @spec build_error_log(any(), integer()) :: String.t() | nil
+  def build_error_log(_result, 0), do: nil
+
+  def build_error_log(result, _exit_code) do
+    case IO.iodata_to_binary(List.wrap(result)) do
+      "" ->
+        nil
+
+      str when byte_size(str) <= @error_log_limit ->
+        str
+
+      str ->
+        binary_part(str, byte_size(str) - @error_log_limit, @error_log_limit)
+    end
+  rescue
+    _ ->
+      str = inspect(result)
+      binary_part(str, 0, min(byte_size(str), @error_log_limit))
+  end
+
+  @doc """
   Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create
   """
   # TODO - tests being failed with fake data test with real data,
@@ -1936,7 +1963,8 @@ defmodule WraftDoc.Documents do
     add_build_history(current_user, instance, %{
       start_time: start_time,
       end_time: end_time,
-      exit_code: exit_code
+      exit_code: exit_code,
+      error_log: build_error_log(result, exit_code)
     })
 
     {result, exit_code}
@@ -1953,7 +1981,8 @@ defmodule WraftDoc.Documents do
     add_build_history(instance, %{
       start_time: start_time,
       end_time: Timex.now(),
-      exit_code: exit_code
+      exit_code: exit_code,
+      error_log: build_error_log(result, exit_code)
     })
 
     {result, exit_code}

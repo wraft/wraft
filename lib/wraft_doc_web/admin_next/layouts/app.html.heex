@@ -147,6 +147,18 @@
           icon="hero-queue-list"
           label="Queue Monitoring"
         />
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/build-metrics"
+          icon="hero-cube"
+          label="Build Metrics"
+        />
+        <.nav_link
+          current_url={assigns[:current_url]}
+          path="/admin/pipeline-metrics"
+          icon="hero-arrows-right-left"
+          label="Pipeline Metrics"
+        />
       </.nav_section>
 
       <.nav_section icon="hero-shield-check" label="Security">
