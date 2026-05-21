@@ -60,8 +60,10 @@ defmodule WraftDocWeb.AdminNext.Layouts do
        do: "Contract Platform"
 
   defp section_for(resource) when resource in ["waiting-list"], do: "Marketing"
-  defp section_for(resource) when resource in ["admin-webhooks", "feature-flags", "queue-monitoring"],
-    do: "Automation & Integrations"
+
+  defp section_for(resource)
+       when resource in ["admin-webhooks", "feature-flags", "queue-monitoring"],
+       do: "Automation & Integrations"
 
   defp section_for(resource) when resource in ["audit-logs"], do: "Security"
   defp section_for(_), do: nil

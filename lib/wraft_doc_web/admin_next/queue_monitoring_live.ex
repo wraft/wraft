@@ -110,8 +110,16 @@ defmodule WraftDocWeb.AdminNext.QueueMonitoringLive do
     schedule_refresh()
 
     case socket.assigns.live_action do
-      :show -> {:noreply, assign(socket, :selected, QueueMonitoring.get(socket.assigns.selected && socket.assigns.selected.id))}
-      _ -> {:noreply, load_all(socket)}
+      :show ->
+        {:noreply,
+         assign(
+           socket,
+           :selected,
+           QueueMonitoring.get(socket.assigns.selected && socket.assigns.selected.id)
+         )}
+
+      _ ->
+        {:noreply, load_all(socket)}
     end
   end
 
@@ -646,7 +654,14 @@ defmodule WraftDocWeb.AdminNext.QueueMonitoringLive do
   # tables — whichever state-transition timestamp is most recent.
   defp job_event_time(%Oban.Job{} = j) do
     j
-    |> Map.take([:completed_at, :discarded_at, :cancelled_at, :attempted_at, :scheduled_at, :inserted_at])
+    |> Map.take([
+      :completed_at,
+      :discarded_at,
+      :cancelled_at,
+      :attempted_at,
+      :scheduled_at,
+      :inserted_at
+    ])
     |> Map.values()
     |> Enum.reject(&is_nil/1)
     |> case do

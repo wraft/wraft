@@ -75,8 +75,19 @@ defmodule WraftDocWeb.AdminNext.FieldTypeLive do
       },
       is_disabled: %{
         module: Backpex.Fields.Boolean,
-        label: "Disabled",
-        orderable: true
+        label: "Status",
+        orderable: true,
+        render: fn assigns ->
+          ~H"""
+          <span class={[
+            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+            @value && "bg-error/10 text-error",
+            !@value && "bg-success/10 text-success"
+          ]}>
+            {if @value, do: "Disabled", else: "Enabled"}
+          </span>
+          """
+        end
       },
       inserted_at: %{
         module: Backpex.Fields.DateTime,

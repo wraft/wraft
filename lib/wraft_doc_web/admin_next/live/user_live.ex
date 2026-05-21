@@ -60,13 +60,35 @@ defmodule WraftDocWeb.AdminNext.UserLive do
         module: Backpex.Fields.Boolean,
         label: "Email Verified",
         except: [:new, :edit],
-        orderable: true
+        orderable: true,
+        render: fn assigns ->
+          ~H"""
+          <span class={[
+            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+            @value && "bg-success/10 text-success",
+            !@value && "bg-warning/10 text-warning"
+          ]}>
+            {if @value, do: "Verified", else: "Pending"}
+          </span>
+          """
+        end
       },
       is_guest: %{
         module: Backpex.Fields.Boolean,
         label: "Guest",
         except: [:new, :edit],
-        orderable: true
+        orderable: true,
+        render: fn assigns ->
+          ~H"""
+          <span class={[
+            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+            @value && "bg-warning/10 text-warning",
+            !@value && "bg-success/10 text-success"
+          ]}>
+            {if @value, do: "Guest", else: "User"}
+          </span>
+          """
+        end
       },
       signed_in_at: %{
         module: Backpex.Fields.DateTime,

@@ -25,6 +25,8 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
   alias WraftDocWeb.AdminNext.UI.Tokens
 
   @page_size 25
+  @default_range_days 30
+  @ranges [{"7D", 7}, {"30D", 30}, {"90D", 90}]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -35,6 +37,9 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
      |> assign(:action_filter, "")
      |> assign(:schema_filter, "")
      |> assign(:search, "")
+     |> assign(:range_days, @default_range_days)
+     |> assign(:ranges, @ranges)
+     |> assign(:daily_activity, [])
      |> assign(:schema_options, schema_options())
      |> assign(:counts, AuditLogs.counts())
      |> assign(:result, empty_result())
@@ -93,6 +98,10 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
     {:noreply, push_navigate(socket, to: "/admin/audit-logs/#{URI.encode(to_string(id))}")}
   end
 
+  def handle_event("set_range", %{"days" => days}, socket) do
+    {:noreply, socket |> assign(:range_days, String.to_integer(days)) |> load_page()}
+  end
+
   # ---------------------------------------------------------------------------
   # Data loading
   # ---------------------------------------------------------------------------
@@ -103,19 +112,20 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
       page_size: page_size,
       action_filter: action,
       schema_filter: schema,
-      search: search
+      search: search,
+      range_days: range_days
     } = socket.assigns
 
-    result =
-      AuditLogs.list(
-        page: page,
-        page_size: page_size,
-        action: action,
-        schema: schema,
-        search: search
-      )
+    filter_opts = [action: action, schema: schema, search: search]
 
-    assign(socket, :result, result)
+    result =
+      AuditLogs.list(Keyword.merge(filter_opts, page: page, page_size: page_size))
+
+    daily_activity = AuditLogs.daily_activity(range_days, filter_opts)
+
+    socket
+    |> assign(:result, result)
+    |> assign(:daily_activity, daily_activity)
   end
 
   defp schema_options do
@@ -164,6 +174,21 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
           <.mini_stat icon="hero-pencil-square" label="Updated" value={@counts.updated} />
           <.mini_stat icon="hero-trash" label="Deleted" value={@counts.deleted} />
         </section>
+
+        <.card
+          title="Daily activity"
+          caption={daily_caption(@daily_activity, @range_days, assigns)}
+        >
+          <:header_actions>
+            <.segmented
+              current={@range_days}
+              options={@ranges}
+              event="set_range"
+              param="days"
+            />
+          </:header_actions>
+          <.area_chart series={@daily_activity} accent="primary" height={200} />
+        </.card>
 
         <.card
           title="Activity"
@@ -532,5 +557,11 @@ defmodule WraftDocWeb.AdminNext.AuditLogLive do
       1 -> "1 field changed"
       n -> "#{n} fields changed"
     end
+  end
+
+  defp daily_caption(series, range_days, assigns) do
+    total = Enum.sum(Enum.map(series, & &1.count))
+    base = "#{total} events · last #{range_days} days"
+    if filters_active?(assigns), do: base <> " · filtered", else: base
   end
 end

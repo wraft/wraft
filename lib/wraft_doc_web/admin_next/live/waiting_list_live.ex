@@ -57,7 +57,19 @@ defmodule WraftDocWeb.AdminNext.WaitingListLive do
         module: Backpex.Fields.Select,
         label: "Status",
         options: [{"Approved", :approved}, {"Rejected", :rejected}, {"Pending", :pending}],
-        orderable: true
+        orderable: true,
+        render: fn assigns ->
+          ~H"""
+          <span class={[
+            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize",
+            @value == :approved && "bg-success/10 text-success",
+            @value == :rejected && "bg-error/10 text-error",
+            @value == :pending && "bg-warning/10 text-warning"
+          ]}>
+            {to_string(@value)}
+          </span>
+          """
+        end
       },
       inserted_at: %{
         module: Backpex.Fields.DateTime,

@@ -114,6 +114,33 @@ defmodule WraftDoc.Admin.AuditLogs do
   end
 
   @doc """
+  Daily count of audit events for the last `days_back` days (default 30),
+  oldest day first, with empty days zero-filled so the chart's x-axis is
+  continuous. Respects the same `:action`, `:schema`, and `:search` opts
+  as `list/1`, so the chart and the table view stay in sync.
+  """
+  @spec daily_activity(non_neg_integer(), list_opts()) :: [%{date: Date.t(), count: integer()}]
+  def daily_activity(days_back \\ 30, opts \\ []) do
+    today = Date.utc_today()
+    from_date = Date.add(today, -days_back)
+    {:ok, from_naive} = NaiveDateTime.new(from_date, ~T[00:00:00])
+
+    grouped =
+      opts
+      |> build_query()
+      |> where([v], v.recorded_at >= ^from_naive)
+      |> group_by([v], fragment("date(?)", v.recorded_at))
+      |> select([v], {fragment("date(?)::text", v.recorded_at), count(v.id)})
+      |> Repo.all()
+      |> Map.new(fn {date_str, count} -> {Date.from_iso8601!(date_str), count} end)
+
+    for offset <- 0..days_back do
+      date = Date.add(from_date, offset)
+      %{date: date, count: Map.get(grouped, date, 0)}
+    end
+  end
+
+  @doc """
   Returns the list of tracked schema atoms in the order they are configured.
   Used to populate the entity-type filter dropdown.
   """

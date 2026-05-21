@@ -112,11 +112,10 @@ defmodule WraftDoc.Admin.QueueMonitoring do
         Map.update(acc, queue, %{state => count}, &Map.put(&1, state, count))
       end)
 
-    producers =
-      live_producers()
-      |> Map.new(fn p -> {to_string(p.queue), p} end)
+    producers = Map.new(live_producers(), fn p -> {to_string(p.queue), p} end)
 
-    queue_names = MapSet.union(MapSet.new(Map.keys(grouped)), MapSet.new(Map.keys(configured_queues())))
+    queue_names =
+      MapSet.union(MapSet.new(Map.keys(grouped)), MapSet.new(Map.keys(configured_queues())))
 
     queue_names
     |> MapSet.to_list()
