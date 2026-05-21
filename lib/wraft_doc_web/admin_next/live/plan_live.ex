@@ -62,7 +62,18 @@ defmodule WraftDocWeb.AdminNext.PlanLive do
         module: Backpex.Fields.Boolean,
         label: "Active",
         orderable: true,
-        except: [:new, :edit]
+        except: [:new, :edit],
+        render: fn assigns ->
+          ~H"""
+          <span class={[
+            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+            @value && "bg-success/10 text-success",
+            !@value && "bg-error/10 text-error"
+          ]}>
+            {if @value, do: "Active", else: "Inactive"}
+          </span>
+          """
+        end
       },
       features: %{
         module: Backpex.Fields.Text,

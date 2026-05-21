@@ -83,7 +83,18 @@ defmodule WraftDocWeb.AdminNext.AdminWebhookLive do
       is_active: %{
         module: Backpex.Fields.Boolean,
         label: "Active",
-        orderable: true
+        orderable: true,
+        render: fn assigns ->
+          ~H"""
+          <span class={[
+            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+            @value && "bg-success/10 text-success",
+            !@value && "bg-error/10 text-error"
+          ]}>
+            {if @value, do: "Active", else: "Inactive"}
+          </span>
+          """
+        end
       },
       headers: %{
         module: Backpex.Fields.Textarea,

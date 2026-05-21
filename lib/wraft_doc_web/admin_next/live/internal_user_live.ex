@@ -3,7 +3,7 @@ defmodule WraftDocWeb.AdminNext.InternalUserLive do
   Backpex admin for `WraftDoc.InternalUsers.InternalUser`.
 
   Mirrors `WraftDocWeb.InternalUserAdmin` (Kaffy):
-  - Index columns: Email, Status (Active/Deactivated), Created At
+  - Index columns: Email, Active, Created At
   - Form: Email (readonly on edit), Password (help text on create), is_deactivated (hidden on create, readonly on edit)
   - Item actions: Activate / Deactivate (toggle is_deactivated)
   """
@@ -49,9 +49,22 @@ defmodule WraftDocWeb.AdminNext.InternalUserLive do
       },
       is_deactivated: %{
         module: Backpex.Fields.Boolean,
-        label: "Deactivated",
+        label: "Active",
         # Hidden from create/edit forms — toggled via the Activate/Deactivate item actions.
-        except: [:new, :edit]
+        except: [:new, :edit],
+        render: fn assigns ->
+          assigns = Map.put(assigns, :active?, !assigns.value)
+
+          ~H"""
+          <span class={[
+            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+            @active? && "bg-success/10 text-success",
+            !@active? && "bg-error/10 text-error"
+          ]}>
+            {if @active?, do: "Active", else: "Inactive"}
+          </span>
+          """
+        end
       },
       inserted_at: %{
         module: Backpex.Fields.DateTime,
