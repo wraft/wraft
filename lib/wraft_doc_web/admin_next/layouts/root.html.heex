@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
     <title>{assigns[:page_title] || "Wraft Backoffice"}</title>
     <link phx-track-static rel="stylesheet" href="/assets/admin.css" />
     <script defer phx-track-static type="text/javascript" src="/assets/admin.js">
