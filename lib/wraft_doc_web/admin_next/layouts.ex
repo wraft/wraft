@@ -86,7 +86,7 @@ defmodule WraftDocWeb.AdminNext.Layouts do
 
   def nav_section(assigns) do
     ~H"""
-    <li class="mt-3 list-none">
+    <div class="block! mt-3">
       <p class="text-zinc-500 mx-2 flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider">
         <%!-- Spacer matches the icon column in nav_link so section labels
              align horizontally with item labels. --%>
@@ -95,7 +95,7 @@ defmodule WraftDocWeb.AdminNext.Layouts do
       <ul class="mt-0.5 ml-0 space-y-px">
         {render_slot(@inner_block)}
       </ul>
-    </li>
+    </div>
     """
   end
 

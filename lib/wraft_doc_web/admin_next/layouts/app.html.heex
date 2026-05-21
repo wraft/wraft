@@ -20,7 +20,7 @@
 
   <:sidebar class="bg-[#0c1412] border-r border-white/5 text-zinc-300 px-0! py-0! pb-0! pt-0! md:mt-0! overflow-hidden! [&>ul]:flex [&>ul]:flex-col [&>ul]:h-full">
     <%!-- Org switcher --%>
-    <li class="list-none border-b border-white/5 px-2 py-3">
+    <li class="list-none border-b border-white/5 px-2 py-3 shrink-0">
       <button class="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-white/5">
         <div class="bg-primary text-primary-content grid size-6 shrink-0 place-items-center rounded-md text-[11px] font-bold">
           W
@@ -33,7 +33,7 @@
     </li>
 
     <%!-- Sections --%>
-    <li>
+    <li class="block! flex-1 overflow-y-auto min-h-0">
       <.nav_section icon="hero-squares-2x2" label="Overview">
         <.nav_link
           current_url={assigns[:current_url]}
@@ -154,7 +154,7 @@
     </li>
 
     <%!-- User footer --%>
-    <li class="list-none border-t border-white/5 px-2 py-3 mt-auto">
+    <li class="list-none border-t border-white/5 px-2 py-3 shrink-0">
       <.link
         href="/admin/sign-out"
         method="delete"
