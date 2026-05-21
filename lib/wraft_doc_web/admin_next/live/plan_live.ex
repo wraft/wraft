@@ -2,14 +2,15 @@ defmodule WraftDocWeb.AdminNext.PlanLive do
   @moduledoc """
   Backpex admin for non-custom (`custom IS NULL`) `WraftDoc.Enterprise.Plan` rows.
 
+  Form is organised into three panels — **Basics**, **Features**, and
+  **Limits & entitlements** — mirroring the product mockup.
+
   Mirrors `WraftDocWeb.PlanAdmin` (Kaffy). Limitations vs. the original:
   - **Plan create does not call PaddleAPI.** The original `insert/2` wrapped
     `Enterprise.create_plan/1` which builds a `Multi` that talks to Paddle for
     product/price IDs. From this admin we save the row via `Plan.plan_changeset/2`
     only. If you need a Paddle-synced plan, use the existing seed flow or call
     `Enterprise.create_plan/1` directly from a script.
-  - Embeds (`trial_period`, `limits`, `custom`) and the `features` array are
-    read-only in this UI. Edit those via API/seeds.
   - Soft delete: the row's `is_active?` is set to `false` instead of a hard delete.
   """
   use Backpex.LiveResource,
@@ -29,8 +30,9 @@ defmodule WraftDocWeb.AdminNext.PlanLive do
 
   import Ecto.Query
 
+  alias Backpex.HTML.Form, as: BackpexForm
+  alias Backpex.HTML.Layout
   alias WraftDoc.Enterprise.Plan
-  alias WraftDoc.Repo
 
   @impl Backpex.LiveResource
   def singular_name, do: "Plan"
@@ -42,27 +44,57 @@ defmodule WraftDocWeb.AdminNext.PlanLive do
   def layout(_assigns), do: {WraftDocWeb.AdminNext.Layouts, :app}
 
   @impl Backpex.LiveResource
+  def panels do
+    # `features_panel` has its label suppressed (nil) because the features field
+    # renders its own section header with the "+ Add feature" button.
+    [
+      features_panel: nil,
+      limits_panel: "Limits & entitlements"
+    ]
+  end
+
+  @impl Backpex.LiveResource
   def fields do
     [
-      name: %{module: Backpex.Fields.Text, label: "Name", searchable: true, orderable: true},
-      description: %{module: Backpex.Fields.Textarea, label: "Description"},
-      plan_amount: %{module: Backpex.Fields.Text, label: "Amount"},
-      currency: %{module: Backpex.Fields.Text, label: "Currency"},
+      # ── Basics ───────────────────────────────────────────────────────
+      name: %{
+        module: Backpex.Fields.Text,
+        label: "Plan name",
+        placeholder: "e.g. Growth",
+        searchable: true,
+        orderable: true
+      },
+      description: %{
+        module: Backpex.Fields.Textarea,
+        label: "Tagline",
+        placeholder: "One sentence describing this tier",
+        help_text: "Shown on the pricing page below the plan name.",
+        rows: 2
+      },
+      plan_amount: %{
+        module: Backpex.Fields.Text,
+        label: "Price (USD)",
+        placeholder: "49"
+      },
       billing_interval: %{
         module: Backpex.Fields.Select,
         label: "Billing interval",
-        options: [{"Monthly", :month}, {"Yearly", :year}]
+        options: [{"Monthly", :month}, {"Yearly", :year}, {"Custom", :custom}]
       },
-      type: %{
-        module: Backpex.Fields.Select,
-        label: "Type",
-        options: [{"Free", :free}, {"Regular", :regular}, {"Enterprise", :enterprise}]
+      trial_period: %{
+        module: Backpex.Fields.Text,
+        label: "Trial length",
+        only: [:new, :edit, :show, :index],
+        render: fn assigns ->
+          ~H"<span>{WraftDocWeb.AdminNext.PlanLive.trial_period_label(@value)}</span>"
+        end,
+        render_form: &__MODULE__.render_trial_length_form/1
       },
       is_active?: %{
         module: Backpex.Fields.Boolean,
-        label: "Active",
+        label: "Show on pricing page",
+        help_text: "Public visibility",
         orderable: true,
-        except: [:new, :edit],
         render: fn assigns ->
           ~H"""
           <span class={[
@@ -70,34 +102,45 @@ defmodule WraftDocWeb.AdminNext.PlanLive do
             @value && "bg-success/10 text-success",
             !@value && "bg-error/10 text-error"
           ]}>
-            {if @value, do: "Active", else: "Inactive"}
+            {if @value, do: "Visible", else: "Hidden"}
           </span>
           """
         end
       },
+      type: %{
+        module: Backpex.Fields.Select,
+        label: "Type",
+        options: [{"Free", :free}, {"Regular", :regular}, {"Enterprise", :enterprise}],
+        except: [:new, :edit]
+      },
+      currency: %{
+        module: Backpex.Fields.Text,
+        label: "Currency",
+        except: [:new, :edit]
+      },
+
+      # ── Features ─────────────────────────────────────────────────────
       features: %{
         module: Backpex.Fields.Text,
         label: "Features",
-        except: [:new, :edit],
+        panel: :features_panel,
+        only: [:new, :edit, :show],
         render: fn assigns ->
           ~H'<span>{(@value || []) |> Enum.join(", ")}</span>'
-        end
+        end,
+        render_form: &__MODULE__.render_features_form/1
       },
-      trial_period: %{
-        module: Backpex.Fields.Text,
-        label: "Trial period",
-        except: [:new, :edit],
-        render: fn assigns ->
-          ~H'<span class="font-mono text-xs">{WraftDocWeb.AdminNext.PlanLive.embed_label(@value)}</span>'
-        end
-      },
+
+      # ── Limits & entitlements ────────────────────────────────────────
       limits: %{
         module: Backpex.Fields.Text,
-        label: "Limits",
-        except: [:new, :edit],
+        label: "Quotas",
+        panel: :limits_panel,
+        only: [:new, :edit, :show],
         render: fn assigns ->
           ~H'<span class="font-mono text-xs">{WraftDocWeb.AdminNext.PlanLive.embed_label(@value)}</span>'
-        end
+        end,
+        render_form: &__MODULE__.render_limits_form/1
       },
       inserted_at: %{
         module: Backpex.Fields.DateTime,
@@ -122,8 +165,33 @@ defmodule WraftDocWeb.AdminNext.PlanLive do
   end
 
   def changeset(plan, attrs, _metadata) do
-    Plan.plan_changeset(plan, attrs)
+    Plan.plan_changeset(plan, attrs |> normalize_features() |> normalize_trial_period())
   end
+
+  # The features field submits as `change[features][]`, which Phoenix parses as
+  # a list. Strip whitespace and drop empty rows (the UI keeps blank rows for
+  # editing affordance, but we don't want them persisted).
+  defp normalize_features(%{"features" => features} = attrs) when is_list(features) do
+    list = features |> Enum.map(&String.trim(to_string(&1))) |> Enum.reject(&(&1 == ""))
+    Map.put(attrs, "features", list)
+  end
+
+  defp normalize_features(attrs), do: attrs
+
+  # The trial-length input always submits a hidden `period=day`, so a blank
+  # frequency would otherwise persist as `%TrialPeriod{period: :day, frequency: nil}`
+  # — semantically "no trial" but with a stray period set. Drop the whole embed
+  # from params when frequency is empty so `cast_embed` leaves `trial_period: nil`.
+  defp normalize_trial_period(%{"trial_period" => %{"frequency" => freq} = tp} = attrs) do
+    if String.trim(to_string(freq)) == "" do
+      Map.delete(attrs, "trial_period")
+    else
+      # Keep only the fields the embed cares about (drop Phoenix's _persistent_id etc.).
+      Map.put(attrs, "trial_period", Map.take(tp, ["frequency", "period"]))
+    end
+  end
+
+  defp normalize_trial_period(attrs), do: attrs
 
   @doc """
   Formats an Ecto embed (struct or nil) as a compact, JSON-encoded map.
@@ -140,6 +208,169 @@ defmodule WraftDocWeb.AdminNext.PlanLive do
   end
 
   def embed_label(value), do: inspect(value)
+
+  @doc "Human label for a `TrialPeriod` embed (e.g. `14 days`)."
+  def trial_period_label(nil), do: "—"
+
+  def trial_period_label(%{frequency: freq, period: period}) when not is_nil(freq) do
+    unit = period |> to_string() |> pluralize(freq)
+    "#{freq} #{unit}"
+  end
+
+  def trial_period_label(_), do: "—"
+
+  defp pluralize("", _n), do: "days"
+  defp pluralize(unit, 1), do: unit
+  defp pluralize(unit, _n), do: unit <> "s"
+
+  # ─── Custom form renderers ──────────────────────────────────────────────
+
+  @doc false
+  # Trial length: a single number input (days). The embed's `:period` is
+  # always submitted as `"day"` so cast_embed builds a valid TrialPeriod.
+  def render_trial_length_form(assigns) do
+    ~H"""
+    <div>
+      <Layout.field_container>
+        <:label align={:top}>
+          <Layout.input_label text={@field_options[:label]} />
+        </:label>
+        <.inputs_for :let={tp} field={@form[@name]}>
+          <div class="flex items-center gap-2">
+            <BackpexForm.input
+              type="number"
+              field={tp[:frequency]}
+              placeholder="14"
+              class="max-w-[8rem]"
+              min="0"
+            />
+            <span class="text-base-content/60 text-sm">days</span>
+            <input type="hidden" name={tp[:period].name} value="day" />
+          </div>
+        </.inputs_for>
+      </Layout.field_container>
+    </div>
+    """
+  end
+
+  @doc false
+  # Renders the "Features" panel content: a header (title + subtitle + "+ Add
+  # feature" button) and a list of feature rows. Each row has a check icon, a
+  # text input named `change[features][]`, and a remove button. A `FeaturesList`
+  # JS hook (assets/js/admin.js) clones a `<template>` row for add and removes
+  # rows on click. `phx-update="ignore"` keeps the JS-managed DOM intact across
+  # LiveView re-renders.
+  def render_features_form(assigns) do
+    features =
+      case assigns.form[assigns.name].value do
+        list when is_list(list) -> list
+        _ -> []
+      end
+
+    # On `:new` only, show two empty rows as an editing affordance (mirrors the
+    # mockup). On `:edit` of a plan that genuinely has no features, render none —
+    # users can click "+ Add feature" if they want to add some.
+    features =
+      if features == [] and assigns.live_action == :new, do: ["", ""], else: features
+
+    input_name = Phoenix.HTML.Form.input_name(assigns.form, assigns.name) <> "[]"
+
+    assigns =
+      assigns
+      |> assign(:features, features)
+      |> assign(:input_name, input_name)
+
+    ~H"""
+    <div
+      id={Phoenix.HTML.Form.input_id(@form, @name) <> "_section"}
+      phx-hook="FeaturesList"
+      phx-update="ignore"
+      data-input-name={@input_name}
+    >
+      <hr class="border-base-200 mb-6 border" />
+      <div class="flex items-start justify-between gap-4 px-6">
+        <div>
+          <h3 class="text-base-content text-lg font-semibold">Features</h3>
+          <p class="text-base-content/60 text-sm">Bullet points shown on the plan card.</p>
+        </div>
+        <button type="button" data-features-action="add" class="btn btn-sm btn-outline">
+          <Backpex.HTML.CoreComponents.icon name="hero-plus" class="size-4" /> Add feature
+        </button>
+      </div>
+
+      <hr class="border-base-200 mt-4 mb-2 border" />
+
+      <template data-features-template>
+        <.feature_row placeholder="Add a feature" />
+      </template>
+
+      <div data-features-rows>
+        <.feature_row
+          :for={{feat, i} <- Enum.with_index(@features)}
+          name={@input_name}
+          value={feat}
+          placeholder={"Feature #{i + 1} — e.g. 10 seats"}
+        />
+      </div>
+    </div>
+    """
+  end
+
+  attr :name, :any, default: nil
+  attr :value, :string, default: ""
+  attr :placeholder, :string, default: "Add a feature"
+
+  defp feature_row(assigns) do
+    ~H"""
+    <div class="features-row flex items-center gap-3 px-6 py-1">
+      <Backpex.HTML.CoreComponents.icon
+        name="hero-check"
+        class="text-base-content/40 size-4 shrink-0"
+      />
+      <input type="text" name={@name} value={@value} class="input w-full" placeholder={@placeholder} />
+      <button
+        type="button"
+        data-features-action="remove"
+        class="text-base-content/50 hover:text-error shrink-0"
+      >
+        <Backpex.HTML.CoreComponents.icon name="hero-x-mark" class="size-4" />
+      </button>
+    </div>
+    """
+  end
+
+  @doc false
+  # Limits embed: 4 numeric quota inputs. Schema fields → image labels:
+  #   organisation_invite  → "Seats included"
+  #   instance_create      → "Documents per month"
+  #   content_type_create  → "Content types"
+  #   organisation_create  → "Sub-organisations"
+  def render_limits_form(assigns) do
+    ~H"""
+    <div class="px-6 py-2">
+      <.inputs_for :let={lf} field={@form[@name]}>
+        <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+          <div>
+            <Layout.input_label for={lf[:organisation_invite]} text="Seats included" />
+            <BackpexForm.input type="number" field={lf[:organisation_invite]} min="0" />
+          </div>
+          <div>
+            <Layout.input_label for={lf[:instance_create]} text="Documents per month" />
+            <BackpexForm.input type="number" field={lf[:instance_create]} min="0" />
+          </div>
+          <div>
+            <Layout.input_label for={lf[:content_type_create]} text="Content types" />
+            <BackpexForm.input type="number" field={lf[:content_type_create]} min="0" />
+          </div>
+          <div>
+            <Layout.input_label for={lf[:organisation_create]} text="Sub-organisations" />
+            <BackpexForm.input type="number" field={lf[:organisation_create]} min="0" />
+          </div>
+        </div>
+      </.inputs_for>
+    </div>
+    """
+  end
 
   defmodule SoftDeactivate do
     @moduledoc "Marks the plan inactive instead of deleting (matches Kaffy)."

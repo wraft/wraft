@@ -4,7 +4,6 @@ defmodule WraftDoc.Enterprise.Plan do
   """
   use WraftDoc.Schema
 
-  alias __MODULE__
   alias __MODULE__.Custom
   alias __MODULE__.Limits
   alias WraftDoc.Billing.Coupon
@@ -35,7 +34,10 @@ defmodule WraftDoc.Enterprise.Plan do
     timestamps()
   end
 
-  def changeset(%Plan{} = plan, attrs \\ %{}) do
+  # Accepts either a `%Plan{}` or an `%Ecto.Changeset{}` so callers that pre-wrap
+  # the item (e.g. Backpex.Adapters.Ecto, which pipes through `Ecto.Changeset.change/1`
+  # before invoking the user changeset function) work without an extra unwrap.
+  def changeset(plan, attrs \\ %{}) do
     plan
     |> cast(attrs, [
       :name,
@@ -63,7 +65,7 @@ defmodule WraftDoc.Enterprise.Plan do
     )
   end
 
-  def plan_changeset(%Plan{} = plan, attrs \\ %{}) do
+  def plan_changeset(plan, attrs \\ %{}) do
     plan
     |> cast(attrs, [
       :name,
@@ -88,7 +90,7 @@ defmodule WraftDoc.Enterprise.Plan do
     )
   end
 
-  def custom_plan_changeset(%Plan{} = plan, attrs \\ %{}) do
+  def custom_plan_changeset(plan, attrs \\ %{}) do
     plan
     |> cast(attrs, [
       :name,
