@@ -48,8 +48,9 @@ defmodule WraftDocWeb.AdminNext.Layouts do
   defp maybe_add_section(crumbs, nil), do: crumbs
   defp maybe_add_section(crumbs, section), do: crumbs ++ [{section, nil}]
 
-  defp section_for(resource) when resource in ["plans", "enterprise-plans", "coupons"],
-    do: "Subscription & Billing"
+  defp section_for(resource)
+       when resource in ["subscriptions", "plans", "enterprise-plans", "coupons"],
+       do: "Subscription & Billing"
 
   defp section_for(resource)
        when resource in ["users", "user-roles", "internal-users", "organisations"],

@@ -162,7 +162,7 @@ defmodule WraftDocWeb.AdminNext.HomeLive do
 
           <.card
             title="Plan distribution"
-            caption="Active plans by type"
+            caption="Active subscriptions per plan"
           >
             <:header_actions>
               <span class="text-xs tabular-nums text-base-content/60">
@@ -173,14 +173,14 @@ defmodule WraftDocWeb.AdminNext.HomeLive do
             <%= if @plan_dist == [] do %>
               <.empty_state
                 icon="hero-credit-card"
-                title="No active plans"
-                description="Plans you publish will appear here, grouped by type."
+                title="No active subscriptions"
+                description="Subscriptions will appear here, grouped by plan."
               />
             <% else %>
               <div class="space-y-3">
                 <.progress_row
                   :for={row <- @plan_dist}
-                  label={Tokens.plan_label(row.type)}
+                  label={plan_row_label(row)}
                   count={row.count}
                   max={max_plan_count(@plan_dist)}
                 />
@@ -276,4 +276,15 @@ defmodule WraftDocWeb.AdminNext.HomeLive do
 
   defp max_plan_count([]), do: 1
   defp max_plan_count(list), do: list |> Enum.map(& &1.count) |> Enum.max(fn -> 1 end) |> max(1)
+
+  defp plan_row_label(%{name: name} = row) when is_binary(name) and name != "" do
+    case row.billing_interval do
+      :month -> "#{name} · Monthly"
+      :year -> "#{name} · Yearly"
+      :custom -> "#{name} · Custom"
+      _ -> name
+    end
+  end
+
+  defp plan_row_label(row), do: Tokens.plan_label(row.type)
 end

@@ -745,6 +745,7 @@ defmodule WraftDocWeb.Router do
       live_resources "/frames", FrameLive
 
       if not Enterprise.self_hosted?() do
+        live "/subscriptions", SubscriptionLive, :index
         live_resources "/plans", PlanLive
         live_resources "/enterprise-plans", EnterprisePlanLive
         live_resources "/coupons", CouponLive

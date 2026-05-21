@@ -62,10 +62,12 @@ defmodule WraftDocWeb.AdminNext.UI.Tokens do
 
   # ----- Plan labels -----
 
-  @spec plan_label(atom() | String.t()) :: String.t()
+  @spec plan_label(atom() | String.t() | nil) :: String.t()
   def plan_label(:free), do: "Free"
   def plan_label(:regular), do: "Regular"
   def plan_label(:enterprise), do: "Enterprise"
+  def plan_label(nil), do: "Untyped"
+  def plan_label(""), do: "Untyped"
   def plan_label(other), do: other |> to_string() |> String.capitalize()
 
   # ----- Date / datetime formatters -----
