@@ -73,19 +73,21 @@ defmodule WraftDocWeb.AdminNext.UI do
 
   def page_header(assigns) do
     ~H"""
-    <header class={[
-      "flex flex-col gap-4 border-b border-base-200 pb-5 sm:flex-row sm:items-start sm:justify-between",
-      @class
-    ]}>
-      <div class="min-w-0 space-y-1.5">
-        <p :if={@eyebrow != []} class="ds-eyebrow">{render_slot(@eyebrow)}</p>
-        <h1 class="ds-page-title">{@title}</h1>
-        <p :if={@description} class="ds-page-description">{@description}</p>
+    <header class={["flex flex-col gap-3 border-b border-base-200 pb-5", @class]}>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-w-0 space-y-1">
+          <p :if={@eyebrow != []} class="ds-eyebrow">{render_slot(@eyebrow)}</p>
+          <h1 class="ds-page-title">{@title}</h1>
+        </div>
+        <div
+          :if={@status != [] or @actions != []}
+          class="flex shrink-0 flex-wrap items-center gap-2 [&>div]:mb-0!"
+        >
+          {render_slot(@status)}
+          {render_slot(@actions)}
+        </div>
       </div>
-      <div :if={@status != [] or @actions != []} class="flex shrink-0 flex-wrap items-center gap-2">
-        {render_slot(@status)}
-        {render_slot(@actions)}
-      </div>
+      <p :if={@description} class="ds-page-description max-w-3xl">{@description}</p>
     </header>
     """
   end
