@@ -43,21 +43,7 @@ ENV PORT=4000
 
 COPY mix.exs mix.lock ./
 RUN mix deps.clean jido_ai --unlock || true
-RUN for i in 1 2 3; do \
-        echo "Attempt $i to fetch dependencies..."; \
-        if HEX_HTTP_CONCURRENCY=1 HEX_HTTP_TIMEOUT=120 mix deps.get --only $MIX_ENV; then \
-            echo "Dependencies fetched successfully on attempt $i"; \
-            break; \
-        else \
-            echo "Attempt $i failed, cleaning and retrying..."; \
-            rm -rf deps _build; \
-            if [ $i -eq 3 ]; then \
-                echo "All attempts failed. Exiting."; \
-                exit 1; \
-            fi; \
-            sleep 10; \
-        fi; \
-    done
+RUN HEX_HTTP_CONCURRENCY=1 HEX_HTTP_TIMEOUT=120 mix deps.get --only $MIX_ENV
 RUN mkdir config
 
 COPY config/config.exs config/${MIX_ENV}.exs config/
