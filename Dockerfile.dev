@@ -31,6 +31,11 @@ RUN sed -i 's/<policy domain="coder" rights="none" pattern="PDF" \/>/<policy dom
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+# Install Node.js (required by Tailwind v4 to load `@plugin "daisyui"` from node_modules)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
 # Set Java environment
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:$PATH"
@@ -126,6 +131,16 @@ RUN for i in 1 2 3; do \
     done
 
 RUN mix do compile
+
+# Install asset node deps (daisyUI etc.) so Tailwind can resolve `@plugin "daisyui"`
+RUN cd assets && npm ci --no-audit --no-fund
+
+# Pre-fetch the standalone esbuild and tailwind binaries, then bake initial
+# bundles into the image. priv/static/assets/ is excluded from the build context
+# (see .dockerignore), so without this the first /admin request would race the
+# --watch builders before they emit admin.css / admin.js.
+RUN mix esbuild.install --if-missing && mix tailwind.install --if-missing
+RUN mix assets.build
 
 EXPOSE 4000
 CMD ["bash", "/app/entrypoint_dev.sh"]

@@ -159,6 +159,11 @@ defmodule WraftDoc.Mixfile do
       "ecto.start": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "wraft.bucket", "ecto.setup"],
       test: ["ecto.create --quiet", "wraft.bucket", "ecto.migrate", "test"],
+      "assets.build": [
+        "esbuild default",
+        "esbuild admin",
+        "tailwind admin"
+      ],
       "assets.deploy": [
         "cmd --cd assets npm ci --no-audit --no-fund --prefer-offline",
         "esbuild default --minify",
