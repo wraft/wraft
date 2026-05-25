@@ -31,8 +31,8 @@ if [[ -z `psql -Atqc "\\list $DB_NAME"` ]]; then
   sleep 2
 fi
 
-mix wraft.bucket
 mix ecto.migrate
+mix wraft.bucket
 mix run priv/repo/seeds.exs
 mix wraft.permissions
 exec mix phx.server
