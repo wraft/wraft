@@ -153,12 +153,12 @@ defmodule WraftDoc.Mixfile do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "wraft.check_deps", "wraft.bucket", "ecto.setup", "assets.setup"],
+      setup: ["deps.get", "wraft.check_deps", "ecto.setup", "assets.setup"],
       "setup.deps": ["wraft.check_deps"],
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.setup": ["ecto.create", "ecto.migrate", "wraft.bucket", "run priv/repo/seeds.exs"],
       "ecto.start": ["ecto.create", "ecto.migrate"],
-      "ecto.reset": ["ecto.drop", "wraft.bucket", "ecto.setup"],
-      test: ["ecto.create --quiet", "wraft.bucket", "ecto.migrate", "test"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      test: ["ecto.create --quiet", "ecto.migrate", "wraft.bucket", "test"],
       "assets.setup": ["cmd --cd assets npm ci --no-audit --no-fund --prefer-offline"],
       "assets.build": [
         "assets.setup",
