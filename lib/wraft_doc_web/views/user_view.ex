@@ -40,6 +40,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
       email: user.email,
       email_verify: user.email_verify,
       profile_pic: generate_url(user.profile),
+      profile_pic_thumb: generate_url(user.profile, :thumb),
       organisation_id: user.current_org_id,
       roles: render_many(user.roles, RegistrationView, "role.json", as: :role),
       inserted_at: user.inserted_at,
@@ -97,6 +98,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
       id: user.id,
       name: user.name,
       profile_pic: generate_url(user.profile),
+      profile_pic_thumb: generate_url(user.profile, :thumb),
       removable: user.removable
     }
   end
@@ -108,7 +110,8 @@ defmodule WraftDocWeb.Api.V1.UserView do
     %{
       id: user.id,
       name: user.name,
-      profile_pic: generate_url(user.profile)
+      profile_pic: generate_url(user.profile),
+      profile_pic_thumb: generate_url(user.profile, :thumb)
     }
   end
 
@@ -122,6 +125,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
       inserted_at: me.inserted_at,
       updated_at: me.updated_at,
       profile_pic: generate_url(me.profile),
+      profile_pic_thumb: generate_url(me.profile, :thumb),
       roles: render_many(me.roles, RegistrationView, "role.json", as: :role),
       role_names: me.role_names || [],
       permissions: me.permissions,
@@ -139,6 +143,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
       joined_at: List.first(user.user_organisations).inserted_at,
       updated_at: user.updated_at,
       profile_pic: generate_url(user.profile),
+      profile_pic_thumb: generate_url(user.profile, :thumb),
       roles: render_many(user.roles, RegistrationView, "role.json", as: :role)
     }
   end
@@ -249,9 +254,11 @@ defmodule WraftDocWeb.Api.V1.UserView do
   #   Map.new(meta, fn {_, address} -> {:name, address} end)
   # end
 
-  def generate_url(%{profile_pic: pic} = profile) do
-    WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
+  def generate_url(profile, version \\ :original)
+
+  def generate_url(%{profile_pic: pic} = profile, version) do
+    WraftDocWeb.PropicUploader.url({pic, profile}, version, signed: true)
   end
 
-  def generate_url(_), do: nil
+  def generate_url(_, _version), do: nil
 end

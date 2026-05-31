@@ -673,6 +673,24 @@ defmodule WraftDoc.AccountTest do
       assert %{name: ["can't be blank"], dob: ["is invalid"], gender: ["is invalid"]} ==
                errors_on(changeset)
     end
+
+    test "returns struct with the newly attached profile_pic, not the pre-propic version" do
+      # Guards the keyword in `update_profile/2`'s Multi result: returning the
+      # `:profile` step's struct hides the just-uploaded pic from the response.
+      profile = insert(:profile, gender: "Female", dob: "1998-04-01")
+
+      profile_pic = %Plug.Upload{
+        content_type: "image/png",
+        path: File.cwd!() <> "/priv/static/images/logo.png",
+        filename: "logo.png"
+      }
+
+      params = %{name: "new name", dob: "1990-01-22", gender: "Male", profile_pic: profile_pic}
+      updated = Account.update_profile(profile.user, params)
+
+      assert updated.profile_pic.file_name == "logo.png"
+      assert updated.name == "new name"
+    end
   end
 
   describe "get_profile/1" do

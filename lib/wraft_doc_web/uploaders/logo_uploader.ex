@@ -9,8 +9,11 @@ defmodule WraftDocWeb.LogoUploader do
   # Limit upload size to 1MB
   @max_file_size 1 * 1024 * 1024
 
-  @versions [:original]
+  @versions [:original, :thumb]
   @extension_whitelist ~w(.jpg .jpeg .gif .png)
+
+  def transform(:thumb, _),
+    do: {:convert, WraftDocWeb.Uploaders.Thumbnail.convert_string()}
 
   # Validate File type and size
   def validate({file, _}) do
@@ -23,9 +26,9 @@ defmodule WraftDocWeb.LogoUploader do
   end
 
   # Change Filename
-  def filename(_version, {_file, organisation}) do
-    "logo_#{organisation.id}"
-  end
+  # Keep :original at the legacy path so existing uploads remain reachable.
+  def filename(:original, {_file, organisation}), do: "logo_#{organisation.id}"
+  def filename(version, {_file, organisation}), do: "logo_#{version}_#{organisation.id}"
 
   # Storage Directory
   def storage_dir(_, {_file, organisation}) do

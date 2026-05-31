@@ -41,6 +41,28 @@ defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
       conn = put(conn, Routes.v1_profile_path(conn, :update), attrs)
       assert json_response(conn, 422)["errors"]["profile_pic"] == ["is invalid"]
     end
+
+    test "uploads profile pic and returns both original and thumb URLs", %{conn: conn} do
+      profile_pic = %Plug.Upload{
+        content_type: "image/png",
+        path: File.cwd!() <> "/priv/static/images/logo.png",
+        filename: "logo.png"
+      }
+
+      user_id = conn.assigns.current_user.id
+
+      attrs =
+        Map.merge(@valid_attrs, %{profile_pic: profile_pic, user_id: user_id})
+
+      conn = put(conn, Routes.v1_profile_path(conn, :update), attrs)
+      response = json_response(conn, 200)
+
+      # PropicUploader keys files by the Profile's id (the upload scope), not user_id.
+      profile_id = WraftDoc.Repo.get_by(WraftDoc.Account.Profile, user_id: user_id).id
+
+      assert response["profile_pic"] =~ "profilepic_#{profile_id}.png"
+      assert response["profile_pic_thumb"] =~ "profilepic_thumb_#{profile_id}.png"
+    end
   end
 
   describe "show_current_profile/2" do

@@ -9,8 +9,11 @@ defmodule WraftDocWeb.PropicUploader do
   # Limit upload size to 1MB
   @max_file_size 1 * 1024 * 1024
 
-  @versions [:original]
+  @versions [:original, :thumb]
   @extension_whitelist ~w(.jpg .jpeg .gif .png)
+
+  def transform(:thumb, _),
+    do: {:convert, WraftDocWeb.Uploaders.Thumbnail.convert_string()}
 
   # Validate File type and size
   def validate({file, _}) do
@@ -23,9 +26,13 @@ defmodule WraftDocWeb.PropicUploader do
   end
 
   # Change Filename
-  def filename(_version, {_file, user}) do
-    "profilepic_" <> String.replace(user.id, ~r/\s+/, "-")
-  end
+  # Scope is a %Profile{} struct, so `.id` is the profile's UUID (not user_id).
+  # Keep :original at the legacy path so existing uploads remain reachable.
+  def filename(:original, {_file, profile}),
+    do: "profilepic_" <> String.replace(profile.id, ~r/\s+/, "-")
+
+  def filename(version, {_file, profile}),
+    do: "profilepic_#{version}_" <> String.replace(profile.id, ~r/\s+/, "-")
 
   # Storage Directory
   def storage_dir(_, {_file, profile}) do

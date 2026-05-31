@@ -115,8 +115,13 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
     conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), params)
 
-    assert json_response(conn, 200)["logo"] =~
+    response = json_response(conn, 200)
+
+    assert response["logo"] =~
              "#{System.get_env("MINIO_URL")}/organisations/#{organisation.id}/logo/logo_#{organisation.id}.png"
+
+    assert response["logo_thumb"] =~
+             "#{System.get_env("MINIO_URL")}/organisations/#{organisation.id}/logo/logo_thumb_#{organisation.id}.png"
   end
 
   @tag :skip

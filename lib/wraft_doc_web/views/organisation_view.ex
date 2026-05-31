@@ -19,7 +19,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       email: organisation.email,
       phone: organisation.phone,
       url: organisation.url,
-      logo: generate_url(organisation)
+      logo: generate_url(organisation),
+      logo_thumb: generate_url(organisation, :thumb)
     }
   end
 
@@ -37,7 +38,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       email: organisation.email,
       phone: organisation.phone,
       url: organisation.url,
-      logo: generate_url(organisation)
+      logo: generate_url(organisation),
+      logo_thumb: generate_url(organisation, :thumb)
     }
   end
 
@@ -53,7 +55,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       gstin: organisation.gstin,
       email: organisation.email,
       phone: organisation.phone,
-      logo: generate_url(organisation)
+      logo: generate_url(organisation),
+      logo_thumb: generate_url(organisation, :thumb)
     }
   end
 
@@ -75,7 +78,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     %{
       id: organisation.id,
       name: organisation.name,
-      logo: generate_url(organisation)
+      logo: generate_url(organisation),
+      logo_thumb: generate_url(organisation, :thumb)
     }
   end
 
@@ -182,7 +186,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
   defp wraft_member?(%User{}), do: true
   defp wraft_member?(nil), do: false
 
-  defp generate_url(%{logo: logo} = organisation) do
-    WraftDocWeb.LogoUploader.url({logo, organisation}, signed: true)
+  defp generate_url(organisation, version \\ :original)
+
+  defp generate_url(%{logo: logo} = organisation, version) do
+    WraftDocWeb.LogoUploader.url({logo, organisation}, version, signed: true)
   end
 end

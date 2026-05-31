@@ -45,13 +45,16 @@ defmodule WraftDoc.Release do
   end
 
   def wraft_permissions do
-    ensure_started()
+    {:ok, _} = Application.ensure_all_started(@app)
     Mix.Tasks.Wraft.Permissions.run([])
   end
 
-  # defp repos do
-  #   Application.fetch_env!(@app, :ecto_repos)
-  # end
+  # Unlike the migrate/seed helpers above, this task hits MinIO and the Repo,
+  # so the full application must be started — not just :ssl/:faker.
+  def backfill_thumbnails(args \\ []) do
+    {:ok, _} = Application.ensure_all_started(@app)
+    Mix.Tasks.Wraft.BackfillThumbnails.run(args)
+  end
 
   defp repos do
     Application.load(@app)

@@ -55,6 +55,7 @@ defmodule WraftDocWeb.Schemas.Profile do
         dob: %Schema{type: :string, description: "Date of birth", format: "date"},
         gender: %Schema{type: :string, description: "User's gender"},
         profile_pic: %Schema{type: :string, description: "path to profile pic"},
+        profile_pic_thumb: %Schema{type: :string, description: "Thumbnail of profile pic"},
         inserted_at: %Schema{
           type: :string,
           description: "When was the user inserted",
@@ -73,6 +74,7 @@ defmodule WraftDocWeb.Schemas.Profile do
         dob: "1992-09-24",
         gender: "Male",
         profile_pic: "/image.png",
+        profile_pic_thumb: "/image_thumb.png",
         user: %{
           id: "c68b0988-790b-45e8-965c-c4aeb427e70d",
           email: "admin@wraftdocs.com"

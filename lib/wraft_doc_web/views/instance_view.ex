@@ -228,9 +228,11 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
-  def generate_url(%{profile: %{profile_pic: pic} = profile}),
-    do: WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
+  def generate_url(profile_owner, version \\ :original)
 
-  def generate_url(_),
+  def generate_url(%{profile: %{profile_pic: pic} = profile}, version),
+    do: WraftDocWeb.PropicUploader.url({pic, profile}, version, signed: true)
+
+  def generate_url(_, _version),
     do: nil
 end

@@ -162,6 +162,18 @@ defmodule WraftDoc.Client.Minio do
   end
 
   @doc """
+  Uploads a raw binary body to the given key. Pass `opts` like
+  `[content_type: "image/png"]` so browsers render the asset inline instead of
+  treating it as `application/octet-stream`.
+  """
+  @spec put_object(binary(), binary(), keyword()) :: ex_aws_response()
+  def put_object(file_path, body, opts \\ []) do
+    bucket()
+    |> S3.put_object(file_path, body, opts)
+    |> @ex_aws_module.request()
+  end
+
+  @doc """
   Check if a file exists in MinIO.
   """
   @spec file_exists?(binary()) :: boolean()

@@ -560,7 +560,7 @@ defmodule WraftDoc.Account do
       {:error, _, changeset, _} ->
         {:error, changeset}
 
-      {:ok, %{profile: profile_struct, user: _user}} ->
+      {:ok, %{propic: profile_struct, user: _user}} ->
         profile_struct
         |> Repo.preload(:user)
         |> Repo.preload(:country)

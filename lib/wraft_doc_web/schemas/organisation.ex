@@ -51,6 +51,7 @@ defmodule WraftDocWeb.Schemas.Organisation do
         phone: %Schema{type: :string, description: "Phone number of organisation"},
         email: %Schema{type: :string, description: "Email of organisation"},
         logo: %Schema{type: :string, description: "Logo of organisation"},
+        logo_thumb: %Schema{type: :string, description: "Thumbnail of organisation logo"},
         inserted_at: %Schema{
           type: :string,
           format: "date-time",
@@ -75,6 +76,7 @@ defmodule WraftDocWeb.Schemas.Organisation do
         members_count: 6,
         email: "abcent@gmail.com",
         logo: "/logo.jpg",
+        logo_thumb: "/logo_thumb.jpg",
         phone: "865623232",
         updated_at: "2020-01-21T14:00:00Z",
         inserted_at: "2020-02-21T14:00:00Z"
@@ -162,6 +164,7 @@ defmodule WraftDocWeb.Schemas.Organisation do
             corporate_id: "BNIJSN1234NGT",
             email: "abcent@gmail.com",
             logo: "/logo.jpg",
+            logo_thumb: "/logo_thumb.jpg",
             phone: "865623232",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"

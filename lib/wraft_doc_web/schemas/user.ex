@@ -85,6 +85,7 @@ defmodule WraftDocWeb.Schemas.User do
         email: %Schema{type: :string, description: "User's email"},
         email_verify: %Schema{type: :boolean, description: "Email verification status"},
         profile_pic: %Schema{type: :string, description: "URL of the user's profile picture"},
+        profile_pic_thumb: %Schema{type: :string, description: "URL of the user's profile picture thumbnail"},
         organisation_id: %Schema{type: :string, description: "User's current organisation ID"},
         roles: %Schema{
           type: :array,
@@ -109,6 +110,7 @@ defmodule WraftDocWeb.Schemas.User do
         email: "email@xyz.com",
         email_verify: true,
         profile_pic: "www.minio.com/users/johndoe.jpg",
+        profile_pic_thumb: "www.minio.com/users/johndoe_thumb.jpg",
         organisation_id: "466f1fa1-9657-4166-b372-21e8135aeaf1",
         roles: [%{id: "756f1fa1-9657-4166-b372-21e8135aeaf1", name: "superadmin"}],
         updated_at: "2020-01-21T14:00:00Z",
@@ -144,6 +146,7 @@ defmodule WraftDocWeb.Schemas.User do
           email: "email@xyz.com",
           email_verify: true,
           profile_pic: "www.minio.com/users/johndoe.jpg",
+          profile_pic_thumb: "www.minio.com/users/johndoe_thumb.jpg",
           organisation_id: "466f1fa1-9657-4166-b372-21e8135aeaf1",
           roles: [%{id: "756f1fa1-9657-4166-b372-21e8135aeaf1", name: "superadmin"}],
           updated_at: "2020-01-21T14:00:00Z",
@@ -173,7 +176,8 @@ defmodule WraftDocWeb.Schemas.User do
           %{
             id: "af2cf1c6-f342-4042-8425-6346e9fd6c44",
             name: "Richard Hendricks",
-            profile_pic: "www.minio.com/users/johndoe.jpg"
+            profile_pic: "www.minio.com/users/johndoe.jpg",
+            profile_pic_thumb: "www.minio.com/users/johndoe_thumb.jpg"
           }
         ]
       }
@@ -193,6 +197,7 @@ defmodule WraftDocWeb.Schemas.User do
         email_verify: %Schema{type: :boolean, description: "Email verification status"},
         organisation_id: %Schema{type: :string, description: "ID of the user's organisation"},
         profile_pic: %Schema{type: :string, description: "User's profile pic URL"},
+        profile_pic_thumb: %Schema{type: :string, description: "User's profile pic thumbnail URL"},
         role: %Schema{
           type: :array,
           items: %Schema{type: :object},
@@ -229,6 +234,7 @@ defmodule WraftDocWeb.Schemas.User do
         role_name: ["editor"],
         permissions: ["asset:show"],
         profile_pic: "www.aws.com/users/johndoe.jpg",
+        profile_pic_thumb: "www.aws.com/users/johndoe_thumb.jpg",
         organisation_id: "jn14786914qklnqw",
         updated_at: "2020-01-21T14:00:00Z",
         inserted_at: "2020-02-21T14:00:00Z"
@@ -249,6 +255,7 @@ defmodule WraftDocWeb.Schemas.User do
         email_verify: %Schema{type: :boolean, description: "Email verification status"},
         organisation_id: %Schema{type: :string, description: "ID of the user's organisation"},
         profile_pic: %Schema{type: :string, description: "User's profile pic URL"},
+        profile_pic_thumb: %Schema{type: :string, description: "User's profile pic thumbnail URL"},
         role: %Schema{type: :string, description: "User's role"},
         inserted_at: %Schema{
           type: :string,
@@ -269,6 +276,7 @@ defmodule WraftDocWeb.Schemas.User do
         email_verify: true,
         role: "user",
         profile_pic: "www.aws.com/users/johndoe.jpg",
+        profile_pic_thumb: "www.aws.com/users/johndoe_thumb.jpg",
         organisation_id: "jn14786914qklnqw",
         updated_at: "2020-01-21T14:00:00Z",
         inserted_at: "2020-02-21T14:00:00Z"
