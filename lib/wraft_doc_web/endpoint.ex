@@ -12,10 +12,18 @@ defmodule WraftDocWeb.Endpoint do
     longpoll: false
   )
 
+  # `max_age` must stay in sync with `@admin_session_max_age` in
+  # `WraftDoc.InternalUsers` (the gates also enforce expiry via an
+  # issued-at value inside the session, so old cookies die even if the
+  # cookie attribute is tampered with). `secure` is enabled per-build via
+  # config (`config :wraft_doc, :session_cookie_secure, true` in prod).
   @session_options [
     store: :cookie,
     key: "_wraftdoc_key",
-    signing_salt: "hUnYtn2s"
+    signing_salt: System.get_env("SESSION_SIGNING_SALT", "hUnYtn2s"),
+    max_age: 60 * 60 * 12,
+    same_site: "Lax",
+    secure: Application.compile_env(:wraft_doc, :session_cookie_secure, false)
   ]
 
   socket("/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]])

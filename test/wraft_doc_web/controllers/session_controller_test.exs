@@ -7,7 +7,6 @@ defmodule WraftDocWeb.SessionControllerTest do
 
   describe "create/2" do
     test "creates a session with valid email-password combination", %{conn: conn} do
-      # Create an existing user with a valid password
       user = insert(:internal_user)
       params = %{session: %{email: user.email, password: user.password}}
 
@@ -16,6 +15,8 @@ defmodule WraftDocWeb.SessionControllerTest do
       assert redirected_to(conn) == "/admin"
       assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Signed in successfully."
       assert get_session(conn, :admin_id) == user.id
+      assert is_integer(get_session(conn, :admin_iat))
+      assert get_session(conn, :admin_epoch) == user.session_epoch
     end
 
     test "flashes an error message if the user is deactivated", %{conn: conn} do
@@ -26,33 +27,13 @@ defmodule WraftDocWeb.SessionControllerTest do
 
       assert redirected_to(conn) == Routes.session_path(conn, :new)
 
-      # Debug: Check what flash message is actually set
-      flash_message = Phoenix.Flash.get(conn.assigns.flash, :error)
-
-      # If the flash is nil, the controller might be handling deactivated users differently
-      # Let's make the test more flexible to handle different possible behaviors
-      assert flash_message in [
-               "Please provide the correct login credentials to login.",
-               "Your account has been deactivated.",
-               "Account deactivated. Please contact administrator.",
-               # If the controller doesn't set a specific message for deactivated users
-               nil
-             ]
-
-      # If no specific message is set for deactivated users, we might need to update the test expectation
-      # or fix the controller to provide a proper message
-      if flash_message == nil do
-        # Check if there's any other indication of the error
-        IO.puts(
-          "Warning: No flash message set for deactivated user. Controller might need updating."
-        )
-      end
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Your account has been deactivated, please contact support."
 
       assert get_session(conn, :admin_id) == nil
     end
 
     test "flashes an error message with invalid email-password combination", %{conn: conn} do
-      # Create an existing user with a valid password
       user = insert(:internal_user)
       params = %{session: %{email: user.email, password: "wrong_password123"}}
 
@@ -77,6 +58,19 @@ defmodule WraftDocWeb.SessionControllerTest do
                "Please provide the correct login credentials to login."
 
       assert get_session(conn, :admin_id) == nil
+    end
+
+    test "rate-limits repeated sign-in attempts for the same email", %{conn: _conn} do
+      email = "rate-limit-target-#{System.unique_integer([:positive])}@wmail.com"
+      params = %{session: %{email: email, password: "incorrect-password"}}
+
+      responses =
+        for _attempt <- 1..6 do
+          conn = post(build_conn(), Routes.session_path(build_conn(), :create), params)
+          Phoenix.Flash.get(conn.assigns.flash, :error)
+        end
+
+      assert "Too many sign-in attempts. Please try again later." in responses
     end
   end
 

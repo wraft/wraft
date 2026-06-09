@@ -23,7 +23,10 @@ defmodule WraftDocWeb.AdminNext.FeatureFlagLiveTest do
     admin = insert(:internal_user)
 
     conn =
-      Plug.Test.init_test_session(Phoenix.ConnTest.build_conn(), %{"admin_id" => admin.id})
+      Plug.Test.init_test_session(
+        Phoenix.ConnTest.build_conn(),
+        WraftDoc.InternalUsers.admin_session_attrs(admin)
+      )
 
     {:ok, conn: conn, admin: admin}
   end

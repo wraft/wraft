@@ -9,6 +9,10 @@ defmodule WraftDoc.InternalUsers.InternalUser do
     field(:password, :string, virtual: true)
     field(:encrypted_password, :string)
     field(:is_deactivated, :boolean, default: false)
+    # Bumped on deactivation/password change; sessions minted with an older
+    # epoch are rejected by the admin auth gates, so stolen or stale cookies
+    # die with the account instead of living until SECRET_KEY_BASE rotation.
+    field(:session_epoch, :integer, default: 0)
 
     timestamps()
   end
@@ -18,7 +22,7 @@ defmodule WraftDoc.InternalUsers.InternalUser do
     |> cast(attrs, [:email, :password])
     |> validate_required([:email, :password])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+\.[^\s]+$/, message: "has invalid format")
-    |> validate_length(:password, min: 8, max: 22)
+    |> validate_length(:password, min: 12, max: 72)
     |> unique_constraint(:email, message: "Email already taken.! Try another email.")
     |> generate_encrypted_password
   end
@@ -28,7 +32,20 @@ defmodule WraftDoc.InternalUsers.InternalUser do
     |> cast(attrs, [:email, :password, :is_deactivated])
     |> validate_required([:email, :is_deactivated])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+\.[^\s]+$/, message: "has invalid format")
+    |> validate_length(:password, min: 12, max: 72)
     |> unique_constraint(:email, message: "Email already taken.! Try another email.")
+    |> bump_session_epoch()
     |> generate_encrypted_password
+  end
+
+  defp bump_session_epoch(changeset) do
+    revoke? =
+      get_change(changeset, :password) != nil or get_change(changeset, :is_deactivated) == true
+
+    if revoke? do
+      put_change(changeset, :session_epoch, (get_field(changeset, :session_epoch) || 0) + 1)
+    else
+      changeset
+    end
   end
 end

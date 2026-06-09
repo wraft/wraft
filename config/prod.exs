@@ -34,6 +34,9 @@ config :sentry,
     env: "production"
   }
 
+# Mark the session cookie `secure` in production (HTTPS-only).
+config :wraft_doc, :session_cookie_secure, true
+
 # Do not print debug messages in production
 config :logger,
   level: :info

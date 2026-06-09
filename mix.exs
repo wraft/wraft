@@ -59,6 +59,7 @@ defmodule WraftDoc.Mixfile do
       {:bcrypt_elixir, "~> 3.2"},
       {:briefly, "~> 0.5"},
       {:bypass, "~> 2.1", only: :test},
+      {:hammer, "~> 7.0"},
       {:comeonin, "~> 5.3"},
       {:cors_plug, "~> 3.0"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

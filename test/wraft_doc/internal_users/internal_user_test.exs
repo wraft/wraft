@@ -6,7 +6,7 @@ defmodule WraftDocs.InternalUsers.InternalUserTest do
 
   @valid_params %{
     email: "user@wraft.com",
-    password: "12345678"
+    password: "a-long-enough-password"
   }
 
   describe "changeset/2" do
@@ -31,19 +31,19 @@ defmodule WraftDocs.InternalUsers.InternalUserTest do
     end
 
     test "returns an invalid changeset with short password" do
-      attrs = Map.put(@valid_params, :password, "1234567")
+      attrs = Map.put(@valid_params, :password, "short-pass")
       changeset = InternalUser.changeset(%InternalUser{}, attrs)
 
       refute changeset.valid?
-      assert "should be at least 8 character(s)" in errors_on(changeset, :password)
+      assert "should be at least 12 character(s)" in errors_on(changeset, :password)
     end
 
-    test "returns an invalid changeset with long password" do
-      attrs = Map.put(@valid_params, :password, String.duplicate("q", 23))
+    test "returns an invalid changeset with password above the bcrypt limit" do
+      attrs = Map.put(@valid_params, :password, String.duplicate("q", 73))
       changeset = InternalUser.changeset(%InternalUser{}, attrs)
 
       refute changeset.valid?
-      assert "should be at most 22 character(s)" in errors_on(changeset, :password)
+      assert "should be at most 72 character(s)" in errors_on(changeset, :password)
     end
 
     test "returns an invalid changeset with taken email" do
@@ -74,6 +74,37 @@ defmodule WraftDocs.InternalUsers.InternalUserTest do
       changeset = InternalUser.update_changeset(internal_user, %{"is_deactivated" => "true"})
 
       assert changeset.valid?
+    end
+
+    test "bumps session_epoch on deactivation" do
+      internal_user = insert(:internal_user, session_epoch: 3)
+      changeset = InternalUser.update_changeset(internal_user, %{"is_deactivated" => "true"})
+
+      assert Ecto.Changeset.get_change(changeset, :session_epoch) == 4
+    end
+
+    test "bumps session_epoch on password change" do
+      internal_user = insert(:internal_user)
+
+      changeset =
+        InternalUser.update_changeset(internal_user, %{
+          "is_deactivated" => "false",
+          "password" => "a-brand-new-password"
+        })
+
+      assert Ecto.Changeset.get_change(changeset, :session_epoch) == 1
+    end
+
+    test "does not bump session_epoch on a plain email update" do
+      internal_user = insert(:internal_user)
+
+      changeset =
+        InternalUser.update_changeset(internal_user, %{
+          "is_deactivated" => "false",
+          "email" => "new-address@wraft.com"
+        })
+
+      assert Ecto.Changeset.get_change(changeset, :session_epoch) == nil
     end
 
     test "returns an invalid changeset with invalid params" do

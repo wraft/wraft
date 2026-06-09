@@ -31,6 +31,7 @@ defmodule WraftDoc.Application do
       #   restart: :permanent
       # )
       WraftDoc.Schedulers.RefreshDashboardStats,
+      {WraftDoc.RateLimiter, [clean_period: :timer.minutes(10)]},
       WraftDoc.Utils.CloakVault,
       {Registry, keys: :unique, name: WraftDoc.TokenRegistry},
       {DynamicSupervisor, strategy: :one_for_one, name: WraftDoc.TokenSupervisor}
