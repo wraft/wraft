@@ -179,12 +179,29 @@ defmodule WraftDoc.AiAgents do
     {:error, "Either prompt_id or prompt with prompt_type is required"}
   end
 
-  def format_error(message) do
+  def format_error(%{__exception__: true} = error) do
+    message = provider_error_message(error) || Exception.message(error)
+
+    case Map.get(error, :status) do
+      status when is_integer(status) -> {:error, {status, %{errors: message}}}
+      _ -> {:error, message}
+    end
+  end
+
+  def format_error(message) when is_binary(message) do
     with {:ok, %{"error" => %{"code" => code, "message" => error_message}}} <-
            decode_error_message(message) do
       {:error, {code, %{errors: error_message}}}
     end
   end
+
+  def format_error(_message), do: {:error, "Something went wrong, please try again"}
+
+  defp provider_error_message(%{response_body: %{"error" => %{"message" => message}}})
+       when is_binary(message),
+       do: message
+
+  defp provider_error_message(_error), do: nil
 
   defp decode_error_message(error_msg) do
     case Regex.run(~r/%\{.*\}/, error_msg) do

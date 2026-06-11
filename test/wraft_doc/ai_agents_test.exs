@@ -75,4 +75,42 @@ defmodule WraftDoc.AiAgentsTest do
       assert prompt_data.type == :suggestion
     end
   end
+
+  describe "format_error/1" do
+    test "extracts status and provider message from ReqLLM API errors" do
+      error =
+        ReqLLM.Error.API.Request.exception(
+          reason: "Unauthorized",
+          status: 401,
+          response_body: %{"error" => %{"message" => "Incorrect API key provided"}}
+        )
+
+      assert {:error, {401, %{errors: "Incorrect API key provided"}}} =
+               AiAgents.format_error(error)
+    end
+
+    test "falls back to exception message when there is no provider error body" do
+      error = ReqLLM.Error.API.Response.exception(reason: "Malformed JSON", status: 502)
+
+      assert {:error, {502, %{errors: message}}} = AiAgents.format_error(error)
+      assert message =~ "Malformed JSON"
+    end
+
+    test "returns message without status tuple for non-HTTP exceptions" do
+      error = ReqLLM.Error.Validation.Error.exception(reason: "Invalid model spec")
+
+      assert {:error, message} = AiAgents.format_error(error)
+      assert message =~ "Invalid model spec"
+    end
+
+    test "returns generic error for unrecognized input" do
+      assert {:error, "Something went wrong, please try again"} = AiAgents.format_error(:boom)
+    end
+
+    test "still decodes legacy inspected-map error strings" do
+      message = ~s(request failed %{"error" => %{"code" => 429, "message" => "rate limited"}})
+
+      assert {:error, {429, %{errors: "rate limited"}}} = AiAgents.format_error(message)
+    end
+  end
 end

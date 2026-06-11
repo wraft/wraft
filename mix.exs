@@ -136,9 +136,8 @@ defmodule WraftDoc.Mixfile do
       {:assent, "~> 0.3.0"},
       {:mint, "~> 1.0"},
       {:castore, "~> 1.0"},
-      {:jido, "~> 1.1.0-rc.2"},
-      {:jido_ai, github: "wraft/jido_ai", override: true},
-      {:instructor, github: "thmsmlr/instructor_ex", override: true},
+      {:jido_ai, "~> 2.2"},
+      {:req_llm, "~> 1.14"},
       {:cloak_ecto, "~> 1.3.0"},
       {:open_api_spex, "~> 3.21"},
       {:bureaucrat, "~> 0.2"}

@@ -18,13 +18,15 @@ defmodule WraftDoc.AiAgents.Tool do
         ]
 
       alias WraftDoc.AiAgents
+      alias WraftDoc.AiAgents.ModelSpec
       alias WraftDoc.Models
 
       @response_model unquote(opts[:response_model])
+      @max_attempts 3
 
       def run(
             %{
-              model: %{model_name: model_name, provider: provider, auth_key: auth_key} = model,
+              model: %{auth_key: auth_key} = model,
               prompt: %{prompt: prompt_text},
               content: content
             } = params,
@@ -32,46 +34,59 @@ defmodule WraftDoc.AiAgents.Tool do
           ) do
         start_time = System.monotonic_time(:millisecond)
 
-        prompt =
-          Jido.AI.Prompt.new(%{
-            messages: [
-              %{role: :system, content: "You are an expert document summarizer and converter."},
-              %{role: :user, content: "#{prompt_text}\n\nDocument content:\n#{content}"}
-            ]
-          })
+        with {:ok, spec} <- ModelSpec.build(model),
+             {:ok, llm_model} <- to_llm_model(spec) do
+          messages = [
+            ReqLLM.Context.system("You are an expert document summarizer and converter."),
+            ReqLLM.Context.user("#{prompt_text}\n\nDocument content:\n#{content}")
+          ]
 
-        model_config = [
-          model: model_name,
-          api_key: auth_key
-        ]
+          base_url = llm_model.base_url || to_string(llm_model.provider)
+          opts = [api_key: auth_key] ++ structured_output_opts(llm_model)
 
-        model_config =
-          model
-          |> Map.get(:endpoint_url)
+          llm_model
+          |> generate_with_retry(messages, opts, @max_attempts)
           |> case do
-            nil -> model_config
-            endpoint_url -> model_config ++ [base_url: endpoint_url]
+            {:ok, response} ->
+              Models.create_model_log(params, "success", base_url, start_time)
+
+              result =
+                response
+                |> ReqLLM.Response.object()
+                |> then(&Ecto.embedded_load(@response_model, &1, :json))
+
+              {:ok, result}
+
+            {:error, reason} ->
+              Models.create_model_log(params, "failed", base_url, start_time)
+              AiAgents.format_error(reason)
           end
+        else
+          {:error, %{__exception__: true} = error} -> AiAgents.format_error(error)
+          {:error, _reason} = error -> error
+        end
+      end
 
-        {:ok, %{base_url: base_url} = model} =
-          Jido.AI.Model.from({String.to_atom(provider), model_config})
+      defp to_llm_model(spec), do: ReqLLM.model(spec)
 
-        %{
-          model: model,
-          mode: :json_schema,
-          prompt: prompt,
-          response_model: @response_model,
-          max_retries: 2
-        }
-        |> Jido.AI.Actions.Instructor.run(%{})
-        |> case do
-          {:ok, %{result: result}, _} ->
-            Models.create_model_log(params, "success", base_url, start_time)
-            {:ok, result}
+      # OpenAI-compatible servers (llama.cpp) support response_format
+      # json_schema but not strict tool calling, which ReqLLM's :auto mode
+      # falls back to for models missing from its registry.
+      defp structured_output_opts(%{provider: :openai}),
+        do: [openai_structured_output_mode: :json_schema]
 
-          {:error, reason, _} ->
-            Models.create_model_log(params, "failed", base_url, start_time)
-            AiAgents.format_error(reason)
+      defp structured_output_opts(_llm_model), do: []
+
+      defp generate_with_retry(llm_model, messages, opts, attempts) do
+        case ReqLLM.generate_object(llm_model, messages, @response_model.llm_schema(), opts) do
+          {:ok, _response} = ok ->
+            ok
+
+          {:error, _reason} when attempts > 1 ->
+            generate_with_retry(llm_model, messages, opts, attempts - 1)
+
+          error ->
+            error
         end
       end
     end
