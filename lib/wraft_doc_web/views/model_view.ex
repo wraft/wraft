@@ -20,6 +20,8 @@ defmodule WraftDocWeb.Api.V1.ModelView do
       id: model.id,
       name: model.name,
       description: model.description,
+      provider: model.provider,
+      model_name: model.model_name,
       endpoint_url: model.endpoint_url,
       is_default: model.is_default,
       is_local: model.is_local,
