@@ -576,6 +576,7 @@ defmodule WraftDocWeb.Router do
       # AI/ML Management
       scope "/ai" do
         get("/models/providers", ModelController, :providers)
+        get("/models/providers/:provider/models", ModelController, :provider_models)
         resources("/models", ModelController, except: [:new, :edit])
         put("/models/:id/set_default", ModelController, :set_default)
         resources("/prompts", PromptsController, except: [:new, :edit])

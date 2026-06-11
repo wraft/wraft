@@ -41,6 +41,22 @@ defmodule WraftDocWeb.Api.V1.ModelController do
   def providers(conn, _params),
     do: render(conn, :providers, providers: WraftDoc.AiAgents.ModelSpec.provider_options())
 
+  operation(:provider_models,
+    summary: "List known models for an AI provider",
+    description: "Retrieve chat models from the catalog for the given provider",
+    parameters: [
+      provider: [in: :path, type: :string, description: "Provider value", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", %OpenApiSpex.Schema{type: :object}},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
+
+  @spec provider_models(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def provider_models(conn, %{"provider" => provider}),
+    do: render(conn, :provider_models, models: WraftDoc.AiAgents.ModelSpec.model_options(provider))
+
   operation(:create,
     summary: "Create a new AI model",
     description: "Create a new AI model configuration",

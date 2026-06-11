@@ -66,6 +66,26 @@ defmodule WraftDoc.AiAgents.ModelSpec do
   end
 
   @doc """
+  Known chat models for a provider, from the llm_db catalog.
+
+  Returns an empty list for unknown providers and for self-hosted/alias
+  providers (llamacpp, ollama, vllm), where model names are free-form.
+  """
+  @spec model_options(String.t()) :: [map()]
+  def model_options(provider) do
+    with nil <- Enum.find(@aliases, &(&1.value == provider)),
+         {:ok, id, false} <- resolve_provider(provider) do
+      id
+      |> LLMDB.models()
+      |> Enum.filter(&(&1.capabilities.chat and not &1.deprecated))
+      |> Enum.map(&%{value: &1.model, label: &1.name || &1.model})
+      |> Enum.sort_by(&String.downcase(&1.label))
+    else
+      _alias_local_or_unsupported -> []
+    end
+  end
+
+  @doc """
   Builds a ReqLLM inline model spec from an `ai_model` record.
   """
   @spec build(Model.t() | map()) :: {:ok, map()} | {:error, String.t()}

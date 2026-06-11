@@ -22,6 +22,13 @@ defmodule WraftDocWeb.Api.V1.ModelView do
     %{data: providers}
   end
 
+  @doc """
+  Renders the known models for a provider.
+  """
+  def provider_models(%{models: models}) do
+    %{data: models}
+  end
+
   defp data(%Model{} = model) do
     %{
       id: model.id,

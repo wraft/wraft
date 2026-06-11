@@ -99,6 +99,25 @@ defmodule WraftDoc.AiAgents.ModelSpecTest do
     end
   end
 
+  describe "model_options/1" do
+    test "returns chat models with value and label for hosted providers" do
+      options = ModelSpec.model_options("anthropic")
+
+      assert length(options) > 0
+      assert Enum.all?(options, &(is_binary(&1.value) and is_binary(&1.label)))
+      assert Enum.any?(options, &String.starts_with?(&1.value, "claude"))
+    end
+
+    test "returns empty list for self-hosted and alias providers" do
+      assert ModelSpec.model_options("llamacpp") == []
+      assert ModelSpec.model_options("ollama") == []
+    end
+
+    test "returns empty list for unsupported providers" do
+      assert ModelSpec.model_options("bedrock") == []
+    end
+  end
+
   describe "provider_options/0" do
     test "returns value, label and requires_endpoint for each provider" do
       options = ModelSpec.provider_options()
