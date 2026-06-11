@@ -60,6 +60,17 @@ defmodule WraftDoc.AiAgents.ModelSpecTest do
                })
     end
 
+    test "maps hosted providers groq, mistral and openrouter" do
+      for {db_provider, expected} <- [
+            {"groq", :groq},
+            {"mistral", :mistral},
+            {"openrouter", :openrouter}
+          ] do
+        assert {:ok, %{provider: ^expected, id: "m"}} =
+                 ModelSpec.build(%{provider: db_provider, model_name: "m", endpoint_url: nil})
+      end
+    end
+
     test "returns error for unsupported provider" do
       assert {:error, "Unsupported AI provider: bedrock"} =
                ModelSpec.build(%{provider: "bedrock", model_name: "x", endpoint_url: nil})

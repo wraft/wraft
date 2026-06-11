@@ -16,7 +16,10 @@ defmodule WraftDoc.AiAgents.ModelSpec do
     "google" => :google,
     "anthropic" => :anthropic,
     "ollama" => :ollama,
-    "llamacpp" => :openai
+    "llamacpp" => :openai,
+    "groq" => :groq,
+    "mistral" => :mistral,
+    "openrouter" => :openrouter
   }
 
   @endpoint_required ["llamacpp", "ollama"]
