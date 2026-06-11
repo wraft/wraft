@@ -83,9 +83,15 @@ defmodule WraftDoc.AiAgents.ModelSpecTest do
 
       assert "openai" in providers
       assert "llamacpp" in providers
+      # Providers with credentials the ai_model table cannot hold are excluded
+      refute "amazon_bedrock" in providers
+
+      endpoint_required =
+        for %{requires_endpoint: true, value: value} <- ModelSpec.provider_options(),
+            do: value
 
       for provider <- providers do
-        endpoint = if provider in ["llamacpp", "ollama"], do: "http://localhost:1", else: nil
+        endpoint = if provider in endpoint_required, do: "http://localhost:1", else: nil
 
         assert {:ok, _spec} =
                  ModelSpec.build(%{provider: provider, model_name: "m", endpoint_url: endpoint})
