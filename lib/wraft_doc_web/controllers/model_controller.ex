@@ -28,6 +28,19 @@ defmodule WraftDocWeb.Api.V1.ModelController do
         models: Models.list_ai_models(conn.assigns.current_user.current_org_id)
       )
 
+  operation(:providers,
+    summary: "List supported AI providers",
+    description: "Retrieve the providers accepted for AI models",
+    responses: [
+      ok: {"Ok", "application/json", %OpenApiSpex.Schema{type: :object}},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
+
+  @spec providers(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def providers(conn, _params),
+    do: render(conn, :providers, providers: WraftDoc.AiAgents.ModelSpec.provider_options())
+
   operation(:create,
     summary: "Create a new AI model",
     description: "Create a new AI model configuration",

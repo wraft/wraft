@@ -15,6 +15,13 @@ defmodule WraftDocWeb.Api.V1.ModelView do
     %{data: data(model)}
   end
 
+  @doc """
+  Renders the supported provider options.
+  """
+  def providers(%{providers: providers}) do
+    %{data: providers}
+  end
+
   defp data(%Model{} = model) do
     %{
       id: model.id,

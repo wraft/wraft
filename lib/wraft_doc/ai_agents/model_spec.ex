@@ -11,18 +11,34 @@ defmodule WraftDoc.AiAgents.ModelSpec do
 
   alias WraftDoc.Models.Model
 
-  @providers %{
-    "openai" => :openai,
-    "google" => :google,
-    "anthropic" => :anthropic,
-    "ollama" => :ollama,
-    "llamacpp" => :openai,
-    "groq" => :groq,
-    "mistral" => :mistral,
-    "openrouter" => :openrouter
-  }
+  @provider_defs [
+    %{value: "openai", reqllm: :openai, label: "OpenAI", requires_endpoint: false},
+    %{value: "google", reqllm: :google, label: "Google Gemini", requires_endpoint: false},
+    %{value: "anthropic", reqllm: :anthropic, label: "Anthropic", requires_endpoint: false},
+    %{value: "ollama", reqllm: :ollama, label: "Ollama", requires_endpoint: true},
+    %{value: "llamacpp", reqllm: :openai, label: "llama.cpp", requires_endpoint: true},
+    %{value: "groq", reqllm: :groq, label: "Groq", requires_endpoint: false},
+    %{value: "mistral", reqllm: :mistral, label: "Mistral", requires_endpoint: false},
+    %{value: "openrouter", reqllm: :openrouter, label: "OpenRouter", requires_endpoint: false}
+  ]
 
-  @endpoint_required ["llamacpp", "ollama"]
+  @providers Map.new(@provider_defs, &{&1.value, &1.reqllm})
+  @endpoint_required @provider_defs
+                     |> Enum.filter(& &1.requires_endpoint)
+                     |> Enum.map(& &1.value)
+
+  @doc """
+  Provider values accepted in the `ai_model` table.
+  """
+  @spec supported_providers() :: [String.t()]
+  def supported_providers, do: Enum.map(@provider_defs, & &1.value)
+
+  @doc """
+  Provider options for API consumers (settings UI dropdowns).
+  """
+  @spec provider_options() :: [map()]
+  def provider_options,
+    do: Enum.map(@provider_defs, &Map.take(&1, [:value, :label, :requires_endpoint]))
 
   @doc """
   Builds a ReqLLM inline model spec from an `ai_model` record.

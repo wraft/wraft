@@ -76,4 +76,31 @@ defmodule WraftDoc.AiAgents.ModelSpecTest do
                ModelSpec.build(%{provider: "bedrock", model_name: "x", endpoint_url: nil})
     end
   end
+
+  describe "supported_providers/0" do
+    test "lists every provider build/1 accepts" do
+      providers = ModelSpec.supported_providers()
+
+      assert "openai" in providers
+      assert "llamacpp" in providers
+
+      for provider <- providers do
+        endpoint = if provider in ["llamacpp", "ollama"], do: "http://localhost:1", else: nil
+
+        assert {:ok, _spec} =
+                 ModelSpec.build(%{provider: provider, model_name: "m", endpoint_url: endpoint})
+      end
+    end
+  end
+
+  describe "provider_options/0" do
+    test "returns value, label and requires_endpoint for each provider" do
+      options = ModelSpec.provider_options()
+
+      assert length(options) == length(ModelSpec.supported_providers())
+
+      assert %{value: "llamacpp", label: "llama.cpp", requires_endpoint: true} in options
+      assert %{value: "openai", label: "OpenAI", requires_endpoint: false} in options
+    end
+  end
 end
