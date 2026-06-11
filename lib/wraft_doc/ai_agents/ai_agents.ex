@@ -145,7 +145,7 @@ defmodule WraftDoc.AiAgents do
     |> Models.get_default_model()
     |> case do
       %Model{} = model -> {:ok, model}
-      nil -> {:error, "No default model available for this organization"}
+      nil -> {:error, "No active default model available for this organization"}
     end
   end
 
@@ -153,7 +153,8 @@ defmodule WraftDoc.AiAgents do
     model_id
     |> Models.get_model()
     |> case do
-      %Model{} = model -> {:ok, model}
+      %Model{status: "active"} = model -> {:ok, model}
+      %Model{} -> {:error, "Model is not active"}
       nil -> {:error, "Model not found"}
       {:error, error} -> {:error, error}
     end

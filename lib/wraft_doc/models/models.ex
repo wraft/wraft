@@ -38,6 +38,7 @@ defmodule WraftDoc.Models do
     Model
     |> where([m], m.organisation_id == ^organisation_id)
     |> where([m], m.is_default == true)
+    |> where([m], m.status == "active")
     |> limit(1)
     |> Repo.one()
   end
