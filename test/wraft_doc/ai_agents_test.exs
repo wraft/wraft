@@ -120,6 +120,17 @@ defmodule WraftDoc.AiAgentsTest do
                AiAgents.get_model_or_default(%{model_id: model.id}, org_id)
     end
 
+    test "rejects a model belonging to another organisation", %{user: user} do
+      model = create_model!(user, %{})
+      other_org_user = insert(:user_with_organisation)
+
+      assert {:error, "Model not found"} =
+               AiAgents.get_model_or_default(
+                 %{model_id: model.id},
+                 other_org_user.current_org_id
+               )
+    end
+
     test "returns the active default model", %{user: user, org_id: org_id} do
       model = create_model!(user, %{})
       assert model.is_default

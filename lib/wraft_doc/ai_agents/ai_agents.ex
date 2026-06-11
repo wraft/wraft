@@ -149,14 +149,13 @@ defmodule WraftDoc.AiAgents do
     end
   end
 
-  def get_model_or_default(%{model_id: model_id}, _organisation_id) do
+  def get_model_or_default(%{model_id: model_id}, organisation_id) do
     model_id
-    |> Models.get_model()
+    |> Models.get_model(organisation_id)
     |> case do
       %Model{status: "active"} = model -> {:ok, model}
       %Model{} -> {:error, "Model is not active"}
       nil -> {:error, "Model not found"}
-      {:error, error} -> {:error, error}
     end
   end
 
@@ -190,9 +189,12 @@ defmodule WraftDoc.AiAgents do
   end
 
   def format_error(message) when is_binary(message) do
-    with {:ok, %{"error" => %{"code" => code, "message" => error_message}}} <-
-           decode_error_message(message) do
-      {:error, {code, %{errors: error_message}}}
+    case decode_error_message(message) do
+      {:ok, %{"error" => %{"code" => code, "message" => error_message}}} ->
+        {:error, {code, %{errors: error_message}}}
+
+      _undecodable ->
+        {:error, "Something went wrong, please try again"}
     end
   end
 

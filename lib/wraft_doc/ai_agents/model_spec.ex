@@ -133,7 +133,7 @@ defmodule WraftDoc.AiAgents.ModelSpec do
   end
 
   defp provider_names do
-    LLMDB.Store.providers()
+    LLMDB.providers()
     |> Map.new(&{&1.id, &1.name})
   rescue
     _error -> %{}

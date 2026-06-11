@@ -71,12 +71,13 @@ defmodule WraftDoc.AiAgents.ToolIntegrationTest do
     assert log.endpoint == "http://localhost:#{bypass.port}/v1"
   end
 
-  test "returns formatted error and logs failure when the provider errors", %{
+  test "returns formatted error without retrying when the provider rejects the key", %{
     bypass: bypass,
     user: user,
     model: model
   } do
-    Bypass.expect(bypass, "POST", "/v1/chat/completions", fn conn ->
+    # expect_once asserts the deterministic 401 is NOT retried
+    Bypass.expect_once(bypass, "POST", "/v1/chat/completions", fn conn ->
       error_body = %{error: %{message: "invalid api key", type: "auth_error"}}
 
       conn
@@ -92,6 +93,45 @@ defmodule WraftDoc.AiAgents.ToolIntegrationTest do
     }
 
     assert {:error, _reason} = DocRefinement.run(params, %{})
+    assert [%ModelLog{status: "failed"}] = Repo.all(ModelLog)
+  end
+
+  test "returns an error instead of crashing when the response is not parseable", %{
+    bypass: bypass,
+    user: user,
+    model: model
+  } do
+    Bypass.expect(bypass, "POST", "/v1/chat/completions", fn conn ->
+      response = %{
+        id: "chatcmpl-test",
+        object: "chat.completion",
+        created: 0,
+        model: "llama-3.1-8b",
+        choices: [
+          %{
+            index: 0,
+            message: %{role: "assistant", content: "I am not JSON at all"},
+            finish_reason: "stop"
+          }
+        ],
+        usage: %{prompt_tokens: 10, completion_tokens: 5, total_tokens: 15}
+      }
+
+      conn
+      |> Plug.Conn.put_resp_content_type("application/json")
+      |> Plug.Conn.resp(200, Jason.encode!(response))
+    end)
+
+    params = %{
+      model: model,
+      prompt: %{prompt: "Refine this document"},
+      content: "Some draft content",
+      user: user
+    }
+
+    assert {:error, "The AI model returned an unreadable response, please try again"} =
+             DocRefinement.run(params, %{})
+
     assert [%ModelLog{status: "failed"}] = Repo.all(ModelLog)
   end
 
