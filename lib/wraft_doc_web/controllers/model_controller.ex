@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Api.V1.ModelController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  alias WraftDoc.AiAgents.ModelSpec
   alias WraftDoc.Models
   alias WraftDoc.Models.Model
   alias WraftDocWeb.Schemas.Error
@@ -39,7 +40,7 @@ defmodule WraftDocWeb.Api.V1.ModelController do
 
   @spec providers(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def providers(conn, _params),
-    do: render(conn, :providers, providers: WraftDoc.AiAgents.ModelSpec.provider_options())
+    do: render(conn, :providers, providers: ModelSpec.provider_options())
 
   operation(:provider_models,
     summary: "List known models for an AI provider",
@@ -55,7 +56,7 @@ defmodule WraftDocWeb.Api.V1.ModelController do
 
   @spec provider_models(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def provider_models(conn, %{"provider" => provider}),
-    do: render(conn, :provider_models, models: WraftDoc.AiAgents.ModelSpec.model_options(provider))
+    do: render(conn, :provider_models, models: ModelSpec.model_options(provider))
 
   operation(:create,
     summary: "Create a new AI model",

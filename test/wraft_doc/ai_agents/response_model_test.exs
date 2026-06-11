@@ -98,7 +98,9 @@ defmodule WraftDoc.AiAgents.ResponseModelTest do
       result = Ecto.embedded_load(Refinement, %{"refined_content" => "Better text"}, :json)
 
       assert %Refinement{refined_content: "Better text"} = result
-      assert %{result: "Better text"} = AIToolView.render("ai_tool_result.json", %{result: result})
+
+      assert %{result: "Better text"} =
+               AIToolView.render("ai_tool_result.json", %{result: result})
     end
   end
 end

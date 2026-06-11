@@ -29,13 +29,20 @@ defmodule WraftDoc.AiAgents.ModelSpec do
     :google_vertex,
     :openai_codex,
     :zai_coder,
-    :zai_coding_plan
+    :zai_coding_plan,
+    # ReqLLM's dedicated :ollama provider sends a structured-output request
+    # body Ollama's /v1 endpoint rejects with "EOF"; routed through the
+    # OpenAI-compatible alias below instead.
+    :ollama
   ]
 
-  @endpoint_required [:ollama, :vllm]
+  @endpoint_required [:vllm]
 
+  # Self-hosted servers that expose an OpenAI-compatible API are routed
+  # through ReqLLM's :openai provider with the model's endpoint_url.
   @aliases [
-    %{value: "llamacpp", reqllm: :openai, label: "llama.cpp", requires_endpoint: true}
+    %{value: "llamacpp", reqllm: :openai, label: "llama.cpp", requires_endpoint: true},
+    %{value: "ollama", reqllm: :openai, label: "Ollama", requires_endpoint: true}
   ]
 
   @doc """
@@ -129,12 +136,11 @@ defmodule WraftDoc.AiAgents.ModelSpec do
   end
 
   defp reqllm_providers do
-    ReqLLM.Providers.list() |> Enum.reject(&(&1 in @denied))
+    Enum.reject(ReqLLM.Providers.list(), &(&1 in @denied))
   end
 
   defp provider_names do
-    LLMDB.providers()
-    |> Map.new(&{&1.id, &1.name})
+    Map.new(LLMDB.providers(), &{&1.id, &1.name})
   rescue
     _error -> %{}
   end

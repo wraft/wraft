@@ -28,8 +28,7 @@ defmodule WraftDoc.AiAgents.ModelSpecTest do
     end
 
     test "routes llamacpp through openai provider with base_url" do
-      assert {:ok,
-              %{provider: :openai, id: "llama-3.1-8b", base_url: "http://localhost:8080/v1"}} =
+      assert {:ok, %{provider: :openai, id: "llama-3.1-8b", base_url: "http://localhost:8080/v1"}} =
                ModelSpec.build(%{
                  provider: "llamacpp",
                  model_name: "llama-3.1-8b",
@@ -37,12 +36,14 @@ defmodule WraftDoc.AiAgents.ModelSpecTest do
                })
     end
 
-    test "routes ollama through native ollama provider with base_url" do
-      assert {:ok, %{provider: :ollama, id: "llama3", base_url: "http://localhost:11434"}} =
+    test "routes ollama through the openai-compatible provider with base_url" do
+      # ReqLLM's native :ollama provider rejects structured-output requests
+      # ("EOF"); the OpenAI-compatible route works against the same endpoint.
+      assert {:ok, %{provider: :openai, id: "llama3", base_url: "http://localhost:11434/v1"}} =
                ModelSpec.build(%{
                  provider: "ollama",
                  model_name: "llama3",
-                 endpoint_url: "http://localhost:11434"
+                 endpoint_url: "http://localhost:11434/v1"
                })
     end
 
@@ -103,7 +104,7 @@ defmodule WraftDoc.AiAgents.ModelSpecTest do
     test "returns chat models with value and label for hosted providers" do
       options = ModelSpec.model_options("anthropic")
 
-      assert length(options) > 0
+      assert options != []
       assert Enum.all?(options, &(is_binary(&1.value) and is_binary(&1.label)))
       assert Enum.any?(options, &String.starts_with?(&1.value, "claude"))
     end

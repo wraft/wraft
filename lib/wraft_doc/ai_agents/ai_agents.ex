@@ -27,15 +27,12 @@ defmodule WraftDoc.AiAgents do
 
   ## Examples
 
-      # Execute an extraction agent
       iex> WraftDoc.AiAgents.execute(user, model, extraction_prompt, content)
       {:ok, %Extraction{entities: [...], dates: [...], financial_details: [...]}}
 
-      # Execute a suggestion agent
       iex> WraftDoc.AiAgents.execute(user, model, suggestion_prompt, content)
       {:ok, %Suggestions{suggestions: [...]}}
 
-      # Execute a refinement agent
       iex> WraftDoc.AiAgents.execute(user, model, refinement_prompt, content)
       {:ok, "Refined content here..."}
 
