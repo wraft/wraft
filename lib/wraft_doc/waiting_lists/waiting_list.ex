@@ -33,7 +33,13 @@ defmodule WraftDoc.WaitingLists.WaitingList do
     timestamps()
   end
 
-  def changeset(%WaitingList{} = waiting_list, attrs \\ %{}) do
+  # Backpex passes an `Ecto.Changeset` (not a struct) as the first arg.
+  def changeset(waiting_list \\ %WaitingList{}, attrs \\ %{})
+
+  def changeset(%WaitingList{} = waiting_list, attrs), do: do_changeset(waiting_list, attrs)
+  def changeset(%Ecto.Changeset{} = changeset, attrs), do: do_changeset(changeset, attrs)
+
+  defp do_changeset(waiting_list, attrs) do
     waiting_list
     |> cast(attrs, [:first_name, :last_name, :email, :status, :modified_by_id])
     |> validate_required([:first_name, :last_name, :email, :status])
