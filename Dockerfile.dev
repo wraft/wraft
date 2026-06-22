@@ -1,8 +1,10 @@
 FROM hexpm/elixir:1.19.5-erlang-27.3.4.8-debian-bookworm-20260505
 
 # Install dependencies
+# unzip extracts uploaded Full backup archives (zip) on import.
 RUN apt-get update && apt-get install -y --fix-missing \
     postgresql-client \
+    unzip \
     inotify-tools \
     build-essential \
     xorg \

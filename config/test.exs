@@ -21,7 +21,10 @@ config :wraft_doc, WraftDoc.TypesenseServer, start: false
 
 config :wraft_doc, permissions_file: "test/mix/tasks/csv/test_permissions.csv"
 
-config :wraft_doc, :test_module, minio: ExAwsMock, razorpay: WraftDoc.Client.RazorpayMock
+config :wraft_doc, :test_module,
+  minio: ExAwsMock,
+  razorpay: WraftDoc.Client.RazorpayMock,
+  cmd_runner: CmdRunnerMock
 
 config :tesla, adapter: Tesla.Mock
 

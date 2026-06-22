@@ -85,7 +85,10 @@ defmodule WraftDocWeb.Schemas.User do
         email: %Schema{type: :string, description: "User's email"},
         email_verify: %Schema{type: :boolean, description: "Email verification status"},
         profile_pic: %Schema{type: :string, description: "URL of the user's profile picture"},
-        profile_pic_thumb: %Schema{type: :string, description: "URL of the user's profile picture thumbnail"},
+        profile_pic_thumb: %Schema{
+          type: :string,
+          description: "URL of the user's profile picture thumbnail"
+        },
         organisation_id: %Schema{type: :string, description: "User's current organisation ID"},
         roles: %Schema{
           type: :array,

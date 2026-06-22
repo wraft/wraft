@@ -139,8 +139,8 @@ defmodule WraftDoc.Admin.MetricRangeTest do
 
   describe "presets/0" do
     test "exposes the segmented-control options" do
-      labels = MetricRange.presets() |> Enum.map(fn {label, _v} -> label end)
-      values = MetricRange.presets() |> Enum.map(fn {_l, value} -> value end)
+      labels = Enum.map(MetricRange.presets(), fn {label, _v} -> label end)
+      values = Enum.map(MetricRange.presets(), fn {_l, value} -> value end)
 
       assert "24H" in labels
       assert "Custom" in labels

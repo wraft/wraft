@@ -17,5 +17,7 @@ defmodule WraftDocWeb.Uploaders.Thumbnail do
   @doc "Same args as `convert_string/0`, but as a list for `System.cmd/2`."
   @spec convert_args() :: [String.t()]
   def convert_args,
-    do: ~w(-strip -thumbnail) ++ ["#{@size}^"] ++ ~w(-gravity center -extent) ++ [@size] ++ ~w(-quality 90)
+    do:
+      ~w(-strip -thumbnail) ++
+        ["#{@size}^"] ++ ~w(-gravity center -extent) ++ [@size] ++ ~w(-quality 90)
 end

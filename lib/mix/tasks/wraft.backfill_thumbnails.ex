@@ -83,12 +83,18 @@ defmodule Mix.Tasks.Wraft.BackfillThumbnails do
   end
 
   defp fetch_page(schema, fields, nil) do
-    from(r in schema, order_by: r.id, limit: @batch_size, select: ^fields) |> Repo.all()
+    Repo.all(from(r in schema, order_by: r.id, limit: @batch_size, select: ^fields))
   end
 
   defp fetch_page(schema, fields, last_id) do
-    from(r in schema, where: r.id > ^last_id, order_by: r.id, limit: @batch_size, select: ^fields)
-    |> Repo.all()
+    Repo.all(
+      from(r in schema,
+        where: r.id > ^last_id,
+        order_by: r.id,
+        limit: @batch_size,
+        select: ^fields
+      )
+    )
   end
 
   defp process_org_logo(%{logo: %{file_name: name}} = org, state) when is_binary(name) do
@@ -163,7 +169,8 @@ defmodule Mix.Tasks.Wraft.BackfillThumbnails do
 
     try do
       with :ok <- File.write(src, Minio.get_object(original_key)),
-           {_, 0} <- System.cmd(binary, [src | Thumbnail.convert_args()] ++ [dst], stderr_to_stdout: true),
+           {_, 0} <-
+             System.cmd(binary, [src | Thumbnail.convert_args()] ++ [dst], stderr_to_stdout: true),
            {:ok, body} <- File.read(dst),
            {:ok, _} <- Minio.put_object(thumb_key, body, content_type: content_type) do
         :ok
@@ -204,8 +211,6 @@ defmodule Mix.Tasks.Wraft.BackfillThumbnails do
     do: update_in(state, [:counts, key], &(&1 + 1))
 
   defp log_summary(%{generated: g, skipped: s, failed: f, would_generate: w}) do
-    Logger.info(
-      "Backfill complete — generated=#{g} skipped=#{s} failed=#{f} would_generate=#{w}"
-    )
+    Logger.info("Backfill complete — generated=#{g} skipped=#{s} failed=#{f} would_generate=#{w}")
   end
 end

@@ -257,7 +257,7 @@ defmodule WraftDocWeb.AdminNext.UI do
 
   attr :rest, :global,
     include:
-      ~w(phx-click phx-value-id phx-value-days phx-disable-with form name method data-confirm disabled)
+      ~w(phx-click phx-value-id phx-value-days phx-disable-with form name method data-confirm disabled popovertarget popovertargetaction style)
 
   slot :inner_block, required: true
 

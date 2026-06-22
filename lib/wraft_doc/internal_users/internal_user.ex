@@ -9,9 +9,6 @@ defmodule WraftDoc.InternalUsers.InternalUser do
     field(:password, :string, virtual: true)
     field(:encrypted_password, :string)
     field(:is_deactivated, :boolean, default: false)
-    # Bumped on deactivation/password change; sessions minted with an older
-    # epoch are rejected by the admin auth gates, so stolen or stale cookies
-    # die with the account instead of living until SECRET_KEY_BASE rotation.
     field(:session_epoch, :integer, default: 0)
 
     timestamps()

@@ -152,6 +152,7 @@ Use the following tools to maintain code quality:
 
 - `mix format` to format your code
 - `mix credo` for static code analysis
+- `mix quality` to run format, compile (--warnings-as-errors), and credo together
 
 ## Recognition
 

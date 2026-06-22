@@ -70,3 +70,9 @@ priv/slugs/organisation
 !priv/slugs/gantt_chart/**
 !priv/slugs/pletter/**
 .env.custom
+
+# AI / agent tooling artifacts
+.claude/
+.cursor/
+.agents/
+.context/

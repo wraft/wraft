@@ -12,6 +12,36 @@ if System.get_env("PHX_SERVER") && System.get_env("RELEASE_NAME") do
   config :wraft_doc, WraftDocWeb.Endpoint, server: true
 end
 
+# Whole-application backup feature (admin panel). OFF by default — a
+# routine deploy must never start producing all-tenant artifacts as a
+# side effect. Enabling requires a dedicated backup bucket; the engine
+# refuses to run without one. Artifacts are stored UNENCRYPTED (plain
+# tar + pg_dump) — keep the backup bucket private and staff-only.
+#
+# Parse an integer env var, falling back to default for unset OR empty
+# string (the `|| default` idiom alone lets `FOO=` crash String.to_integer).
+env_integer = fn name, default ->
+  case System.get_env(name) do
+    value when is_binary(value) and value != "" -> String.to_integer(value)
+    _ -> default
+  end
+end
+
+config :wraft_doc, :system_backup,
+  enabled: System.get_env("SYSTEM_BACKUP_ENABLED") in ["true", "1"],
+  backup_bucket: System.get_env("MINIO_BACKUP_BUCKET"),
+  retention_count: env_integer.("BACKUP_RETENTION_COUNT", 7),
+  cloak_key_label: System.get_env("BACKUP_CLOAK_KEY_LABEL") || "v1",
+  min_free_disk_bytes: env_integer.("BACKUP_MIN_FREE_DISK_BYTES", 2_000_000_000),
+  # Remote restore ("another site") reaches an operator-supplied host — off by
+  # default (SSRF/exfil surface). When on, hosts must pass the private-range
+  # block unless listed in BACKUP_REMOTE_ALLOWED_HOSTS (comma-separated).
+  remote_restore_enabled: System.get_env("BACKUP_REMOTE_RESTORE_ENABLED") in ["true", "1"],
+  remote_allowed_hosts:
+    (System.get_env("BACKUP_REMOTE_ALLOWED_HOSTS") || "")
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+
 # Ensure Sandbox pool is set for tests
 if config_env() == :test do
   config :wraft_doc, WraftDoc.Repo,

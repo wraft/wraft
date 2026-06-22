@@ -74,7 +74,7 @@ defmodule WraftDocWeb.AdminNext.Layouts do
             ],
        do: "Automation & Integrations"
 
-  defp section_for(resource) when resource in ["audit-logs"], do: "Security"
+  defp section_for(resource) when resource in ["audit-logs", "backups"], do: "Security"
   defp section_for(_), do: nil
 
   defp humanize(slug) do

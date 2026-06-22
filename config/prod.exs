@@ -30,12 +30,23 @@ config :sentry,
   environment_name: :prod,
   enable_source_code_context: true,
   root_source_code_path: File.cwd!(),
+  # Redact DATABASE_URL/CLOAK_KEY/etc. from events — an unhandled
+  # exception around a credentialed shell-out (backup engine pg_dump)
+  # must never ship a connection string to Sentry.
+  before_send: {WraftDoc.Sentry.Scrubber, :scrub},
   tags: %{
     env: "production"
   }
 
 # Mark the session cookie `secure` in production (HTTPS-only).
 config :wraft_doc, :session_cookie_secure, true
+
+# Override the admin session signing salt at build time. Compile-time
+# (releases don't re-read it from env at boot); the salt is a namespace,
+# not the secret — cookie integrity rests on secret_key_base.
+if salt = System.get_env("SESSION_SIGNING_SALT") do
+  config :wraft_doc, :session_signing_salt, salt
+end
 
 # Do not print debug messages in production
 config :logger,

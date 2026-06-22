@@ -133,7 +133,8 @@ defmodule WraftDoc.Admin.PipelineMetrics do
         {NaiveDateTime.truncate(bucket, :second), {total, ok, fail}}
       end)
 
-    base_hour = MetricRange.from_naive(range) |> NaiveDateTime.truncate(:second) |> floor_hour()
+    base_hour =
+      range |> MetricRange.from_naive() |> NaiveDateTime.truncate(:second) |> floor_hour()
 
     for offset <- 0..23 do
       ts = NaiveDateTime.add(base_hour, offset * 3600, :second)

@@ -12,16 +12,18 @@ defmodule WraftDocWeb.Endpoint do
     longpoll: false
   )
 
-  # `max_age` must stay in sync with `@admin_session_max_age` in
-  # `WraftDoc.InternalUsers` (the gates also enforce expiry via an
-  # issued-at value inside the session, so old cookies die even if the
-  # cookie attribute is tampered with). `secure` is enabled per-build via
-  # config (`config :wraft_doc, :session_cookie_secure, true` in prod).
+  # `max_age` must stay in sync with `WraftDoc.InternalUsers.admin_session_max_age/0`
+  # (the gates also enforce expiry via an issued-at value inside the session, so
+  # old cookies die even if the cookie attribute is tampered with). `secure` and
+  # the signing salt are compile-time config (`config/prod.exs`) — a release does
+  # not re-read them from the environment at boot, so they live in config, not a
+  # runtime `System.get_env`. The salt is a namespace, not the secret: cookie
+  # integrity rests on `secret_key_base`.
   @session_options [
     store: :cookie,
     key: "_wraftdoc_key",
-    signing_salt: System.get_env("SESSION_SIGNING_SALT", "hUnYtn2s"),
-    max_age: 60 * 60 * 12,
+    signing_salt: Application.compile_env(:wraft_doc, :session_signing_salt, "hUnYtn2s"),
+    max_age: WraftDoc.InternalUsers.admin_session_max_age(),
     same_site: "Lax",
     secure: Application.compile_env(:wraft_doc, :session_cookie_secure, false)
   ]

@@ -63,10 +63,11 @@ RUN mix release
 
 FROM ${RUNNER_IMAGE}
 
-# Install system dependencies
+# Install system dependencies.
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    postgresql-client \
+    postgresql-client-15 \
+    unzip \
     inotify-tools \
     build-essential \
     xorg \

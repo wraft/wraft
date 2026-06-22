@@ -711,6 +711,11 @@ defmodule WraftDocWeb.Router do
   scope "/admin", WraftDocWeb do
     pipe_through([:admin_browser, :current_admin])
     delete("/sign-out", SessionController, :delete)
+    # Backup downloads: CSRF-protected POST mints a single-use token for a
+    # part (db | bucket | full), the GET consumes it and streams (see
+    # BackupDownloadController).
+    post("/backups/:id/authorize-download/:part", BackupDownloadController, :authorize)
+    get("/backups/:id/download/:part", BackupDownloadController, :download)
   end
 
   scope "/admin", WraftDocWeb.AdminNext do
@@ -742,6 +747,7 @@ defmodule WraftDocWeb.Router do
       live "/pipeline-metrics/:id", PipelineMetricsLive, :show
       live "/audit-logs", AuditLogLive, :index
       live "/audit-logs/:id", AuditLogLive, :show
+      live "/backups", SystemBackupLive, :index
       live_resources "/waiting-list", WaitingListLive
       live "/template-assets/import", TemplateAssetImportLive, :import
       live_resources "/template-assets", TemplateAssetLive

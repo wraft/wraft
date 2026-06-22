@@ -100,7 +100,8 @@ config :wraft_doc, Oban,
     webhooks: 15,
     cloud_provider: 15,
     integrations: 15,
-    repository: 15
+    repository: 15,
+    backups: 1
   ],
   plugins: [
     Oban.Plugins.Pruner,
@@ -120,7 +121,13 @@ config :wraft_doc, Oban,
         tags: ["hard_delete_organisation_records"],
         args: %{"type" => "hard_delete_organisation_records"}},
        {"0 2 * * 0", WraftDoc.Workers.WebhookCleanupWorker,
-        queue: :scheduled, tags: ["webhook_cleanup"], args: %{days_to_keep: 90}}
+        queue: :scheduled, tags: ["webhook_cleanup"], args: %{days_to_keep: 90}},
+       # Auto-backup is UI-configured (system_backup_schedule). This checker
+       # runs every 15 minutes and enqueues a scheduled backup when the
+       # configured time is reached (at most once per period). No-ops while
+       # the feature flag is off or the schedule is disabled.
+       {"*/15 * * * *", WraftDoc.Workers.SystemBackupScheduleWorker,
+        queue: :backups, tags: ["system_backup_schedule"]}
      ]}
   ]
 
@@ -131,7 +138,11 @@ config :waffle,
 
 config :ex_aws,
   json_codec: Jason,
-  region: "local"
+  region: "local",
+  # 5 min recv timeout (hackney default is 5s): whole-app backup uploads
+  # and the streamed download move multi-GB artifacts whose parts can
+  # exceed 5s under any storage-side latency.
+  hackney_opts: [recv_timeout: 300_000]
 
 config :tesla, adapter: Tesla.Adapter.Hackney
 

@@ -22,9 +22,11 @@ services:
       MINIO_HOST: minio
       MINIO_PORT: 9000
       MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_BACKUP_BUCKET: ${MINIO_BACKUP_BUCKET:-wraft-backups}
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_URL: http://127.0.0.1:9000
+      SYSTEM_BACKUP_ENABLED: ${SYSTEM_BACKUP_ENABLED:-false}
       MIX_ENV: dev
       PADDLE_API_KEY: ${PADDLE_API_KEY}
       PADDLE_BASE_URL: ${PADDLE_BASE_URL}
@@ -76,15 +78,17 @@ services:
     environment:
       MINIO_URL: http://minio:9000
       MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_BACKUP_BUCKET: ${MINIO_BACKUP_BUCKET:-wraft-backups}
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     depends_on:
       - minio
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc config host add myminio $$MINIO_URL $${MINIO_ROOT_USER} $$MINIO_ROOT_PASSWORD;
+      /usr/bin/mc alias set myminio $$MINIO_URL $${MINIO_ROOT_USER} $$MINIO_ROOT_PASSWORD;
       /usr/bin/mc mb -p myminio/$${MINIO_BUCKET};
-      /usr/bin/mc policy set public myminio/$${MINIO_BUCKET};
+      /usr/bin/mc anonymous set public myminio/$${MINIO_BUCKET};
+      /usr/bin/mc mb -p myminio/$${MINIO_BACKUP_BUCKET};
       exit 0;"
 
   typesense:

@@ -5,8 +5,12 @@ defmodule WraftDoc.InternalUsers do
   alias WraftDoc.Repo
 
   # Admin sessions expire after this many seconds regardless of cookie
-  # lifetime; keep in sync with the `max_age` on the endpoint session options.
+  # lifetime. The endpoint references `admin_session_max_age/0` for the
+  # cookie `max_age`, so the two cannot drift.
   @admin_session_max_age 60 * 60 * 12
+
+  @doc "Admin session lifetime in seconds (shared with the endpoint cookie max_age)."
+  def admin_session_max_age, do: @admin_session_max_age
 
   def change_internal_user, do: InternalUser.changeset(%InternalUser{})
 

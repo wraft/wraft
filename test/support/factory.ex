@@ -57,6 +57,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Pipelines.Pipeline
   alias WraftDoc.Pipelines.Stages.Stage
   alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
+  alias WraftDoc.SystemBackups.Backup, as: SystemBackup
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Themes.ThemeAsset
   alias WraftDoc.WaitingLists.WaitingList
@@ -708,6 +709,31 @@ defmodule WraftDoc.Factory do
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       is_deactivated: false
+    }
+  end
+
+  def system_backup_factory do
+    %SystemBackup{
+      status: :completed,
+      trigger_type: :manual,
+      file_path: sequence(:backup_prefix, &"system/backups/backup-#{&1}/"),
+      file_size: 2048,
+      db_size: 1024,
+      db_checksum: sequence(:db_checksum, &"db-checksum-#{&1}"),
+      bucket_size: 1024,
+      bucket_checksum: sequence(:bucket_checksum, &"bucket-checksum-#{&1}"),
+      manifest: %{},
+      heartbeat_at: DateTime.truncate(DateTime.utc_now(), :second),
+      started_at: DateTime.truncate(DateTime.utc_now(), :second),
+      completed_at: DateTime.truncate(DateTime.utc_now(), :second)
+    }
+  end
+
+  def system_backup_restore_factory do
+    %WraftDoc.SystemBackups.Restore{
+      status: :pending,
+      target_database: sequence(:restore_db, &"wraft_restored_#{&1}"),
+      target_bucket: sequence(:restore_bucket, &"wraft-restored-#{&1}")
     }
   end
 
