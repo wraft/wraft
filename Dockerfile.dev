@@ -1,20 +1,29 @@
-FROM hexpm/elixir:1.19.5-erlang-27.3.4.8-debian-bookworm-20260505
+FROM hexpm/elixir:1.19.5-erlang-27.3.4.8-debian-trixie-20260610
+
+# Add the PostgreSQL APT (PGDG) repo: trixie main only ships client 17, but the
+# DB server is PostgreSQL 18 and pg_dump/pg_restore must be >= the server major.
+# The downloaded key's fingerprint is pinned, so a substituted key fails the build.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl -fsSL --retry 3 https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+    && gpg --show-keys --with-colons /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+       | grep -q '^fpr:::::::::B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8:' \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt trixie-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 # unzip extracts uploaded Full backup archives (zip) on import.
 RUN apt-get update && apt-get install -y --fix-missing \
-    postgresql-client \
+    postgresql-client-18 \
     unzip \
     inotify-tools \
     build-essential \
-    xorg \
     libssl-dev \
-    libxrender-dev \
     git \
     wget \
-    gdebi \
-    xvfb \
-    wkhtmltopdf \
+    fonts-dejavu-core \
+    fonts-urw-base35 \
     texlive-fonts-recommended \
     texlive-plain-generic \
     texlive-latex-extra \
@@ -23,11 +32,13 @@ RUN apt-get update && apt-get install -y --fix-missing \
     imagemagick \
     ghostscript \
     ca-certificates \
-    openjdk-17-jdk && \
+    openjdk-21-jdk && \
     update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-RUN sed -i 's/<policy domain="coder" rights="none" pattern="PDF" \/>/<policy domain="coder" rights="read|write" pattern="PDF" \/>/' /etc/ImageMagick-6/policy.xml
+# Fix ImageMagick PDF security policy (path is version-specific: -6 on bookworm, -7 on trixie)
+RUN find /etc/ImageMagick-* -name policy.xml -exec \
+    sed -i 's/<policy domain="coder" rights="none" pattern="PDF" \/>/<policy domain="coder" rights="read|write" pattern="PDF" \/>/' {} +
 
 # Install Rust toolchain for Rustler
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -39,7 +50,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Java environment
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:$PATH"
 
 # Install Pandoc
@@ -53,15 +64,17 @@ RUN ARCH=$(dpkg --print-architecture) && \
     dpkg -i ${PANDOC_DEB} && \
     rm -f ${PANDOC_DEB}
 
-# Install Typst
-RUN wget -q https://github.com/typst/typst/releases/download/v0.14.2/typst-x86_64-unknown-linux-musl.tar.xz && \
-    tar -xf typst-x86_64-unknown-linux-musl.tar.xz && \
-    mv typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst && \
-    rm -rf typst-x86_64-unknown-linux-musl typst-x86_64-unknown-linux-musl.tar.xz
-
-# Create a wrapper for wkhtmltopdf to run in headless mode
-RUN echo "xvfb-run -a -s \"-screen 0 640x480x16\" wkhtmltopdf \"\$@\"" > /usr/local/bin/wkhtmltopdf-wrapper && \
-    chmod +x /usr/local/bin/wkhtmltopdf-wrapper
+# Install Typst (architecture-aware)
+RUN ARCH=$(dpkg --print-architecture) && \
+    case "$ARCH" in \
+        amd64) TYPST_ARCH=x86_64-unknown-linux-musl ;; \
+        arm64) TYPST_ARCH=aarch64-unknown-linux-musl ;; \
+        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    wget -q https://github.com/typst/typst/releases/download/v0.14.2/typst-${TYPST_ARCH}.tar.xz && \
+    tar -xf typst-${TYPST_ARCH}.tar.xz && \
+    mv typst-${TYPST_ARCH}/typst /usr/local/bin/typst && \
+    rm -rf typst-${TYPST_ARCH} typst-${TYPST_ARCH}.tar.xz
 
 # Install eforms.sty, insdljs.sty, exerquiz.sty, taborder.sty and required .def files
 WORKDIR /tmp/acrotex

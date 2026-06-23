@@ -6,11 +6,11 @@
 - Erlang/OTP 27.0.1
 - Postgres
 - Minio - S3 compatible object storage
-- Pandoc 3.6.3
+- Pandoc 3.9.0.2
 - ImageMagick
 - Latex
-- Typst 0.13.0
-- Java 17 (for PDF signing)
+- Typst 0.14.2
+- Java 21 (for PDF signing)
 - Rust toolchain (for native dependencies)
 
 `.tool-versions` will have the exact versions defined in it.
@@ -63,7 +63,7 @@ $ sudo apt install inotify-tools
 ### 3 - **Postgres**
 
 Select your OS from the options [here](https://www.postgresql.org/download/) and follow the instructions to
-install the latest version of postgres.
+install postgres. PostgreSQL 18 is recommended (it matches the container images).
 Check your installation using:
 
 ```shell
@@ -103,7 +103,7 @@ $ brew install pandoc
 
 For Linux machines, follow the instructions below.
 
-- Download the pandoc package that suits your device [here](https://github.com/jgm/pandoc/releases/tag/2.9.2.1)
+- Download the pandoc package that suits your device [here](https://github.com/jgm/pandoc/releases/tag/3.9.0.2)
 - To install the deb:
 
 ```shell
@@ -286,10 +286,10 @@ The Docker setup includes:
 
 - **Backend**: Elixir 1.19.2 with Erlang 27.0.1
 - **Frontend**: React application
-- **Database**: PostgreSQL 14
+- **Database**: PostgreSQL 18
 - **Object Storage**: MinIO (S3-compatible)
 - **Search Engine**: Typesense
-- **Dependencies**: Pandoc 3.6.3, Typst 0.13.0, LaTeX, ImageMagick, Java 17, Rust toolchain
+- **Dependencies**: Pandoc 3.9.0.2, Typst 0.14.2, LaTeX, ImageMagick, Java 21, Rust toolchain
 
 #### Services and Ports
 

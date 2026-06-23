@@ -95,7 +95,10 @@ if config_env() == :prod do
       # See the documentation on https://hexdocs.pm/plug_cowboy/Plug.Cowboy.html
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
-      port: port
+      port: port,
+      protocol_options: [
+        idle_timeout: env_integer.("HTTP_IDLE_TIMEOUT_MS", 3_600_000)
+      ]
     ],
     secret_key_base: secret_key_base
 
@@ -178,10 +181,6 @@ config :wraft_doc, :onedrive,
   client_secret: System.get_env("ONEDRIVE_CLIENT_SECRET"),
   redirect_uri: System.get_env("REDIRECT_URI"),
   tenant_id: System.get_env("ONEDRIVE_TENANT_ID")
-
-config :pdf_generator,
-  wkhtml_path: System.get_env("WKHTMLTOPDF_PATH"),
-  pdftk_path: System.get_env("PDFTK_PATH")
 
 config :wraft_doc, :paddle,
   api_key: System.get_env("PADDLE_API_KEY"),

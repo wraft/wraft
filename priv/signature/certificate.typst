@@ -1,0 +1,85 @@
+// Field values are escaped Typst string literals (see signatures.ex).
+
+#set page(paper: "a4", margin: 40pt)
+#set text(font: ("DejaVu Sans", "Nimbus Sans"), size: 11pt, fill: rgb("#333333"))
+
+#block(stroke: (left: 4pt + rgb("#1aae6f")), inset: (left: 12pt), below: 28pt)[
+  #text(size: 20pt, weight: 600, fill: rgb("#222222"))[Signature Record Summary]
+]
+
+#let signers = (
+$for(signers)$
+  (
+    index: "$it.index$",
+    name: "$it.name$",
+    email: "$it.email$",
+    auth_level: "$it.auth_level$",
+    counterparty_id: "$it.counterparty_id$",
+    ip_address: "$it.ip_address$",
+    device: "$it.device$",
+    signed_at: "$it.signed_at$",
+    reason: "$it.reason$",
+    signature_image: "$it.signature_image$",
+  ),
+$endfor$
+)
+
+#let kv(label, value) = [#text(weight: 600, fill: rgb("#555555"))[#label] #value]
+
+#for s in signers [
+  #block(
+    fill: white,
+    stroke: 1pt + rgb("#cccccc"),
+    radius: 8pt,
+    inset: (x: 28pt, y: 20pt),
+    below: 24pt,
+    width: 100%,
+  )[
+    #grid(columns: (1fr, 1fr), column-gutter: 24pt,
+      [
+        #text(weight: 600, size: 13pt, fill: rgb("#1aae6f"))[
+          #box(
+            fill: rgb("#1aae6f"), inset: 5pt, radius: 50%,
+          )[#text(fill: white, weight: "bold", size: 10pt)[#s.index]] Signer \##s.index
+        ]
+        #v(12pt)
+        #kv("Name:", s.name) \
+        #kv("Email:", s.email) \
+        #kv("Auth:", s.auth_level)
+        #v(8pt)
+        #text(weight: 600, fill: rgb("#444444"))[Signature]
+        #line(length: 100%, stroke: 0.5pt + rgb("#eeeeee"))
+        #v(6pt)
+        #if s.signature_image != "" [
+          #box(stroke: 1pt + rgb("#dddddd"), fill: rgb("#fafafa"), inset: 4pt)[
+            #image(s.signature_image, height: 56pt)
+          ]
+        ] else [
+          #box(stroke: 1pt + rgb("#dddddd"), fill: rgb("#fafafa"), inset: 8pt)[
+            #text(fill: rgb("#888888"))[Signature not available]
+          ]
+        ]
+        #v(8pt)
+        #kv("ID:", s.counterparty_id)
+      ],
+      [
+        #kv("IP:", s.ip_address) \
+        #kv("Device:", s.device) \
+        #kv("Signed:", [#s.signed_at (UTC)]) \
+        #kv("Reason:", emph(s.reason))
+      ],
+    )
+  ]
+]
+
+#v(48pt)
+#align(center)[
+  #text(size: 11pt, fill: rgb("#666666"))[
+    This document was electronically signed and is legally binding. \
+    Generated on $generated_at$
+  ]
+]
+#v(20pt)
+#align(center)[
+  #text(size: 11pt, fill: rgb("#666666"))[Signing certificate provided by: Wraft]
+]

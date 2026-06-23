@@ -156,25 +156,22 @@ defmodule WraftDoc.Documents.Signatures do
     signers_content = prepare_markdown(base_local_dir_path, counterparties)
     File.write!(certificate_md_path, signers_content)
 
-    generate_certificate(certificate_md_path, certificate_pdf_path)
+    with {:ok, _} <- generate_certificate(certificate_md_path, certificate_pdf_path),
+         {:ok, _signed_pdf_path} <-
+           apply_digital_signature(pdf_path, signed_pdf_path, certificate_pdf_path) do
+      Minio.upload_file(signed_pdf_path)
 
-    pdf_path
-    |> apply_digital_signature(signed_pdf_path, certificate_pdf_path)
-    |> case do
-      {:ok, _signed_pdf_path} ->
-        Minio.upload_file(signed_pdf_path)
+      # Update the counterparty with the signed file
+      Enum.each(counterparties, fn counterparty ->
+        CounterParties.counter_party_sign(counterparty, %{signed_file: signed_pdf_path})
+      end)
 
-        # Update the counterparty with the signed file
-        Enum.each(counterparties, fn counterparty ->
-          CounterParties.counter_party_sign(counterparty, %{signed_file: signed_pdf_path})
-        end)
-
-        finalize_signed_document(instance, signed_pdf_path, current_user)
-        cleanup_signed_pdf(signed_pdf_path, instance_dir_path)
-        {:ok, signed_pdf_path}
-
+      finalize_signed_document(instance, signed_pdf_path, current_user)
+      cleanup_signed_pdf(signed_pdf_path, instance_dir_path)
+      {:ok, signed_pdf_path}
+    else
       {:error, reason} ->
-        Logger.error("Failed to apply digital signature: #{reason}")
+        Logger.error("Digital signature failed: #{inspect(reason)}")
         cleanup_signed_pdf(signed_pdf_path, instance_dir_path)
         {:error, reason}
     end
@@ -312,18 +309,24 @@ defmodule WraftDoc.Documents.Signatures do
       "#{certificate_markdown_path}",
       "-o",
       "#{certificate_pdf_path}",
-      "--template=#{File.cwd!() <> "/priv/signature/certificate.html"}",
-      "--pdf-engine=wkhtmltopdf"
+      "--template=#{File.cwd!() <> "/priv/signature/certificate.typst"}",
+      "--pdf-engine=typst",
+      # Scope Typst's root to the instance dir -- only the signature image is read.
+      "--pdf-engine-opt=--root=#{Path.dirname(certificate_pdf_path)}"
     ]
 
-    case System.cmd("pandoc", args, stderr_to_stdout: true) do
+    # cwd = instance dir so pandoc's intermediate .typ is created under --root.
+    case System.cmd("pandoc", args,
+           stderr_to_stdout: true,
+           cd: Path.dirname(certificate_pdf_path)
+         ) do
       {output, 0} ->
         Logger.info("Certificate generated successfully: #{output}")
         {:ok, output}
 
       {error_output, exit_code} ->
         Logger.error("Failed to generate certificate: #{error_output}")
-        {:error, exit_code}
+        {:error, "pandoc exited #{exit_code}: #{error_output}"}
     end
   end
 
@@ -334,7 +337,7 @@ defmodule WraftDoc.Documents.Signatures do
   def prepare_markdown(base_local_dir_path, counterparties) do
     signers_yaml = """
     ---
-    generated_at: "#{format_datetime(DateTime.utc_now())}"
+    generated_at: #{yaml_typst_scalar(format_datetime(DateTime.utc_now()))}
     signers:
     #{format_signers(counterparties, base_local_dir_path)}
     ---
@@ -350,20 +353,40 @@ defmodule WraftDoc.Documents.Signatures do
   end
 
   defp format_signer({counterparty, index}, base_local_dir_path) do
-    signature_image_path = download_signature_image(counterparty, base_local_dir_path)
+    signature_image = signature_image_ref(counterparty, base_local_dir_path)
 
     """
       - index: #{index}
-        name: #{counterparty.name}
-        email: #{counterparty.email}
-        auth_level: Email
-        counterparty_id: #{counterparty.id}
-        ip_address: #{counterparty.signature_ip || "Not available"}
-        device: #{counterparty.device || "Not available"}
-        signed_at: "#{format_datetime(counterparty.signature_date)}"
-        reason: #{@signature_reason}
-        signature_image: "#{signature_image_path}"
+        name: #{yaml_typst_scalar(counterparty.name)}
+        email: #{yaml_typst_scalar(counterparty.email)}
+        auth_level: 'Email'
+        counterparty_id: #{yaml_typst_scalar(counterparty.id)}
+        ip_address: #{yaml_typst_scalar(counterparty.signature_ip || "Not available")}
+        device: #{yaml_typst_scalar(counterparty.device || "Not available")}
+        signed_at: #{yaml_typst_scalar(format_datetime(counterparty.signature_date))}
+        reason: #{yaml_typst_scalar(@signature_reason)}
+        signature_image: #{yaml_typst_scalar(signature_image)}
     """
+  end
+
+  # Escape counterparty fields for the Typst string literal + YAML (injection-safe).
+  defp yaml_typst_scalar(value) do
+    escaped =
+      value
+      |> to_string()
+      |> String.replace(~r/[\x00-\x1f\x7f]/, " ")
+      |> String.replace("\\", "\\\\")
+      |> String.replace("\"", "\\\"")
+      |> String.replace("'", "''")
+
+    "'" <> escaped <> "'"
+  end
+
+  defp signature_image_ref(counterparty, base_local_dir_path) do
+    case download_signature_image(counterparty, base_local_dir_path) do
+      nil -> ""
+      abs_path -> "/" <> Path.relative_to(abs_path, base_local_dir_path)
+    end
   end
 
   defp download_signature_image(%CounterParty{signature_image: nil}, _), do: nil

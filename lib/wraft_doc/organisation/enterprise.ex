@@ -1440,8 +1440,10 @@ defmodule WraftDoc.Enterprise do
       {:ok, %{membership: membership, payment: payment}} ->
         membership = Repo.preload(membership, [:plan, :organisation])
 
-        Task.start_link(fn -> create_invoice(membership, payment) end)
-        Task.start_link(fn -> create_membership_expiry_check_job(membership) end)
+        # Fire-and-forget after the transaction commits: use Task.start (unlinked)
+        # so a failure in invoice rendering / job insertion cannot crash the caller.
+        Task.start(fn -> create_invoice(membership, payment) end)
+        Task.start(fn -> create_membership_expiry_check_job(membership) end)
 
         membership
     end
@@ -1529,26 +1531,40 @@ defmodule WraftDoc.Enterprise do
   defp create_invoice(membership, payment) do
     invoice_number = generate_invoice_number(payment)
 
-    invoice =
-      Phoenix.View.render_to_string(
-        WraftDocWeb.Api.V1.PaymentView,
-        "invoice.html",
-        membership: membership,
-        invoice_number: invoice_number,
-        payment: payment
-      )
+    typst_source =
+      WraftDocWeb.Api.V1.PaymentView.invoice_typst(membership, invoice_number, payment)
 
-    {:ok, filename} =
-      PdfGenerator.generate(invoice,
-        page_size: "A4",
-        delete_temporary: true,
-        edit_password: "1234",
-        filename: invoice_number
-      )
+    case render_invoice_pdf(typst_source, invoice_number) do
+      {:ok, pdf_path} ->
+        invoice = invoice_upload_struct(invoice_number, pdf_path)
+        result = upload_invoice(payment, invoice, invoice_number)
+        File.rm(pdf_path)
+        result
 
-    invoice = invoice_upload_struct(invoice_number, filename)
+      {:error, reason} ->
+        Logger.error("Invoice generation failed for #{invoice_number}: #{reason}")
+        {:error, reason}
+    end
+  end
 
-    upload_invoice(payment, invoice, invoice_number)
+  defp render_invoice_pdf(typst_source, invoice_number) do
+    tmp_dir = System.tmp_dir!()
+    typ_path = Path.join(tmp_dir, "#{invoice_number}.typ")
+    pdf_path = Path.join(tmp_dir, "#{invoice_number}.pdf")
+    File.write!(typ_path, typst_source)
+
+    try do
+      case System.cmd("typst", ["compile", typ_path, pdf_path], stderr_to_stdout: true) do
+        {_output, 0} ->
+          {:ok, pdf_path}
+
+        {error_output, exit_code} ->
+          File.rm(pdf_path)
+          {:error, "typst exited #{exit_code}: #{error_output}"}
+      end
+    after
+      File.rm(typ_path)
+    end
   end
 
   # Creates a background job that checks if the membership is expired on the date of membership expiry

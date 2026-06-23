@@ -185,9 +185,6 @@ config :ex_audit,
 
 config :wraft_doc, WraftDoc.Client.Razorpay, base_url: "https://api.razorpay.com/v1/payments"
 
-config :pdf_generator,
-  raise_on_missing_wkhtmltopdf_binary: false
-
 config :fun_with_flags, :persistence,
   adapter: FunWithFlags.Store.Persistent.Ecto,
   repo: WraftDoc.Repo

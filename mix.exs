@@ -106,7 +106,6 @@ defmodule WraftDoc.Mixfile do
       {:oban, "~> 2.20"},
       {:oban_web, "~> 2.11"},
       {:opus, "~> 0.8"},
-      {:pdf_generator, "~> 0.6"},
       {:phoenix, "~> 1.7.21"},
       {:phoenix_ecto, "~> 4.6"},
       {:phoenix_html, "~> 4.3", override: true},

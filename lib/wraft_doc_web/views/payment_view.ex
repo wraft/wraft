@@ -94,4 +94,79 @@ defmodule WraftDocWeb.Api.V1.PaymentView do
   defp generate_url(%{invoice: invoice} = payment) do
     WraftDocWeb.InvoiceUploader.url({invoice, payment}, signed: true)
   end
+
+  @doc "Render the membership invoice as a self-contained Typst document string."
+  @spec invoice_typst(map(), String.t(), Payment.t()) :: String.t()
+  def invoice_typst(membership, invoice_number, payment) do
+    org = membership.organisation
+
+    date =
+      case payment.meta["created_at"] do
+        nil -> Timex.format!(DateTime.utc_now(), "{D}/{M}/{YYYY}")
+        created_at -> created_at |> Timex.from_unix() |> humanize_time()
+      end
+
+    """
+    #set page(paper: "a4", margin: 18mm)
+    #set text(font: ("DejaVu Sans", "Nimbus Sans"), size: 11pt, fill: rgb("#333333"))
+
+    #let d = (
+      invoice_number: "#{typst_escape(invoice_number)}",
+      date: "#{typst_escape(date)}",
+      legal_name: "#{typst_escape(org.legal_name)}",
+      address: "#{typst_escape(org.address)}",
+      email: "#{typst_escape(org.email)}",
+      plan: "#{typst_escape(membership.plan.description)}",
+      plan_amount: "#{typst_escape(calculate_plan_amount(payment.amount))}",
+      gst: "#{typst_escape(calculate_gst(payment.amount))}",
+      total: "#{typst_escape(convert_to_rupee(payment.amount))}",
+      valid_till: "#{typst_escape(humanize_date(payment.end_date))}",
+    )
+
+    #grid(columns: (1fr, 1fr),
+      align(horizon)[#text(size: 24pt, weight: 800)[Functionary]],
+      align(right)[*Invoice No:* #d.invoice_number #linebreak() Date: #d.date],
+    )
+    #v(8pt)
+    #line(length: 100%, stroke: 0.5pt + rgb("#cccccc"))
+    #v(12pt)
+    #grid(columns: (1fr, 1fr), column-gutter: 24pt,
+      [
+        *Functionary Labs Pvt Ltd.* #linebreak()
+        No. 24, Caravel Building, 1st Main Rd, #linebreak()
+        S.T. Bed, Koramangala 4th Block, #linebreak()
+        Bengaluru, Karnataka 560095
+      ],
+      [
+        *To:* #linebreak()
+        #d.legal_name #linebreak()
+        #d.address #linebreak()
+        #d.email
+      ],
+    )
+    #v(20pt)
+    #table(columns: (1fr, auto), align: (left, right), inset: 8pt,
+      fill: (_, row) => if row == 0 { rgb("#333333") },
+      table.header(text(fill: white)[*Item*], text(fill: white)[*Price*]),
+      [#d.plan], [Rs. #d.plan_amount],
+      [18% GST], [Rs. #d.gst],
+      [*Total*], [*Rs. #d.total*],
+    )
+    #v(20pt)
+    Your subscription is valid till #d.valid_till.
+    #v(36pt)
+    #align(center)[For questions/concerns regarding this invoice, please contact #text(fill: rgb("#0071cc"))[#("hello@wraft.co")]]
+    #v(10pt)
+    #align(center)[#text(weight: 700)[#("www.wraft.co")]]
+    """
+  end
+
+  # Escape for the Typst string literal so org fields can't inject markup.
+  defp typst_escape(value) do
+    value
+    |> to_string()
+    |> String.replace(~r/[\x00-\x1f\x7f]/, " ")
+    |> String.replace("\\", "\\\\")
+    |> String.replace("\"", "\\\"")
+  end
 end

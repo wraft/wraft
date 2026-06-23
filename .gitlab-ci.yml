@@ -15,17 +15,12 @@ variables:
   MIX_ENV: "test"
   GUARDIAN_KEY: #<GUARDIAN_KEY>
   SECRET_KEY_BASE: #<SECRET_KEY_BASE>
-  WKHTMLTOPDF_PATH: /usr/local/bin/wkhtmltopdf-wrapper
-  PDFTK_PATH: /usr/local/bin/wkhtmltopdf-wrapper
 
 test:
   stage: test
   before_script:
     - apt-get update
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential xorg libssl-dev libxrender-dev wget gdebi xvfb
-    - wget https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb
-    - gdebi --n wkhtmltox_0.12.5-1.buster_amd64.deb
-    - echo "xvfb-run -a -s \"-screen 0 640x480x16\" wkhtmltopdf \"\$@\"" >/usr/local/bin/wkhtmltopdf-wrapper && chmod +x /usr/local/bin/wkhtmltopdf-wrapper
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential libssl-dev wget
     - mix local.rebar --force
     - mix local.hex --force
     - mix deps.get --only test

@@ -545,6 +545,10 @@ defmodule WraftDoc.SystemBackups.BackupEngine do
     end
   end
 
+  # Range-GET size and concurrency for streaming a part (ExAws defaults 1 MB / 8).
+  @artifact_chunk_size 8 * 1024 * 1024
+  @artifact_concurrency 16
+
   @doc """
   Chunked stream of an object body from the backup bucket — constant
   memory for multi-GB objects (never `Minio.download/1`, which loads the
@@ -552,7 +556,10 @@ defmodule WraftDoc.SystemBackups.BackupEngine do
   """
   def artifact_stream(key) when is_binary(key) do
     backup_bucket()
-    |> S3.download_file(key, :memory)
+    |> S3.download_file(key, :memory,
+      chunk_size: @artifact_chunk_size,
+      max_concurrency: @artifact_concurrency
+    )
     |> @ex_aws.stream!()
   end
 
