@@ -179,10 +179,6 @@ config :wraft_doc, :onedrive,
   redirect_uri: System.get_env("REDIRECT_URI"),
   tenant_id: System.get_env("ONEDRIVE_TENANT_ID")
 
-config :pdf_generator,
-  wkhtml_path: System.get_env("WKHTMLTOPDF_PATH"),
-  pdftk_path: System.get_env("PDFTK_PATH")
-
 config :wraft_doc, :paddle,
   api_key: System.get_env("PADDLE_API_KEY"),
   webhook_secret_key: System.get_env("PADDLE_WEBHOOK_SECRET_KEY"),
