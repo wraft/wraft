@@ -127,6 +127,8 @@ defmodule WraftDocWeb.BackupDownloadController do
     |> put_resp_content_type("application/octet-stream")
     |> put_resp_header("content-disposition", ~s(attachment; filename="#{filename}"))
     |> put_resp_header("cache-control", "no-store")
+    # Disable reverse-proxy buffering of the chunked stream.
+    |> put_resp_header("x-accel-buffering", "no")
   end
 
   defp stream_enumerable(conn, enumerable) do
