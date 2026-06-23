@@ -1,6 +1,6 @@
 ARG ELIXIR_VERSION=1.19.5
 ARG OTP_VERSION=27.3.4.8
-ARG DEBIAN_VERSION=bookworm-20260505
+ARG DEBIAN_VERSION=trixie-20260610
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -9,7 +9,7 @@ FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
 RUN apt-get update -y \
-    && apt-get install -y curl build-essential git openjdk-17-jdk \
+    && apt-get install -y curl build-essential git openjdk-21-jdk \
        ca-certificates libssl-dev openssl \
     && update-ca-certificates \
     && apt-get clean \
@@ -27,7 +27,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Java environment
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:$PATH"
 
 WORKDIR /app
@@ -63,26 +63,35 @@ RUN mix release
 
 FROM ${RUNNER_IMAGE}
 
+# Add the PostgreSQL APT (PGDG) repo: trixie main only ships client 17, but the
+# DB server is PostgreSQL 18 and pg_dump/pg_restore must be >= the server major.
+# The downloaded key's fingerprint is pinned, so a substituted key fails the build.
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates curl gnupg \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl -fsSL --retry 3 https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+    && gpg --show-keys --with-colons /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+       | grep -q '^fpr:::::::::B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8:' \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt trixie-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Install system dependencies.
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    postgresql-client-15 \
+    postgresql-client-18 \
     unzip \
     inotify-tools \
     build-essential \
-    xorg \
     libssl-dev \
-    libxrender-dev \
     lmodern \
     git \
     wget \
     vim \
-    gdebi \
-    xvfb \
     gcc \
     libstdc++6 \
     locales \
-    wkhtmltopdf \
+    fonts-dejavu-core \
+    fonts-urw-base35 \
     texlive-fonts-recommended \
     texlive-plain-generic \
     texlive-latex-extra \
@@ -91,13 +100,14 @@ RUN apt-get update && \
     ghostscript \
     curl \
     ca-certificates \
-    openjdk-17-jdk && \
+    openjdk-21-jdk && \
     update-ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Fix ImageMagick PDF security policy
-RUN sed -i 's/<policy domain="coder" rights="none" pattern="PDF" \/>/<policy domain="coder" rights="read|write" pattern="PDF" \/>/' /etc/ImageMagick-6/policy.xml
+RUN find /etc/ImageMagick-* -name policy.xml -exec \
+    sed -i 's/<policy domain="coder" rights="none" pattern="PDF" \/>/<policy domain="coder" rights="read|write" pattern="PDF" \/>/' {} +
 
 # Install Pandoc
 RUN ARCH=$(dpkg --print-architecture) && \
@@ -130,7 +140,7 @@ ENV LC_ALL en_US.UTF-8
 ENV MIX_ENV="prod"
 
 # Set Java environment
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:$PATH"
 
 # Install eforms.sty, insdljs.sty, exerquiz.sty, taborder.sty and required .def files
