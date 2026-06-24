@@ -263,8 +263,14 @@ defmodule WraftDoc.Models do
 
   """
   @spec get_prompt(String.t(), String.t()) :: Prompt.t() | nil
-  def get_prompt(<<_::288>> = id, organisation_id),
-    do: Repo.get_by(Prompt, id: id, organisation_id: organisation_id)
+  def get_prompt(<<_::288>> = id, organisation_id) do
+    Prompt
+    |> where(
+      [p],
+      p.id == ^id and (p.organisation_id == ^organisation_id or is_nil(p.organisation_id))
+    )
+    |> Repo.one()
+  end
 
   def get_prompt(_, _), do: nil
 

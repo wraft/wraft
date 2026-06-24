@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.AIToolController do
   use OpenApiSpex.ControllerSpecs
 
   plug(WraftDocWeb.Plug.AddActionLog)
+  plug(WraftDocWeb.Plug.FeatureFlagCheck, feature: :ai_features)
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -35,7 +36,8 @@ defmodule WraftDocWeb.Api.V1.AIToolController do
     with {:ok, validated_params} <- AiAgents.validate_params(params),
          {:ok, model} <-
            AiAgents.get_model_or_default(validated_params, current_user.current_org_id),
-         {:ok, prompt_data} <- AiAgents.get_prompt_data(validated_params),
+         {:ok, prompt_data} <-
+           AiAgents.get_prompt_data(validated_params, current_user.current_org_id),
          {:ok, result} <-
            AiAgents.execute(current_user, model, prompt_data, validated_params.content) do
       render(conn, "ai_tool_result.json", result: result)

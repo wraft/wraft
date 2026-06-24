@@ -83,6 +83,7 @@ defmodule WraftDoc.AiAgents.Tool do
 
           {:error, reason} = error when attempts > 1 ->
             if retryable_error?(reason) do
+              Process.sleep(retry_backoff_ms(attempts))
               generate_with_retry(llm_model, messages, opts, attempts - 1)
             else
               error
@@ -93,25 +94,32 @@ defmodule WraftDoc.AiAgents.Tool do
         end
       end
 
-      # Deterministic client errors (bad key, bad model, invalid request)
-      # won't change on retry; only rate limits, server errors, and
-      # transport failures are worth re-sending.
       defp retryable_error?(%{status: status}) when is_integer(status),
         do: status == 429 or status >= 500
 
-      defp retryable_error?(_reason), do: true
+      defp retryable_error?(_reason), do: false
+
+      defp retry_backoff_ms(attempts) do
+        exponent = @max_attempts - attempts
+        trunc(:math.pow(2, exponent) * 500) + :rand.uniform(250)
+      end
 
       defp load_result({:error, _reason} = error), do: error
 
       defp load_result({:ok, response}) do
         case ReqLLM.Response.object(response) do
           object when is_map(object) ->
-            result = Ecto.embedded_load(@response_model, object, :json)
+            try do
+              result = Ecto.embedded_load(@response_model, object, :json)
 
-            if Enum.any?(@response_model.__schema__(:embeds), &is_nil(Map.get(result, &1))) do
-              {:error, "The AI model returned an incomplete response, please try again"}
-            else
-              {:ok, result}
+              if Enum.any?(@response_model.__schema__(:embeds), &is_nil(Map.get(result, &1))) do
+                {:error, "The AI model returned an incomplete response, please try again"}
+              else
+                {:ok, result}
+              end
+            rescue
+              _e in [ArgumentError, Ecto.CastError] ->
+                {:error, "The AI model returned an unreadable response, please try again"}
             end
 
           _no_object ->

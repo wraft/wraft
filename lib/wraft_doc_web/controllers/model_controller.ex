@@ -4,6 +4,8 @@ defmodule WraftDocWeb.Api.V1.ModelController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  plug(WraftDocWeb.Plug.FeatureFlagCheck, feature: :ai_features)
+
   alias WraftDoc.AiAgents.ModelSpec
   alias WraftDoc.Models
   alias WraftDoc.Models.Model

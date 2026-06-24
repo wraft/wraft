@@ -152,6 +152,8 @@ defmodule WraftDocWeb.Router do
 
       # health
       get("/health", HealthController, :check_health)
+
+      get("/config", ConfigController, :show)
     end
 
     # templates

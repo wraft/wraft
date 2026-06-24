@@ -38,8 +38,6 @@ defmodule WraftDoc.AiAgents.ModelSpec do
 
   @endpoint_required [:vllm]
 
-  # Self-hosted servers that expose an OpenAI-compatible API are routed
-  # through ReqLLM's :openai provider with the model's endpoint_url.
   @aliases [
     %{value: "llamacpp", reqllm: :openai, label: "llama.cpp", requires_endpoint: true},
     %{value: "ollama", reqllm: :openai, label: "Ollama", requires_endpoint: true}
@@ -84,7 +82,7 @@ defmodule WraftDoc.AiAgents.ModelSpec do
          {:ok, id, false} <- resolve_provider(provider) do
       id
       |> LLMDB.models()
-      |> Enum.filter(&(&1.capabilities.chat and not &1.deprecated))
+      |> Enum.filter(&(is_map(&1.capabilities) and &1.capabilities.chat and not &1.deprecated))
       |> Enum.map(&%{value: &1.model, label: &1.name || &1.model})
       |> Enum.sort_by(&String.downcase(&1.label))
     else

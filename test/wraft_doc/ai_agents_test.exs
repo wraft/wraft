@@ -60,17 +60,19 @@ defmodule WraftDoc.AiAgentsTest do
     end
   end
 
-  describe "get_prompt_data/1" do
+  describe "get_prompt_data/2" do
     test "returns error when neither prompt_id nor prompt is provided" do
       params = %{}
+      organisation_id = Ecto.UUID.generate()
 
       assert {:error, "Either prompt_id or prompt with prompt_type is required"} =
-               AiAgents.get_prompt_data(params)
+               AiAgents.get_prompt_data(params, organisation_id)
     end
 
     test "returns inline prompt data when provided" do
       params = %{prompt: "test prompt", prompt_type: :suggestion}
-      assert {:ok, prompt_data} = AiAgents.get_prompt_data(params)
+      organisation_id = Ecto.UUID.generate()
+      assert {:ok, prompt_data} = AiAgents.get_prompt_data(params, organisation_id)
       assert prompt_data.prompt == "test prompt"
       assert prompt_data.type == :suggestion
     end
