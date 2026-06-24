@@ -40,7 +40,14 @@ defmodule WraftDoc.AiAgents.ModelSpec do
 
   @aliases [
     %{value: "llamacpp", reqllm: :openai, label: "llama.cpp", requires_endpoint: true},
-    %{value: "ollama", reqllm: :openai, label: "Ollama", requires_endpoint: true}
+    %{value: "ollama", reqllm: :openai, label: "Ollama", requires_endpoint: true},
+    %{
+      value: "nvidia",
+      reqllm: :openai,
+      label: "NVIDIA NIM",
+      requires_endpoint: false,
+      base_url: "https://integrate.api.nvidia.com/v1"
+    }
   ]
 
   @doc """
@@ -102,16 +109,25 @@ defmodule WraftDoc.AiAgents.ModelSpec do
         error
 
       {:ok, reqllm_id, requires_endpoint} ->
+        base_url = endpoint_url || alias_base_url(provider)
+
         cond do
           requires_endpoint and is_nil(endpoint_url) ->
             {:error, "endpoint_url is required for provider: #{provider}"}
 
-          is_nil(endpoint_url) ->
+          is_nil(base_url) ->
             {:ok, %{provider: reqllm_id, id: model_name}}
 
           true ->
-            {:ok, %{provider: reqllm_id, id: model_name, base_url: endpoint_url}}
+            {:ok, %{provider: reqllm_id, id: model_name, base_url: base_url}}
         end
+    end
+  end
+
+  defp alias_base_url(provider) do
+    case Enum.find(@aliases, &(&1.value == provider)) do
+      %{} = alias_def -> Map.get(alias_def, :base_url)
+      _ -> nil
     end
   end
 
