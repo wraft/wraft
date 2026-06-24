@@ -71,6 +71,58 @@ defmodule WraftDoc.AiAgents.ToolIntegrationTest do
     assert log.endpoint == "http://localhost:#{bypass.port}/v1"
   end
 
+  test "retries a retryable 5xx and succeeds on a later attempt", %{
+    bypass: bypass,
+    user: user,
+    model: model
+  } do
+    {:ok, attempts} = Agent.start_link(fn -> 0 end)
+
+    Bypass.expect(bypass, "POST", "/v1/chat/completions", fn conn ->
+      n = Agent.get_and_update(attempts, &{&1, &1 + 1})
+
+      if n < 2 do
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(503, Jason.encode!(%{error: %{message: "overloaded"}}))
+      else
+        response = %{
+          id: "chatcmpl-test",
+          object: "chat.completion",
+          created: 0,
+          model: "llama-3.1-8b",
+          choices: [
+            %{
+              index: 0,
+              message: %{
+                role: "assistant",
+                content: Jason.encode!(%{refined_content: "Polished text"})
+              },
+              finish_reason: "stop"
+            }
+          ],
+          usage: %{prompt_tokens: 10, completion_tokens: 5, total_tokens: 15}
+        }
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(response))
+      end
+    end)
+
+    params = %{
+      model: model,
+      prompt: %{prompt: "Refine this document"},
+      content: "Some draft content",
+      user: user
+    }
+
+    assert {:ok, %Refinement{refined_content: "Polished text"}} = DocRefinement.run(params, %{})
+    # two 503s retried, third attempt succeeded
+    assert Agent.get(attempts, & &1) == 3
+    assert [%ModelLog{status: "success"}] = Repo.all(ModelLog)
+  end
+
   test "returns formatted error without retrying when the provider rejects the key", %{
     bypass: bypass,
     user: user,

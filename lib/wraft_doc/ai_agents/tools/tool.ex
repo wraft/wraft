@@ -23,6 +23,11 @@ defmodule WraftDoc.AiAgents.Tool do
 
       @response_model unquote(opts[:response_model])
       @max_attempts 3
+      # Absolute wall-clock budget for the whole retry loop. The request process
+      # blocks during backoff, so cap total time well under the frontend axios
+      # timeout (120s) — a new attempt is not started once the next backoff
+      # would push past this deadline.
+      @max_total_ms 90_000
 
       def run(
             %{
@@ -33,6 +38,7 @@ defmodule WraftDoc.AiAgents.Tool do
             _context
           ) do
         start_time = System.monotonic_time(:millisecond)
+        deadline = start_time + @max_total_ms
 
         with {:ok, spec} <- ModelSpec.build(model),
              {:ok, llm_model} <- to_llm_model(spec) do
@@ -45,7 +51,7 @@ defmodule WraftDoc.AiAgents.Tool do
           opts = [api_key: auth_key] ++ structured_output_opts(llm_model)
 
           llm_model
-          |> generate_with_retry(messages, opts, @max_attempts)
+          |> generate_with_retry(messages, opts, @max_attempts, deadline)
           |> load_result()
           |> case do
             {:ok, result} ->
@@ -76,15 +82,18 @@ defmodule WraftDoc.AiAgents.Tool do
 
       defp structured_output_opts(_llm_model), do: []
 
-      defp generate_with_retry(llm_model, messages, opts, attempts) do
+      defp generate_with_retry(llm_model, messages, opts, attempts, deadline) do
         case ReqLLM.generate_object(llm_model, messages, @response_model.llm_schema(), opts) do
           {:ok, _response} = ok ->
             ok
 
           {:error, reason} = error when attempts > 1 ->
-            if retryable_error?(reason) do
-              Process.sleep(retry_backoff_ms(attempts))
-              generate_with_retry(llm_model, messages, opts, attempts - 1)
+            backoff = retry_backoff_ms(attempts)
+
+            if retryable_error?(reason) and
+                 System.monotonic_time(:millisecond) + backoff < deadline do
+              Process.sleep(backoff)
+              generate_with_retry(llm_model, messages, opts, attempts - 1, deadline)
             else
               error
             end
