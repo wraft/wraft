@@ -72,6 +72,10 @@ defmodule WraftDoc.ContentTypes.ContentType do
       message: "Content type with the same name under your organisation exists.!",
       name: :content_type_organisation_unique_index
     )
+    |> unique_constraint(:prefix,
+      name: :unique_org_prefix_index,
+      message: "has already been taken"
+    )
     |> validate_length(:prefix, min: 2, max: 6)
     |> validate_format(:color, ~r/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
   end
@@ -94,6 +98,10 @@ defmodule WraftDoc.ContentTypes.ContentType do
       :name,
       message: "Content type with the same name under your organisation exists.!",
       name: :content_type_organisation_unique_index
+    )
+    |> unique_constraint(:prefix,
+      name: :unique_org_prefix_index,
+      message: "has already been taken"
     )
     |> organisation_constraint(Layout, :layout_id)
     |> organisation_constraint(Flow, :flow_id)

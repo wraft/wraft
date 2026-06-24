@@ -74,9 +74,18 @@ defmodule WraftDoc.TemplateAssets.WraftJsonSchema do
                   "type" => "object",
                   "required" => ["primaryColor", "secondaryColor", "bodyColor"],
                   "properties" => %{
-                    "primaryColor" => %{"type" => "string", "pattern" => "^#[0-9A-Fa-f]{6}$"},
-                    "secondaryColor" => %{"type" => "string", "pattern" => "^#[0-9A-Fa-f]{6}$"},
-                    "bodyColor" => %{"type" => "string", "pattern" => "^#[0-9A-Fa-f]{6}$"}
+                    "primaryColor" => %{
+                      "type" => "string",
+                      "pattern" => "^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$"
+                    },
+                    "secondaryColor" => %{
+                      "type" => "string",
+                      "pattern" => "^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$"
+                    },
+                    "bodyColor" => %{
+                      "type" => "string",
+                      "pattern" => "^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$"
+                    }
                   }
                 }
               }
@@ -116,14 +125,14 @@ defmodule WraftDoc.TemplateAssets.WraftJsonSchema do
                   "type" => "array",
                   "items" => %{
                     "type" => "object",
-                    "required" => ["type", "name", "description"],
+                    "required" => ["type", "name"],
                     "properties" => %{
                       "type" => %{
                         "type" => "string",
                         "enum" => ["string", "date", "number", "boolean"]
                       },
                       "name" => %{"type" => "string"},
-                      "description" => %{"type" => "string"},
+                      "description" => %{"type" => ["string", "null"]},
                       "required" => %{"type" => "boolean"}
                     }
                   }
