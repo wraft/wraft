@@ -180,15 +180,22 @@ defmodule WraftDoc.AiAgents do
     message = provider_error_message(error) || Exception.message(error)
 
     case Map.get(error, :status) do
-      status when is_integer(status) -> {:error, {status, %{errors: message}}}
-      _ -> {:error, message}
+      status when is_integer(status) and status in 100..599 ->
+        {:error, {status, %{errors: message}}}
+
+      _ ->
+        {:error, message}
     end
   end
 
   def format_error(message) when is_binary(message) do
     case decode_error_message(message) do
-      {:ok, %{"error" => %{"code" => code, "message" => error_message}}} ->
+      {:ok, %{"error" => %{"code" => code, "message" => error_message}}}
+      when is_integer(code) and code in 100..599 ->
         {:error, {code, %{errors: error_message}}}
+
+      {:ok, %{"error" => %{"message" => error_message}}} when is_binary(error_message) ->
+        {:error, error_message}
 
       _undecodable ->
         {:error, "Something went wrong, please try again"}

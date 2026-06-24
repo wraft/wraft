@@ -52,6 +52,11 @@ defmodule WraftDocWeb.Api.V1.ModelView do
   defp mask_auth_key(nil), do: nil
   defp mask_auth_key(:error), do: %{"error" => "Key error, please update key"}
 
+  # Keys of 4 bytes or fewer have no leading segment to reveal; fully mask them
+  # (also avoids String.duplicate/2 raising on a negative count).
+  defp mask_auth_key(key) when byte_size(key) <= 4,
+    do: String.duplicate("*", byte_size(key))
+
   defp mask_auth_key(key) do
     masked_part = String.duplicate("*", byte_size(key) - 4)
     visible_part = String.slice(key, -4, 4)

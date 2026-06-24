@@ -69,7 +69,9 @@ defmodule WraftDoc.AiAgents.ModelSpec do
     |> Enum.map(fn id ->
       %{
         value: Atom.to_string(id),
-        label: Map.get(names, id, humanize(id)),
+        # `|| humanize/1` (not Map.get's default) so a present-but-nil catalog
+        # name still falls back to a string and never breaks the downcase sort.
+        label: Map.get(names, id) || humanize(id),
         requires_endpoint: id in @endpoint_required
       }
     end)
@@ -95,6 +97,10 @@ defmodule WraftDoc.AiAgents.ModelSpec do
     else
       _alias_local_or_unsupported -> []
     end
+  rescue
+    # Mirror provider_names/0: a missing/changed llm_db catalog must not crash
+    # the providers endpoint — degrade to an empty model list instead.
+    _error -> []
   end
 
   @doc """
