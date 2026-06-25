@@ -5,6 +5,8 @@ defmodule WraftDoc.Models do
 
   import Ecto.Query, warn: false
 
+  require Logger
+
   alias WraftDoc.Models.Model
   alias WraftDoc.Models.ModelLog
   alias WraftDoc.Models.Prompt
@@ -38,6 +40,7 @@ defmodule WraftDoc.Models do
     Model
     |> where([m], m.organisation_id == ^organisation_id)
     |> where([m], m.is_default == true)
+    |> where([m], m.status == "active")
     |> limit(1)
     |> Repo.one()
   end
@@ -181,7 +184,7 @@ defmodule WraftDoc.Models do
       ) do
     end_time = System.monotonic_time(:millisecond)
 
-    create_model_log(%{
+    %{
       model_name: model_name,
       provider: provider,
       prompt_text: prompt_text,
@@ -190,7 +193,15 @@ defmodule WraftDoc.Models do
       response_time_ms: end_time - start_time,
       user_id: user_id,
       organisation_id: organisation_id
-    })
+    }
+    |> create_model_log()
+    |> tap(fn
+      {:error, %Ecto.Changeset{} = changeset} ->
+        Logger.warning("Failed to write AI model log: #{inspect(changeset.errors)}")
+
+      _ok ->
+        :ok
+    end)
   end
 
   @doc """
@@ -262,8 +273,14 @@ defmodule WraftDoc.Models do
 
   """
   @spec get_prompt(String.t(), String.t()) :: Prompt.t() | nil
-  def get_prompt(<<_::288>> = id, organisation_id),
-    do: Repo.get_by(Prompt, id: id, organisation_id: organisation_id)
+  def get_prompt(<<_::288>> = id, organisation_id) do
+    Prompt
+    |> where(
+      [p],
+      p.id == ^id and (p.organisation_id == ^organisation_id or is_nil(p.organisation_id))
+    )
+    |> Repo.one()
+  end
 
   def get_prompt(_, _), do: nil
 
@@ -298,7 +315,11 @@ defmodule WraftDoc.Models do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec update_prompt(Prompt.t(), map()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_prompt(Prompt.t(), map()) ::
+          {:ok, Prompt.t()} | {:error, Ecto.Changeset.t() | String.t()}
+  def update_prompt(%Prompt{organisation_id: nil, creator_id: nil} = _prompt, _attrs),
+    do: {:error, "System prompt cannot be modified"}
+
   def update_prompt(%Prompt{} = prompt, attrs) do
     prompt
     |> Prompt.changeset(attrs)

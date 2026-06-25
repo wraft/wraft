@@ -4,6 +4,9 @@ defmodule WraftDocWeb.Api.V1.ModelController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  plug(WraftDocWeb.Plug.FeatureFlagCheck, feature: :ai_features)
+
+  alias WraftDoc.AiAgents.ModelSpec
   alias WraftDoc.Models
   alias WraftDoc.Models.Model
   alias WraftDocWeb.Schemas.Error
@@ -27,6 +30,35 @@ defmodule WraftDocWeb.Api.V1.ModelController do
       render(conn, :index,
         models: Models.list_ai_models(conn.assigns.current_user.current_org_id)
       )
+
+  operation(:providers,
+    summary: "List supported AI providers",
+    description: "Retrieve the providers accepted for AI models",
+    responses: [
+      ok: {"Ok", "application/json", %OpenApiSpex.Schema{type: :object}},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
+
+  @spec providers(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def providers(conn, _params),
+    do: render(conn, :providers, providers: ModelSpec.provider_options())
+
+  operation(:provider_models,
+    summary: "List known models for an AI provider",
+    description: "Retrieve chat models from the catalog for the given provider",
+    parameters: [
+      provider: [in: :path, type: :string, description: "Provider value", required: true]
+    ],
+    responses: [
+      ok: {"Ok", "application/json", %OpenApiSpex.Schema{type: :object}},
+      unauthorized: {"Unauthorized", "application/json", Error}
+    ]
+  )
+
+  @spec provider_models(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def provider_models(conn, %{"provider" => provider}),
+    do: render(conn, :provider_models, models: ModelSpec.model_options(provider))
 
   operation(:create,
     summary: "Create a new AI model",

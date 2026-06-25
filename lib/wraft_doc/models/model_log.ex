@@ -9,8 +9,6 @@ defmodule WraftDoc.Models.ModelLog do
   alias __MODULE__
   alias WraftDoc.Account.User
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.Models.Model
-  alias WraftDoc.Models.Prompt
 
   schema "ai_model_log" do
     field(:prompt_text, :string)
@@ -21,8 +19,6 @@ defmodule WraftDoc.Models.ModelLog do
     field(:response, :string)
     field(:response_time_ms, :integer)
 
-    belongs_to(:prompt, Prompt)
-    belongs_to(:model, Model)
     belongs_to(:user, User)
     belongs_to(:organisation, Organisation)
 
@@ -36,11 +32,10 @@ defmodule WraftDoc.Models.ModelLog do
       :model_name,
       :prompt_text,
       :endpoint,
+      :provider,
       :status,
       :response,
       :response_time_ms,
-      :model_id,
-      :prompt_id,
       :user_id,
       :organisation_id
     ])
@@ -49,8 +44,6 @@ defmodule WraftDoc.Models.ModelLog do
       :prompt_text,
       :status,
       :response_time_ms,
-      :model_id,
-      :prompt_id,
       :user_id,
       :organisation_id
     ])

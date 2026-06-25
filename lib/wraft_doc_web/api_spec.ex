@@ -54,6 +54,7 @@ defmodule WraftDocWeb.ApiSpec do
       ],
       tags: [
         %OpenApiSpex.Tag{name: "Health", description: "Health check operations"},
+        %OpenApiSpex.Tag{name: "Config", description: "Public runtime configuration"},
         %OpenApiSpex.Tag{name: "User", description: "User operations"},
         %OpenApiSpex.Tag{name: "Profile", description: "Profile operations"},
         %OpenApiSpex.Tag{name: "Organisation", description: "Organisation operations"},

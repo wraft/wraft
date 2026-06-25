@@ -27,15 +27,12 @@ defmodule WraftDoc.AiAgents do
 
   ## Examples
 
-      # Execute an extraction agent
       iex> WraftDoc.AiAgents.execute(user, model, extraction_prompt, content)
       {:ok, %Extraction{entities: [...], dates: [...], financial_details: [...]}}
 
-      # Execute a suggestion agent
       iex> WraftDoc.AiAgents.execute(user, model, suggestion_prompt, content)
       {:ok, %Suggestions{suggestions: [...]}}
 
-      # Execute a refinement agent
       iex> WraftDoc.AiAgents.execute(user, model, refinement_prompt, content)
       {:ok, "Refined content here..."}
 
@@ -145,46 +142,73 @@ defmodule WraftDoc.AiAgents do
     |> Models.get_default_model()
     |> case do
       %Model{} = model -> {:ok, model}
-      nil -> {:error, "No default model available for this organization"}
+      nil -> {:error, "No active default model available for this organization"}
     end
   end
 
-  def get_model_or_default(%{model_id: model_id}, _organisation_id) do
+  def get_model_or_default(%{model_id: model_id}, organisation_id) do
     model_id
-    |> Models.get_model()
+    |> Models.get_model(organisation_id)
     |> case do
-      %Model{} = model -> {:ok, model}
+      %Model{status: "active"} = model -> {:ok, model}
+      %Model{} -> {:error, "Model is not active"}
       nil -> {:error, "Model not found"}
-      {:error, error} -> {:error, error}
     end
   end
 
   @doc """
   Retrieves prompt data either from database by ID or from inline prompt parameters.
   """
-  @spec get_prompt_data(map()) :: {:ok, Prompt.t() | map()} | {:error, String.t()}
-  def get_prompt_data(%{prompt_id: prompt_id}) when not is_nil(prompt_id) do
-    case Models.get_prompt(prompt_id) do
+  @spec get_prompt_data(map(), String.t()) :: {:ok, Prompt.t() | map()} | {:error, String.t()}
+  def get_prompt_data(%{prompt_id: prompt_id}, organisation_id) when not is_nil(prompt_id) do
+    case Models.get_prompt(prompt_id, organisation_id) do
       %Prompt{} = prompt -> {:ok, prompt}
       nil -> {:error, "Prompt not found"}
-      {:error, error} -> {:error, error}
     end
   end
 
-  def get_prompt_data(%{prompt: prompt, prompt_type: prompt_type}) when not is_nil(prompt) do
+  def get_prompt_data(%{prompt: prompt, prompt_type: prompt_type}, _organisation_id)
+      when not is_nil(prompt) do
     {:ok, %{prompt: prompt, type: prompt_type}}
   end
 
-  def get_prompt_data(_) do
+  def get_prompt_data(_, _organisation_id) do
     {:error, "Either prompt_id or prompt with prompt_type is required"}
   end
 
-  def format_error(message) do
-    with {:ok, %{"error" => %{"code" => code, "message" => error_message}}} <-
-           decode_error_message(message) do
-      {:error, {code, %{errors: error_message}}}
+  def format_error(%{__exception__: true} = error) do
+    message = provider_error_message(error) || Exception.message(error)
+
+    case Map.get(error, :status) do
+      status when is_integer(status) and status in 100..599 ->
+        {:error, {status, %{errors: message}}}
+
+      _ ->
+        {:error, message}
     end
   end
+
+  def format_error(message) when is_binary(message) do
+    case decode_error_message(message) do
+      {:ok, %{"error" => %{"code" => code, "message" => error_message}}}
+      when is_integer(code) and code in 100..599 ->
+        {:error, {code, %{errors: error_message}}}
+
+      {:ok, %{"error" => %{"message" => error_message}}} when is_binary(error_message) ->
+        {:error, error_message}
+
+      _undecodable ->
+        {:error, "Something went wrong, please try again"}
+    end
+  end
+
+  def format_error(_message), do: {:error, "Something went wrong, please try again"}
+
+  defp provider_error_message(%{response_body: %{"error" => %{"message" => message}}})
+       when is_binary(message),
+       do: message
+
+  defp provider_error_message(_error), do: nil
 
   defp decode_error_message(error_msg) do
     case Regex.run(~r/%\{.*\}/, error_msg) do

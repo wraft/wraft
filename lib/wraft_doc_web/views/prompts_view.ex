@@ -22,6 +22,7 @@ defmodule WraftDocWeb.Api.V1.PromptsView do
       id: prompt.id,
       title: prompt.title,
       prompt: prompt.prompt,
+      type: prompt.type,
       status: prompt.status
     }
   end

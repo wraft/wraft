@@ -4,6 +4,8 @@ defmodule WraftDocWeb.Api.V1.PromptsController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  plug(WraftDocWeb.Plug.FeatureFlagCheck, feature: :ai_features)
+
   alias WraftDoc.Models
   alias WraftDoc.Models.Prompt
   alias WraftDocWeb.Schemas.Error
@@ -74,7 +76,9 @@ defmodule WraftDocWeb.Api.V1.PromptsController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    with %Prompt{} = prompt <- Models.get_prompt(id) do
+    current_user = conn.assigns[:current_user]
+
+    with %Prompt{} = prompt <- Models.get_prompt(id, current_user.current_org_id) do
       render(conn, :show, prompt: prompt)
     end
   end
@@ -99,7 +103,7 @@ defmodule WraftDocWeb.Api.V1.PromptsController do
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Prompt{} = prompt <- Models.get_prompt(id),
+    with %Prompt{} = prompt <- Models.get_prompt(id, current_user.current_org_id),
          {:ok, %Prompt{} = prompt} <-
            Models.update_prompt(
              prompt,
@@ -128,7 +132,9 @@ defmodule WraftDocWeb.Api.V1.PromptsController do
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
-    with %Prompt{} = prompt <- Models.get_prompt(id),
+    current_user = conn.assigns[:current_user]
+
+    with %Prompt{} = prompt <- Models.get_prompt(id, current_user.current_org_id),
          {:ok, %Prompt{}} <- Models.delete_prompt(prompt) do
       send_resp(conn, :no_content, "")
     end

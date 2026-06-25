@@ -7,6 +7,7 @@ defmodule WraftDoc.Models.Model do
   import Ecto.Changeset
 
   alias WraftDoc.Account.User
+  alias WraftDoc.AiAgents.ModelSpec
   alias WraftDoc.EctoType.EncryptedBinaryType
   alias WraftDoc.Enterprise.Organisation
 
@@ -76,6 +77,9 @@ defmodule WraftDoc.Models.Model do
     |> validate_length(:name, min: 1, max: 255)
     |> validate_length(:description, max: 1000)
     |> validate_inclusion(:status, ["active", "inactive", "pending"])
+    |> validate_inclusion(:provider, ModelSpec.supported_providers(),
+      message: "is not a supported AI provider"
+    )
     |> validate_url(:endpoint_url)
     |> unique_constraint(:name, name: :ai_model_organisation_id_name_index)
     |> unique_constraint(:model_name, name: :ai_model_organisation_id_model_name_index)

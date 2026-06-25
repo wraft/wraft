@@ -12,7 +12,8 @@ defmodule WraftDocWeb.Plug.FeatureFlagCheck do
 
   def call(conn, opts) do
     feature = Keyword.fetch!(opts, :feature)
-    organisation = Repo.get(Organisation, conn.assigns[:current_user].current_org_id)
+    current_user = conn.assigns[:current_user]
+    organisation = current_user && Repo.get(Organisation, current_user.current_org_id)
 
     if feature in FeatureFlags.available_features() do
       if FeatureFlags.enabled?(feature, organisation) do

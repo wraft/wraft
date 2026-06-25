@@ -15,11 +15,27 @@ defmodule WraftDocWeb.Api.V1.ModelView do
     %{data: data(model)}
   end
 
+  @doc """
+  Renders the supported provider options.
+  """
+  def providers(%{providers: providers}) do
+    %{data: providers}
+  end
+
+  @doc """
+  Renders the known models for a provider.
+  """
+  def provider_models(%{models: models}) do
+    %{data: models}
+  end
+
   defp data(%Model{} = model) do
     %{
       id: model.id,
       name: model.name,
       description: model.description,
+      provider: model.provider,
+      model_name: model.model_name,
       endpoint_url: model.endpoint_url,
       is_default: model.is_default,
       is_local: model.is_local,
@@ -35,6 +51,11 @@ defmodule WraftDocWeb.Api.V1.ModelView do
 
   defp mask_auth_key(nil), do: nil
   defp mask_auth_key(:error), do: %{"error" => "Key error, please update key"}
+
+  # Keys of 4 bytes or fewer have no leading segment to reveal; fully mask them
+  # (also avoids String.duplicate/2 raising on a negative count).
+  defp mask_auth_key(key) when byte_size(key) <= 4,
+    do: String.duplicate("*", byte_size(key))
 
   defp mask_auth_key(key) do
     masked_part = String.duplicate("*", byte_size(key) - 4)
