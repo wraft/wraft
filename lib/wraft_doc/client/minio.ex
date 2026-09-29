@@ -13,7 +13,6 @@ defmodule WraftDoc.Client.Minio do
     defexception message: "MinIO upload error. File not found."
   end
 
-  alias ExAws.Config
   alias ExAws.S3
   alias WraftDoc.Client.Minio.DownloadError
 
@@ -117,7 +116,7 @@ defmodule WraftDoc.Client.Minio do
 
   def generate_url(file_path, opts \\ []) do
     opts = put_in(opts[:expires_in], Keyword.get(opts, :expires_in, @default_expiry_time))
-    config = Config.new(:s3, Application.get_all_env(:ex_aws))
+    config = WraftDoc.Storage.PublicEndpoint.config()
     {:ok, url} = S3.presigned_url(config, :get, bucket(), file_path, opts)
     url
   end

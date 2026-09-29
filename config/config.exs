@@ -133,7 +133,7 @@ config :wraft_doc, Oban,
 
 # File Upload config
 config :waffle,
-  storage: Waffle.Storage.S3,
+  storage: WraftDoc.Storage.S3,
   version_timeout: 30_000
 
 config :ex_aws,

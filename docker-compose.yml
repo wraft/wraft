@@ -65,7 +65,7 @@ services:
       - db:/var/lib/postgresql
 
   rustfs:
-    image: rustfs/rustfs:v1.0.0
+    image: rustfs/rustfs:1.0.0
     ports:
       - 9000:9000
       - 9001:9001
@@ -78,35 +78,26 @@ services:
     volumes:
       - rustfsdata:/data
     command: /data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
 
   createbucket:
     image: rustfs/rc:v0.1.36
-    restart: on-failure:5
     environment:
       S3_URL: http://rustfs:9000
       S3_BUCKET: ${S3_BUCKET}
       S3_BACKUP_BUCKET: ${S3_BACKUP_BUCKET:-wraft-backups}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
+    volumes:
+      - ./scripts/rustfs:/init:ro
     depends_on:
-      - rustfs
-    entrypoint: >
-      /bin/sh -c "
-      set -e;
-      if [ \"$$S3_BACKUP_BUCKET\" = \"$$S3_BUCKET\" ]; then
-        echo \"S3_BACKUP_BUCKET must differ from S3_BUCKET; the app bucket is anonymously readable\" >&2;
-        exit 1;
-      fi;
-      i=0;
-      until rc alias set myrustfs $$S3_URL $${S3_ACCESS_KEY} $$S3_SECRET_KEY; do
-        i=$$((i+1));
-        if [ $$i -ge 30 ]; then exit 1; fi;
-        sleep 2;
-      done;
-      rc ls myrustfs/$${S3_BUCKET} >/dev/null 2>&1 || rc mb -p myrustfs/$${S3_BUCKET};
-      rc anonymous set download myrustfs/$${S3_BUCKET};
-      rc ls myrustfs/$${S3_BACKUP_BUCKET} >/dev/null 2>&1 || rc mb -p myrustfs/$${S3_BACKUP_BUCKET};
-      "
+      rustfs:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/init/init-buckets.sh"]
 
   typesense:
     image: typesense/typesense:27.1
