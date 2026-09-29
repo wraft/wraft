@@ -277,7 +277,7 @@ defmodule WraftDocWeb.AdminNext.SystemBackupLive do
         <.card :if={not @enabled} title="Feature disabled">
           <p class="text-sm text-base-content/70">
             System backups are off. Set <code>SYSTEM_BACKUP_ENABLED=true</code>
-            and a <code>MINIO_BACKUP_BUCKET</code>.
+            and a <code>S3_BACKUP_BUCKET</code>.
           </p>
         </.card>
 

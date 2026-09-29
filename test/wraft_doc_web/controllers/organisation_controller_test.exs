@@ -118,10 +118,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     response = json_response(conn, 200)
 
     assert response["logo"] =~
-             "#{System.get_env("MINIO_URL")}/organisations/#{organisation.id}/logo/logo_#{organisation.id}.png"
+             "#{System.get_env("S3_URL")}/organisations/#{organisation.id}/logo/logo_#{organisation.id}.png"
 
     assert response["logo_thumb"] =~
-             "#{System.get_env("MINIO_URL")}/organisations/#{organisation.id}/logo/logo_thumb_#{organisation.id}.png"
+             "#{System.get_env("S3_URL")}/organisations/#{organisation.id}/logo/logo_thumb_#{organisation.id}.png"
   end
 
   @tag :skip

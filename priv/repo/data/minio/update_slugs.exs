@@ -10,7 +10,7 @@ defmodule WraftDoc.Minio.UpdateSlugs do
   require Logger
   alias WraftDoc.Minio.Utils
 
-  wraft_bucket = System.get_env("MINIO_BUCKET")
+  wraft_bucket = System.get_env("S3_BUCKET")
 
   Logger.info("Update slugs in object storage")
 

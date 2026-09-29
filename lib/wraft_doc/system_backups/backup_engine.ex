@@ -134,7 +134,7 @@ defmodule WraftDoc.SystemBackups.BackupEngine do
 
     cond do
       backup_bucket in [nil, ""] ->
-        {:error, "no backup bucket configured (MINIO_BACKUP_BUCKET) — refusing to run"}
+        {:error, "no backup bucket configured (S3_BACKUP_BUCKET) — refusing to run"}
 
       database_url in [nil, ""] ->
         {:error, "DATABASE_URL is not set — cannot run pg_dump"}
@@ -143,7 +143,7 @@ defmodule WraftDoc.SystemBackups.BackupEngine do
         {:ok,
          %{
            backup_bucket: backup_bucket,
-           app_bucket: System.get_env("MINIO_BUCKET"),
+           app_bucket: System.get_env("S3_BUCKET"),
            database_url: database_url,
            cloak_key_label: settings[:cloak_key_label] || "v1",
            min_free_disk_bytes: settings[:min_free_disk_bytes] || 2_000_000_000

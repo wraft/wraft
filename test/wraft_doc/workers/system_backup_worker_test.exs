@@ -157,7 +157,7 @@ defmodule WraftDoc.Workers.SystemBackupWorkerTest do
 
     test "Lifeline-discard simulation: row reconciled to failed mid-run never resurrects" do
       {:ok, backup} = SystemBackups.create_pending(:scheduled)
-      app_bucket = System.get_env("MINIO_BUCKET")
+      app_bucket = System.get_env("S3_BUCKET")
       prefix = "system/backups/#{backup.id}/"
       test_pid = self()
 

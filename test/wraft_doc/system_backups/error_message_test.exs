@@ -36,8 +36,8 @@ defmodule WraftDoc.SystemBackups.ErrorMessageTest do
   end
 
   test "configuration errors name the env var" do
-    assert ErrorMessage.humanize("no backup bucket configured (MINIO_BACKUP_BUCKET)") =~
-             "MINIO_BACKUP_BUCKET"
+    assert ErrorMessage.humanize("no backup bucket configured (S3_BACKUP_BUCKET)") =~
+             "S3_BACKUP_BUCKET"
   end
 
   test "staging disk pre-flight" do

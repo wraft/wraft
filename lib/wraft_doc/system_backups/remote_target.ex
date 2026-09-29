@@ -10,7 +10,7 @@ defmodule WraftDoc.SystemBackups.RemoteTarget do
       private / loopback / link-local range, IPv4 **or** IPv6 (override with
       an explicit `remote_allowed_hosts` allowlist);
     * **live-target-guarded** — refuses a remote whose database matches the
-      live `DATABASE_URL` or whose bucket matches the live `MINIO_BUCKET`
+      live `DATABASE_URL` or whose bucket matches the live `S3_BUCKET`
       (`pg_restore --clean` would destroy the live instance).
 
   Resolution happens at validate time. `pg_restore`/S3 re-resolve the hostname
@@ -158,7 +158,7 @@ defmodule WraftDoc.SystemBackups.RemoteTarget do
       same_database?(db_url, System.get_env("DATABASE_URL")) ->
         {:error, "refusing to restore onto the live database"}
 
-      bucket == System.get_env("MINIO_BUCKET") ->
+      bucket == System.get_env("S3_BUCKET") ->
         {:error, "refusing to restore into the live bucket"}
 
       true ->

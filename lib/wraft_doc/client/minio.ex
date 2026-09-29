@@ -257,5 +257,5 @@ defmodule WraftDoc.Client.Minio do
     end
   end
 
-  defp bucket, do: System.get_env("MINIO_BUCKET")
+  defp bucket, do: System.get_env("S3_BUCKET")
 end

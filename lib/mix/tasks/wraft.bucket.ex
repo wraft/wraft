@@ -16,7 +16,7 @@ defmodule Mix.Tasks.Wraft.Bucket do
 
   @requirements ["app.start"]
   def run(_) do
-    bucket = System.get_env("MINIO_BUCKET", "wraft")
+    bucket = System.get_env("S3_BUCKET", "wraft")
     Logger.info("Checking if bucket '#{bucket}' exists...")
 
     case Utils.bucket_exists?(bucket) do

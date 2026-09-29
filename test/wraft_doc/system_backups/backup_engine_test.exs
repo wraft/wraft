@@ -62,7 +62,7 @@ defmodule WraftDoc.SystemBackups.BackupEngineTest do
     end
 
     test "same-bucket fallback excludes prior backups and tmp keys", %{backup: backup} do
-      app_bucket = System.get_env("MINIO_BUCKET")
+      app_bucket = System.get_env("S3_BUCKET")
 
       Application.put_env(
         :wraft_doc,

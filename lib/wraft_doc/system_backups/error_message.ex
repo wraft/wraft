@@ -24,7 +24,7 @@ defmodule WraftDoc.SystemBackups.ErrorMessage do
     {:contains, "econnrefused",
      "Could not reach the storage server. Check that it is running and reachable."},
     {:contains, "no backup bucket configured",
-     "No backup storage bucket is configured (set MINIO_BACKUP_BUCKET)."},
+     "No backup storage bucket is configured (set S3_BACKUP_BUCKET)."},
     {:contains, "insufficient disk for backup staging",
      "Not enough free disk space on the app server to stage the backup."},
     {:contains, "pg_dump failed", "Exporting the database failed."},
