@@ -97,8 +97,8 @@ defmodule Mix.Tasks.Wraft.CheckDeps do
   end
 
   defp check_minio_connection do
-    IO.puts("\nChecking MinIO connection...")
-    endpoint = System.get_env("MINIO_ENDPOINT", "http://localhost:9000")
+    IO.puts("\nChecking RustFS connection...")
+    endpoint = s3_endpoint()
 
     config =
       ExAws.Config.new(:s3,
@@ -111,29 +111,42 @@ defmodule Mix.Tasks.Wraft.CheckDeps do
 
     case ExAws.request(request, config) do
       {:ok, _} ->
-        IO.puts("✅ MinIO is running and accessible")
+        IO.puts("✅ RustFS is running and accessible")
         :ok
 
       {:error, :econnrefused} ->
-        IO.puts("\n❌ MinIO Error: Connection refused")
+        IO.puts("\n❌ RustFS Error: Connection refused")
         IO.puts("\nTroubleshooting steps:")
-        IO.puts("1. Check if MinIO is running:")
-        IO.puts("   - If using Docker: docker ps | grep minio")
-        IO.puts("   - Check MinIO endpoint: #{endpoint}")
-        IO.puts("2. Verify MINIO_ENDPOINT environment variable:")
-        IO.puts("   Current value: #{endpoint}")
+        IO.puts("1. Check if RustFS is running:")
+        IO.puts("   - If using Docker: docker ps | grep rustfs")
+        IO.puts("   - Check S3 endpoint: #{endpoint}")
+        IO.puts("2. Verify S3_HOST, S3_PORT, and S3_URL:")
+        IO.puts("   Current endpoint: #{endpoint}")
         IO.puts("3. If using Docker, make sure the container is running:")
         IO.puts("   - docker-compose up -d")
-        raise "MinIO connection failed"
+        raise "RustFS connection failed"
 
       {:error, error} ->
-        IO.puts("\n❌ MinIO Error: #{inspect(error)}")
+        IO.puts("\n❌ RustFS Error: #{inspect(error)}")
         IO.puts("\nTroubleshooting steps:")
-        IO.puts("1. Verify MinIO configuration:")
-        IO.puts("   - MINIO_ENDPOINT: #{endpoint}")
-        IO.puts("2. Check MinIO logs for errors")
-        IO.puts("3. Ensure MinIO service is running")
-        raise "MinIO connection failed"
+        IO.puts("1. Verify S3 configuration:")
+        IO.puts("   - S3 endpoint: #{endpoint}")
+        IO.puts("2. Check RustFS logs for errors")
+        IO.puts("3. Ensure RustFS service is running")
+        raise "RustFS connection failed"
+    end
+  end
+
+  defp s3_endpoint do
+    case System.get_env("S3_URL") do
+      url when is_binary(url) and url != "" ->
+        if String.contains?(url, "://"), do: url, else: "http://#{url}"
+
+      _ ->
+        host = System.get_env("S3_HOST") || "localhost"
+        port = System.get_env("S3_PORT") || "9000"
+        scheme = System.get_env("S3_SCHEMA") || "http"
+        "#{scheme}://#{host}:#{port}"
     end
   end
 end

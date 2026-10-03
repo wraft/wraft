@@ -29,7 +29,7 @@ end
 
 config :wraft_doc, :system_backup,
   enabled: System.get_env("SYSTEM_BACKUP_ENABLED") in ["true", "1"],
-  backup_bucket: System.get_env("MINIO_BACKUP_BUCKET"),
+  backup_bucket: System.get_env("S3_BACKUP_BUCKET"),
   retention_count: env_integer.("BACKUP_RETENTION_COUNT", 7),
   cloak_key_label: System.get_env("BACKUP_CLOAK_KEY_LABEL") || "v1",
   min_free_disk_bytes: env_integer.("BACKUP_MIN_FREE_DISK_BYTES", 2_000_000_000),
@@ -139,24 +139,24 @@ config :wraft_doc, WraftDocWeb.Guardian, secret_key: System.get_env("GUARDIAN_KE
 
 config :waffle,
   # "wraft"
-  bucket: System.get_env("MINIO_BUCKET"),
+  bucket: System.get_env("S3_BUCKET"),
   # "http://127.0.0.1:9000"
-  asset_host: System.get_env("MINIO_URL")
+  asset_host: System.get_env("S3_URL")
 
-minio_schema =
-  if schema = System.get_env("MINIO_SCHEMA") do
+s3_schema =
+  if schema = System.get_env("S3_SCHEMA") do
     schema <> "://"
   else
     "http://"
   end
 
 config :ex_aws,
-  access_key_id: System.get_env("MINIO_ROOT_USER"),
-  secret_access_key: System.get_env("MINIO_ROOT_PASSWORD"),
+  access_key_id: System.get_env("S3_ACCESS_KEY"),
+  secret_access_key: System.get_env("S3_SECRET_KEY"),
   s3: [
-    scheme: minio_schema,
-    host: System.get_env("MINIO_HOST"),
-    port: System.get_env("MINIO_PORT")
+    scheme: s3_schema,
+    host: System.get_env("S3_HOST"),
+    port: System.get_env("S3_PORT")
   ]
 
 config :ex_typesense,

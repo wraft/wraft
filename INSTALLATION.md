@@ -5,7 +5,7 @@
 - Elixir 1.19.2
 - Erlang/OTP 27.0.1
 - Postgres
-- Minio - S3 compatible object storage
+- RustFS - S3 compatible object storage
 - Pandoc 3.9.0.2
 - ImageMagick
 - Latex
@@ -76,18 +76,36 @@ Test your connectivity:
 $ psql -h 127.0.0.1 -p 5432 -U postgres postgres
 ```
 
-### 4 - **Minio**
+### 4 - **RustFS**
 
-Download the latest version of minio from [here](https://min.io/docs/minio/linux/index.html) and follow the instructions to install based on your OS.
+RustFS is the local S3-compatible store. The API listens on port `9000` and the console on port `9001`. Set `RUSTFS_ACCESS_KEY` and `RUSTFS_SECRET_KEY` to the same values as `S3_ACCESS_KEY` and `S3_SECRET_KEY` in your env file.
 
-Run the following command from the system terminal or shell to start a local MinIO instance using the ~/minio folder. You can replace this path with another folder path on the local machine:
+Skip this section if you use the Docker setup below. That stack starts RustFS for you.
+
+##### **Linux**
 
 ```shell
-$ minio server ~/minio
-$ minio server ~/minio --console-address :9001
+curl -O https://rustfs.com/install_rustfs.sh && bash install_rustfs.sh
 ```
 
-Open http://127.0.0.1:9000 in a web browser to access the MinIO Console.
+Then set the credentials in `/etc/default/rustfs` and run `sudo systemctl restart rustfs`. Full steps: [RustFS Linux quick start](https://docs.rustfs.com/en/installation/linux/quick-start/).
+
+##### **macOS**
+
+Install the [standalone binary or Launcher](https://docs.rustfs.com/en/installation/macos/), then start the server:
+
+```shell
+mkdir -p "$HOME/rustfs/data"
+export RUSTFS_ACCESS_KEY="<same as S3_ACCESS_KEY>"
+export RUSTFS_SECRET_KEY="<same as S3_SECRET_KEY>"
+"$HOME/rustfs/bin/rustfs" server \
+  --address "127.0.0.1:9000" \
+  --console-enable true \
+  --console-address "127.0.0.1:9001" \
+  "$HOME/rustfs/data"
+```
+
+Open http://127.0.0.1:9001 for the RustFS console. The app talks to the API at http://127.0.0.1:9000.
 
 ### 5 - **Pandoc**
 
@@ -250,14 +268,14 @@ cp .env.example .env.dev
 source .env.dev
 ```
 
-4. **Add MinIO host entry**
+4. **Add RustFS host entry**
 
 ```shell
 # macOS / Linux
-echo "127.0.0.1 minio" | sudo tee -a /etc/hosts
+echo "127.0.0.1 rustfs" | sudo tee -a /etc/hosts
 
 # Windows
-echo 127.0.0.1 minio >> C:\Windows\System32\drivers\etc\hosts
+echo 127.0.0.1 rustfs >> C:\Windows\System32\drivers\etc\hosts
 ```
 
 5. **Start all Docker containers**
@@ -265,6 +283,8 @@ echo 127.0.0.1 minio >> C:\Windows\System32\drivers\etc\hosts
 ```shell
 docker-compose up -d
 ```
+
+Object storage uses a new `rustfsdata` volume. Files that were stored in the old MinIO `miniodata` volume are not copied. Copy them with `rc` or `mc` before you remove that volume if you still need them.
 
 6. **Visit the application**
 
@@ -287,7 +307,7 @@ The Docker setup includes:
 - **Backend**: Elixir 1.19.2 with Erlang 27.0.1
 - **Frontend**: React application
 - **Database**: PostgreSQL 18
-- **Object Storage**: MinIO (S3-compatible)
+- **Object Storage**: RustFS (S3-compatible)
 - **Search Engine**: Typesense
 - **Dependencies**: Pandoc 3.9.0.2, Typst 0.14.2, LaTeX, ImageMagick, Java 21, Rust toolchain
 
@@ -295,7 +315,7 @@ The Docker setup includes:
 
 - **Frontend**: http://localhost:3200
 - **Backend API**: http://localhost:4000
-- **MinIO Console**: http://localhost:9001
+- **RustFS Console**: http://localhost:9001
 - **PostgreSQL**: localhost:5433
 - **Typesense**: localhost:8108
 
@@ -307,7 +327,7 @@ Make sure to configure the following environment variables in your `.env.dev` fi
 
 - `SECRET_KEY_BASE`
 - `DEV_DB_USERNAME`, `DEV_DB_PASSWORD`, `DEV_DB_NAME`
-- `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`
+- `S3_ACCESS_KEY` / `S3_SECRET_KEY`
 - `TYPESENSE_API_KEY`
 - `CLOAK_KEY`
 - `GUARDIAN_KEY`

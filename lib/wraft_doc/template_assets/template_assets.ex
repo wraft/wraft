@@ -1465,7 +1465,7 @@ defmodule WraftDoc.TemplateAssets do
     |> then(&{:ok, &1})
   end
 
-  defp storage_url, do: Path.join(System.get_env("MINIO_URL"), System.get_env("MINIO_BUCKET"))
+  defp storage_url, do: Path.join(System.get_env("S3_URL"), System.get_env("S3_BUCKET"))
 
   @doc """
   Download template from Storages.

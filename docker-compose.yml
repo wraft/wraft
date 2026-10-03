@@ -19,13 +19,13 @@ services:
       CLOAK_KEY: ${CLOAK_KEY}
       DATABASE_URL: postgres://${DEV_DB_USERNAME}:${DEV_DB_PASSWORD}@db:5433/${DEV_DB_NAME}?ssl=false
       GUARDIAN_KEY: ${GUARDIAN_KEY}
-      MINIO_HOST: minio
-      MINIO_PORT: 9000
-      MINIO_BUCKET: ${MINIO_BUCKET}
-      MINIO_BACKUP_BUCKET: ${MINIO_BACKUP_BUCKET:-wraft-backups}
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_URL: http://127.0.0.1:9000
+      S3_HOST: rustfs
+      S3_PORT: 9000
+      S3_BUCKET: ${S3_BUCKET}
+      S3_BACKUP_BUCKET: ${S3_BACKUP_BUCKET:-wraft-backups}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_URL: http://127.0.0.1:9000
       SYSTEM_BACKUP_ENABLED: ${SYSTEM_BACKUP_ENABLED:-false}
       MIX_ENV: dev
       PADDLE_API_KEY: ${PADDLE_API_KEY}
@@ -41,9 +41,12 @@ services:
     ports:
       - 4000:4000
     depends_on:
-      - db
-      - minio
-      - typesense
+      db:
+        condition: service_started
+      createbucket:
+        condition: service_completed_successfully
+      typesense:
+        condition: service_started
     restart: always
 
   db:
@@ -61,37 +64,40 @@ services:
     volumes:
       - db:/var/lib/postgresql
 
-  minio:
-    image: quay.io/minio/minio
+  rustfs:
+    image: rustfs/rustfs:1.0.0
     ports:
       - 9000:9000
       - 9001:9001
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_SERVER_URL: http://127.0.0.1:9000
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY}
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
     volumes:
-      - miniodata:/data:rw
-    command: minio server /data --console-address ":9001" --address :9000
+      - rustfsdata:/data
+    command: /data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
 
   createbucket:
-    image: minio/mc
-    restart: on-failure:5
+    image: rustfs/rc:v0.1.36
     environment:
-      MINIO_URL: http://minio:9000
-      MINIO_BUCKET: ${MINIO_BUCKET}
-      MINIO_BACKUP_BUCKET: ${MINIO_BACKUP_BUCKET:-wraft-backups}
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      S3_URL: http://rustfs:9000
+      S3_BUCKET: ${S3_BUCKET}
+      S3_BACKUP_BUCKET: ${S3_BACKUP_BUCKET:-wraft-backups}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+    volumes:
+      - ./scripts/rustfs:/init:ro
     depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc alias set myminio $$MINIO_URL $${MINIO_ROOT_USER} $$MINIO_ROOT_PASSWORD;
-      /usr/bin/mc mb -p myminio/$${MINIO_BUCKET};
-      /usr/bin/mc anonymous set public myminio/$${MINIO_BUCKET};
-      /usr/bin/mc mb -p myminio/$${MINIO_BACKUP_BUCKET};
-      exit 0;"
+      rustfs:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/init/init-buckets.sh"]
 
   typesense:
     image: typesense/typesense:27.1
@@ -107,5 +113,5 @@ services:
 
 volumes:
   db:
-  miniodata:
+  rustfsdata:
   typesense_data:
