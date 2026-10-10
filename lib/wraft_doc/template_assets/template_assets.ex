@@ -1235,7 +1235,7 @@ defmodule WraftDoc.TemplateAssets do
         "assets" => [
           %{
             "name" => "#{layout.name}",
-            "path" => "assets/letterhead.pdf",
+            "path" => "assets/#{layout.asset.file.file_name}",
             "type" => "layout",
             "description" => "#{layout.description}"
           }
