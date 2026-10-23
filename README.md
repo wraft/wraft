@@ -21,6 +21,10 @@
   <img src="priv/static/images/screenshot01.png" alt="Wraft Cover" style="width: 70%;" />
 </div>
 
+<p align="center">
+  <a href="https://app.railyard.run/deploy?repo=https://github.com/wraft/wraft"><img src="https://app.railyard.run/deploy/badge" alt="Deploy to Railyard"></a>
+</p>
+
 # Wraft - Document Lifecycle Management
 
 Wraft is an open-source content authoring platform that's helps businesses produce their most important set of documents.
